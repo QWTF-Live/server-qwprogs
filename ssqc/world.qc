@@ -338,6 +338,7 @@ void () worldspawn = {
     globalstat(STAT_PAUSED, EV_FLOAT, "cs_paused");
     globalstat(STAT_NOFIRE, EV_FLOAT, "no_fire_mode");
     globalstat(STAT_TEAMNO_ATTACK, EV_FLOAT, "team_no_attack");
+    globalstat(STAT_ORG_GAME, EV_FLOAT, "org_game");
 
     // login required cache
     local float flr = CF_GetSetting("flr", "fologinrequired", "1");

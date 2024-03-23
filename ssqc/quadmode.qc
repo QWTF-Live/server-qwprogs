@@ -477,9 +477,9 @@ void () QuadRoundBegin = {
 	cb_prematch = 0;
  	round_active = 1;
 	round_over = 0;
+	team_no_attack = 1 + (rounds % 2);
     
     if(quad_roles) {
-        team_no_attack = 1 + (rounds % 2);
         //tfdet = find(world, classname, "info_tfdetect");
         if(rounds % 2) {
             Team1_Role = &Role_Defence;

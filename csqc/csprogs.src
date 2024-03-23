@@ -29,6 +29,7 @@ vote.qc
 status.qc
 settings.qc
 menu.qc
+particles.qc
 main.qc
 events.qc
 hitfeedback.qc			  

@@ -189,6 +189,7 @@ noref void() CSQC_WorldLoaded = {
     // not resolve correctly.
     localcmd("flush\n");
     localcmd("cl_smartjump 0\n");  // replaced by fo_smartjump
+    Register_Particles();
 }
 
 void FO_CussView();

@@ -898,12 +898,9 @@ void () GasGrenadeExplode2 = {
     if (self.heat <= 20) {
         self.weapon = self.weapon + 1;
         if (self.weapon == 1) {
-            WriteByte(MSG_MULTICAST, SVC_TEMPENTITY);
-            WriteByte(MSG_MULTICAST, TE_LAVASPLASH);
-            WriteCoord(MSG_MULTICAST, self.origin_x);
-            WriteCoord(MSG_MULTICAST, self.origin_y);
-            WriteCoord(MSG_MULTICAST, self.origin_z - 24);
-            multicast(self.origin, MULTICAST_PVS);
+            pointparticles(particleeffectnum("gas_smoke_base"),
+                    [self.origin_x, self.origin_y, self.origin_z - 24],
+                    '0 0 0', 1);
         } else if (self.weapon == 2)
             self.weapon = 0;
         return;

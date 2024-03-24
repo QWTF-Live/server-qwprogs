@@ -83,7 +83,7 @@ static void PM_Sounds(float is_jumping, float is_jumpframe,
         if (waterlevel >= 2) {
            if (time > swimsound_next) {
                swimsound_next = time + 1;
-               localsound(random() < 0.5 ? "player/water1.wav" : "player/water2.wav",
+               localsound(random() < 0.5 ? "misc/water1.wav" : "misc/water2.wav",
                           CHAN_BODY, 1);
            }
         } else if (is_jumpframe) {
@@ -869,28 +869,25 @@ void PM_Refresh() {
 
 DEFCVAR_FLOAT(cl_upspeed, 400);
 void PM_InputFrame() {
-    float iz = input_movevalues.z;
-    input_movevalues.z = 0;
-
     float max_speed = isdemo() ? SPEC_MAXSPEED : pstate_pred.csqc_maxspeed;
 
-#if 0  // Quick fix
     // cl_smartjump replacement
     float type;
     if (input_buttons & BUTTON2) {
-        if ((game_state.is_player && CVARF(fo_smartjump) &&
-            (PM_GetWaterLevel(PM_Org(), &type) >= 2))
-              || game_state.is_spectator) {
+        if (game_state.is_spectator ||
+            (game_state.is_player && CVARF(fo_smartjump) &&
+            PM_GetWaterLevel(PM_Org(), &type) >= 2 && vlen(input_movevalues) == 0)) {
             input_buttons &= ~BUTTON2;
-            iz = min(CVARF(cl_upspeed), Class_MaxSpeed(WP_PlayerClass()));
+            input_movevalues.z = CVARF(cl_upspeed);
         }
     }
-#endif
-    if (input_buttons & BUTTON2) {
-        if (game_state.is_spectator) {
-            input_buttons &= ~BUTTON2;
-            iz = CVARF(cl_upspeed);
-        }
+
+    if (game_state.is_player) {
+        // Make sure that inconsistent CVAR>max doesnt contribute to clamp.
+        float class_speed = Class_MaxSpeed(WP_PlayerClass());
+        input_movevalues.x = min(input_movevalues.x, class_speed);
+        input_movevalues.y = min(input_movevalues.y, class_speed);
+        input_movevalues.z = min(input_movevalues.z, class_speed);
     }
 
     // Technically the sync with pstate_pred being on the right frame is loose..
@@ -899,8 +896,6 @@ void PM_InputFrame() {
 
     if (vlen(input_movevalues) > max_speed)
         input_movevalues = normalize(input_movevalues) * max_speed;
-    if (iz)
-        input_movevalues.z = min(max_speed, input_movevalues.z + iz);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

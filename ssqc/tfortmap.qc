@@ -783,9 +783,9 @@ void (entity Goal, entity Player, entity AP, float addb) Apply_Results = {
     if (Player == AP) {
         if (Goal.count > 0) {
             if (Player.team_no > 0) {
-                LogEventGoal(Player);
                 TeamFortress_TeamIncreaseScore(Player.team_no, Goal.count);
                 TeamFortress_TeamShowScores(2);
+                LogEventGoal(Player);
             }
         }
     }

@@ -101,6 +101,8 @@ void () PostFOQuadStarted = {
 };
 
 void () PostFOQuadFinalRoundStarted = {
+	AnnounceEvent(AN_ROUND_END);
+
 	if (!fo_login_required)
 		return;
 
@@ -163,6 +165,8 @@ void () PostFOQuadFinalRoundStarted = {
 };
 
 void (float winner) PostFOQuadFinished = {
+	AnnounceEvent(AN_GAME_END);
+
 	if (!fo_login_required)
 		return;
 
@@ -718,6 +722,7 @@ void () StartQuadRound =
 		}
 
 		if (rounds == 2 && legit_players > 1) {
+			AnnounceEvent(AN_GAME_START);
 			PostFOQuadStarted();
 			if (legit_players == 4)
 				Activate2v2_Ruleset();

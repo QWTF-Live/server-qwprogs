@@ -141,8 +141,12 @@ void AnnounceScoreboard() {
 
 static var float announce_active;
 float AnnounceActive() {
+    if (!use_announcer)
+        return FALSE;
+
     if (!org_game || time < round_start_time)
         return FALSE;
+
     return announce_active;
 }
 

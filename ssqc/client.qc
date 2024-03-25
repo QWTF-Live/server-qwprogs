@@ -647,6 +647,9 @@ void () DecodeLevelParms = {
         // CSQC projectiles
         fo_projectiles = CF_GetSetting("focp", "fo_csqc_projectiles", "on");
 
+        // discord announcer
+        use_announcer = CF_GetSetting("uda", "use_discord_announcer", "off");
+
         // delay respawning by this many seconds [0]
         Role_None.respawn_delay_time = CF_GetSetting("rd", "respawn_delay", "0");
         if (Role_None.respawn_delay_time) {

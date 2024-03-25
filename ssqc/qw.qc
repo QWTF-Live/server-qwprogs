@@ -806,3 +806,5 @@ float fo_login_required;
 var float PC_PYRO_AIRBLAST_COOLDOWN = 5;
 var float PC_ENGINEER_GRENADE_TYPE_2_RANGE = 240;
 .float detpack_last;
+
+float use_announcer;

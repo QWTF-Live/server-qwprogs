@@ -1,6 +1,22 @@
 //========================================================
 // Functions handling TeamFortress Map Entities
 //========================================================
+//
+enumflags {
+    GACT_CARRY_GLOW,          // 1
+    GACT_CARRY_HALF_SPEED,    // 2
+    GACT_DIE_DROP,            // 4
+    GACT_RETURN_IF_DIE,       // 8
+    GACT_RETURN_IF_GOAL_ACT,  // 16
+    GACT_RETURN_IF_REMOVE,    // 32
+    GACT_FILTER,              // 64
+    GACT_PAUSETIME_REMOVE,    // 128
+    GACT_KEEP_RESPAWN,        // 256
+    GACT_NOT_CARRY_GLOW,      // 512
+    GACT_PLAYER_KEEP_EFFECTS, // 1024
+    GACT_FALL_SPAWN,          // 2048
+    GACT_CAN_DROPITEM,        // 4096
+};
 
 void () TF_PlaceItem;
 void () TF_StartItem;
@@ -431,7 +447,7 @@ void () info_tfgoal = {
     precache_sound("items/damage2.wav");
     precache_sound("items/damage3.wav");
 
-    self.solid = 1;
+    self.solid = SOLID_TRIGGER;
 
     if (self.goal_state == 0)
         self.goal_state = 2;
@@ -469,7 +485,7 @@ void () info_tfgoal_timer = {
         dprint("Timer Goal created with no specified time.\n");
         dremove(self);
     }
-    self.solid = 0;
+    self.solid = SOLID_NOT;
     if (self.goal_state == 0) {
         self.goal_state = 2;
     }
@@ -1450,7 +1466,7 @@ void (entity Goal, entity AP) DoGoalWork = {
             RI.weapon = 2;
             RI.think = ReturnItem;
             RI.nextthink = time + 0.1;
-            te.solid = 0;
+            te.solid = SOLID_NOT;
         }
     }
     if (Goal.remove_spawnpoint != 0) {
@@ -2288,9 +2304,9 @@ void () ReturnItem = {
     self.enemy.goal_state = 2;
     if ((self.enemy.goal_activation & 8192) &&
             (self.enemy.classname == "item_tfgoal"))
-        self.enemy.solid = 2;
+        self.enemy.solid = SOLID_BBOX;
     else
-        self.enemy.solid = 1;
+        self.enemy.solid = SOLID_TRIGGER;
 
     self.enemy.movetype = 0;
     self.enemy.touch = item_tfgoal_touch;
@@ -2385,6 +2401,7 @@ void (entity Item, entity AP, float method) tfgoalitem_RemoveFromPlayer = {
             }
             DelayReturn.think = ReturnItem;
             DelayReturn.nextthink = time + 0.5;
+            Item.solid = SOLID_NOT;
         } else {
             if (Item.goal_activation & 4) {
                 if ((method == 2) && (Item.goal_activation & 4096)) {
@@ -2406,7 +2423,8 @@ void (entity Item, entity AP, float method) tfgoalitem_RemoveFromPlayer = {
         return;
     } else {
         if (method == 1) {
-            if (Item.goal_activation & 16) {
+            Item.solid = SOLID_NOT;
+            if (Item.goal_activation & GACT_RETURN_IF_GOAL_ACT) {
                 DelayReturn = spawn();
                 DelayReturn.enemy = Item;
                 DelayReturn.weapon = 2;
@@ -2416,7 +2434,6 @@ void (entity Item, entity AP, float method) tfgoalitem_RemoveFromPlayer = {
                 TeamFortress_SetSpeed(AP);
                 return;
             }
-            Item.solid = 0;
             Item.owner = world;
             TeamFortress_SetSpeed(AP);
             return;
@@ -2504,9 +2521,9 @@ void () tfgoalitem_dropthink = {
                         self.goal_state = 2;
                         self.movetype = 6;
                         if (self.goal_activation & 8192) {
-                            self.solid = 2;
+                            self.solid = SOLID_BBOX;
                         } else {
-                            self.solid = 1;
+                            self.solid = SOLID_TRIGGER;
                         }
                         if (self.mdl != string_null) {
                             FO_SetModel(self, self.mdl);
@@ -2547,9 +2564,9 @@ void (entity Item, float PAlive, entity P) tfgoalitem_drop = {
     Item.goal_state = 2;
     Item.movetype = 6;
     if (Item.goal_activation & 8192) {
-        Item.solid = 2;
+        Item.solid = SOLID_BBOX;
     } else {
-        Item.solid = 1;
+        Item.solid = SOLID_TRIGGER;
     }
     if (Item.mdl != string_null) {
         FO_SetModel(Item, Item.mdl);
@@ -2595,6 +2612,7 @@ void () tfgoalitem_remove = {
         te.nextthink = time + 0.1;
         te.think = ReturnItem;
         te.bubble_count = 0; //reset return time counter
+        self.solid = SOLID_NOT;
         return;
     }
     dremove(self);
@@ -2704,7 +2722,7 @@ void () item_flag_team2 = {
     setsize(self, self.goal_min, self.goal_max);
     self.touch = item_tfgoal_touch;
     self.goal_state = 2;
-    self.solid = 1;
+    self.solid = SOLID_TRIGGER;
     setorigin(self, self.origin);
     self.nextthink = time + 0.2;
     self.think = TF_PlaceItem;
@@ -2725,7 +2743,7 @@ void () item_flag_team2 = {
     dp.axhitme = 2;
     dp.count = 10;
     dp.frags = 10;
-    dp.solid = 1;
+    dp.solid = SOLID_TRIGGER;
     dp.goal_state = 2;
     dp.goal_min = VEC_HULL_MIN;
     dp.goal_max = VEC_HULL_MAX;
@@ -2739,7 +2757,7 @@ void () item_flag_team2 = {
     dp.frags = 5;
     dp.goal_activation = 0;
     dp.goal_no = 5;
-    dp.solid = 0;
+    dp.solid = SOLID_NOT;
     dp.goal_state = 2;
     dp.goal_min = VEC_HULL_MIN;
     dp.goal_max = VEC_HULL_MAX;
@@ -2779,7 +2797,7 @@ void () item_flag_team1 = {
     setsize(self, self.goal_min, self.goal_max);
     self.touch = item_tfgoal_touch;
     self.goal_state = 2;
-    self.solid = 1;
+    self.solid = SOLID_TRIGGER;
     setorigin(self, self.origin);
     self.nextthink = time + 0.2;
     self.think = TF_PlaceItem;
@@ -2800,7 +2818,7 @@ void () item_flag_team1 = {
     dp.axhitme = 1;
     dp.count = 10;
     dp.frags = 10;
-    dp.solid = 1;
+    dp.solid = SOLID_TRIGGER;
     dp.goal_state = 2;
     dp.goal_min = VEC_HULL_MIN;
     dp.goal_max = VEC_HULL_MAX;
@@ -2815,7 +2833,7 @@ void () item_flag_team1 = {
     dp.frags = 5;
     dp.goal_activation = 0;
     dp.goal_no = 6;
-    dp.solid = 0;
+    dp.solid = SOLID_NOT;
     dp.goal_state = TFGS_INACTIVE;
     dp.goal_min = VEC_HULL_MIN;
     dp.goal_max = VEC_HULL_MAX;

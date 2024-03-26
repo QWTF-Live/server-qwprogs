@@ -1,6 +1,21 @@
 static string livebot_hook = "https://discord.com/api/webhooks/1221561643801120778/rQvCiclJ4gvi1UXi16EZCZooAZnhE8mfEhEYJvciNYGrQQ8rS8U1-TsV1sAZFX1F-nl5";
+static var string announce_endpoint;
+static var float announce_ready;
+
+float AnnounceActive() {
+    if (!announce_ready)
+        return FALSE;
+
+    return use_announcer;
+}
+
+enum {
+    KV_S,
+    KV_I,
+};
 
 struct KeyVal {
+    int type;
     string key;
     string val;
 };
@@ -10,9 +25,13 @@ static string JSON_Wrap(int n, KeyVal* key_vals, string embeds = "") {
     int last = n - !has_embeds;
     string result = "{\n";
     for (int i = 0; i < n; i++) {
-        result = strcat(result, " \"", key_vals[i].key,"\": \"",
-                                        key_vals[i].val, "\"",
-                                        i < last ? ",\n" : "\n");
+        result = strcat(result, " \"", key_vals[i].key,"\":");
+        if (key_vals[i].type == KV_S)
+            result = strcat(result, "\"", key_vals[i].val, "\"");
+        else
+            result = strcat(result, key_vals[i].val);
+
+        result = strcat(result, i < last ? ",\n" : "\n");
     }
     if (has_embeds) {
         result = strcat(result, "  \"embeds\": [ {\n", embeds, "\n} ]\n");
@@ -21,15 +40,123 @@ static string JSON_Wrap(int n, KeyVal* key_vals, string embeds = "") {
     return result;
 }
 
-static string to_mins(float t) {
-    float m = t / 60;
-    float s = t % 60;
-
-    return sprintf("%02d:%02d", m, s);
+static inline string JSON_Name(entity player) {
+    return strdecolorize(player.netname);
 }
 
-struct TeamString { string code[2]; };
+static void AnnounceScoreboard() {
+    int count;
+    entity* list = find_list(classname, "player", EV_STRING, count);
 
+    string result = "[";
+
+    for (int i = 0; i < count; i++) {
+        entity p = list[i];
+        KeyVal kvs[] = {
+                        {KV_S, "name", JSON_Name(p)},
+                        {KV_I, "team", ftos(p.team_no)},
+                        {KV_I, "pc", ftos(p.playerclass)},
+                        {KV_I, "kills", ftos(p.kills)},
+                        {KV_I, "deaths", ftos(p.deaths)},
+                        {KV_I, "dmgg", ftos(p.damagegiven)},
+                        {KV_I, "dmgt", ftos(p.damagetaken)},
+                        {KV_I, "caps", ftos(p.caps)},
+                        {KV_I, "touches", ftos(p.touches)}
+                       };
+
+        result = strcat(result, JSON_Wrap(kvs.length, kvs),
+                        i + 1 == count ? "" : ",");
+
+    }
+
+    result = strcat(result, "]");
+
+    uri_post(strcat(announce_endpoint, "scoreboard"), FO_ANNOUNCE,
+            "application/json", result);
+}
+
+void AnnounceEvent(string event, entity player = __NULL__) {
+    if (!AnnounceActive())
+        return;
+
+    KeyVal kvs[] = {
+        {KV_S, "type", event},
+        {KV_I, "time", ftos(time)},
+        {KV_I, "round_start", ftos(round_start_time)},
+        {KV_S, "team1score", ftos(team1score)},
+        {KV_S, "team2score", ftos(team2score)},
+     };
+
+    string data = strcat("{ \"event\": ", JSON_Wrap(kvs.length, kvs));
+
+    if (player) {
+        KeyVal pkvs[] = {
+            {KV_S, "name", JSON_Name(player)},
+            {KV_I, "team", ftos(player.team_no)},
+            {KV_I, "pc", ftos(player.playerclass)},
+        };
+        data = strcat(data, ", \"player\": ", JSON_Wrap(pkvs.length, pkvs));
+    }
+
+    data = strcat(data, "}");
+
+
+    uri_post(strcat(announce_endpoint, "event"), FO_ANNOUNCE,
+             "application/json", data);
+}
+
+void AnnounceHeartbeat() {
+    if (!AnnounceActive())
+        return;
+
+    KeyVal kvs[] = {
+                    {KV_S, "map", mapname},
+                    {KV_I, "time", ftos(time)},
+                    {KV_I, "round_start", ftos(round_start_time)},
+                    {KV_I, "org_game", ftos(org_game)},
+                    {KV_I, "team1score", ftos(team1score)},
+                    {KV_I, "team2score", ftos(team2score)},
+                   };
+
+    string data = JSON_Wrap(kvs.length, kvs);
+    uri_post(strcat(announce_endpoint, "heartbeat"), FO_ANNOUNCE, "application/json", data);
+}
+
+void AnnounceUpdate() {
+    if (!AnnounceActive())
+        return;
+
+    static float next_heartbeat;
+    if (time > next_heartbeat) {
+        next_heartbeat = time + 5;
+
+        AnnounceHeartbeat();
+        return;
+    }
+
+    static float next_scoreboard;
+    if (time > next_scoreboard) {
+        next_scoreboard = time + 10;
+
+        AnnounceScoreboard();
+        return;
+    }
+}
+
+void InitAnnounce() {
+    /* if (!use_announcer) */
+    /*     return; */
+
+    announce_endpoint = strcat("http://localhost:9292/", serverkey("hostname"), "/");
+    uri_post(strcat(announce_endpoint, "init"), FO_ANNOUNCE, "application/json", "hello");
+}
+
+void InitAnnounceResult(float response) {
+    if (!response)
+        announce_ready = TRUE;
+}
+
+#if 0
 static string blank_icon = "<:blank:1221574759720943708>";
 
 static string flag_icon(float team_no) {
@@ -61,143 +188,4 @@ static string to_icon(float team_no, float class_no) {
     else
         return icons[class_no - 1].code[team_no - 1];
 }
-
-void LiveBotPostAnnounce(string message) {
-    KeyVal kvs[] = {{"content", message}};
-    string data = JSON_Wrap(kvs.length, kvs);
-    uri_post(livebot_hook, FO_ANNOUNCE_REQUEST, "application/json", data);
-}
-
-struct FieldCol {
-    string name;
-    int inl;
-    string values;
-};
-
-static void InitFieldCol(FieldCol* col, string name, int inl) {
-    col->name = name;
-    col->inl = inl;
-    col->values = "";
-}
-
-static void AddRow(FieldCol* col, string row) {
-    if (col->values == "")
-        col->values = row;
-    else
-        col->values = strcat(col->values, "\\n",row);
-}
-
-static string RenderFieldCol(FieldCol* col, float last = FALSE) {
-    string result = strcat("{\"name\": \"", col->name, "\",");
-    if (col->inl)
-        result = strcat(result, "\"inline\":true,");
-    result = strcat(result, "\"value\": \"", col->values, "\"}",
-                    last ? "" : ",\n");
-    return result;
-}
-
-string RenderScoreBoardField() {
-    FieldCol rnd1, red[4], blue[4];
-
-    InitFieldCol(&rnd1, "Round 1", TRUE);
-    InitFieldCol(&blue[0], "Blue", FALSE);
-    InitFieldCol(&blue[1], "K/D", TRUE);
-    InitFieldCol(&blue[2], "DMG", TRUE);
-
-    int count;
-    entity* list = find_list(classname, "player", EV_STRING, count);
-    for (int i = 0; i < count; i++) {
-        entity p = list[i];
-        FieldCol* t = p.team_no == 1 ? blue : red;
-        AddRow(&t[0], strcat(to_icon(p.team_no, p.playerclass), p.netname));
-        AddRow(&t[1], sprintf("%d/%d", p.kills, p.deaths));
-        AddRow(&t[2], ftos(p.damagegiven));
-    }
-
-    string result = strcat(RenderFieldCol(&rnd1),
-                           RenderFieldCol(&blue[0]),
-                           RenderFieldCol(&blue[1]),
-                           RenderFieldCol(&blue[2], TRUE));
-
-    return result;
-}
-
-string EmbedFields(string embed) {
-    return strcat("\"fields\": [\n", embed, "\n]");
-}
-
-
-void AnnounceScoreboard() {
-    static float next;
-    if (time < next)
-        return;
-    next = time + 5;
-
-    string msg = sprintf("Scoreboard: %s", mapname);
-    KeyVal kvs[] = {{"content", msg}};
-    string data = JSON_Wrap(kvs.length, kvs, EmbedFields(RenderScoreBoardField()));
-    uri_post(strcat(livebot_hook,"?wait=true"), 6, "application/json", data);
-}
-
-static var float announce_active;
-float AnnounceActive() {
-    if (!use_announcer)
-        return FALSE;
-
-    if (!org_game || time < round_start_time)
-        return FALSE;
-
-    return announce_active;
-}
-
-enum {
-    AN_GAME_START,
-    AN_ROUND_END,
-    AN_GAME_END,
-};
-
-void AnnounceEvent(float ev) {
-    string msg = "";
-    switch (ev) {
-        case AN_GAME_START:
-            msg = sprintf("### %s: game started on %s", serverkey("hostname"), mapname);
-            announce_active = TRUE;
-            break;
-        case AN_ROUND_END:
-            msg = sprintf("### Round 1: %s %s %d - %s %d", msg,
-                    flag_icon(1), team1score, flag_icon(2), team2score);
-            break;
-        case AN_GAME_END:
-            if (team1score == team2score)
-                msg = "Draw!";
-            else
-                msg = (team1score > team2score) ? "Blue wins!" : "Red wins!";
-
-            msg = sprintf("### %s: %s %s %d - %s %d", serverkey("hostname"), msg,
-                    flag_icon(1), team1score, flag_icon(2), team2score);
-            break;
-    }
-
-    if (msg != "" && AnnounceActive())
-        LiveBotPostAnnounce(msg);
-}
-
-void AnnounceCapture(entity player) {
-    if (!AnnounceActive())
-        return;
-
-    float captured = player.team_no == 1 ? 1 : 0;
-    string suffix[] = {
-        strcat(" captured the ", flag_icon(1), " flag!"),
-        strcat(" captured the ", flag_icon(2), " flag!"),
-    };
-
-    string p_s = strcat(to_icon(player.team_no, player.playerclass), " ",
-                        player.netname);
-    p_s = strcat(p_s, suffix[captured]);
-
-    string msg = sprintf("[%s] %s (Score: %d - %d)",
-            to_mins(time - round_start_time), p_s, team1score, team2score);
-
-    LiveBotPostAnnounce(msg);
-}
+#endif

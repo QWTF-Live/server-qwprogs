@@ -648,7 +648,7 @@ void () DecodeLevelParms = {
         fo_projectiles = CF_GetSetting("focp", "fo_csqc_projectiles", "on");
 
         // discord announcer
-        use_announcer = CF_GetSetting("uda", "use_discord_announcer", "off");
+        use_announcer = CF_GetSetting("uda", "use_discord_announcer", "on");
 
         // delay respawning by this many seconds [0]
         Role_None.respawn_delay_time = CF_GetSetting("rd", "respawn_delay", "0");
@@ -3935,6 +3935,10 @@ void () InitReverseCap = {
         }
     }
 
+}
+
+void EndFrame() {
+    AnnounceUpdate();
 }
 
 // this is to fix hack used to avoid fall damage, it currently breaks pm_airstep

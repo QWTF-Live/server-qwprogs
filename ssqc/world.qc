@@ -83,6 +83,8 @@ void WorldSpawnPost()
     FO_FlashDimension = -1;
 
     dremove(self);
+
+    InitAnnounce();
 }
 
 void () worldspawn = {

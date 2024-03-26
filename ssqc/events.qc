@@ -313,7 +313,7 @@ void (entity player) LogEventGoal = {
         return;
 
     player.caps = player.caps + 1;
-    AnnounceCapture(player);
+    AnnounceEvent("capture", player);
 
     if (canlog == 0)
         return;

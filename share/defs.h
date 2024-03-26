@@ -1498,11 +1498,11 @@ enum {
 #define ALL_TIME_DEFENCE	2
 
 // web request index
-#define BR_LOGIN_REQUEST			1
+#define BR_LOGIN_REQUEST		1
 #define FO_QUAD_STARTED_REQUEST		2
 #define FO_QUAD_FINISHED_REQUEST	3
-#define FO_LOGIN_REQUEST			4
-#define FO_ANNOUNCE_REQUEST			5
+#define FO_LOGIN_REQUEST		4
+#define FO_ANNOUNCE 			5
 
 #define SPEC_MAXSPEED 1000
 

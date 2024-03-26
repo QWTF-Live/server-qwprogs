@@ -24,6 +24,10 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
 	local float success = !responsecode;
 
 	switch(reqid) {
+		case FO_ANNOUNCE:
+			InitAnnounceResult(responsecode);
+			break;
+
 		case FO_QUAD_STARTED_REQUEST:
 			local string msg;
 

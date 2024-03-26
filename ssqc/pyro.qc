@@ -311,28 +311,21 @@ void () FlameFollow = {
     }
 };
 
-void (entity player, entity fireowner, vector org
-        , float flamehealth) SetOnFire = {    
+void (entity player, entity fireowner, vector org, float flamehealth) SetOnFire = {
     entity flame;
 
-    if (cb_prematch) 
-    {
+    if (cb_prematch || player.deadflag)
         return;
-    }
 
-    if (player.numflames >= 4) 
-    {
+    if (player.numflames >= 4) {
         player.tfstate = player.tfstate | TFSTATE_FLAMES_MAX;
         return;
     }
 
-    if ((player.armorclass & AT_SAVEFIRE) && (player.armorvalue > 0)) 
-    {
+    if ((player.armorclass & AT_SAVEFIRE) && (player.armorvalue > 0))
         return;
-    }
 
-    if (player.classname == "player") 
-    {
+    if (player.classname == "player") {
         if (((teamplay & 16) && (player.team_no > 0)) &&
             (player.team_no == fireowner.team_no)) {
             return;
@@ -340,20 +333,17 @@ void (entity player, entity fireowner, vector org
         CenterPrint(player, "You are on fire!\n");
         stuffcmd(player, "bf\n");
     }
-    
-    if (player.numflames < 1) 
-    {
+
+    if (player.numflames < 1) {
         flame = FlameSpawn("1", player);
         //FO_Sound(flame, CHAN_VOICE, "ambience/fire1.wav", 1, 1); // original tf code, but super annoying and it doesn't stop
-    } 
-    else
-    {
+    } else {
         flame = FlameSpawn("3", player);
         if (flame == world) {
             return;
         }
     }
-    
+
     flame.classname = "fire";
     flame.health = flamehealth;
     SetFlameCount(player, (player.numflames + 1));

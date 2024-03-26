@@ -9,6 +9,7 @@ enum {
     CT_FAST_PROJECTILE,   // Fast proj => less judder (e.g. heavy bullet)
 };
 
+.float last_death;
 .float last_death_ctime;
 .float last_attack_ctime;
 

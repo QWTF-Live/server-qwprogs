@@ -174,11 +174,18 @@ static void RewindSave(RewindState* rs) {
     rs->held_velocity = e.velocity;
 }
 
+.float rewind_filter;
+
 static void RewindRestore(RewindState* rs, float type) {
     ASSERTD_EQ(rs->rewound, kRewound);
 
     rs->rewound = type;
     entity e = rs->owner;
+
+    if (e.rewind_filter) {
+        e.solid = e.rewind_filter;
+        e.rewind_filter = 0;
+    }
 
     if (e.health <= 0)
         return;
@@ -201,8 +208,12 @@ static void RewindTo(RewindState* rstate, float rtime) {
     ASSERTD_EQ(rstate->rewound, kRewound);
     entity e = rstate->owner;
 
-    if (e.health <= 0 || rtime < e->spawn_time)
+    if (e.health <= 0 || rtime < e->last_death) {
+        e.rewind_filter = e.solid;
+        e.solid = SOLID_NOT;
         return;
+    }
+    e.rewind_filter = 0;
 
     vector pos;
 

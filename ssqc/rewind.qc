@@ -183,8 +183,8 @@ static void RewindRestore(RewindState* rs, float type) {
     entity e = rs->owner;
 
     if (e.rewind_filter) {
-        e.solid = e.rewind_filter;
-        e.rewind_filter = 0;
+        /* e.solid = e.rewind_filter; */
+        /* e.rewind_filter = 0; */
     }
 
     if (e.health <= 0)
@@ -209,11 +209,11 @@ static void RewindTo(RewindState* rstate, float rtime) {
     entity e = rstate->owner;
 
     if (e.health <= 0 || rtime < e->last_death) {
-        e.rewind_filter = e.solid;
-        e.solid = SOLID_NOT;
+        /* e.rewind_filter = e.solid; */
+        /* e.solid = SOLID_NOT; */
         return;
     }
-    e.rewind_filter = 0;
+    /* e.rewind_filter = 0; */
 
     vector pos;
 

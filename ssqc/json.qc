@@ -148,7 +148,10 @@ void InitAnnounce() {
     /* if (!use_announcer) */
     /*     return; */
 
-    string shard = CF_GetSetting("shard", "shard", "dev");
+    string shard = infokey(world, "shard");
+    if (shard == string_null)
+        shard = "dev";
+
     announce_endpoint = strcat("http://localhost:9292/", shard, "/");
     uri_post(strcat(announce_endpoint, "init"), FO_ANNOUNCE, "application/json", "hello");
 }

@@ -52,6 +52,10 @@ static void AnnounceScoreboard() {
 
     for (int i = 0; i < count; i++) {
         entity p = list[i];
+
+        if (clienttype(p) != CLIENTTYPE_REAL)
+            continue;
+
         KeyVal kvs[] = {
                         {KV_S, "name", JSON_Name(p)},
                         {KV_I, "team", ftos(p.team_no)},

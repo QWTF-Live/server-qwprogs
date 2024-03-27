@@ -111,6 +111,7 @@ void AnnounceHeartbeat() {
 
     KeyVal kvs[] = {
                     {KV_S, "map", mapname},
+                    {KV_S, "servername", serverkey("hostname")},
                     {KV_I, "time", ftos(time)},
                     {KV_I, "round_start", ftos(round_start_time)},
                     {KV_I, "org_game", ftos(org_game)},
@@ -147,7 +148,8 @@ void InitAnnounce() {
     /* if (!use_announcer) */
     /*     return; */
 
-    announce_endpoint = strcat("http://localhost:9292/", serverkey("hostname"), "/");
+    string shard = CF_GetSetting("shard", "shard", "dev");
+    announce_endpoint = strcat("http://localhost:9292/", shard, "/");
     uri_post(strcat(announce_endpoint, "init"), FO_ANNOUNCE, "application/json", "hello");
 }
 

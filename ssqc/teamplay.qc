@@ -97,7 +97,7 @@ void TeamPlay_Cap(vector origin, entity player) {
   if (!org_game || !new_balance)
     return;
 
-  ApplyRadius(origin, 1500,
+  ApplyRadius(origin, 1000,
       FilTeamNEQ[player.team_no - 1], EffStrip,
       FilOwnerTeamNEQ[player.team_no - 1], EffRemove);
 }

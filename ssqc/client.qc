@@ -2083,9 +2083,6 @@ void (float all_dimensions) SetDimensions = {
 };
 
 void () PutClientInServer = {
-    if (fo_login_required && self.fo_login == string_null)
-        UpdateClient_Login(self);
-
     local float oldclass;
     local entity spot;
     local entity te;

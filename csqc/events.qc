@@ -341,6 +341,12 @@ void() CSQC_Parse_Event = {
             RemoveVoteMap(readstring(), FALSE);
             break;
         case MSG_LOGIN:
+            // Everything in MSG_INIT duped?
+            static float once;
+            if (once)
+                return;
+            once = TRUE;
+
             if (!FoLogin("", FALSE))
                 print("You are not logged in\n");
             break;

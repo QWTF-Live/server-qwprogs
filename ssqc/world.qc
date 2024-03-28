@@ -334,7 +334,7 @@ void () worldspawn = {
     clientstat(STAT_TEAMNO, EV_FLOAT, team_no);
     clientstat(STAT_ALL_TIME, EV_FLOAT, all_time);
     clientstat(STAT_FLAGS, EV_FLOAT, stat_flags);
-    clientstat(STAT_SPAWN_GEN,EV_FLOAT, spawn_gen);
+    clientstat(STAT_SPAWN_GEN, EV_FLOAT, spawn_gen);
 
     globalstat(STAT_ROUND_END, EV_FLOAT, "round_end_time");
     globalstat(STAT_PAUSED, EV_FLOAT, "cs_paused");
@@ -346,6 +346,10 @@ void () worldspawn = {
     local float flr = CF_GetSetting("flr", "fologinrequired", "1");
     backend_address = CF_GetSettingRaw("ba", "backend_address", "");
     fo_login_required = (flr && (backend_address != ""));
+    if (fo_login_required) {
+        WriteByte(MSG_INIT, SVC_CGAMEPACKET);
+        WriteByte(MSG_INIT, MSG_LOGIN);
+    }
 
     entity worldspawnent;
     worldspawnent = spawn();

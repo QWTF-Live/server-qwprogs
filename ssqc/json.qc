@@ -206,7 +206,7 @@ void ReportMatchResult() {
     };
 
     string final = JSON_Wrap(fvs.length, fvs);
-    string endpoint = "http://localhost:9000/result";
+    string endpoint = "http://stats.qwtf.live:9000/result";
     uri_post(endpoint, TFL_RESULT, "application/json", final);
 
 }

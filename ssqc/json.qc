@@ -41,7 +41,7 @@ static string JSON_Wrap(int n, KeyVal* key_vals, string embeds = "") {
 }
 
 static inline string JSON_Name(entity player) {
-    return strdecolorize(player.netname);
+    return uri_escape(strdecolorize(player.netname));
 }
 
 static void AnnounceScoreboard() {

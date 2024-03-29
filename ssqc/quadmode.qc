@@ -98,6 +98,8 @@ void () PostFOQuadStarted = {
 	dprint("POST to ", uri, "\n");
 	dprint(data);
 	uri_post(uri, FO_QUAD_STARTED_REQUEST, "application/json", data);
+
+	ReportMatchResult();
 };
 
 void () PostFOQuadFinalRoundStarted = {

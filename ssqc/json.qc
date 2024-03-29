@@ -20,10 +20,9 @@ struct KeyVal {
     string val;
 };
 
-static string JSON_Wrap(int n, KeyVal* key_vals, string embeds = "") {
-    float has_embeds = embeds != "" ? 1 : 0;
-    int last = n - !has_embeds;
+static string JSON_Wrap(int n, KeyVal* key_vals) {
     string result = "{\n";
+    int last = n - 1;
     for (int i = 0; i < n; i++) {
         result = strcat(result, " \"", key_vals[i].key,"\":");
         if (key_vals[i].type == KV_S)
@@ -32,9 +31,6 @@ static string JSON_Wrap(int n, KeyVal* key_vals, string embeds = "") {
             result = strcat(result, key_vals[i].val);
 
         result = strcat(result, i < last ? ",\n" : "\n");
-    }
-    if (has_embeds) {
-        result = strcat(result, "  \"embeds\": [ {\n", embeds, "\n} ]\n");
     }
     result = strcat(result, "}\n");
     return result;
@@ -75,7 +71,7 @@ static void AnnounceScoreboard() {
 
     result = strcat(result, "]");
 
-    uri_post(strcat(announce_endpoint, "scoreboard"), FO_ANNOUNCE,
+    uri_post(strcat(announce_endpoint, "scoreboard"), TFL_ANNOUNCE,
             "application/json", result);
 }
 
@@ -105,7 +101,7 @@ void AnnounceEvent(string event, entity player = __NULL__) {
     data = strcat(data, "}");
 
 
-    uri_post(strcat(announce_endpoint, "event"), FO_ANNOUNCE,
+    uri_post(strcat(announce_endpoint, "event"), TFL_ANNOUNCE,
              "application/json", data);
 }
 
@@ -124,7 +120,7 @@ void AnnounceHeartbeat() {
                    };
 
     string data = JSON_Wrap(kvs.length, kvs);
-    uri_post(strcat(announce_endpoint, "heartbeat"), FO_ANNOUNCE, "application/json", data);
+    uri_post(strcat(announce_endpoint, "heartbeat"), TFL_ANNOUNCE, "application/json", data);
 }
 
 void AnnounceUpdate() {
@@ -157,12 +153,62 @@ void InitAnnounce() {
         shard = "dev";
 
     announce_endpoint = strcat("http://localhost:9292/", shard, "/");
-    uri_post(strcat(announce_endpoint, "init"), FO_ANNOUNCE, "application/json", "hello");
+    uri_post(strcat(announce_endpoint, "init"), TFL_ANNOUNCE, "application/json", "hello");
 }
 
 void InitAnnounceResult(float response) {
     if (!response)
         announce_ready = TRUE;
+}
+
+string FO_GetUserSettingString(entity ent, string ps_short, string ps_setting,
+                               string ps_default);
+float TeamFortress_TeamGetScore(float tno);
+
+void ReportMatchResult() {
+    int count;
+    entity* list = find_list(classname, "player", EV_STRING, count);
+
+    string players[2];
+    players[0] = players[1] = string_null;
+
+    for (int i = 0; i < count; i++) {
+        entity p = list[i];
+        if (p.all_time != ALL_TIME_COLOUR)
+            continue;
+
+        string token = FO_GetUserSettingString(p, "_fo_token", "fo_token", "");
+        KeyVal pvs[] = {
+            {KV_S, "discord_name", p.fo_login},
+            {KV_S, "auth_token", token},
+            {KV_I, "pc", ftos(p.playerclass)},
+        };
+
+        int idx = p.team_no - 1;
+        string sep = players[idx] != string_null ? ", " : "";
+        players[idx] = strcat(players[idx], sep, JSON_Wrap(pvs.length, pvs));
+    }
+
+
+    string teams[2];
+    for (int i = 0; i < 2; i++) {
+        KeyVal tvs[] = {
+            {KV_I, "score", ftos(TeamFortress_TeamGetScore(i+1))},
+            {KV_I, "players", strcat("[", players[i], "]")},
+        }
+
+        teams[i] = JSON_Wrap(tvs.length, tvs);
+    }
+
+    KeyVal fvs[] = {
+        {KV_I, "team1", teams[0]},
+        {KV_I, "team2", teams[1]}
+    };
+
+    string final = JSON_Wrap(fvs.length, fvs);
+    string endpoint = "http://localhost:9000/result";
+    uri_post(endpoint, TFL_RESULT, "application/json", final);
+
 }
 
 #if 0

@@ -27,6 +27,8 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
 		case TFL_ANNOUNCE:
 			InitAnnounceResult(responsecode);
 			break;
+		case TFL_RESULT:
+			break;
 
 		case FO_QUAD_STARTED_REQUEST:
 			local string msg;

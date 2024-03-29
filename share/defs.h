@@ -1503,7 +1503,7 @@ enum {
 #define FO_QUAD_FINISHED_REQUEST	3
 #define FO_LOGIN_REQUEST		4
 #define TFL_ANNOUNCE 			5
-#define TFL_RESULT 			5
+#define TFL_RESULT 			6
 
 #define SPEC_MAXSPEED 1000
 

@@ -189,7 +189,6 @@ void ReportMatchResult() {
         players[idx] = strcat(players[idx], sep, JSON_Wrap(pvs.length, pvs));
     }
 
-
     string teams[2];
     for (int i = 0; i < 2; i++) {
         KeyVal tvs[] = {
@@ -201,6 +200,10 @@ void ReportMatchResult() {
     }
 
     KeyVal fvs[] = {
+        {KV_S, "server", infokey(world, "hostname")},
+        {KV_S, "address", cvar_string("sv_serverip")},
+        {KV_S, "shard", infokey(world, "shard")},
+        {KV_S, "channel_id", discord_channel_id},
         {KV_I, "team1", teams[0]},
         {KV_I, "team2", teams[1]}
     };

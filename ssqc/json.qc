@@ -174,13 +174,13 @@ void ReportMatchResult() {
 
     for (int i = 0; i < count; i++) {
         entity p = list[i];
-        if (p.all_time != ALL_TIME_COLOUR)
+        if (p.all_time != ALL_TIME_COLOUR || p.team_no < 1 || p.team_no > 2)
             continue;
 
         string token = FO_GetUserSettingString(p, "_fo_token", "fo_token", "");
         KeyVal pvs[] = {
-            {KV_S, "discord_name", p.fo_login},
-            {KV_S, "auth_token", token},
+            {KV_S, "username", p.fo_login},
+            {KV_S, "fo_token", token},
             {KV_I, "pc", ftos(p.playerclass)},
         };
 
@@ -204,6 +204,7 @@ void ReportMatchResult() {
         {KV_S, "address", cvar_string("sv_serverip")},
         {KV_S, "shard", infokey(world, "shard")},
         {KV_S, "channel_id", discord_channel_id},
+        {KV_S, "map", mapname},
         {KV_I, "team1", teams[0]},
         {KV_I, "team2", teams[1]}
     };

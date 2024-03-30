@@ -210,9 +210,10 @@ void ReportMatchResult() {
     };
 
     string final = JSON_Wrap(fvs.length, fvs);
+    dprint("Reporting to qwtf-live: ", final, "\n");
+
     string endpoint = "http://stats.qwtf.live:9000/result";
     uri_post(endpoint, TFL_RESULT, "application/json", final);
-
 }
 
 #if 0

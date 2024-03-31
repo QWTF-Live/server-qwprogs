@@ -3068,7 +3068,9 @@ static void PlayerPostThinkAlive() {
         RefreshStatusBar(self);
 }
 
+void FoLoginIfRequired(entity player);
 void () PlayerPostThink = {
+    FoLoginIfRequired(self);
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
 

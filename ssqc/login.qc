@@ -13,11 +13,34 @@ void (entity player, string login, string secret) performLogin = {
     dprint("\n");
 }
 
-void (entity player) performFoLogin = {
-    local string uri = sprintf("%s/results/api/v1/fo_login", backend_address);
-    local string token = FO_GetUserSettingString(player, "_fo_token", "fo_token", "");
-    uri_get(uri, FO_LOGIN_REQUEST, "application/json", sprintf("{ \"auth_token\": \"%s\" }", token));
-    dprint(sprintf("%s [%s] logging in\n", infokey(player, "name"), infokey(player, "ip")));
+void FoLoginIfRequired(entity player) {
+    if (!fo_login_required || player.fo_login != string_null)
+        return;
+
+    string token = FO_GetUserSettingString(player, "_fo_token", "fo_token", "");
+    if (token == "")
+        return;
+
+    if (player.fo_num_login_tries >= 3 || time < player.fo_next_login_try)
+        return;
+
+    static float next_login;  // Rate limit
+    if (time < next_login)
+        return;
+
+    next_login = time + 0.25;
+    player.fo_num_login_tries++;
+    player.fo_next_login_try = time + 2;
+
+    string uri = sprintf("%s/results/api/v1/fo_login", backend_address);
+    uri_get(uri, FO_LOGIN_REQUEST, "application/json",
+            sprintf("{ \"auth_token\": \"%s\" }", token));
+    dprint(sprintf("%s [%s] logging in -> %s\n", infokey(player, "name"), infokey(player, "ip"),
+                uri));
+}
+
+void FoTryLogin(entity player) {
+    player.fo_num_login_tries = 0;
 }
 
 void(float reqid, float responsecode, string resourcebody, int resourcebytes) URI_Get_Callback = {

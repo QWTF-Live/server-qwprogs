@@ -739,6 +739,9 @@ string (string s, float width) strpadr =
 float captainmode;
 .float captain;
 
+.float fo_num_login_tries;
+.float fo_next_login_try;
+float fo_login_required;
 // fortressone.org API
 .string fo_login;
 
@@ -801,7 +804,6 @@ float disable_resup_gren;
 // backend
 string match_id;
 string backend_address;
-float fo_login_required;
 .entity filter_ent;
 
 var float PC_PYRO_AIRBLAST_COOLDOWN = 5;

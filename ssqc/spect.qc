@@ -142,7 +142,8 @@ void () SpectatorImpulseCommand = {
 };
 
 void () SpectatorThink = {
-    
+    FoLoginIfRequired(self);
+
     self.playerclass = 0;
     self.afflicted = 0;
     self.teamafflicted = 0;

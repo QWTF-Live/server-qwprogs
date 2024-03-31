@@ -346,10 +346,6 @@ void () worldspawn = {
     local float flr = CF_GetSetting("flr", "fologinrequired", "1");
     backend_address = CF_GetSettingRaw("ba", "backend_address", "");
     fo_login_required = (flr && (backend_address != ""));
-    if (fo_login_required) {
-        WriteByte(MSG_INIT, SVC_CGAMEPACKET);
-        WriteByte(MSG_INIT, MSG_LOGIN);
-    }
 
     entity worldspawnent;
     worldspawnent = spawn();

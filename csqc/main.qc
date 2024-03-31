@@ -183,6 +183,8 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     print("CSQC initialization finished\n");
 };
 
+void FoLogin_UpdateToken();
+
 noref void() CSQC_WorldLoaded = {
     localcmd("menu_restart\n");
     // Resolve race condition where models packed into map package sometimes do
@@ -190,6 +192,8 @@ noref void() CSQC_WorldLoaded = {
     localcmd("flush\n");
     localcmd("cl_smartjump 0\n");  // replaced by fo_smartjump
     Register_Particles();
+
+    FoLogin_UpdateToken();
 }
 
 void FO_CussView();
@@ -743,6 +747,16 @@ static string FoLogin_GetToken() {
     return token;
 }
 
+static void FoLogin_SetToken(string token) {
+    localcmd("setinfo _fo_token ", token, "\n");
+}
+
+static void FoLogin_UpdateToken() {
+    string token = FoLogin_GetToken();
+    if (token != "")
+        FoLogin_SetToken(token);
+}
+
 // Doesn't actually return success, just whether it sent a token.
 float FoLogin(string token, float print_error) {
     if (token != "") {
@@ -759,7 +773,7 @@ float FoLogin(string token, float print_error) {
         return FALSE;
     }
 
-    localcmd("setinfo _fo_token ", token, "\n");
+    FoLogin_SetToken(token);
     localcmd("cmd fo-login-silent\n");
     return TRUE;
 }

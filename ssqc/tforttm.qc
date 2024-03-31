@@ -263,7 +263,8 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
 };
 
 float (float tno) TeamFortress_TeamSet = {
-    if (quadmode && tno >= 1 && tno <= 4 && !self.fo_login && fo_login_required) {
+    if (quadmode && tno >= 1 && tno <= 4 && self.fo_login == string_null &&
+        fo_login_required) {
         sprint(self, PRINT_HIGH, "You need to sign in first. Get your login token at www.fortressone.org\n");
         return 0;
     }

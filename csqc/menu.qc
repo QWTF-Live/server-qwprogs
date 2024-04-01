@@ -71,10 +71,12 @@ void Menu_Cancel() ;
 fo_menu* InProgressMenu;
 fo_menu* CurrentMenu;
 
+static string qwtf_live = "^7QWTF^8.^1LIVE";
+
 fo_menu_option MenuSpacer = {"","","","",FO_MENU_STATE_SPACER};
 
 var fo_menu FO_MENU_GAME = {
-    [0,0], [300,200], "Fortress One", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_ALLOW_INTERMISSION, {
+    [0,0], [300,200], qwtf_live, FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_ALLOW_INTERMISSION, {
         {"1","Select Team", "","Join a team",FO_MENU_STATE_NORMAL,{FO_Menu_Team(TRUE); },MENU_BUTTON},
         {"2","Select Class","","Each class has unique strenghts and weaknesses.",FO_MENU_STATE_NORMAL,{localcmd("changeclass\n"); Menu_Cancel(); },MENU_BUTTON},
         {"3","Ready","","Only applies to organised games",FO_MENU_STATE_NORMAL,{localcmd("ready\n"); Menu_Cancel();},MENU_BUTTON},
@@ -88,7 +90,7 @@ var fo_menu FO_MENU_GAME = {
     }, 10, TRUE
 };
 var fo_menu FO_MENU_GAME_SPECTATOR = {
-    [0,0], [300,200], "Fortress One", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_ALLOW_INTERMISSION, {
+    [0,0], [300,200], qwtf_live, FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_ALLOW_INTERMISSION, {
         {"1","Join Game", "","",FO_MENU_STATE_NORMAL,{localcmd("join\n"); Menu_Cancel(); },MENU_BUTTON},
         MenuSpacer,
         {"3","Server Admin", "","",FO_MENU_STATE_DISABLED,{FO_Menu_Admin_Main(TRUE);},MENU_BUTTON},
@@ -883,6 +885,19 @@ void Menu_Draw(float width, float height, float menushown) = {
     }
 }
 
+static float IsSpectator() {
+    // This is subtle:
+    // When we first connect, nothing is initialized, this essentially picks up
+    // that state.  We can't actually use team_no because it will remain zero,
+    // similarly, the true spectator check below is also falsely zero below.
+    if (!game_state.is_spectator && !game_state.is_player)
+        return TRUE;
+
+    // Here we care about distinguishing connecting as spectator vs observer, so
+    // query it rather than using game_state which mixes.
+    return stof(getplayerkeyvalue(player_localnum, "*spectator"));
+}
+
 void FO_Menu_Game(float force) = {
     if(fo_hud_menu_active && (CurrentMenu == &FO_MENU_GAME || CurrentMenu == &FO_MENU_GAME_SPECTATOR)) {
         Menu_Cancel();
@@ -891,10 +906,7 @@ void FO_Menu_Game(float force) = {
     if(fo_hud_menu_active && !force)
         return;
 
-    // Here we care about distinguishing connecting as spectator vs observer, so
-    // query it rather than using game_state which mixes.
-    float true_spec = stof(getplayerkeyvalue(player_localnum, "*spectator"));
-    if (true_spec) {
+    if (IsSpectator()) {
         //print(getplayerkeyvalue(player_localnum, "name"), " is a spectator!\n");
         //FO_MENU_GAME_SPECTATOR.num_opts = 3;
         FO_MENU_GAME_SPECTATOR.options[2].state = is_admin?FO_MENU_STATE_NORMAL:FO_MENU_STATE_DISABLED;

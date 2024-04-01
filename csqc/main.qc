@@ -175,7 +175,6 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     ClientSettings_Check();
     SetupAliases();
 
-    CurrentMenu = &FO_MENU_TEAM;
     player_menu_type = 0;
     FO_Menu_Game(TRUE);
 
@@ -704,7 +703,7 @@ void _Sync_ServerCommandFrame() {
 
     game_state.localentnum = player_localentnum;
 
-    if (team_no == 0 ||stof(getplayerkeyvalue(player_localnum, "*spectator"))) {
+    if (team_no == 0 || stof(getplayerkeyvalue(player_localnum, "*spectator"))) {
         game_state.is_spectator = 1;
         game_state.is_player = 0;
     } else {

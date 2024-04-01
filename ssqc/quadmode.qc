@@ -162,6 +162,8 @@ void () PostFOQuadFinalRoundStarted = {
 	dprint("POST to ", uri, "\n");
 	dprint(data);
 	uri_post(uri, FO_QUAD_STARTED_REQUEST, "application/json", data);
+
+	ReportMatchResult(kReportHalftime);
 };
 
 void (float winner) PostFOQuadFinished = {
@@ -213,7 +215,7 @@ void (float winner) PostFOQuadFinished = {
 	dprint(data);
 	uri_post(uri, FO_QUAD_FINISHED_REQUEST, "application/json", data);
 
-	ReportMatchResult();
+	ReportMatchResult(kReportEnd);
 };
 
 float () CheckWinningTeam = {
@@ -725,6 +727,7 @@ void () StartQuadRound =
 
 		if (rounds == 2 && legit_players > 1) {
 			AnnounceEvent("game_start");
+			ReportMatchResult(kReportStart);
 			PostFOQuadStarted();
 			if (legit_players == 4)
 				Activate2v2_Ruleset();

@@ -165,7 +165,14 @@ string FO_GetUserSettingString(entity ent, string ps_short, string ps_setting,
                                string ps_default);
 float TeamFortress_TeamGetScore(float tno);
 
-void ReportMatchResult() {
+enum {
+    kReportStart,
+    kReportHalftime,
+    kReportEnd,
+
+};
+
+void ReportMatchResult(int report_type) {
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);
 
@@ -192,6 +199,7 @@ void ReportMatchResult() {
     string teams[2];
     for (int i = 0; i < 2; i++) {
         KeyVal tvs[] = {
+            {KV_I, "report_type", ftos(report_type)},
             {KV_I, "score", ftos(TeamFortress_TeamGetScore(i+1))},
             {KV_I, "players", strcat("[", players[i], "]")},
         }

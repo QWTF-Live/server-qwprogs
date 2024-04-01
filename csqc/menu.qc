@@ -731,10 +731,10 @@ vector fo_menu_draw(fo_menu * menu) = {
         MenuPanel.Position = MenuPanel.Position + [Mouse.x, Mouse.y] - HudSettings.MousePos;
     }
     
-    sui_border_box(position, menusize, 1, bordercolour, FO_MENU_TRANSPARENCY, 0);
+    /* sui_border_box(position, menusize, 1, bordercolour, FO_MENU_TRANSPARENCY, 0); */
     sui_push_frame(position, menusize);
 
-    sui_fill([0, 0], menusize, bgcolour, FO_MENU_TRANSPARENCY, 0);
+    /* sui_fill([0, 0], menusize, bgcolour, FO_MENU_TRANSPARENCY, 0); */
 
     sui_set_align([SUI_ALIGN_CENTER, SUI_ALIGN_CENTER]);
     sui_action_element([0, 0], menusize, menu.id, sui_noop);
@@ -742,9 +742,9 @@ vector fo_menu_draw(fo_menu * menu) = {
     
     HRC_drawstring(
         position + [menusize.x / 2 - stringwidth(menu.title,1,mediumtext)/2,padding*2], 
-        menu.title, 
-        mediumtext, 
-        (menu.flags & FO_MENU_FLAG_WARNING)?MENU_TEXT_WARNING:MENU_TEXT_2, 
+        menu.title, mediumtext,
+        /* (menu.flags & FO_MENU_FLAG_WARNING)?MENU_TEXT_WARNING:MENU_TEXT_2,  */
+        '1 1 1',
         1, 
         0
     );

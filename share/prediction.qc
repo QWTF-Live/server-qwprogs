@@ -369,7 +369,7 @@ static float Prediction_ChangedMask(entity player, entity src) {
     if (player.predict_flags & (PF_PMOVE | PF_POS))
         mask |= FOWP_PMOVE;
 
-    if (player == src)
+    if (player == src && player.predict_state.num_filter_ents > 0)
         mask |= FOWP_FILTER_ENTS;
 
     M1(FOWP_CLASS, playerclass);

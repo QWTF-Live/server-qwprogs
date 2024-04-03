@@ -1,3 +1,7 @@
+const string kLoginHash = "CRC16";
+const string kLoginKey = "_qwtfl_login";
+const string kLoginNonce = "_qwtfl_nonce";
+
 struct FPPState {
     int index;
     float expires_at;
@@ -212,6 +216,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define MSG_QUAD_ROUND_BEGIN 25
 #define MSG_HITFLAG         26
 #define MSG_RELOADSOUND     27
+#define MSG_CACHE_LOGIN     28
 
 #define FLAGINFO_HOME       1
 #define FLAGINFO_CARRIED    2

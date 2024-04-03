@@ -345,6 +345,15 @@ void() CSQC_Parse_Event = {
             local float weapon = readfloat();
             FO_ReloadSound(weapon);
             break;
+        case MSG_CACHE_LOGIN:
+            string login = readstring();
+            string nonce = readstring();
+
+            localcmd("setinfo ", kLoginKey, " ", login, "\n");
+            localcmd("setinfo ", kLoginNonce, " ", nonce, "\n");
+
+            printf("Local cache of login credentials complete\n");
+            break;
     }
 }
 

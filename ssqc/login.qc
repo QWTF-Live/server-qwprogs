@@ -13,10 +13,6 @@ void (entity player, string login, string secret) performLogin = {
     dprint("\n");
 }
 
-static string kLoginHash = "CRC16";
-static string kLoginKey = "_qwtfl_login";
-static string kLoginNonce = "_qwtfl_nonce";
-
 static void StoreCred(entity player) {
     if (!fo_login_allow_nonce_auth)
         return;
@@ -24,8 +20,19 @@ static void StoreCred(entity player) {
     string salt = infokey(world, "fo_rev");
     string nonce = digest_hex(kLoginHash, salt, player.fo_login);
 
+    if (infokey(player, kLoginKey) == player.fo_login &&
+        infokey(player, kLoginNonce) == nonce)
+        return;
+
     forceinfokey(player, kLoginKey, player.fo_login);
     forceinfokey(player, kLoginNonce, nonce);
+
+    msg_entity = player;
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_CACHE_LOGIN);
+    WriteString(MSG_MULTICAST, player.fo_login);
+    WriteString(MSG_MULTICAST, nonce);
+    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
 }
 
 static float LoadCred(entity player) {
@@ -43,6 +50,13 @@ static float LoadCred(entity player) {
 
     if (nonce == comp) {
         player.fo_login = login;
+
+        if (infokey(player, "_login_printed") == "") {
+            forceinfokey(player, "_login_printed", "1");
+            string msg = sprintf("%s logged in as %s [using stored cred]\n",
+                    infokey(self, "name"), self.fo_login);
+            bprint(PRINT_HIGH, msg);
+        }
         return TRUE;
     } else {
         forceinfokey(player, kLoginKey, string_null);

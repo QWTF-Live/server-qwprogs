@@ -346,6 +346,7 @@ void () worldspawn = {
     local float flr = CF_GetSetting("flr", "fologinrequired", "1");
     backend_address = CF_GetSettingRaw("ba", "backend_address", "");
     fo_login_required = (flr && (backend_address != ""));
+    fo_login_allow_nonce_auth = CF_GetSetting("fna", "fast_nonce_auth", "1");
 
     entity worldspawnent;
     worldspawnent = spawn();

@@ -13,16 +13,59 @@ void (entity player, string login, string secret) performLogin = {
     dprint("\n");
 }
 
+static string kLoginHash = "CRC16";
+static string kLoginKey = "_qwtfl_login";
+static string kLoginNonce = "_qwtfl_nonce";
+
+static void StoreCred(entity player) {
+    if (!fo_login_allow_nonce_auth)
+        return;
+
+    string salt = infokey(world, "fo_rev");
+    string nonce = digest_hex(kLoginHash, salt, player.fo_login);
+
+    forceinfokey(player, kLoginKey, player.fo_login);
+    forceinfokey(player, kLoginNonce, nonce);
+}
+
+static float LoadCred(entity player) {
+    if (!fo_login_allow_nonce_auth)
+        return FALSE;
+
+    string login = infokey(player, kLoginKey);
+    if (login == string_null)
+        return FALSE;
+
+    string salt = infokey(world, "fo_rev");
+    string nonce = infokey(player, kLoginNonce);
+
+    string comp = digest_hex(kLoginHash, salt, login);
+
+    if (nonce == comp) {
+        player.fo_login = login;
+        return TRUE;
+    } else {
+        forceinfokey(player, kLoginKey, string_null);
+        return FALSE;
+    }
+}
+
 void FoLoginIfRequired(entity player) {
+    static float kMaxTries = 3;
     if (!fo_login_required || player.fo_login != string_null)
         return;
 
-    string token = FO_GetUserSettingString(player, "_fo_token", "fo_token", "");
-    if (token == "")
+    if (player.fo_num_login_tries >= kMaxTries || time < player.fo_next_login_try)
         return;
 
-    if (player.fo_num_login_tries >= 3 || time < player.fo_next_login_try)
+    if (LoadCred(player))
         return;
+
+    string token = infokey(player, "_fo_token");
+    if (token == string_null) {
+        player.fo_num_login_tries = kMaxTries;
+        return;
+    }
 
     static float next_login;  // Rate limit
     if (time < next_login)
@@ -91,6 +134,7 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
                 msg = sprintf("%s logged in as %s\n", infokey(self, "name"), self.fo_login);
                 bprint(PRINT_HIGH, msg);
                 dprint(msg);
+                StoreCred(self);
             } else {
                 CenterPrint(self, "Login failed\n");
                 msg = (sprintf("%s login failed. Response code: %d\n", infokey(self, "name"), responsecode));

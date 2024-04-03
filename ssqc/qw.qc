@@ -744,6 +744,7 @@ float captainmode;
 float fo_login_required;
 // fortressone.org API
 .string fo_login;
+float fo_login_allow_nonce_auth;
 
 //Player ID
 float loginRequired;

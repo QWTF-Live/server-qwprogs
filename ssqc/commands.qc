@@ -327,6 +327,14 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
 
     switch (arg1)
     {
+        case "join":
+            if (self.is_spectator)
+                Predict_Destroy(self);
+            return FALSE;
+        case "observe":
+            if (!self.is_spectator)
+                Predict_Destroy(self);
+            return FALSE;
         case "impulse":
             if (arg_num == 2) {
                 self.impulse = stof(arg2);
@@ -1371,8 +1379,6 @@ void (string cmd) SV_ParseClientCommand = {
     isProcessed = ParseCmds(argv(0), argv(1), argv(2));
 
     if (!isProcessed)
-    {
         clientcommand(self, cmd);
-    }
 }
 

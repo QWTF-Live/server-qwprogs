@@ -3118,6 +3118,7 @@ void () ClientConnect = {
     spawnfunc_FOPlayer();
 
     self.motd = 0;
+    self.is_spectator = 0;
 
     if (self.netname == string_null)
         KickCheater(self);

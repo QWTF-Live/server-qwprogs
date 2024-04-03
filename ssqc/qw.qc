@@ -811,3 +811,4 @@ var float PC_ENGINEER_GRENADE_TYPE_2_RANGE = 240;
 .float detpack_last;
 
 float use_announcer;
+.float is_spectator;

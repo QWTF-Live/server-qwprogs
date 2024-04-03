@@ -2177,14 +2177,15 @@ float WP_ClientThink() {
 
 entity WP_pmove_ent();
 
-void InitWeapPredEnt(entity pe) {
-    if (pengine.pweap_ent != world) {
-        remove(pengine.pweap_ent);
+static void RemoveWeapPredEnt() {
+    if (pengine.pweap_ent == self)
         pengine.pweap_ent = world;
-    }
-
+}
+void InitWeapPredEnt(entity pe) {
+    pe.classname = "WeaponPredict";
     pe.predraw = WP_ClientThink;
     pe.drawmask = MASK_PRED_ENT;
+    pe.removefunc = RemoveWeapPredEnt;
     pengine.pweap_ent = pe;
 
     wp_ready = TRUE;

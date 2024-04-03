@@ -22,6 +22,7 @@ void () SpectatorConnect = {
     self.playerclass = PC_UNDEFINED;
     self.classname = "observer";
     self.flags = 8;
+    self.is_spectator = 1;
 
     if (infokey(self,"*login"))
         self.login = infokey(self,"*login");

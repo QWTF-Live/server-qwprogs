@@ -212,6 +212,7 @@ static void UpdateGrenList() {
 }
 
 void TFxRenderGrenadeTimers() {
+    return; // TODO: filter properly
     UpdateGrenList();
 
     for (int i = 0; i < num_gren_list; i++) {

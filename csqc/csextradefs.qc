@@ -477,6 +477,17 @@ enum PanelID:float {
     HUD_LAST = 10000,
 };
 
+struct Draw_Args {
+    PanelID id;
+    int type;
+    vector pos;
+    string s_arg;
+    vector size;
+    vector rgb;
+    float alpha;
+    float drawflag;
+};
+
 // hud stuff
 typedef struct {
     PanelID id;
@@ -495,6 +506,9 @@ typedef struct {
     float Snap;
     float Status;
     float SnapID;
+
+    Draw_Args draw_cache[20];
+    int draw_count;
 } FO_Hud_Panel;
 
 FO_Hud_Panel NullPanel;
@@ -525,32 +539,16 @@ vector(PanelID) getPosition;
 vector(PanelID) getFillSize;
 
 enum {
-    D_skip,
     D_drawpic,
     D_drawstring,
     D_drawfill,
 };
 
-struct Draw_Args {
-    PanelID id;
-    int type;
-    vector pos;
-    string s_arg;
-    vector size;
-    vector rgb;
-    float alpha;
-    float drawflag;
-};
-
 struct {
     int enabled;
-    PanelID active_panel;
+    FO_Hud_Panel* active_panel;
     float last_update;
     int draw_direct;
-    Draw_Args draw_cache[1000];
-    int draw_count;
-    float free_cache[1000];
-    int free_count;
 } hud_render_cache;
 
 DEFCVAR_FLOAT(fo_hud_cache, 1)
@@ -564,38 +562,15 @@ enum {
 
 inline float HRC_fps_time() { return 1/max(min(CVARF(fo_hud_fps), 77 * 2), 30); }
 
-void HRC_Invalidate(PanelID panel) {
-    float i, j;
-
-    for (i = 0; i < hud_render_cache.draw_count; i++) {
-        if (hud_render_cache.draw_cache[i].id == panel + 1) {
-            hud_render_cache.draw_cache[i].id = 0;
-            hud_render_cache.draw_cache[i].type = D_skip;
-            hud_render_cache.free_cache[hud_render_cache.free_count++] = i;
-        }
-    }
-
-    // Ascending order sort so that we don't end up inverting rendering order
-    // when pulling from the free-list.
-    for (i = 0; i < hud_render_cache.free_count; i++)
-        for (j = i + 1; j < hud_render_cache.free_count; j++)
-            if (hud_render_cache.free_cache[i] < hud_render_cache.free_cache[j]) {
-                float tmp = hud_render_cache.free_cache[i];
-                hud_render_cache.free_cache[i] = hud_render_cache.free_cache[j];
-                hud_render_cache.free_cache[j] = tmp;
-            }
-}
-
-void HRC_InvalidateAll() {
-    hud_render_cache.draw_count = 0;
-    hud_render_cache.free_count = 0;
-}
-
-void HRC_SetActive(PanelID panel) {
-    hud_render_cache.active_panel = panel;
-}
-
 FO_Hud_Panel* getHudPanel(PanelID panelid);
+
+void HRC_Invalidate(FO_Hud_Panel* p) {
+    p->draw_count = 0;
+}
+
+void HRC_SetActive(FO_Hud_Panel* p) {
+    hud_render_cache.active_panel = p;
+}
 
 // Returns true if HUD should be re-rendered this frame.
 float HRC_NewFrame() {
@@ -618,15 +593,8 @@ float HRC_NewFrame() {
 }
 
 static Draw_Args* next_args() {
-    float idx;
-    if (hud_render_cache.free_count)
-        idx = hud_render_cache.free_cache[--hud_render_cache.free_count];
-    else
-        idx = hud_render_cache.draw_count++;
-
-    Draw_Args* result = &hud_render_cache.draw_cache[idx];
-    result->id = hud_render_cache.active_panel + 1;  // 1-based, 0 => free.
-    return result;
+    FO_Hud_Panel* p = hud_render_cache.active_panel;
+    return &(p->draw_cache[p->draw_count++]);
 }
 
 void HRC_drawpic(vector pos, string pic, vector size, vector rgb='1 1 1',
@@ -684,16 +652,21 @@ void HRC_Render() {
     if (!hud_render_cache.enabled)
         return;
 
-    for (int i = 0; i < hud_render_cache.draw_count; i++) {
-        Draw_Args* args = &hud_render_cache.draw_cache[i];
-        if (args->type == D_skip)
-            continue;
-        else if (args->type == D_drawpic)
-            drawpic(args->pos, args->s_arg, args->size, args->rgb, args->alpha, args->drawflag);
-        else if (args->type == D_drawstring)
-            drawstring(args->pos, args->s_arg, args->size, args->rgb, args->alpha, args->drawflag);
-        else if (args->type == D_drawfill)
-            drawfill(args->pos, args->size, args->rgb, args->alpha, args->drawflag);
+    for (int i = HUDP_FIRST; i <= HUDP_LAST; i++) {
+        FO_Hud_Panel* p = getHudPanel(i);
+        for (int j = 0; j < p->draw_count; j++) {
+            Draw_Args* args = &p->draw_cache[j];
+
+            if (args->type == D_drawpic)
+                drawpic(args->pos, args->s_arg, args->size, args->rgb,
+                        args->alpha, args->drawflag);
+            else if (args->type == D_drawstring)
+                drawstring(args->pos, args->s_arg, args->size, args->rgb,
+                           args->alpha, args->drawflag);
+            else if (args->type == D_drawfill)
+                drawfill(args->pos, args->size, args->rgb, args->alpha,
+                         args->drawflag);
+        }
     }
 }
 

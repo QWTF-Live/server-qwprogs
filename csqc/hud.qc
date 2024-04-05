@@ -1117,7 +1117,7 @@ void Hud_Draw(float width, float height)
     HudSettings.MousePos = [Mouse.x, Mouse.y];
 }
 
-const static float HUDP_COUNT = HUDP_LAST - HUDP_FIRST + 1;
+static const float HUDP_COUNT = HUDP_LAST - HUDP_FIRST + 1;
 
 struct {
     float last_draw[HUDP_COUNT];
@@ -1145,7 +1145,7 @@ void Hud_UpdateView(float width, float height, float menushown, float perf_sampl
     static float last_showingscores;
     if (last_showingscores != showingscores) {
         if (last_showingscores) {
-            HRC_Invalidate(HUDP_SHOWSCORES);
+            HRC_Invalidate(getHudPanel(HUDP_SHOWSCORES));
         } else {
             incremental_hud.idx = HUDP_SHOWSCORES - HUDP_FIRST;
             incremental_hud.last_draw[incremental_hud.idx] = 0;
@@ -1164,9 +1164,11 @@ void Hud_UpdateView(float width, float height, float menushown, float perf_sampl
     // Time ordered and oldest.
     if (time >= incremental_hud.last_draw[idx] + HRC_fps_time()) {
         float hts = perf_start_sample(&hud_partial_timing, perf_sample);
+        FO_Hud_Panel* p = getHudPanel(id);
+
         sui_begin(width, height);
-        HRC_Invalidate(id);
-        HRC_SetActive(id);
+        HRC_Invalidate(p);
+        HRC_SetActive(p);
         Hud_DrawPanel(getHudPanel(id));
         sui_end();
         perf_finish_sample(&hud_partial_timing, hts);

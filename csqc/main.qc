@@ -807,11 +807,6 @@ void Perf_Status() {
     if (prec > 3)
         printf("gettime() timing = %0.5f\n", gettime_lat());
 
-
-    printf("HUD cache used=%d freelist=%d\n",
-            (float)hud_render_cache.draw_count,
-            (float)hud_render_cache.free_count);
-
     compute_avg(&frame_timing.samples, &avg, &variance);
     compute_maxmin(&frame_timing.samples, &minv, &maxv);
     printf(" Frame render (%d) avg=%s var=%0.3f min=%s max=%s\n",

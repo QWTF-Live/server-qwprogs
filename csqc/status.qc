@@ -1146,7 +1146,7 @@ var FO_Hud_Panel Hud_Panels[] = {
 };
 
 inline FO_Hud_Panel* (PanelID panelid) getHudPanel = {
-    ASSERTD_NE(panelid, HUDP_INVALID);
+    /* ASSERTD_NE(panelid, HUDP_INVALID); */
     return &Hud_Panels[panelid - HUDP_FIRST];
 };
 

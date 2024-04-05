@@ -234,8 +234,9 @@ string GetPanelString(string line, FO_Hud_Panel* panel)
 }
 
 void FO_Hud_HidePanel(PanelID id) {
-    getHudPanel(id)->Display = FALSE;
-    HRC_Invalidate(id);
+    FO_Hud_Panel* p = getHudPanel(id);
+    p->Display = FALSE;
+    HRC_Invalidate(p);
 }
 
 void FO_Hud_ShowPanel(PanelID id) {

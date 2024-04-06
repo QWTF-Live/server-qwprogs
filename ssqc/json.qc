@@ -202,7 +202,7 @@ void ReportMatchResult(int report_type) {
             {KV_I, "report_type", ftos(report_type)},
             {KV_I, "score", ftos(TeamFortress_TeamGetScore(i+1))},
             {KV_I, "players", strcat("[", players[i], "]")},
-        }
+        };
 
         teams[i] = JSON_Wrap(tvs.length, tvs);
     }

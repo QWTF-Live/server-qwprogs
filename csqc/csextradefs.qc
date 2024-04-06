@@ -514,7 +514,7 @@ typedef struct {
 } FO_Hud_Panel;
 
 // Total hack for scoreboard
-Draw_Args extended_draw_cache[1000];
+Draw_Args scoreboard_draw_cache[1000];
 
 FO_Hud_Panel NullPanel;
 FO_Hud_Panel NewPanel;
@@ -597,23 +597,17 @@ float HRC_NewFrame() {
     return FALSE;
 }
 
-static Draw_Args* next_args() {
-    FO_Hud_Panel* p = hud_render_cache.active_panel;
-
-    int idx = p->draw_count;
-    if (idx < kDrawCacheSize) {
-        p->draw_count++;
-    } else {
-        if (p->id == HUDP_SHOWSCORES) {
-            p->draw_count++;
-            int nidx = idx - kDrawCacheSize;
-            return &extended_draw_cache[nidx];
-        } else {
-            idx--;
-        }
+static Draw_Args* GetDrawCache(FO_Hud_Panel* p) {
+    switch (p->id) {
+        case HUDP_SHOWSCORES: return scoreboard_draw_cache;
+        default: return &(p->draw_cache[0]);  // compiler bug
     }
+}
 
-    return &(p->draw_cache[idx]);
+static inline Draw_Args* next_args() {
+    FO_Hud_Panel* p = hud_render_cache.active_panel;
+    Draw_Args* dc = GetDrawCache(p);
+    return &dc[p->draw_count++];
 }
 
 void HRC_drawpic(vector pos, string pic, vector size, vector rgb='1 1 1',
@@ -673,14 +667,10 @@ void HRC_Render() {
 
     for (int i = HUDP_FIRST; i <= HUDP_LAST; i++) {
         FO_Hud_Panel* p = getHudPanel(i);
-        for (int j = 0; j < p->draw_count; j++) {
-            Draw_Args* args;
+        Draw_Args* dc = GetDrawCache(p);
 
-            if (j >= kDrawCacheSize) {
-                args = &extended_draw_cache[j - kDrawCacheSize];
-            } else {
-                args = &p->draw_cache[j];
-            }
+        for (int j = 0; j < p->draw_count; j++) {
+            Draw_Args* args = &dc[j];
 
             if (args->type == D_drawpic)
                 drawpic(args->pos, args->s_arg, args->size, args->rgb,

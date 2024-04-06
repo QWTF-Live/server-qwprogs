@@ -130,7 +130,7 @@ void PM_PredictJump_Engine() {
 
     static float last_onground, last_vel_z;
 
-    float jumping = input_buttons & BUTTON2;
+    float jumping = input_buttons & BUTTON_JUMP;
     float onground = pmove_onground; //pmove_onground;
     float landing = (onground && !last_onground);
     float vel_z = pmove_vel_z ?: recent_pmove_vel_z;
@@ -781,7 +781,7 @@ void PM_SyncTo(float seq) {
     PM_RunMovement(SimPMSD(), seq);
 
     // Note: ~FL_ONGROUND and jump occur in same frame, produces JUMP_HELD
-    float jumping = input_buttons & BUTTON2;
+    float jumping = input_buttons & BUTTON_JUMP;
     float landing = pm.last_vel_z < 0 && (ent.flags & FL_ONGROUND);
     float jump_frame = ent.pmove_flags & PMF_JUMP_HELD;
 
@@ -873,11 +873,11 @@ void PM_InputFrame() {
 
     // cl_smartjump replacement
     float type;
-    if (input_buttons & BUTTON2) {
+    if (input_buttons & BUTTON_JUMP) {
         if (game_state.is_spectator ||
             (game_state.is_player && CVARF(fo_smartjump) &&
             PM_GetWaterLevel(PM_Org(), &type) >= 2 && vlen(input_movevalues) == 0)) {
-            input_buttons &= ~BUTTON2;
+            input_buttons &= ~BUTTON_JUMP;
             input_movevalues.z = CVARF(cl_upspeed);
         }
     }

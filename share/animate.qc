@@ -148,7 +148,7 @@ void player_stand1() {
 };
 #else /* CSQC */
 static inline void *thinkindex() { return &pstate_pred.client_thinkindex; }
-static inline float is_attacking() { return input_buttons & BUTTON0; }
+static inline float is_attacking() { return input_buttons & BUTTON_ATTACK; }
 static inline float is_intermission() { return intermission; }
 static void SuperDamageSound() {} // TODO
 static inline vector get_velocity() { return PM_Vel(); }
@@ -169,7 +169,7 @@ void client_anim_frames(void() parent_thunk, void() extra, anim_t* anim) {
     float tidx = *thinkindex()++ - 1;
 
     float loop = anim->loop;
-    if (loop && extra == think_nop && !(input_buttons & BUTTON0))
+    if (loop && extra == think_nop && !(input_buttons & BUTTON_ATTACK))
         loop = TRUE;
 
     if (tidx > anim->num_frames - 1 && !loop) {

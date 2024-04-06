@@ -762,7 +762,7 @@ static void WP_HandleHeavyInputs() {
         return;
 
     // +special toggles lock.
-    if (pstate_pred.buttons_down & BUTTON3)
+    if (pstate_pred.buttons_down & BUTTON_SPECIAL1)
         pstate_pred.tfstate ^= TFSTATE_LOCK;
 
     float match = TRUE;
@@ -828,14 +828,14 @@ static float WP_Sniper_IsAttack() {
         !WP_GetAmmo(AMMO_SHELLS))
         return FALSE;
 
-    if (pstate_pred.buttons_held & BUTTON0) {
+    if (pstate_pred.buttons_held & BUTTON_ATTACK) {
         // Start charging when possible/necessary.
         if (!aiming && pmove_onground && vlen(PM_Vel()) <= 50) {
             pstate_pred.tfstate |= TFSTATE_AIMING;
             SniperState.start_seq = pstate_pred.seq;
         }
         return FALSE;
-    } else if (pstate_pred.buttons_up & BUTTON0) {
+    } else if (pstate_pred.buttons_up & BUTTON_ATTACK) {
         pstate_pred.tfstate &= ~TFSTATE_AIMING;
         SniperState.start_seq = 0;
         // Can fire iff already aiming and on ground
@@ -915,8 +915,8 @@ void WP_HandleGrenadeInputs() {
         default: clear_impulse = FALSE; break;
     }
 
-    HandleButtonThrowgren(1, BUTTON5);
-    HandleButtonThrowgren(2, BUTTON6);
+    HandleButtonThrowgren(1, BUTTON_GRENADE1);
+    HandleButtonThrowgren(2, BUTTON_GRENADE2);
 
     if (clear_impulse)
         pstate_pred.impulse = 0;
@@ -1008,7 +1008,7 @@ void WP_Impulse() {
             break;
     }
 
-    if (input_buttons & BUTTON3)
+    if (input_buttons & BUTTON_SPECIAL1)
         WP_Special();
 
     // Impulses below this line depend on ready weapon.
@@ -1289,7 +1289,7 @@ void WP_Frame() {
     float is_attack = 0;
 
     if (pstate_pred.playerclass != PC_SNIPER)
-        is_attack = ((input_buttons & BUTTON0) && WP_WeaponReady());
+        is_attack = ((input_buttons & BUTTON_ATTACK) && WP_WeaponReady());
     else
         is_attack = WP_Sniper_IsAttack();
 

@@ -2308,14 +2308,13 @@ void () DeadImpulses = {
 };
 
 void () ButtonFrame = {
-    local float changed_buttons = input_buttons ^ self.oldbuttons;
+    float changed_buttons = input_buttons ^ self.oldbuttons;
     self.oldbuttons = input_buttons;
 
-    local float keydowns = changed_buttons & input_buttons;
-    local float keyups = changed_buttons & ~input_buttons;
+    float keydowns = changed_buttons & input_buttons;
+    float keyups = changed_buttons & ~input_buttons;
 
-    // +special every frame
-    if (input_buttons & BUTTON3) {
+    if (input_buttons & BUTTON_SPECIAL1) {
         if (!cb_prematch && !cease_fire) {
             switch (self.playerclass) {
                 case PC_SCOUT:
@@ -2331,15 +2330,13 @@ void () ButtonFrame = {
         }
     }
 
-    // -special every frame
-    if (!(input_buttons & BUTTON3)) {
+    if (!(input_buttons & BUTTON_SPECIAL1)) {
         if (FO_GetUserSetting(self, "hold_feign", "hf", "off")) {
             FO_Spy_Unfeign();
         }
     }
 
-    // +special keydown frame
-    if (keydowns & BUTTON3) {
+    if (keydowns & BUTTON_SPECIAL1) {
         if (cb_prematch || cease_fire) {
             ToggleInvincibility();
         } else {
@@ -2360,12 +2357,10 @@ void () ButtonFrame = {
         }
     }
 
-    // +special2 every frame
-    if (input_buttons & BUTTON4) {
+    if (input_buttons & BUTTON_SPECIAL2) {
         switch (self.playerclass) {
             case PC_SOLDIER:
                 self.impulse = TF_SLOT1;
-                // Intercepted by InterceptRocketJump()
                 break;
             case PC_PYRO:
                 if (IsUsingCFImpulses()) {
@@ -2373,13 +2368,11 @@ void () ButtonFrame = {
                 } else {
                     self.impulse = TF_SLOT1;
                 }
-                // Intercepted by InterceptRocketJump()
                 break;
         }
     }
 
-    // +special2 keydown frame
-    if (keydowns & BUTTON4) {
+    if (keydowns & BUTTON_SPECIAL2) {
         if (!cb_prematch && !cease_fire) {
             switch (self.playerclass) {
                 case PC_SCOUT:
@@ -2398,8 +2391,7 @@ void () ButtonFrame = {
         }
     }
 
-    // +special2 keyup frame
-    if (keyups & BUTTON4) {
+    if (keyups & BUTTON_SPECIAL2) {
         switch (self.playerclass) {
             case PC_DEMOMAN:
                 if(FO_GetUserSetting(self, "hold_detpack", "hd", "off")) {
@@ -2411,8 +2403,7 @@ void () ButtonFrame = {
 
     local float hold_grens = FO_GetUserSetting(self, "hold_grens", "hg", "off");
 
-    // +grenade1 keydown frame
-    if (keydowns & BUTTON5) {
+    if (keydowns & BUTTON_GRENADE1) {
         if (hold_grens) {
             TeamFortress_PrimeGrenade(1, TRUE);
         } else {
@@ -2420,53 +2411,18 @@ void () ButtonFrame = {
         }
     }
 
-    // +grenade1 keyup frame
-    if (keyups & BUTTON5) {
-        if (hold_grens) {
-            TeamFortress_ThrowGrenade();
-        }
-    }
-
-    // +grenade2 keydown frame
-    if (keydowns & BUTTON6) {
-        if (hold_grens) {
+    if (keydowns & BUTTON_GRENADE2) {
+        if (hold_grens)
             TeamFortress_PrimeGrenade(2, TRUE);
-        } else {
+        else
             TeamFortress_PrimeThrowGrenade(2);
-        }
     }
 
-    // +grenade2 keyup frame
-    if (keyups & BUTTON6) {
-        if (hold_grens) {
-            TeamFortress_ThrowGrenade();
-        }
-    }
+    if (hold_grens && (keyups & (BUTTON_GRENADE1 | BUTTON_GRENADE2)))
+        TeamFortress_ThrowGrenade();
 
-    // +dropflag every frame
-    if (input_buttons & BUTTON7) {
+    if (input_buttons & BUTTON_DROPFLAG)
         DropGoalItems();
-    }
-
-    // // +quick1 keydown frame
-    // if (keydowns & BUTTON8) {
-    //     self.impulse = TF_SLOT1;
-    // }
-
-    // // +quick2 keydown frame
-    // if (keydowns & BUTTON9) {
-    //     self.impulse = TF_SLOT2;
-    // }
-
-    // // +quick3 keydown frame
-    // if (keydowns & BUTTON10) {
-    //     self.impulse = TF_SLOT3;
-    // }
-
-    // // +quick4 keydown frame
-    // if (keydowns & BUTTON11) {
-    //     self.impulse = TF_SLOT4;
-    // }
 }
 
 void () W_WeaponFrame = {

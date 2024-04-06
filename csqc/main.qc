@@ -638,7 +638,7 @@ void FO_ApplyCussInput() {
 
     if ((!pmove_onground && (fo_config.fo_concuss & FOC_EASY_AIR)) ||
         (pmove_onground && (fo_config.fo_concuss & FOC_EASY_GROUND)))
-        modify_forward = input_buttons & BUTTON0;
+        modify_forward = input_buttons & BUTTON_ATTACK;
 
     if (modify_forward) {
         input_angles = vectoangles(cuss_state.c_forward);
@@ -654,13 +654,13 @@ noref void CSQC_Input_Frame() {
 
     // Intercept rocket jump;
     if ((WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO) &&
-        (input_buttons & BUTTON4))
-        input_buttons |= BUTTON0 | BUTTON2;
+        (input_buttons & BUTTON_SPECIAL2))
+        input_buttons |= BUTTON_ATTACK | BUTTON_JUMP;
 
     // Handle zoom
     float prev_zoomed_in = zoomed_in;
     if (WP_PlayerClass() == PC_SNIPER)
-        zoomed_in = input_buttons & BUTTON3;
+        zoomed_in = input_buttons & BUTTON_SPECIAL1;
     else
         zoomed_in = 0;
 

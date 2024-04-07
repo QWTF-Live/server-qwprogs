@@ -21,44 +21,6 @@ void GetSelf() = {
     self = findfloat(world, entnum, player_localentnum);
 }
 
-void PushToSlotHistory(float value) {
-    if (slot_history_top >= MAX_SLOT_HISTORY_SIZE) {
-        // Stack is full
-        return;
-    }
-    slot_history[slot_history_top] = value;
-    if (slot_history_top == 0) {
-        Slot slot = !IsSlotNull(pstate_pred.queue_slot) ?
-            pstate_pred.queue_slot : pstate_pred.current_slot;
-        slot_under_stack = SlotIndex(slot) + 1;
-    }
-    slot_history_top += 1;
-}
-
-float RemoveFromSlotHistory(float slot) {
-    for (float i = slot_history_top - 1; i >= 0; i--) {
-        if (slot_history[i] == slot) {
-            for (float j = i+1; j < MAX_SLOT_HISTORY_SIZE; j++) {
-                slot_history[j-1] = slot_history[j];
-            }
-
-            slot_history[MAX_SLOT_HISTORY_SIZE-1] = 0;
-            slot_history_top--;
-            break;
-        }
-    }
-
-    if (slot_history_top > 0) {
-        return slot_history[slot_history_top - 1];
-    } else {
-        if (CVARF(fo_default_weapon))
-            return CVARF(fo_default_weapon);
-        else
-            return slot_under_stack;
-    }
-}
-
-
 static void BindAlias(TFAlias* tfa) {
     if (tfa->impulse == 0 && tfa->cmd == "")  // Some aliases are !csqc-only
         return;
@@ -108,6 +70,8 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     registercommand("+slot");
     registercommand("-slot");
+    registercommand("+button");
+    registercommand("-button");
 
     registercommand("fo_beta_pmove");
     registercommand("fopm_cmd");
@@ -240,23 +204,106 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
     recent_pmove_vel_z = pmove_vel_z;
 }
 
-void Slot_Keydown(float slot) {
-    PushToSlotHistory(slot);
-
-    localcmd(sprintf("impulse %d\n+attack\n", TF_SLOT1 + slot - 1));
-}
-
-void Slot_Keyup(float slot) {
-    float prev = RemoveFromSlotHistory(slot);
-    float still_attack = slot_history_top > 0;  // Empty stack check
-
-    if (prev)
-        localcmd(sprintf("impulse %d\n", TF_SLOT1 + prev - 1));
-    if (!still_attack)
-        localcmd("-attack\n");
-}
-
 void W_ChangeToSlotAlternate(string opt1, string opt2, string opt3, string opt4);
+
+static const float kDebounce = 0.025;
+
+struct SlotState {
+    float on;
+    float activated;
+    float until;
+    float released;
+};
+
+static struct {
+    int num;
+    SlotState state[4];
+    Slot under;
+    float impulse;
+} plus_slot;
+
+static var struct DebounceButton {
+    float button;
+    float until;
+    float on;
+} debounce_button[] = {
+    {BUTTON3},
+    {BUTTON4},
+    {BUTTON5},
+    {BUTTON6},
+    {BUTTON7},
+};
+
+static float active_buttons, debounced_buttons;
+
+static void CommandButton(int plus, int button) {
+    if (button < 3 || button > 7)
+        return;
+    button -= 3;
+
+    float mask = debounce_button[button].button;
+
+    if (plus) {
+        debounce_button[button].on = TRUE;
+        debounce_button[button].until = time + kDebounce;
+
+        active_buttons |= mask;
+    } else {
+        debounce_button[button].on = FALSE;
+        active_buttons &= ~mask;
+
+        if (time < debounce_button[button].until) {
+            debounced_buttons |= mask;
+            return;
+        }
+
+        debounce_button[button].until = 0;
+        debounced_buttons &= ~mask;
+    }
+}
+
+static void ActivatePlusSlot(int idx) {
+    if (idx < 0 || idx >= TF_NUM_SLOTS)
+        return;
+
+    plus_slot.state[idx].on = TRUE;
+
+    if (!plus_slot.state[idx].activated) {
+        if (plus_slot.num++ == 0)
+            plus_slot.under = !IsSlotNull(pstate_pred.queue_slot) ?
+                pstate_pred.queue_slot : pstate_pred.current_slot;
+    }
+
+    plus_slot.state[idx].activated = time;
+    plus_slot.state[idx].until = time + kDebounce;
+
+    plus_slot.impulse = TF_SLOT1 + idx;
+}
+
+static void DeactivatePlusSlot(int idx) {
+    plus_slot.state[idx].on = FALSE;
+    if (time < plus_slot.state[idx].until)
+        return;
+
+    plus_slot.num--;
+    plus_slot.state[idx].activated = 0;
+    plus_slot.state[idx].until = 0;
+
+    int next_idx = 3;
+    if (plus_slot.num == 0) {
+        next_idx = SlotIndex(plus_slot.under);
+    } else {
+        float recent = 0;
+        for (int i = 0; i < 4; i++) {
+            if (plus_slot.state[i].activated > recent) {
+                recent = plus_slot.state[i].activated;
+                next_idx = i;
+            }
+        }
+    }
+
+    plus_slot.impulse = TF_SLOT1 + next_idx;
+}
 
 noref float(string cmd) CSQC_ConsoleCommand = {
     tokenize_console(cmd);
@@ -265,11 +312,17 @@ noref float(string cmd) CSQC_ConsoleCommand = {
     local float grentype;
 
     switch(argv(0)) {
+        case "+button":
+            CommandButton(TRUE, stoi(argv(1)));
+            break;
+        case "-button":
+            CommandButton(FALSE, stoi(argv(1)));
+            break;
         case "+slot":
-            Slot_Keydown(stof(argv(1)));
+            ActivatePlusSlot(stoi(argv(1)) - 1);
             break;
         case "-slot":
-            Slot_Keyup(stof(argv(1)));
+            DeactivatePlusSlot(stoi(argv(1)) - 1);
             break;
 
         case "fo_beta_pmove":
@@ -647,9 +700,37 @@ void FO_ApplyCussInput() {
     }
 }
 
-void PM_InputFrame();
+static void InputFrameDebounce() {
+    // Button debounce
+    if (debounced_buttons) {
+        for (int i = 0; i < debounce_button.length; i++)
+            if (!debounce_button[i].on && debounce_button[i].until)
+                CommandButton(FALSE, i + 3);
+    }
+
+    input_buttons |= active_buttons | debounced_buttons;
+
+    // Slot debounce
+    if (plus_slot.num == 0 && plus_slot.impulse == 0)
+        return;
+
+    if (plus_slot.num > 0) {
+        for (int i = 0; i < 4; i++)
+            if (!plus_slot.state[i].on && plus_slot.state[i].activated)
+                DeactivatePlusSlot(i);
+
+        if (plus_slot.num > 0)
+            input_buttons |= BUTTON_ATTACK;
+    }
+
+    if (plus_slot.impulse) {
+        input_impulse = plus_slot.impulse;
+        plus_slot.impulse = 0;
+    }
+}
 
 noref void CSQC_Input_Frame() {
+    InputFrameDebounce();
     Sync_GameState();
 
     // Intercept rocket jump;

@@ -1662,16 +1662,16 @@ TFAlias client_aliases[] = {
 };
 
 TFAlias csqc_aliases[] = {
-    {"+special",                0, "+button3"},
-    {"-special",                0, "-button3"},
-    {"+special2",               0, "+button4"},
-    {"-special2",               0, "-button4"},
-    {"+grenade1",               0, "+button5"},
-    {"-grenade1",               0, "-button5"},
-    {"+grenade2",               0, "+button6"},
-    {"-grenade2",               0, "-button6"},
-    {"+dropflag",               0, "+button7"},
-    {"-dropflag",               0, "-button7"},
+    {"+special",                0, "+button 3"},
+    {"-special",                0, "-button 3"},
+    {"+special2",               0, "+button 4"},
+    {"-special2",               0, "-button 4"},
+    {"+grenade1",               0, "+button 5"},
+    {"-grenade1",               0, "-button 5"},
+    {"+grenade2",               0, "+button 6"},
+    {"-grenade2",               0, "-button 6"},
+    {"+dropflag",               0, "+button 7"},
+    {"-dropflag",               0, "-button 7"},
 };
 
 #define NB_CONC_CAP_AIR 1100

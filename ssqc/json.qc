@@ -20,7 +20,7 @@ struct KeyVal {
     string val;
 };
 
-static string JSON_Wrap(int n, KeyVal* key_vals) {
+string JSON_Wrap(int n, KeyVal* key_vals) {
     string result = "{\n";
     int last = n - 1;
     for (int i = 0; i < n; i++) {
@@ -220,7 +220,7 @@ void ReportMatchResult(int report_type) {
     string final = JSON_Wrap(fvs.length, fvs);
     dprint("Reporting to qwtf-live: ", final, "\n");
 
-    string endpoint = "http://stats.qwtf.live:9000/result";
+    string endpoint = "http://results.qwtf.live:9000/result";
     uri_post(endpoint, TFL_RESULT, "application/json", final);
 }
 

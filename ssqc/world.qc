@@ -380,6 +380,10 @@ void () worldspawn = {
 
     }
 
+    string token_time = strftime(FALSE, "%Y-%m-%d");
+    string token_hash = substring(digest_hex("SHA1", token_time, mapname), 0, 16);
+    game_token = sprintf("%s_%s_%s", token_time, mapname, token_hash);
+
     dimension_send = DMN_NOFLASH;
     Predict_Init();
 };

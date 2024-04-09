@@ -68,7 +68,19 @@ void () LogEventGameStart = {
         player = find (player, classname, "player");
     }
 
-    event = sprintf("{\"type\": \"gameStart\", \"map\": \"%s\", \"numPlayers\": %s, \"numTeams\": %s, \"time\": %s, \"demo\": \"%s\", \"gameTimeStamp\": \"%s\"}", mapname, ftos(numplayers), ftos(number_of_teams), ftos(gametime), cvar_string("serverdemo"), gametimestamp);
+    KeyVal kvs[] = {
+        {KV_S, "type", "gameStart"},
+        {KV_S, "map", mapname},
+        {KV_I, "numPlayers", ftos(numplayers)},
+        {KV_I, "numTeams", ftos(number_of_teams)},
+        {KV_S, "time", ftos(gametime)},
+        {KV_S, "demo", cvar_string("server_demo")},
+        {KV_S, "gameTimeStamp", gametimestamp},
+        {KV_S, "gameToken", game_token},
+        {KV_S, "shard", infokey(world, "shard")},
+    };
+
+    event = JSON_Wrap(kvs.length, kvs);
     logevent(event);
 }
 
@@ -136,9 +148,7 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
     string event;
     string attackEvent;
     string targetEvent;
-    string part1attack;
-    string part1target;
-    string part2;
+    string part1, part2;
     string damageKind;
     string attackername;
     string targetname;
@@ -175,24 +185,14 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
     }
 
     if (getEntityNameOrLogin(target) != "") {
-        part1attack = sprintf(",\n{\"type\": \"damageDone\", \"kind\": \"%s\", \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, \"target\": \"%s\", \"targetClass\": %s, \"targetTeam\": %s, ",
-                damageKind, 
-                attackername, 
-                ftos(attacker.playerclass), 
-                ftos(attacker.team_no), 
-                getEntityNameOrLogin(target), 
-                ftos(target.playerclass), 
+        part1 = sprintf(",\n{\"type\": \"damageDone\", \"kind\": \"%s\", \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, \"target\": \"%s\", \"targetClass\": %s, \"targetTeam\": %s, ",
+                damageKind,
+                attackername,
+                ftos(attacker.playerclass),
+                ftos(attacker.team_no),
+                getEntityNameOrLogin(target),
+                ftos(target.playerclass),
                 ftos(target.team_no));
-        part1target = sprintf(",\n{\"type\": \"damageTaken\", \"kind\": \"%s\", \"attacker\": \"%s\", \"attackerClass\": %s, \"attackerTeam\": %s, \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, ",
-                damageKind, 
-                attackername, 
-                ftos(attacker.playerclass), 
-                ftos(attacker.team_no), 
-                getEntityNameOrLogin(target), 
-                ftos(target.playerclass), 
-                ftos(target.team_no));
-
-
         part2 = sprintf("\"inflictor\": \"%s\", \"damage\": %s, \"time\": %s, \"gameTimeStamp\": \"%s\"}", 
                 inflictorId,
                 ftos(truedam),
@@ -200,9 +200,7 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
                 gametimestamp
                 );
 
-        attackEvent = strcat(part1attack, part2);
-        targetEvent = strcat(part1target, part2);
-        event = strcat(attackEvent, targetEvent);
+        event = strcat(part1, part2);
         logevent(event);
     }
 }
@@ -265,22 +263,9 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
     }
 
-    string event;
-    string attackEvent;
-    string targetEvent;
-    string part1attack;
-    string part1target;
-    string part2;
+    string event, part1, part2;
 
-    part1attack = sprintf(",\n{\"type\": \"kill\", \"kind\": \"%s\", \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, \"target\": \"%s\", \"targetClass\": %s, \"targetTeam\": %s, ",
-            killKind,
-            attackername, 
-            ftos(attacker.playerclass), 
-            ftos(attacker.team_no), 
-            targetname, 
-            ftos(target.playerclass), 
-            ftos(target.team_no));
-    part1target = sprintf(",\n{\"type\": \"death\", \"kind\": \"%s\", \"attacker\": \"%s\", \"attackerClass\": %s, \"attackerTeam\": %s, \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, ",
+    part1 = sprintf(",\n{\"type\": \"kill\", \"kind\": \"%s\", \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, \"target\": \"%s\", \"targetClass\": %s, \"targetTeam\": %s, ",
             killKind,
             attackername, 
             ftos(attacker.playerclass), 
@@ -293,9 +278,7 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
             ftos(gametime),
             gametimestamp
             );
-    attackEvent = strcat(part1attack, part2);
-    targetEvent = strcat(part1target, part2);
-    event = strcat(attackEvent, targetEvent);
+    event = strcat(part1, part2);
     logevent(event);
 }
 

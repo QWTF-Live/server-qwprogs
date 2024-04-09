@@ -813,3 +813,5 @@ var float PC_ENGINEER_GRENADE_TYPE_2_RANGE = 240;
 
 float use_announcer;
 .float is_spectator;
+
+string game_token;

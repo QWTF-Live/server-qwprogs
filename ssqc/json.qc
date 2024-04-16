@@ -169,7 +169,6 @@ enum {
     kReportStart,
     kReportHalftime,
     kReportEnd,
-
 };
 
 void ReportMatchResult(int report_type) {
@@ -211,6 +210,7 @@ void ReportMatchResult(int report_type) {
         {KV_S, "server", infokey(world, "hostname")},
         {KV_S, "address", cvar_string("sv_serverip")},
         {KV_S, "shard", infokey(world, "shard")},
+        {KV_S, "game_token", game_token},
         {KV_S, "channel_id", discord_channel_id},
         {KV_S, "map", mapname},
         {KV_I, "team1", teams[0]},

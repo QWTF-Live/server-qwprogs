@@ -198,7 +198,6 @@ void ReportMatchResult(int report_type) {
     string teams[2];
     for (int i = 0; i < 2; i++) {
         KeyVal tvs[] = {
-            {KV_I, "report_type", ftos(report_type)},
             {KV_I, "score", ftos(TeamFortress_TeamGetScore(i+1))},
             {KV_I, "players", strcat("[", players[i], "]")},
         };
@@ -211,6 +210,7 @@ void ReportMatchResult(int report_type) {
         {KV_S, "address", cvar_string("sv_serverip")},
         {KV_S, "shard", infokey(world, "shard")},
         {KV_S, "game_token", game_token},
+        {KV_I, "report_type", ftos(report_type)},
         {KV_S, "channel_id", discord_channel_id},
         {KV_S, "map", mapname},
         {KV_I, "team1", teams[0]},

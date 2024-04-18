@@ -45,7 +45,6 @@ float remote_client_time();
 .float primed_gren_exp;         // Expiry of (last) primed grenade
 .float no_grenades_1;           // Number of grenades of type 1 being carried
 .float no_grenades_2;           // Number of grenades of type 2 being carried
-.float hook_out;                // Dummy field for hook to silence error messages
 .float cheat_check;             // Time when we'll next check for team cheats
 .float is_removed;              // TRUE if the entity has been removed
 .float is_undercover;           // TRUE for a SPY if they're undercover
@@ -63,7 +62,6 @@ float remote_client_time();
 .float default_sensitivity;     // Player's default (non-zoomed) sensitivity
 .float default_fov;             // Player's default (non-zoomed) fov
 .float current_fov;             // Player's current field of view
-.float zoom_level;              // Start zooming to this fov next frame
 .float zoom_fov;                // The default fov to zoom in to when pressing special button
 .float zoom_last;               // The last used zoom fov by the player - zoom to this when toggling zoom
 .float has_voted_map;           // Map option that player voted for
@@ -134,7 +132,6 @@ float remote_client_time();
 
 .float is_disarming;
 .float motd;                    // Used to display MOTD
-.float current_menu;
 .float current_menu_type;
 .float current_menu_page;
 .float menu_count;
@@ -817,3 +814,4 @@ float use_announcer;
 .float is_spectator;
 
 string game_token;
+.float oldbuttons;

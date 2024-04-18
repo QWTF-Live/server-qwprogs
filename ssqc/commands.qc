@@ -218,7 +218,6 @@ void (float cap1, float cap2) CaptainMode = {
             //stuffcmd(te, "color 0 0\n");
             //SetTeamName(te);
 
-            te.current_menu = 0;
             te.impulse = 0;
         }
         if(csqcactive) {

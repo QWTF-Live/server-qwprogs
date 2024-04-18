@@ -122,20 +122,6 @@ void (entity pl) W_UpdateCurrentWeapon;
 
 void (entity ent, float num) SetFlameCount;
 
-.float button3_keydown;
-.float button3_keydown_frame;
-.float button3_keyup_frame;
-.float button4_keydown;
-.float button4_keydown_frame;
-.float button4_keyup_frame;
-.float button5_keydown;
-.float button5_keydown_frame;
-.float button5_keyup_frame;
-.float button6_keydown;
-.float button6_keydown_frame;
-.float button6_keyup_frame;
-.float oldbuttons;
-
 void () W_Precache = {
     precache_sound("weapons/r_exp3.wav");
     precache_sound("weapons/rocket1i.wav");
@@ -1460,8 +1446,6 @@ void (entity e) ConvertToSpurs =
 	e.nextthink = time + spurs_duration;
 	e.heat = time;
 };
-
-.float hit_z;
 
 void () spike_touch = {
     if (self.voided)

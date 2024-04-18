@@ -1721,7 +1721,6 @@ void (float inp) Menu_Admin_Input =
                             {
                                 self.playerclass = 0;
                                 playerSetTeam (-1);
-                                self.current_menu = 0;
                                 self.impulse = 0;
                             } else if (self.captain > 0 && self.captain < 5) {
                                 //TeamFortress_TeamSet(self.team_no);

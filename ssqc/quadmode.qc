@@ -789,7 +789,6 @@ void () StartQuadRound =
 			oldself = self;
 			self = te;
 			self.menu_count = 30;
-			self.current_menu = 1;
 			TeamFortress_ThrowGrenade();
 			TeamFortress_RemoveTimers();
 			if (self.playerclass == 9) {

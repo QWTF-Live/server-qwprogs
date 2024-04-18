@@ -14,11 +14,10 @@ void (entity player, string login, string secret) performLogin = {
 }
 
 static void StoreCred(entity player) {
-    if (!fo_login_allow_nonce_auth)
+    if (!login_allow_nonce)
         return;
 
-    string salt = infokey(world, "fo_rev");
-    string nonce = digest_hex(kLoginHash, salt, player.fo_login);
+    string nonce = digest_hex(kLoginHash, login_salt, player.fo_login);
 
     if (infokey(player, kLoginKey) == player.fo_login &&
         infokey(player, kLoginNonce) == nonce)
@@ -36,17 +35,16 @@ static void StoreCred(entity player) {
 }
 
 static float LoadCred(entity player) {
-    if (!fo_login_allow_nonce_auth)
+    if (!login_allow_nonce)
         return FALSE;
 
     string login = infokey(player, kLoginKey);
     if (login == string_null)
         return FALSE;
 
-    string salt = infokey(world, "fo_rev");
     string nonce = infokey(player, kLoginNonce);
 
-    string comp = digest_hex(kLoginHash, salt, login);
+    string comp = digest_hex(kLoginHash, login_salt, login);
 
     if (nonce == comp) {
         player.fo_login = login;

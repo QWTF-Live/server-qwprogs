@@ -346,7 +346,8 @@ void () worldspawn = {
     local float flr = CF_GetSetting("flr", "fologinrequired", "1");
     backend_address = CF_GetSettingRaw("ba", "backend_address", "");
     fo_login_required = (flr && (backend_address != ""));
-    fo_login_allow_nonce_auth = CF_GetSetting("fna", "fast_nonce_auth", "1");
+    login_allow_nonce = CF_GetSetting("lgn", "login_nonce", "1");
+    login_salt = CF_GetSettingRaw("lgs", "login_salt", "sodium");
 
     entity worldspawnent;
     worldspawnent = spawn();
@@ -381,7 +382,7 @@ void () worldspawn = {
     }
 
     string token_time = strftime(FALSE, "%Y-%m-%d_%H-%M-%s");
-    game_token=sprintf("%s_%s_%s", token_time, infokey(world, "shard"), mapname);
+    game_token = sprintf("%s_%s_%s", token_time, infokey(world, "shard"), mapname);
 
     dimension_send = DMN_NOFLASH;
     Predict_Init();

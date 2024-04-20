@@ -1661,8 +1661,8 @@ TFAlias client_aliases[] = {
     // Admin commands
     {"countplayers", TF_ADMIN_COUNTPLAYERS},
     {"deal", TF_ADMIN_CYCLEDEAL},
-    {"kick", TF_ADMIN_KICK},
-    {"ban", TF_ADMIN_BAN},
+    {"admin_kick", TF_ADMIN_KICK},
+    {"admin_ban", TF_ADMIN_BAN},
     {"next", TF_ADMIN_NEXT},
     {"ceasefire", TF_ADMIN_CEASEFIRE},
     {"listips", TF_ADMIN_LISTIPS},

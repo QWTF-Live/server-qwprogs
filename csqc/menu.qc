@@ -323,22 +323,10 @@ var fo_menu FO_MENU_BUILD = {
         }
     }
 };
-var fo_menu FO_MENU_SENTRY_MAINTAIN = {
-    [0,0], [300,200], "Sentry Gun", FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS, {
-        {"1","Anticlockwise","","",FO_MENU_STATE_NORMAL,{localcmd("cmd sentry rotate 45\n");Menu_Cancel();},MENU_BUTTON},
-        {"2","180 Degrees","","",FO_MENU_STATE_NORMAL,{localcmd("cmd sentry rotate 180\n");Menu_Cancel();},MENU_BUTTON},
-        {"3","Clockwise","","",FO_MENU_STATE_NORMAL,{localcmd("cmd sentry rotate -45\n");Menu_Cancel();},MENU_BUTTON},
-        MenuSpacer,
-        {"5","Nothing","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
-    }, 5, TRUE, {
-        if(vlen(PM_Org() - sentry_pos) > ENG_BUILDING_MAINT_DISTANCE) {
-            Menu_Cancel();
-            return;
-        }
-    }
-};
 
-var fo_menu FO_MENU_SENTRY_ROTATE = {
+static const float kActivateAngle = 0.75;
+
+var fo_menu FO_MENU_SENTRY_MAINTAIN = {
     [0,0], [300,200], "Rotate Sentry Gun", FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS, {
         {"1","Anticlockwise","","",FO_MENU_STATE_NORMAL,{localcmd("cmd sentry rotate 45\n");Menu_Cancel();},MENU_BUTTON},
         {"2","180 Degrees","","",FO_MENU_STATE_NORMAL,{localcmd("cmd sentry rotate 180\n");Menu_Cancel();},MENU_BUTTON},
@@ -346,7 +334,9 @@ var fo_menu FO_MENU_SENTRY_ROTATE = {
         MenuSpacer,
         {"5","Nothing","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
     }, 5, TRUE, {
-        if(vlen(PM_Org() - sentry_pos) > ENG_BUILDING_MAINT_DISTANCE) {
+        vector to_sent = sentry_pos - PM_Org();
+        float a = v_forward * normalize(to_sent);
+        if(vlen(to_sent) > ENG_BUILDING_MAINT_DISTANCE || a < kActivateAngle) {
             Menu_Cancel();
             return;
         }
@@ -360,12 +350,15 @@ var fo_menu FO_MENU_DISPENSER_MAINTAIN = {
         MenuSpacer,
         {"5","Nothing","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
     }, 5, TRUE, {
-        if(vlen(PM_Org() - dispenser_pos) > ENG_BUILDING_MAINT_DISTANCE) {
+        vector to_disp = dispenser_pos - PM_Org();
+        float a = v_forward * normalize(to_disp);
+        if(vlen(to_disp) > ENG_BUILDING_MAINT_DISTANCE || a < kActivateAngle) {
             Menu_Cancel();
             return;
         }
     }
 };
+
 var fo_menu FO_MENU_DISPENSER_USE = {
     [0,0], [300,200], "Use Dispenser", FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS, {
         {"1","Withdraw Ammo","","",FO_MENU_STATE_NORMAL,{localcmd("cmd dispenser withdraw ammo\n");Menu_Cancel();},MENU_BUTTON},
@@ -373,7 +366,9 @@ var fo_menu FO_MENU_DISPENSER_USE = {
         MenuSpacer,
         {"5","Nothing","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
     }, 4, TRUE, {
-        if(vlen(PM_Org() - touched_dispenser_pos) > ENG_BUILDING_MAINT_DISTANCE) {
+        vector to_disp = touched_dispenser_pos - PM_Org();
+        float a = v_forward * normalize(to_disp);
+        if(vlen(to_disp) > ENG_BUILDING_MAINT_DISTANCE || a < kActivateAngle) {
             Menu_Cancel();
             return;
         }
@@ -1169,7 +1164,7 @@ void FO_Menu_Rotate_Sentry(float force) = {
     if(SBAR.IsBuilding) {
         return;
     } else {
-        CurrentMenu = &FO_MENU_SENTRY_ROTATE;
+        CurrentMenu = &FO_MENU_SENTRY_MAINTAIN;
     }
     fo_hud_menu_active = TRUE;
 }
@@ -1405,7 +1400,6 @@ void FO_Hud_Init() {
     INIT_MENU_IDS(FO_MENU_BUILD);
     INIT_MENU_IDS(FO_MENU_BUILD_CANCEL);
     INIT_MENU_IDS(FO_MENU_SENTRY_MAINTAIN);
-    INIT_MENU_IDS(FO_MENU_SENTRY_ROTATE);
     INIT_MENU_IDS(FO_MENU_ADMIN_MAIN);
     INIT_MENU_IDS(FO_MENU_ADMIN_MODES);
     INIT_MENU_IDS(FO_MENU_ADMIN_SETTINGS);

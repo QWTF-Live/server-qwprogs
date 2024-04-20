@@ -42,6 +42,7 @@ void (float zoom_in) Sniper_ZoomAdjust;
 void () TeamFortress_StatusQuery;
 void () CF_Scout_Dash;
 void () CF_Spy_DisguiseStop;
+void Scout_ToggleScanner(float toggle_mask);
 void () TeamFortress_DetpackMenu;
 void () CF_Medic_AuraToggle;
 void () FO_LockToggle;
@@ -63,8 +64,6 @@ void () TeamFortress_DetpackStop;
 void (entity e) TeamFortress_PlacePracticeSpawn;
 void (entity e) TeamFortress_RemovePracticeSpawn;
 void () DropKey;
-void () UseSpecialSkill;
-void () UseSpecialSkill2;
 void () RemoveFlare;
 void () ScannerSwitch;
 float () FO_CheckForReload;
@@ -1919,367 +1918,489 @@ void W_ChangeWeaponPrev() {
     W_ChangeWeaponSlot(FO_FindPrevNextWeaponSlot(self.playerclass, slot, TRUE));
 }
 
-void () PreMatchImpulses;
-void () DeadImpulses;
+static struct {
+    int special1;
+    int special2;
+} special_impulses[] = {
+    {0, 0},
+    {TF_DASH, TF_SCAN},
+    {TF_ZOOMTOGGLE},
+    {0, 0},
+    {TF_PB_DETONATE, TF_DETPACK_5},
+    {TF_MEDIC_AURA_TOGGLE},
+    {TF_HVYWEAP_LOCK_TOGGLE},
+    {TF_AIRBLAST},
+    {TF_SPY_DIE, TF_DISGUISE_LAST_SPAWNED},
+    {0, 0},
+};
 
-void () ImpulseCommands = {
-    if ((self.last_impulse == TF_DETPACK) && self.impulse)
-        TeamFortress_SetDetpack(self.impulse);
-
-    if (!IsFeigned(self)) {
-        if (self.impulse == TF_GRENADE_1)
-            TeamFortress_PrimeGrenade(1, TRUE);
-        else if (self.impulse == TF_GRENADE_2)
-            TeamFortress_PrimeGrenade(2, TRUE);
-        else if (self.impulse == TF_GRENADE_T)
-            TeamFortress_ThrowGrenade();
-        else if (self.impulse == TF_GRENADE_PT_1)
-            TeamFortress_PrimeThrowGrenade(1);
-        else if (self.impulse == TF_GRENADE_PT_2)
-            TeamFortress_PrimeThrowGrenade(2);
+static int ImpulseAllowed(int impulse) {
+    switch (impulse) {  // Always allowed
+        case TF_SHOWTF:
+        case TF_CLASSHELP:
+        case TF_SHOWLEGALCLASSES:
+        case TF_CHANGEPC_SCOUT:
+        case TF_CHANGEPC_SNIPER:
+        case TF_CHANGEPC_SOLDIER:
+        case TF_CHANGEPC_DEMOMAN:
+        case TF_CHANGEPC_MEDIC:
+        case TF_CHANGEPC_HVYWEAP:
+        case TF_CHANGEPC_PYRO:
+        case TF_CHANGEPC_SPY:
+        case TF_CHANGEPC_ENGINEER:
+        case TF_CHANGEPC_RANDOM:
+        case TF_CHANGETEAM:
+        case TF_CHANGECLASS:
+        case TF_HELP_MAP:
+        case TF_NAILGREN_INFO:
+        case TF_STATUS_QUERY:
+        case TF_TEAM_1:
+        case TF_TEAM_2:
+        case TF_TEAM_3:
+        case TF_TEAM_4:
+        case TF_TEAM_SCORES:
+        case TF_TEAM_CLASSES:
+        case TF_PLAYER_READY:
+        case TF_PLAYER_NOT_READY:
+            return TRUE;  // Always allowed
     }
 
-    if (cb_prematch || cease_fire) {
-        PreMatchImpulses();
-        DeadImpulses();
-        self.impulse = 0;
-        return;
-    }
+    if (cease_fire || self.deadflag || self.playerclass == 0)
+        return FALSE;
 
-    if (self.impulse == TF_SPECIAL_SKILL)
-        UseSpecialSkill();
-
-    if (self.impulse == TF_SPECIAL_SKILL_2)
-        UseSpecialSkill2();
-
-    if (self.impulse == TF_NEXTTIP) {
-        self.display_tip = 0;
-        self.tip_type = 0;
-        self.tip_time = time;
-        Status_Refresh(self);
-    }
-
-    if (self.impulse == TF_WEAPLAST) {
-        if (self.playerclass == PC_SPY && self.is_undercover == 2)
-            CF_Spy_DisguiseStop();
-        else if (self.playerclass == PC_ENGINEER && self.is_building) {
-            TeamFortress_EngineerBuildStop();
-            W_ChangeWeaponLast();
-        } else if (self.playerclass == PC_DEMOMAN && self.is_detpacking) {
-            TeamFortress_DetpackStop();
-            W_ChangeWeaponLast();
+    if (cb_prematch) {
+        // Only impulses below allowed
+        switch (impulse) {
+            case TF_PREMATCH_INVULN:
+                return TRUE;
+            case TF_WEAPNEXT:
+            case TF_WEAPPREV:
+            case TF_INVENTORY:
+            case TF_ID:
+            case FLAG_INFO:
+            case TF_GRENADE_1:
+            case TF_GRENADE_2:
+            case TF_GRENADE_T:
+            case TF_GRENADE_PT_1:
+            case TF_GRENADE_PT_2:
+                break;
+            default:
+                return FALSE;
         }
-    } else if (self.impulse == TF_TOGGLEVOTE)
-        Vote_ToggleMenu(self);
-
-    if (self.tfstate & TFSTATE_NO_WEAPON == 0) {
-        if (self.impulse == TF_WEAPNEXT)
-            W_ChangeWeaponNext();
-        else if (self.impulse == TF_WEAPPREV)
-            W_ChangeWeaponPrev();
-        else if (self.impulse == TF_RELOAD)
-            FO_ReloadSlot(self.current_slot, FALSE);
-        else if (self.impulse == TF_RELOAD_SLOT1)
-            FO_ReloadSlot(MakeSlot(1), FALSE);
-        else if (self.impulse == TF_RELOAD_SLOT2)
-            FO_ReloadSlot(MakeSlot(2), FALSE);
-        else if (self.impulse == TF_RELOAD_SLOT3)
-            FO_ReloadSlot(MakeSlot(3), FALSE);
-        else if (self.impulse == TF_RELOAD_NEXT)
-            TeamFortress_ReloadNext();
-        else if (self.impulse == TF_DETPACK_5)
-            TeamFortress_SetDetpack(5);
-        else if (self.impulse == TF_DETPACK_20)
-            TeamFortress_SetDetpack(20);
-        else if (self.impulse == TF_DETPACK_50)
-            TeamFortress_SetDetpack(50);
-        else if (self.impulse == TF_DROP_AMMO) {
-            Menu_Drop();
-        } else if (self.impulse == TF_PRACSPAWN_PLACE)
-            TeamFortress_PlacePracticeSpawn(self);
-        else if (self.impulse == TF_PRACSPAWN_REMOVE)
-            TeamFortress_RemovePracticeSpawn(self);
     }
 
-    if (self.impulse == TF_INVENTORY)
-        TeamFortress_Inventory();
-    else if ((self.playerclass != 0) && (self.impulse == TF_MEDIC_HELPME))
-        TeamFortress_SaveMe();
-    else if (self.impulse == TF_GRENADE_T)
-        TeamFortress_ThrowGrenade();
-    else if (self.impulse == TF_ID)
-        CF_Identify(self, 1);
-    else if (self.impulse == TF_ID_TEAM)
-        CF_Identify(self, 2);
-    else if (self.impulse == TF_ID_ENEMY)
-        CF_Identify(self, 3);
-    else if (self.impulse == TF_SHOW_IDS)
-        TeamFortress_ShowIDs();
-    else if ((self.playerclass != 0) && (self.impulse == TF_DROPFLAG))
-        DropGoalItems();
-    else if (self.impulse == TF_DISCARD)
-        TeamFortress_Discard();
-    else if (self.impulse == TF_DISCARD_DROP_AMMO)
-        TeamFortress_Discard_DropAmmo();
-    else if (self.impulse == TF_DASH)
-        CF_Scout_Dash();
-    else if (self.impulse == TF_PB_DETONATE)
-        TeamFortress_DetonatePipebombs(0);
-    else if (self.impulse == TF_DETPACK_STOP) {
-        TeamFortress_DetpackStop();
-    } else if (self.impulse == TF_MEDIC_AURA_TOGGLE)
-        CF_Medic_AuraToggle();
-    else if (self.impulse == TF_HVYWEAP_LOCK_TOGGLE && self.playerclass == PC_HVYWEAP)
-        FO_LockToggle();
-    else if (self.impulse == TF_AIRBLAST && self.playerclass == PC_PYRO)
-        FO_Airblast();
-    else if ((self.impulse == TF_ENGINEER_DETSENTRY) &&
-            (self.playerclass == PC_ENGINEER))
-        DestroyBuilding(self, "building_sentrygun");
-    else if ((self.impulse == TF_ENGINEER_DETDISP) &&
-            (self.playerclass == PC_ENGINEER))
-        DestroyBuilding(self, "building_dispenser");
-    else if ((self.impulse == TF_ENGINEER_TOGGLEDISPENSER) && (self.playerclass == PC_ENGINEER))
-        FO_Engineer_ToggleDispenser();
-    else if ((self.impulse == TF_ENGINEER_TOGGLESENTRY) && (self.playerclass == PC_ENGINEER))
-        FO_Engineer_ToggleSentry();
-    else if ((self.impulse == 196) && (self.playerclass == PC_ENGINEER))
-        DestroyBuilding(self, "building_teleporter_exit");
-    else if ((self.impulse == 197) && (self.playerclass == PC_ENGINEER))
-        DestroyBuilding(self, "building_teleporter_entrance");
-    else if ((self.impulse == TF_SPY_SPY) && (self.playerclass == PC_SPY)) {
-        if (invis_only)
-            CF_Spy_Invisible();
-        else
-            Menu_Spy_Skin();
-    } else if ((self.impulse == TF_SPY_DIE) && (self.playerclass == PC_SPY))
-        FO_Spy_FeignCmd(0);
-    else if ((self.impulse == TF_SPY_DIE_ON) && (self.playerclass == PC_SPY))
-        FO_Spy_FeignOnNextDamage();
-    else if ((self.impulse == TF_SPY_SILENT_DIE) && (self.playerclass == PC_SPY))
-        FO_Spy_FeignCmd(1);
-    else if (self.impulse == TF_DISGUISE_RESET && self.playerclass == PC_SPY) {
-        CF_Spy_ChangeSkin(self, 8, TRUE);
-        CF_Spy_ChangeColor(self, self.team_no, TRUE);
-    } else if (self.impulse == TF_DISGUISE_SCOUT && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 1, TRUE);
-    else if (self.impulse == TF_DISGUISE_SNIPER && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 2, TRUE);
-    else if (self.impulse == TF_DISGUISE_SOLDIER && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 3, TRUE);
-    else if (self.impulse == TF_DISGUISE_DEMOMAN && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 4, TRUE);
-    else if (self.impulse == TF_DISGUISE_MEDIC && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 5, TRUE);
-    else if (self.impulse == TF_DISGUISE_HWGUY && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 6, TRUE);
-    else if (self.impulse == TF_DISGUISE_PYRO && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 7, TRUE);
-    else if (self.impulse == TF_DISGUISE_ENGINEER && self.playerclass == PC_SPY)
-        CF_Spy_ChangeSkin(self, 9, TRUE);
-    else if (self.impulse == TF_DISGUISE_BLUE && self.playerclass == PC_SPY)
-        CF_Spy_ChangeColor(self, 1, TRUE);
-    else if (self.impulse == TF_DISGUISE_RED && self.playerclass == PC_SPY)
-        CF_Spy_ChangeColor(self, 2, TRUE);
-    else if (self.impulse == TF_DISGUISE_YELLOW && self.playerclass == PC_SPY)
-        CF_Spy_ChangeColor(self, 3, TRUE);
-    else if (self.impulse == TF_DISGUISE_GREEN && self.playerclass == PC_SPY)
-        CF_Spy_ChangeColor(self, 4, TRUE);
-    else if (self.impulse == TF_DISGUISE_ENEMY && self.playerclass == PC_SPY) {
-        if (number_of_teams > 2)
-            Menu_Spy_Color();
-        else if (self.team_no == 1)
-            CF_Spy_ChangeColor(self, 2, TRUE);
-        else
-            CF_Spy_ChangeColor(self, 1, TRUE);
-    } else if (self.impulse == TF_DISGUISE_LAST && self.playerclass == PC_SPY)
-        FO_Spy_DisguiseLast(self, TRUE);
-    else if (self.impulse == TF_DISGUISE_LAST_SPAWNED && self.playerclass == PC_SPY)
-        FO_Spy_DisguiseLastSpawned(self, TRUE);
-    else if ((self.impulse == TF_DEMOMAN_DETPACK) &&
-             (self.playerclass == PC_DEMOMAN))
-        TeamFortress_DetpackMenu();
-    else if ((self.impulse == TF_ENGINEER_BUILD) &&
-             (self.playerclass == PC_ENGINEER))
-        TeamFortress_EngineerBuild();
-    else if (self.impulse == FLAG_INFO) {
-        if (CTF_Map == 1)
-            TeamFortress_CTF_FlagInfo();
-        else
-            TeamFortress_DisplayDetectionItems();
-    } else if (self.impulse == TF_DISPLAYLOCATION)
-        display_location();
-    else {
-        DeadImpulses();
+    if (IsFeigned(self)) {
+        // Only impulses below allowed
+        switch (impulse) {
+            case TF_SPECIAL_SKILL1:
+            case TF_SPECIAL_SKILL2:
+            case TF_MEDIC_HELPME:
+            case TF_SPY_DIE:
+            case TF_SPY_SILENT_DIE:
+            case TF_GRENADE_1:
+            case TF_GRENADE_2:
+            case TF_GRENADE_PT_1:
+            case TF_GRENADE_PT_2:
+                break;
+            default:
+                return FALSE;
+        }
     }
 
-    if (self.impulse == TF_DETPACK)
-        self.last_impulse = self.impulse;
-
-    self.impulse = 0;
-};
-
-void () PreMatchImpulses = {
-    if (self.impulse == TF_WEAPNEXT)
-        W_ChangeWeaponNext();
-    else if (self.impulse == TF_WEAPPREV)
-        W_ChangeWeaponPrev();
-
-    if (self.impulse == TF_INVENTORY)
-        TeamFortress_Inventory();
-    else if (self.impulse == TF_ID)
-        CF_Identify(self, 0);
-    else if (self.impulse == FLAG_INFO) {
-        if (CTF_Map == TRUE)
-            TeamFortress_CTF_FlagInfo();
-        else
-            TeamFortress_DisplayDetectionItems();
-    } else if (self.impulse == TF_DISPLAYLOCATION)
-        display_location();
-
-    if (self.impulse == TF_SPECIAL_SKILL) {
-        ToggleInvincibility();
+    if (self.tfstate & TFSTATE_NO_WEAPON) {
+        // Impulses below blocked, others allowed
+        switch (impulse) {
+            case TF_WEAPNEXT:
+            case TF_WEAPPREV:
+            case TF_RELOAD:
+            case TF_RELOAD_SLOT1:
+            case TF_RELOAD_SLOT2:
+            case TF_RELOAD_SLOT3:
+            case TF_RELOAD_NEXT:
+            case TF_DETPACK_5:
+            case TF_DETPACK_20:
+            case TF_DETPACK_50:
+            case TF_DROP_AMMO:
+                return FALSE;
+        }
     }
-};
 
-void () DeadImpulses = {
-    if (self.impulse == TF_SHOWTF)
-        TeamFortress_ShowTF();
-    else if (self.impulse == TF_CLASSHELP)
-        Help_Show();
-    else if (self.impulse == TF_SHOWLEGALCLASSES)
-        TeamFortress_DisplayLegalClasses();
-    else if ((self.impulse >= TF_CHANGEPC_SCOUT) && (self.impulse <= TF_CHANGEPC_RANDOM)) {
-        TeamFortress_ChangeClass(self.impulse - TF_CHANGEPC_SCOUT + 1);
-    } else if ((self.playerclass != 0) && (self.impulse == TF_CHANGETEAM)
-               && (deathmatch == 3) && (!cb_prematch)) {
-        Menu_Team(0);
-    } else if ((self.playerclass != 0) && (self.impulse == TF_CHANGECLASS)
-               && (deathmatch == 3) && (!cb_prematch)) {
-        Menu_Class(0);
-    } else if (self.is_admin) {
-        if (self.impulse == TF_ADMIN_CEASEFIRE)
+    // Final filter
+    switch (impulse) {
+        case TF_PREMATCH_INVULN:
+            return FALSE;  // Only allowed higher
+                           //
+        case TF_DASH:
+        case TF_SCAN:
+        case TF_SCAN_ENEMY:
+        case TF_SCAN_FRIENDLY:
+        case TF_SCAN_SOUND:
+            return self.playerclass == PC_SCOUT;
+
+        case TF_SPY_SPY:
+        case TF_SPY_DIE:
+        case TF_SPY_SILENT_DIE:
+        case TF_DISGUISE_RESET:
+        case TF_DISGUISE_SCOUT:
+        case TF_DISGUISE_SNIPER:
+        case TF_DISGUISE_SOLDIER:
+        case TF_DISGUISE_DEMOMAN:
+        case TF_DISGUISE_MEDIC:
+        case TF_DISGUISE_HWGUY:
+        case TF_DISGUISE_PYRO:
+        case TF_DISGUISE_ENGINEER:
+        case TF_DISGUISE_BLUE:
+        case TF_DISGUISE_RED:
+        case TF_DISGUISE_YELLOW:
+        case TF_DISGUISE_GREEN:
+        case TF_DISGUISE_ENEMY:
+        case TF_DISGUISE_LAST:
+        case TF_DISGUISE_LAST_SPAWNED:
+            return self.playerclass == PC_SPY;
+
+        case TF_ENGINEER_BUILD:
+        case TF_ENGINEER_DETSENTRY:
+        case TF_ENGINEER_DETDISP:
+        case TF_ENGINEER_TOGGLEDISPENSER:
+        case TF_ENGINEER_TOGGLESENTRY:
+            return self.playerclass == PC_ENGINEER;
+
+        case TF_AIRBLAST:
+            return self.playerclass == PC_PYRO;
+
+        case TF_HVYWEAP_LOCK_TOGGLE:
+            return self.playerclass == PC_HVYWEAP;
+
+        case TF_DEMOMAN_DETPACK:
+        case TF_DETPACK:
+        case TF_DETPACK_5:
+        case TF_DETPACK_20:
+        case TF_DETPACK_50:
+            return self.playerclass == PC_DEMOMAN;
+
+        case TF_ADMIN_CEASEFIRE:
+        case TF_ADMIN_COUNTPLAYERS:
+        case TF_ADMIN_CYCLEDEAL:
+        case TF_ADMIN_KICK:
+        case TF_ADMIN_BAN:
+        case TF_ADMIN_NEXT:
+        case TF_ADMIN_LISTIPS:
+        case TF_ADMIN_CLANMODE:
+        case TF_ADMIN_QUADMODE:
+        case TF_ADMIN_DUELMODE:
+        case TF_ADMIN_ADMINMENU:
+        case TF_ADMIN_FORCESTARTMATCH:
+        case TF_ADMIN_READYSTATUS:
+            return self.is_admin;
+
+        default:
+            return TRUE;
+    }
+}
+
+void ExecImpulseCommand(int impulse, int arg = 0) {
+    int o = impulse;
+    if (impulse == TF_SPECIAL_SKILL1) {
+        if (cb_prematch)
+            impulse = TF_PREMATCH_INVULN;
+        else
+            impulse = special_impulses[self.playerclass].special1;
+    } else if (impulse == TF_SPECIAL_SKILL2) {
+        impulse = special_impulses[self.playerclass].special2;
+    }
+
+    if (!impulse || !ImpulseAllowed(impulse))
+        return;
+
+    switch (impulse) {
+        case TF_SHOWTF:
+            TeamFortress_ShowTF(); break;
+        case TF_CLASSHELP:
+            Help_Show(); break;
+        case TF_SHOWLEGALCLASSES:
+            TeamFortress_DisplayLegalClasses(); break;
+        case TF_CHANGEPC_SCOUT:
+            TeamFortress_ChangeClass(PC_SCOUT); break;
+        case TF_CHANGEPC_SNIPER:
+            TeamFortress_ChangeClass(PC_SNIPER); break;
+        case TF_CHANGEPC_SOLDIER:
+            TeamFortress_ChangeClass(PC_SOLDIER); break;
+        case TF_CHANGEPC_DEMOMAN:
+            TeamFortress_ChangeClass(PC_DEMOMAN); break;
+        case TF_CHANGEPC_MEDIC:
+            TeamFortress_ChangeClass(PC_MEDIC); break;
+        case TF_CHANGEPC_HVYWEAP:
+            TeamFortress_ChangeClass(PC_HVYWEAP); break;
+        case TF_CHANGEPC_PYRO:
+            TeamFortress_ChangeClass(PC_PYRO); break;
+        case TF_CHANGEPC_SPY:
+            TeamFortress_ChangeClass(PC_SPY); break;
+        case TF_CHANGEPC_ENGINEER:
+            TeamFortress_ChangeClass(PC_ENGINEER); break;
+        case TF_CHANGEPC_RANDOM:
+            TeamFortress_ChangeClass(PC_RANDOM); break;
+        case TF_CHANGETEAM:
+            if (self.playerclass != 0 && deathmatch == 3 && !cb_prematch)
+                Menu_Team(0);
+            break;
+        case TF_CHANGECLASS:
+            if (self.playerclass != 0 && deathmatch == 3 && !cb_prematch)
+                Menu_Class(0);
+            break;
+        case TF_HELP_MAP:
+            TeamFortress_HelpMap(); break;
+        case TF_NAILGREN_INFO:
+            TeamFortress_NailGrenInfo(); break;
+        case TF_STATUS_QUERY:
+            TeamFortress_StatusQuery(); break;
+        case TF_TEAM_1:
+            if (number_of_teams > 0)
+                TeamFortress_TeamSet(1);
+            break;
+        case TF_TEAM_2:
+            if (number_of_teams > 1)
+                TeamFortress_TeamSet(2);
+            break;
+        case TF_TEAM_3:
+            if (number_of_teams > 2)
+                TeamFortress_TeamSet(3);
+            break;
+        case TF_TEAM_4:
+            if (number_of_teams > 3)
+                TeamFortress_TeamSet(4);
+            break;
+        case TF_TEAM_SCORES:
+            TeamFortress_TeamShowScores(0); break;
+        case TF_TEAM_CLASSES:
+            TeamFortress_TeamShowMemberClasses(self); break;
+        case TF_PLAYER_READY:
+            if (clanbattle == 1) {
+                if (!cb_prematch)
+                    sprint (self, 2, "Match already in progress...\n");
+                else
+                    PlayerReady();
+            }
+            break;
+        case TF_PLAYER_NOT_READY:
+            if (clanbattle == 1) {
+                if (!cb_prematch)
+                    sprint (self, 2, "Match already in progress...\n");
+                else
+                    PlayerNotReady();
+            }
+            break;
+        case TF_PREMATCH_INVULN:
+            ToggleInvincibility(); break;
+        case TF_GRENADE_1:
+            TeamFortress_PrimeGrenade(1, TRUE); break;
+        case TF_GRENADE_2:
+            TeamFortress_PrimeGrenade(2, TRUE); break;
+        case TF_GRENADE_T:
+            TeamFortress_ThrowGrenade(); break;
+        case TF_GRENADE_PT_1:
+            TeamFortress_PrimeThrowGrenade(1); break;
+        case TF_GRENADE_PT_2:
+            TeamFortress_PrimeThrowGrenade(2); break;
+        case TF_NEXTTIP:
+            self.display_tip = 0;
+            self.tip_type = 0;
+            self.tip_time = time;
+            Status_Refresh(self);
+            break;
+        case TF_WEAPLAST:
+            W_ChangeWeaponLast(); break;
+        case TF_TOGGLEVOTE:
+            Vote_ToggleMenu(self); break;
+        case TF_WEAPNEXT:
+            W_ChangeWeaponNext(); break;
+        case TF_WEAPPREV:
+            W_ChangeWeaponPrev(); break;
+        case TF_RELOAD:
+            FO_ReloadSlot(self.current_slot, FALSE); break;
+        case TF_RELOAD_SLOT1:
+            FO_ReloadSlot(MakeSlot(1), FALSE); break;
+        case TF_RELOAD_SLOT2:
+            FO_ReloadSlot(MakeSlot(2), FALSE); break;
+        case TF_RELOAD_SLOT3:
+            FO_ReloadSlot(MakeSlot(3), FALSE); break;
+        case TF_RELOAD_NEXT:
+            TeamFortress_ReloadNext(); break;
+        case TF_DETPACK:
+            TeamFortress_SetDetpack(arg); break;
+        case TF_DETPACK_5:
+            TeamFortress_SetDetpack(5); break;
+        case TF_DETPACK_20:
+            TeamFortress_SetDetpack(20); break;
+        case TF_DETPACK_50:
+            TeamFortress_SetDetpack(50); break;
+        case TF_DROP_AMMO:
+            Menu_Drop(); break;
+        case TF_PRACSPAWN_PLACE:
+            TeamFortress_PlacePracticeSpawn(self); break;
+        case TF_PRACSPAWN_REMOVE:
+            TeamFortress_RemovePracticeSpawn(self); break;
+        case TF_INVENTORY:
+            TeamFortress_Inventory(); break;
+        case TF_MEDIC_HELPME:
+            TeamFortress_SaveMe(); break;
+        case TF_ID:
+            CF_Identify(self, 1); break;
+        case TF_ID_TEAM:
+            CF_Identify(self, 2); break;
+        case TF_ID_ENEMY:
+            CF_Identify(self, 3); break;
+        case TF_SHOW_IDS:
+            TeamFortress_ShowIDs(); break;
+        case TF_DROPFLAG:
+            DropGoalItems(); break;
+        case TF_DISCARD:
+            TeamFortress_Discard(); break;
+        case TF_DISCARD_DROP_AMMO:
+            TeamFortress_Discard_DropAmmo(); break;
+        case TF_SCAN:
+            ScannerSwitch(); break;
+        case TF_SCAN_SOUND:
+            Scout_ToggleScanner(NIT_SCANNER_SOUND); break;
+        case TF_SCAN_ENEMY:
+            Scout_ToggleScanner(NIT_SCANNER_ENEMY); break;
+        case TF_SCAN_FRIENDLY:
+            Scout_ToggleScanner(NIT_SCANNER_FRIENDLY); break;
+        case TF_DASH:
+            CF_Scout_Dash(); break;
+        case TF_PB_DETONATE:
+            TeamFortress_DetonatePipebombs(0); break;
+        case TF_DETPACK_STOP:
+            TeamFortress_DetpackStop(); break;
+        case TF_MEDIC_AURA_TOGGLE:
+            CF_Medic_AuraToggle(); break;
+        case TF_HVYWEAP_LOCK_TOGGLE:
+            FO_LockToggle(); break;
+        case TF_AIRBLAST:
+            FO_Airblast(); break;
+        case TF_ENGINEER_BUILD:
+            TeamFortress_EngineerBuild(); break;
+        case TF_ENGINEER_DETSENTRY:
+            DestroyBuilding(self, "building_sentrygun"); break;
+        case TF_ENGINEER_DETDISP:
+            DestroyBuilding(self, "building_dispenser"); break;
+        case TF_ENGINEER_TOGGLEDISPENSER:
+            FO_Engineer_ToggleDispenser(); break;
+        case TF_ENGINEER_TOGGLESENTRY:
+            FO_Engineer_ToggleSentry(); break;
+        case TF_SPY_SPY:
+            if (invis_only)
+                CF_Spy_Invisible();
+            else
+                Menu_Spy_Skin();
+            break;
+        case TF_SPY_DIE:
+            FO_Spy_FeignCmd(0); break;
+        case TF_SPY_DIE_ON:
+            FO_Spy_FeignOnNextDamage(); break;
+        case TF_SPY_SILENT_DIE:
+            FO_Spy_FeignCmd(1); break;
+        case TF_DISGUISE_RESET:
+            CF_Spy_ChangeSkin(self, 8, TRUE);
+            CF_Spy_ChangeColor(self, self.team_no, TRUE);
+            break;
+        case TF_DISGUISE_SCOUT:
+            CF_Spy_ChangeSkin(self, 1, TRUE); break;
+        case TF_DISGUISE_SNIPER:
+            CF_Spy_ChangeSkin(self, 2, TRUE); break;
+        case TF_DISGUISE_SOLDIER:
+            CF_Spy_ChangeSkin(self, 3, TRUE); break;
+        case TF_DISGUISE_DEMOMAN:
+            CF_Spy_ChangeSkin(self, 4, TRUE); break;
+        case TF_DISGUISE_MEDIC:
+            CF_Spy_ChangeSkin(self, 5, TRUE); break;
+        case TF_DISGUISE_HWGUY:
+            CF_Spy_ChangeSkin(self, 6, TRUE); break;
+        case TF_DISGUISE_PYRO:
+            CF_Spy_ChangeSkin(self, 7, TRUE); break;
+        case TF_DISGUISE_ENGINEER:
+            CF_Spy_ChangeSkin(self, 9, TRUE); break;
+        case TF_DISGUISE_BLUE:
+            CF_Spy_ChangeColor(self, 1, TRUE); break;
+        case TF_DISGUISE_RED:
+            CF_Spy_ChangeColor(self, 2, TRUE); break;
+        case TF_DISGUISE_YELLOW:
+            CF_Spy_ChangeColor(self, 3, TRUE); break;
+        case TF_DISGUISE_GREEN:
+            CF_Spy_ChangeColor(self, 4, TRUE); break;
+        case TF_DISGUISE_ENEMY:
+            if (number_of_teams > 2)
+                Menu_Spy_Color();
+            else if (self.team_no == 1)
+                CF_Spy_ChangeColor(self, 2, TRUE);
+            else
+                CF_Spy_ChangeColor(self, 1, TRUE);
+            break;
+        case TF_DISGUISE_LAST:
+            FO_Spy_DisguiseLast(self, TRUE); break;
+        case TF_DISGUISE_LAST_SPAWNED:
+            FO_Spy_DisguiseLastSpawned(self, TRUE); break;
+        case TF_DEMOMAN_DETPACK:
+            TeamFortress_DetpackMenu(); break;
+        case FLAG_INFO:
+            if (CTF_Map == 1)
+                TeamFortress_CTF_FlagInfo();
+            else
+                TeamFortress_DisplayDetectionItems();
+            break;
+        case TF_DISPLAYLOCATION:
+            display_location(); break;
+
+
+        case TF_ADMIN_CEASEFIRE:
             Admin_CeaseFire();
-        else if (self.impulse == TF_ADMIN_COUNTPLAYERS)
+        case TF_ADMIN_COUNTPLAYERS:
             Admin_CountPlayers();
-        else if (self.impulse == TF_ADMIN_CYCLEDEAL)
+        case TF_ADMIN_CYCLEDEAL:
             Admin_CycleDeal();
-        else if ((self.impulse == TF_ADMIN_KICK) && (self.admin_mode == 1))
-            Admin_DoKick();
-        else if ((self.impulse == TF_ADMIN_BAN) && (self.admin_mode == 1))
-            Admin_DoBan();
-        else if ((self.impulse == TF_ADMIN_NEXT) && (self.admin_mode == 1))
-            Admin_CycleDeal();
-        else if (self.impulse == TF_ADMIN_LISTIPS)
-            Admin_ListIPs();
-        else if (self.impulse == TF_ADMIN_CLANMODE)
-            ClanMode();
-        else if (self.impulse == TF_ADMIN_QUADMODE)
-            QuadMode();
-        else if (self.impulse == TF_ADMIN_DUELMODE)
-            DuelMode();
-        else if (self.impulse == TF_ADMIN_ADMINMENU) {
+        case TF_ADMIN_KICK:
+            if (self.admin_mode == 1)
+                Admin_DoKick();
+            break;
+        case TF_ADMIN_BAN:
+            if (self.admin_mode == 1)
+                Admin_DoBan();
+            break;
+        case TF_ADMIN_NEXT:
+           if (self.admin_mode == 1)
+               Admin_CycleDeal();
+           break;
+        case TF_ADMIN_LISTIPS:
+           Admin_ListIPs(); break;
+        case TF_ADMIN_CLANMODE:
+           ClanMode(); break;
+        case TF_ADMIN_QUADMODE:
+           QuadMode(); break;
+        case TF_ADMIN_DUELMODE:
+            DuelMode(); break;
+        case TF_ADMIN_ADMINMENU:
             self.current_menu_page = 1;
             Menu_Admin();
-        }
-        else if (self.impulse == TF_ADMIN_FORCESTARTMATCH) {
-            StartTimer();
-        }
-        else if (self.impulse == TF_ADMIN_READYSTATUS)
-            Broadcast_Players_NotReady();
+            break;
+        case TF_ADMIN_FORCESTARTMATCH:
+            StartTimer(); break;
+        case TF_ADMIN_READYSTATUS:
+            Broadcast_Players_NotReady(); break;
+        default:
+            sprint(self, PRINT_HIGH, "Unrecognized impulse: ", itos(impulse), "\n");
     }
-    if (self.impulse == TF_HELP_MAP)
-        TeamFortress_HelpMap();
-    else if (self.impulse == TF_NAILGREN_INFO)
-	TeamFortress_NailGrenInfo(); 
-    else if (self.impulse == TF_STATUS_QUERY)
-        TeamFortress_StatusQuery();
-    else if (self.impulse == TF_TEAM_1 && number_of_teams > 0)
-        TeamFortress_TeamSet(1);
-    else if (self.impulse == TF_TEAM_2 && number_of_teams > 1)
-        TeamFortress_TeamSet(2);
-    else if (self.impulse == TF_TEAM_3 && number_of_teams > 2)
-        TeamFortress_TeamSet(3);
-    else if (self.impulse == TF_TEAM_4 && number_of_teams > 3)
-        TeamFortress_TeamSet(4);
-    else if (self.impulse == TF_TEAM_SCORES)
-        TeamFortress_TeamShowScores(0);
-    else if (self.impulse == TF_TEAM_CLASSES)
-        TeamFortress_TeamShowMemberClasses(self);
-    else if ((self.playerclass == PC_SCOUT) && (self.impulse == TF_SCAN))
-        ScannerSwitch();
-    else if ((self.playerclass == PC_SCOUT) &&
-             (self.impulse == TF_SCAN_SOUND)) {
-        sprint(self, PRINT_HIGH, "Scanner sound: ");
-        if (self.tf_items_flags & 4) {
-            self.tf_items_flags = self.tf_items_flags - 4;
-            sprint(self, PRINT_HIGH, "off\n");
-        } else {
-            self.tf_items_flags = self.tf_items_flags | 4;
-            sprint(self, PRINT_HIGH, "on\n");
-        }
-    } else if ((self.playerclass == PC_SCOUT) && (self.impulse == TF_SCAN_ENEMY)) {
-        sprint(self, PRINT_HIGH, "Scanning for: ");
-        if (self.tf_items_flags & NIT_SCANNER_ENEMY) {
-            self.tf_items_flags = self.tf_items_flags - NIT_SCANNER_ENEMY;
-            if (self.tf_items_flags & NIT_SCANNER_FRIENDLY) {
-                sprint(self, PRINT_HIGH, "Friendlies only\n");
-            } else {
-                sprint(self, PRINT_HIGH, "Nothing\n");
-            }
-        } else {
-            self.tf_items_flags = self.tf_items_flags | NIT_SCANNER_ENEMY;
-            if (self.tf_items_flags & NIT_SCANNER_FRIENDLY) {
-                sprint(self, PRINT_HIGH, "Friendlies and enemies\n");
-            } else {
-                sprint(self, PRINT_HIGH, "Enemies only\n");
-            }
-            Status_Refresh(self);
-        }
-    } else if ((self.playerclass == PC_SCOUT) && (self.impulse == TF_SCAN_FRIENDLY)) {
-        sprint(self, PRINT_HIGH, "Scanning for: ");
-        if (self.tf_items_flags & NIT_SCANNER_FRIENDLY) {
-            self.tf_items_flags = self.tf_items_flags - NIT_SCANNER_FRIENDLY;
-            if (self.tf_items_flags & NIT_SCANNER_ENEMY) {
-                sprint(self, PRINT_HIGH, "Enemies only\n");
-            } else {
-                sprint(self, PRINT_HIGH, "Nothing\n");
-            }
-        } else {
-            self.tf_items_flags = self.tf_items_flags | NIT_SCANNER_FRIENDLY;
-            if (self.tf_items_flags & NIT_SCANNER_ENEMY) {
-                sprint(self, PRINT_HIGH, "Friendlies and enemies\n");
-            } else {
-                sprint(self, PRINT_HIGH, "Friendlies only\n");
-            }
-        }
-        Status_Refresh(self);
-    }
-    if (self.impulse == TF_PLAYER_READY) {
-        if (clanbattle == 1) {
-            if (!cb_prematch) {
-                sprint (self, 2, "Match already in progress...\n");
-                self.impulse = 0;
-                return;
-            }
-            PlayerReady();
-            self.impulse = 0;
-            return;
-        }
-    }
-    else if (self.impulse == TF_PLAYER_NOT_READY) {
-        if (clanbattle == 1) {
-            if (!cb_prematch) {
-                sprint (self, 2, "Match already in progress...\n");
-                self.impulse = 0;
-                return;
-            }
-            PlayerNotReady();
-            self.impulse = 0;
-            return;
-        }
-    }
-};
+}
+
+// Handles self.impulse --> Exec
+void ImpulseCommands() {
+    if (self.impulse == TF_DETPACK)
+        self.last_impulse = self.impulse;
+    else if (self.last_impulse == TF_DETPACK)
+        ExecImpulseCommand(TF_DETPACK, self.impulse);
+    else
+        ExecImpulseCommand(self.impulse);
+
+    self.impulse = 0;
+}
 
 void () ButtonFrame = {
     float changed_buttons = input_buttons ^ self.oldbuttons;
@@ -2289,111 +2410,60 @@ void () ButtonFrame = {
     float keyups = changed_buttons & ~input_buttons;
 
     if (input_buttons & BUTTON_SPECIAL1) {
-        if (!cb_prematch && !cease_fire) {
-            switch (self.playerclass) {
-                case PC_SCOUT:
-                    CF_Scout_Dash();
-                    break;
-                case PC_DEMOMAN:
-                    TeamFortress_DetonatePipebombs(0);
-                    break;
-                case PC_PYRO:
-                    FO_Airblast();
-                    break;
-            }
+        switch (self.playerclass) {
+            case PC_SCOUT:
+            case PC_DEMOMAN:
+            case PC_PYRO:
+                ExecImpulseCommand(TF_SPECIAL_SKILL1);
+                break;
+            case PC_MEDIC:
+            case PC_HVYWEAP:
+            case PC_SPY:
+                if (keydowns & BUTTON_SPECIAL1)
+                    ExecImpulseCommand(TF_SPECIAL_SKILL1);
+                break;
         }
     }
 
-    if (!(input_buttons & BUTTON_SPECIAL1)) {
-        if (FO_GetUserSetting(self, "hold_feign", "hf", "off")) {
-            FO_Spy_Unfeign();
-        }
-    }
-
-    if (keydowns & BUTTON_SPECIAL1) {
-        if (cb_prematch || cease_fire) {
-            ToggleInvincibility();
-        } else {
-            switch (self.playerclass) {
-                case PC_MEDIC:
-                    CF_Medic_AuraToggle();
-                    break;
-                case PC_HVYWEAP:
-                    FO_LockToggle();
-                    break;
-                case PC_SPY:
-                    FO_Spy_ToggleFeign(0);
-                    break;
-                case PC_ENGINEER:
-                    FO_Engineer_ToggleDispenser();
-                    break;
-            }
+    if (keyups & BUTTON_SPECIAL1) {
+        switch (self.playerclass) {
+            case PC_SPY:
+                if (FO_GetUserSetting(self, "hold_feign", "hf", "off"))
+                    FO_Spy_Unfeign();
+                break;
         }
     }
 
     if (input_buttons & BUTTON_SPECIAL2) {
         switch (self.playerclass) {
             case PC_SOLDIER:
-                self.impulse = TF_SLOT1;
-                break;
             case PC_PYRO:
-                if (IsUsingCFImpulses()) {
-                    self.impulse = TF_SLOT2;
-                } else {
-                    self.impulse = TF_SLOT1;
-                }
+                ExecImpulseCommand(TF_SPECIAL_SKILL1);
                 break;
-        }
-    }
-
-    if (keydowns & BUTTON_SPECIAL2) {
-        if (!cb_prematch && !cease_fire) {
-            switch (self.playerclass) {
-                case PC_SCOUT:
-                    ScannerSwitch();
-                    break;
-                case PC_DEMOMAN:
-                    TeamFortress_ToggleDetpack(5);
-                    break;
-                case PC_SPY:
-                    FO_Spy_DisguiseLastSpawned(self, TRUE);
-                    break;
-                case PC_ENGINEER:
-                    FO_Engineer_ToggleSentry();
-                    break;
-            }
+            case PC_SCOUT:
+            case PC_DEMOMAN:
+            case PC_SPY:
+                if (keydowns & BUTTON_SPECIAL2)
+                    ExecImpulseCommand(TF_SPECIAL_SKILL2);
+                break;
         }
     }
 
     if (keyups & BUTTON_SPECIAL2) {
         switch (self.playerclass) {
             case PC_DEMOMAN:
-                if(FO_GetUserSetting(self, "hold_detpack", "hd", "off")) {
-                    TeamFortress_DetpackStop();
-                }
+                ExecImpulseCommand(TF_DETPACK_STOP);
                 break;
         }
     }
 
-    local float hold_grens = FO_GetUserSetting(self, "hold_grens", "hg", "off");
-
-    if (keydowns & BUTTON_GRENADE1) {
-        if (hold_grens) {
-            TeamFortress_PrimeGrenade(1, TRUE);
-        } else {
-            TeamFortress_PrimeThrowGrenade(1);
-        }
-    }
-
-    if (keydowns & BUTTON_GRENADE2) {
-        if (hold_grens)
-            TeamFortress_PrimeGrenade(2, TRUE);
-        else
-            TeamFortress_PrimeThrowGrenade(2);
-    }
-
-    if (hold_grens && (keyups & (BUTTON_GRENADE1 | BUTTON_GRENADE2)))
-        TeamFortress_ThrowGrenade();
+    float hold_grens = FO_GetUserSetting(self, "hold_grens", "hg", "off");
+    if (keydowns & BUTTON_GRENADE1)
+        ExecImpulseCommand(hold_grens ? TF_GRENADE_1 : TF_GRENADE_PT_1);
+    if (keydowns & BUTTON_GRENADE2)
+        ExecImpulseCommand(hold_grens ? TF_GRENADE_2 : TF_GRENADE_PT_2);
+    if ((keyups & (BUTTON_GRENADE1 | BUTTON_GRENADE2)) && hold_grens)
+        ExecImpulseCommand(TF_GRENADE_T);
 
     if (input_buttons & BUTTON_DROPFLAG)
         DropGoalItems();
@@ -2420,14 +2490,6 @@ void () W_WeaponFrame = {
         self.impulse = 0;
         return;
     }
-
-    if (IsFeigned(self) &&
-            (self.impulse != TF_SPECIAL_SKILL) &&
-            (self.impulse != TF_SPECIAL_SKILL_2) &&
-            (self.impulse != TF_MEDIC_HELPME) &&
-            (self.impulse != TF_SPY_DIE) &&
-            (self.impulse != TF_SPY_SILENT_DIE))
-        return;
 
     if (self.impulse == TF_WEAPLAST && self.is_undercover != 2) {
         W_ChangeWeaponLast();
@@ -2475,7 +2537,7 @@ void () W_WeaponFrame = {
     }
 
     if (self.playerclass == PC_SNIPER) {
-        if (self.impulse == TF_SPECIAL_SKILL || self.impulse == TF_ZOOMTOGGLE) {
+        if (self.impulse == TF_SPECIAL_SKILL1 || self.impulse == TF_ZOOMTOGGLE) {
             Sniper_ZoomToggle();
             self.impulse = 0;
             return;
@@ -2493,8 +2555,8 @@ void () W_WeaponFrame = {
     // whitelist of commands that can be used even when reloading
     switch (self.impulse)
     {
-        case TF_SPECIAL_SKILL:
-        case TF_SPECIAL_SKILL_2:
+        case TF_SPECIAL_SKILL1:
+        case TF_SPECIAL_SKILL2:
         case TF_PB_DETONATE:
         case TF_MEDIC_HELPME:
         case TF_DASH:

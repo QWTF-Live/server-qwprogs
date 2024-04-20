@@ -437,6 +437,7 @@ float already_chosen_map;
 .float antispam_assault_cannon; // don't spam assault cannon messages
 .float antispam_cannon_air;     // don't spam assault cannon air messages
 .float antispam_incendiary_cannon; // don't spam incendiary cannon messages
+.float antispam_feign;
 
 // status bar stuff
 .string StatusString;           // current centerprint text (strzone'd!)

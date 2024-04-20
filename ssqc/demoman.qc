@@ -244,7 +244,6 @@ void (float timer) TeamFortress_SetDetpack = {
            " seconds...\n");
     Menu_Demoman_Cancel();
 
-    self.detpack_last = time;
     newmis = spawn();
     newmis.owner = self;
     newmis.classname = "timer";
@@ -339,6 +338,7 @@ void () TeamFortress_DetpackSet = {
     newmis.nextthink = time + self.health;
     newmis.think = TeamFortress_DetpackExplode;
     sprint(self.owner, PRINT_HIGH, "Detpack set!\n");
+    self.detpack_last = time;
     dremove(self);
 };
 

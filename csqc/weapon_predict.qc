@@ -777,7 +777,7 @@ static void WP_HandleHeavyInputs() {
     switch (pstate_pred.impulse) {
         case TF_LOCKON: pstate_pred.tfstate |= TFSTATE_LOCK; break;
         case TF_LOCKOFF: pstate_pred.tfstate &= ~TFSTATE_LOCK; break;
-        case TF_SPECIAL_SKILL: pstate_pred.tfstate ^= TFSTATE_LOCK; break;
+        case TF_SPECIAL_SKILL1: pstate_pred.tfstate ^= TFSTATE_LOCK; break;
         default:
             match = FALSE;
     }
@@ -1059,7 +1059,7 @@ void WP_Impulse() {
             WPP_Dump();
             break;
 
-        case TF_SPECIAL_SKILL:
+        case TF_SPECIAL_SKILL1:
         case TF_DASH:  // This could use a clean-up server side
             WP_Special();
             break;

@@ -1032,3 +1032,34 @@ entity(entity scanner, float scanrange, float enemies,
     }
     return (world);
 };
+
+void Scout_ToggleScanner(float toggle_mask) {
+    self.tf_items_flags ^= toggle_mask;
+
+    if (toggle_mask & NIT_SCANNER_SOUND) {
+        float sound = self.tf_items_flags  & NIT_SCANNER_SOUND ;
+        sprint(self, PRINT_HIGH, "Scanner sound: ");
+        sprint(self, PRINT_HIGH, sound ? "on" : "off", "\n");
+    }
+
+    const float kEnemy = NIT_SCANNER_ENEMY;
+    const float kFriendly = NIT_SCANNER_FRIENDLY;
+    const float kAll = kEnemy | kFriendly;
+
+    if (toggle_mask & kAll == 0)
+        return;
+
+    float active = self.tf_items_flags & kAll;
+
+    sprint(self, PRINT_HIGH, "Scanning for: ");
+    if (active == kAll)
+        sprint(self, PRINT_HIGH, "Friendlies and enemies\n");
+    else if (active == kEnemy)
+        sprint(self, PRINT_HIGH, "Enemies only\n");
+    else if (active == kFriendly)
+        sprint(self, PRINT_HIGH, "Friendlies only\n");
+    else
+        sprint(self, PRINT_HIGH, "Nothing\n");
+
+    Status_Refresh(self);
+}

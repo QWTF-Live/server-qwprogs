@@ -11,9 +11,9 @@ static void MarkFoLogin(entity player, string login, int stored) {
     bprint(PRINT_HIGH, msg);
 }
 
-static string GenLoginNonce(entity player) {
-    string login = infokey(player, kLoginKey);
+static string GenLoginNonce(entity player, string login) {
     string fo_token = infokey(player, kFoToken);
+
     if (login == string_null || fo_token == string_null)
         return "INVALID";
 
@@ -25,7 +25,7 @@ static void StoreCred(entity player) {
         return;
 
     // Back-off to allow csqc init time
-    if (time - player.connect_time < 5)
+    if (time - player.connect_time < 2)
         return;
 
     if (infokey(player, "*tfl_credential") != string_null) {
@@ -37,7 +37,7 @@ static void StoreCred(entity player) {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_CACHE_LOGIN);
     WriteString(MSG_MULTICAST, player.fo_login);
-    WriteString(MSG_MULTICAST, GenLoginNonce(player));
+    WriteString(MSG_MULTICAST, GenLoginNonce(player, player.fo_login));
     multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
 
     player.credential_stored = 1;
@@ -52,7 +52,7 @@ static float LoadCred(entity player) {
         return FALSE;
 
     string nonce = infokey(player, kLoginNonce);
-    string comp = GenLoginNonce(player);
+    string comp = GenLoginNonce(player, login);
 
     if (nonce == comp && comp != "INVALID") {
         MarkFoLogin(player, login, 1);

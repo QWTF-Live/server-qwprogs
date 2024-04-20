@@ -3112,7 +3112,7 @@ void () ClientConnect = {
     if (self.netname == string_null)
         KickCheater(self);
 
-    self.fo_login = infokey(self,"*tfl_login");
+    self.fo_login = infokey(self, "*tfl_login");
 
     TeamFortress_ExecMapScript(self);
     self.has_disconnected = 0;

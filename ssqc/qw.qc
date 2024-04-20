@@ -78,6 +78,7 @@ float remote_client_time();
 .float detpack_left;            // Seconds left to detpack explosion
 .float pipecooldown;            // Time when detpipe command can be issued
 .float detpipe_nesting;         // Used to avoid recursive detpipes when detting self
+.float detpipe_queued;          // Queues detpipe when locked out
 .float disguise_skin;           // The skin the spy is changing to
 .float queue_skin;              // The skin the spy will change to after team disguise is finished
 .float last_selected_skin;      // The last skin the spy selected to disguise as
@@ -605,7 +606,6 @@ float supermedikit;
 float superspanner;
 float superknife;
 float superknife_multihit;
-float impulse_queue;
 float detpack_when_reloading;
 float flag_follow;
 float ceasefire_type;

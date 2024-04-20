@@ -16,9 +16,21 @@ void () TeamFortress_DetpackDisarm;
 void () TeamFortress_DetpackCountDown;
 void CheckStateQ3Goal(entity trig);
 
-float (float force) TeamFortress_DetonatePipebombs = {
-    if (!force && allpipes_cooldown && time < self.pipecooldown)
-        return impulse_queue ? FALSE : TRUE;
+void TeamFortress_QueuedDetpipe() {
+    if (!self.detpipe_queued)
+        return;
+    if (time >= self.pipecooldown) {
+        TeamFortress_DetonatePipebombs(FALSE);
+        self.detpipe_queued = FALSE;
+    }
+}
+
+float TeamFortress_DetonatePipebombs(float force) {
+    if (!force && allpipes_cooldown && time < self.pipecooldown) {
+        if (!FO_GetUserSetting(self, "ndq", "no_det_queue", "off"))
+            self.detpipe_queued = TRUE;
+        return FALSE;
+    }
 
     if (self.detpipe_nesting > 0)
         return TRUE;

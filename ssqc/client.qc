@@ -681,10 +681,6 @@ void () DecodeLevelParms = {
         // allow knife to hit on every frame of animation
         superknife_multihit = CF_GetSetting("skmh", "superknife_multihit", "off");
 
-        // impulse command queueing
-        // ensures detpipe impulse isn't cleared at end of function
-        impulse_queue = CF_GetSetting("impulsequeue", "impulse_queue", "off");
-
         // whitelists detpack impulses on the list of commands that you're allowed to use while reloading [off]
         detpack_when_reloading = CF_GetSetting("detreload", "detpack_while_reloading", "off");
 
@@ -868,7 +864,6 @@ void () DecodeLevelParms = {
 
         st = infokey(world, "default");
         if (st == "on") {
-            impulse_queue = FALSE;
             server_default = TRUE;
             old_grens = FALSE;
             drop_grenades = TRUE;
@@ -937,7 +932,6 @@ void () DecodeLevelParms = {
 
         st = infokey(world, "faithful");
         if (st == "on") {
-            impulse_queue = FALSE;
             server_faithful = TRUE;
             drop_grenades = FALSE;
             drop_grenpack = FALSE;
@@ -1007,7 +1001,6 @@ void () DecodeLevelParms = {
         st = infokey(world, "huetf");
         if (st == "on") {
             server_huetf = TRUE;
-            impulse_queue = TRUE;
             flag_follow = FALSE;
             ng_damage = 18;
             sng_damage = 26;
@@ -2112,6 +2105,7 @@ void () PutClientInServer = {
     self.tip_type = 0;
     self.feign_next_damage = 0;
     self.conc_state.mag = 0;
+    self.detpipe_queued = 0;
 
     FO_InstantReloadAllWeapons(self);
 

@@ -55,7 +55,8 @@ void (float issilent) FO_Spy_FeignCmd;
 void (float issilent) FO_Spy_ToggleFeign;
 void () FO_Engineer_ToggleDispenser;
 void () FO_Engineer_ToggleSentry;
-float (float force) TeamFortress_DetonatePipebombs;
+void TeamFortress_QueuedDetpipe();
+float TeamFortress_DetonatePipebombs(float force);
 void (float timer) TeamFortress_ToggleDetpack;
 void (float timer) TeamFortress_SetDetpack;
 void () TeamFortress_DetpackStop;
@@ -1922,9 +1923,6 @@ void () PreMatchImpulses;
 void () DeadImpulses;
 
 void () ImpulseCommands = {
-    float clearImpulse; // related to impulse_queue
-    clearImpulse = TRUE;
-
     if ((self.last_impulse == TF_DETPACK) && self.impulse)
         TeamFortress_SetDetpack(self.impulse);
 
@@ -2025,8 +2023,8 @@ void () ImpulseCommands = {
         TeamFortress_Discard_DropAmmo();
     else if (self.impulse == TF_DASH)
         CF_Scout_Dash();
-    else if (self.impulse == TF_PB_DETONATE)       
-        clearImpulse = TeamFortress_DetonatePipebombs(0);
+    else if (self.impulse == TF_PB_DETONATE)
+        TeamFortress_DetonatePipebombs(0);
     else if (self.impulse == TF_DETPACK_STOP) {
         TeamFortress_DetpackStop();
     } else if (self.impulse == TF_MEDIC_AURA_TOGGLE)
@@ -2118,11 +2116,7 @@ void () ImpulseCommands = {
     if (self.impulse == TF_DETPACK)
         self.last_impulse = self.impulse;
 
-    if (clearImpulse)
-    {
-        self.impulse = 0;
-    }
-    
+    self.impulse = 0;
 };
 
 void () PreMatchImpulses = {
@@ -2419,6 +2413,8 @@ void () W_WeaponFrame = {
         self.impulse = 0;
         return;
     }
+
+    TeamFortress_QueuedDetpipe();
 
     if (self.menu_input) {
         if (self.impulse > 0 && self.impulse <= 10) {

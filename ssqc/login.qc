@@ -13,25 +13,45 @@ void (entity player, string login, string secret) performLogin = {
     dprint("\n");
 }
 
+static void MarkFoLogin(entity player, string login, int stored) {
+    player.fo_login = login;
+    forceinfokey(self,"*tfl_login", login);
+    if (stored)
+        forceinfokey(player, "*tfl_credential", "1");
+
+    CenterPrint(player, sprintf("You have logged in as %s\n", player.fo_login));
+    string msg = sprintf("%s logged in as %s%s\n",
+            infokey(self, "name"), self.fo_login,
+            stored ? " [using local credential]" : "");
+    bprint(PRINT_HIGH, msg);
+}
+
+static string GenLoginNonce(entity player) {
+    string login = infokey(player, kLoginKey);
+    string fo_token = infokey(player, kFoToken);
+    if (login == string_null || fo_token == string_null)
+        return "INVALID";
+
+    return digest_hex(kLoginHash, login_salt, login, fo_token);
+}
+
 static void StoreCred(entity player) {
-    if (!login_allow_nonce)
+    if (!login_allow_nonce || player.fo_login == string_null || player.credential_stored)
         return;
 
-    string nonce = digest_hex(kLoginHash, login_salt, player.fo_login);
-
-    if (infokey(player, kLoginKey) == player.fo_login &&
-        infokey(player, kLoginNonce) == nonce)
+    if (infokey(player, "*tfl_credential") != string_null) {
+        player.credential_stored = 1;
         return;
-
-    forceinfokey(player, kLoginKey, player.fo_login);
-    forceinfokey(player, kLoginNonce, nonce);
+    }
 
     msg_entity = player;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_CACHE_LOGIN);
     WriteString(MSG_MULTICAST, player.fo_login);
-    WriteString(MSG_MULTICAST, nonce);
+    WriteString(MSG_MULTICAST, GenLoginNonce(player));
     multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
+
+    player.credential_stored = 1;
 }
 
 static float LoadCred(entity player) {
@@ -43,18 +63,10 @@ static float LoadCred(entity player) {
         return FALSE;
 
     string nonce = infokey(player, kLoginNonce);
+    string comp = GenLoginNonce(player);
 
-    string comp = digest_hex(kLoginHash, login_salt, login);
-
-    if (nonce == comp) {
-        player.fo_login = login;
-
-        if (infokey(player, "_login_printed") == "") {
-            forceinfokey(player, "_login_printed", "1");
-            string msg = sprintf("%s logged in as %s [using stored cred]\n",
-                    infokey(self, "name"), self.fo_login);
-            bprint(PRINT_HIGH, msg);
-        }
+    if (nonce == comp && comp != "INVALID") {
+        MarkFoLogin(player, login, 1);
         return TRUE;
     } else {
         forceinfokey(player, kLoginKey, string_null);
@@ -63,10 +75,14 @@ static float LoadCred(entity player) {
 }
 
 void FoLoginIfRequired(entity player) {
-    static float kMaxTries = 3;
-    if (!fo_login_required || player.fo_login != string_null)
+    if (!fo_login_required || player.credential_stored) {
         return;
+    } else if (player.fo_login != string_null) {
+        StoreCred(player);
+        return;
+    }
 
+    static const float kMaxTries = 3;
     if (player.fo_num_login_tries >= kMaxTries || time < player.fo_next_login_try)
         return;
 
@@ -141,11 +157,7 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
             local string msg;
 
             if (!responsecode) {
-                self.fo_login = resourcebody;
-                CenterPrint(self, sprintf("You have logged in as %s\n", self.fo_login));
-                msg = sprintf("%s logged in as %s\n", infokey(self, "name"), self.fo_login);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
+                MarkFoLogin(self, resourcebody, 0);
                 StoreCred(self);
             } else {
                 CenterPrint(self, "Login failed\n");

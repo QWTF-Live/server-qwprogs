@@ -26,8 +26,8 @@ void () SpectatorConnect = {
 
     if (infokey(self,"*login"))
         self.login = infokey(self,"*login");
-    if (infokey(self,"*admin"))
-        self.is_admin = stof(infokey(self, "*admin"));
+    self.fo_login = infokey(self,"*tfl_login");
+    self.is_admin = stof(infokey(self, "*admin"));
 
     st = infokey(self, "apw");
     if (st == string_null)

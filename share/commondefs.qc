@@ -1,6 +1,7 @@
 const string kLoginHash = "CRC16";
 const string kLoginKey = "_qwtfl_login";
 const string kLoginNonce = "_qwtfl_nonce";
+const string kFoToken = "_fo_token";
 
 struct FPPState {
     int index;

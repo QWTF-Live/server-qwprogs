@@ -3113,7 +3113,6 @@ void () ClientConnect = {
     }
 
     bprint(PRINT_HIGH, self.netname, " entered the game\n");
-    sprint(self, PRINT_HIGH, "FortressOne: Weapon Prediction ", wp_version, "\n");
 
     spawnfunc_FOPlayer();
 
@@ -3125,8 +3124,9 @@ void () ClientConnect = {
 
     if (infokey(self,"*login"))
         self.login = infokey(self,"*login");
-    if (infokey(self,"*admin"))
-        self.is_admin = stof(infokey(self, "*admin"));
+    self.fo_login = infokey(self,"*tfl_login");
+    self.is_admin = stof(infokey(self, "*admin"));
+
     if (loginRequired && self.login == string_null)
         sprint(self,2, "Login required, please use \"cmd login <login> <secret>\" \nbefore joining the game\n");
 

@@ -632,7 +632,6 @@ float nokeepcells;
 float allowpracspawns;
 string discord_channel_id;
 string demo_files_address;
-string stats_files_address;
 float splitbackpackmodels;
 float standardizedeathammo;
 float deathammo_shells;

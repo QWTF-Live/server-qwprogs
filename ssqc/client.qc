@@ -777,9 +777,6 @@ void () DecodeLevelParms = {
         // specify demo filehost address e.g. https://fortressone-demos.s3.amazonaws.com/sydney/staging/
         demo_files_address = FO_GetUserSettingString(world, "demo_files_address", "demofileaddy", "");
 
-        // specify stats filehost address e.g. http://fortressone-stats.s3-ap-southeast-2.amazonaws.com/sydney/staging/
-        stats_files_address = FO_GetUserSettingString(world, "stats_files_address", "statsfileaddy", "");
-
         // specify discord channel [""]
         discord_channel_id = infokey(world, "discord_channel_id");
 

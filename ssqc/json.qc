@@ -36,6 +36,17 @@ string JSON_Wrap(int n, KeyVal* key_vals) {
     return result;
 }
 
+static string JSON_Array(int n, string* arr) {
+    string result = "[", comma = "";
+    for (int i = 0; i < n; i++)
+        if (arr[i] != string_null) {
+            result = strcat(result, comma, arr[i]);
+            comma = ", ";
+        }
+
+    return strcat(result, "]");
+}
+
 static inline string JSON_Name(entity player) {
     return uri_escape(strdecolorize(player.netname));
 }
@@ -175,24 +186,23 @@ void ReportMatchResult(int report_type) {
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);
 
-    string players[2];
-    players[0] = players[1] = string_null;
+    string players[2], comma[2];
+    players[0] = players[1] = comma[0] = comma[1] = string_null;
 
     for (int i = 0; i < count; i++) {
         entity p = list[i];
         if (p.all_time != ALL_TIME_COLOUR || p.team_no < 1 || p.team_no > 2)
             continue;
 
-        string token = FO_GetUserSettingString(p, "_fo_token", "fo_token", "");
         KeyVal pvs[] = {
             {KV_S, "username", p.fo_login},
-            {KV_S, "fo_token", token},
+            {KV_S, "fo_token", infokey(p, "_fo_token")},
             {KV_I, "pc", ftos(p.playerclass)},
         };
 
         int idx = p.team_no - 1;
-        string sep = players[idx] != string_null ? ", " : "";
-        players[idx] = strcat(players[idx], sep, JSON_Wrap(pvs.length, pvs));
+        players[idx] = strcat(players[idx], comma[idx], JSON_Wrap(pvs.length, pvs));
+        comma[idx] = ", ";
     }
 
     string teams[2];
@@ -206,54 +216,19 @@ void ReportMatchResult(int report_type) {
     }
 
     KeyVal fvs[] = {
-        {KV_S, "server", infokey(world, "hostname")},
-        {KV_S, "address", cvar_string("sv_serverip")},
+        {KV_S, "server_name", infokey(world, "hostname")},
+        {KV_S, "server_address", cvar_string("sv_serverip")},
         {KV_S, "shard", infokey(world, "shard")},
         {KV_S, "game_token", game_token},
         {KV_I, "report_type", ftos(report_type)},
         {KV_S, "channel_id", discord_channel_id},
         {KV_S, "map", mapname},
-        {KV_I, "team1", teams[0]},
-        {KV_I, "team2", teams[1]}
+        {KV_I, "teams", JSON_Array(2, teams),
     };
 
     string final = JSON_Wrap(fvs.length, fvs);
     dprint("Reporting to qwtf-live: ", final, "\n");
 
-    string endpoint = "http://results.qwtf.live:9000/result";
+    string endpoint = "http://stats.qwtf.live:5000/api/report";
     uri_post(endpoint, TFL_RESULT, "application/json", final);
 }
-
-#if 0
-static string blank_icon = "<:blank:1221574759720943708>";
-
-static string flag_icon(float team_no) {
-    string icons[] = {
-        "<:flag_1:1221574798514192434>",
-        "<:flag_2:1221574954831839283>",
-        "<:flag_3:1221574795280384110>",
-        "<:flag_4:1221574953975943200>",
-    };
-
-    return icons[team_no - 1];
-}
-
-static string to_icon(float team_no, float class_no) {
-    TeamString icons[] = {
-        {{"<:scout_blue:1221574792264548403>", "<:scout_red:1221575126982721626>"}},
-        {{"<:sniper_blue:1221574788460576899>", "<:sniper_red:1221575128132092032>"}},
-        {{"<:soldier_blue:1221574785314717777>", "<:soldier_red:1221575129436389487>"}},
-        {{"<:demoman_blue:1221574782227710002>", "<:demoman_red:1221575454377508904>"}},
-        {{"<:medic_blue:1221574771616124929>", "<:medic_red:1221574769661444188>"}},
-        {{"<:hwguy_blue:1221574778096189501>", "<:hwguy_red:1221575455778541649>"}},
-        {{"<:pyro_blue:1221574774375841805>", "<:pyro_red:1221575457795739731>"}},
-        {{"<:spy_blue:1221574768856273057>", "<:spy_red:1221574765697957918>"}},
-        {{"<:engineer_blue:1221574764422893588>", "<:engineer_red:1221574763198021683>"}},
-    };
-    if ((class_no < 1 || class_no > icons.length) ||
-        (team_no < 1 || team_no > 2))
-        return blank_icon;
-    else
-        return icons[class_no - 1].code[team_no - 1];
-}
-#endif

@@ -3139,6 +3139,8 @@ void () ClientConnect = {
     UpdateClientPrematch(self, !cb_prematch);
     UpdateClient_VoteMap_AddAll(self);
 
+    forceinfokey(self, "dupe", "1");
+
     if (cb_prematch)
         sprint(self, PRINT_HIGH, "Currently in \sprematch\s time\n");
 };

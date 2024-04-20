@@ -49,6 +49,8 @@ void () SpectatorConnect = {
     TeamFortress_StartTimers();
     TeamFortress_RemovePracticeSpawn(self);
     TeamFortress_SetSpeed(self);
+
+    forceinfokey(self, "dupe", "0");
 };
 
 void () SpectatorDisconnect = {

@@ -946,68 +946,47 @@ void Hud_DrawClassInfoPanel(float playerclass)
             }
             break;
         case PC_SPY:
-            if (SBAR.IsUndercover == 1)
-            {
+            if (SBAR.IsUndercover == SPY_DISGUISED) {
                 icon = ICON_SPY; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
-                if (SBAR.InvisOnly)
-                {
-                    msg = "Invisible";
-                    HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
-                }
-                else
-                {
-                    msg = "Undercover";
-                    pos = HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
-                    msg = strcat(TeamToString(SBAR.UndercoverTeam), " ", ClassToString(SBAR.UndercoverSkin));
-                    HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, TRUE, colour);
-                }
-            }
-            else if (SBAR.IsUndercover == 2)
-            {
+                msg = "Undercover";
+                pos = HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
+                msg = strcat(TeamToString(SBAR.UndercoverTeam), " ", ClassToString(SBAR.UndercoverSkin));
+                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, TRUE, colour);
+            } else if (SBAR.IsUndercover == SPY_DISGUISING) {
                 icon = ICON_SPY; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
-                if (SBAR.InvisOnly)
+                msg = "Disguising";
+                pos = HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
+                if (SBAR.DisguiseTeam)
                 {
-                    msg = "Invisible";
-                    pos = HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
-                    msg = strcat("In ", ftos(SBAR.UndercoverTimer), " secs");
-                    HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, TRUE, colour);
+                    msg = strcat("(", TeamToString(SBAR.DisguiseTeam), SBAR.QueueSkin ? "" : ") ");
                 }
-                else
+                else if (SBAR.QueueTeam)
                 {
-                    msg = "Disguising";
-                    pos = HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
-                    if (SBAR.DisguiseTeam)
-                    {
-                        msg = strcat("(", TeamToString(SBAR.DisguiseTeam), SBAR.QueueSkin ? "" : ") ");
-                    }
-                    else if (SBAR.QueueTeam)
-                    {
-                        msg = strcat("(", TeamToString(SBAR.QueueTeam), " ");
-                    }
-                    else if (SBAR.UndercoverTeam)
-                    {
-                        msg = strcat(TeamToString(SBAR.UndercoverTeam), " ");
-                    }
-                    string msg2 = "";
-                    if (SBAR.DisguiseSkin)
-                    {
-                        msg2 = strcat(SBAR.QueueTeam ? "" : "(", ClassToString(SBAR.DisguiseSkin), ")");
-                    }
-                    else if (SBAR.QueueSkin)
-                    {
-                        msg2 = strcat(" ", ClassToString(SBAR.QueueSkin), ")");
-                    }
-                    else if (SBAR.UndercoverSkin)
-                    {
-                        msg2 = strcat(ClassToString(SBAR.UndercoverSkin));
-                    }
-                    msg = strcat(msg, msg2);
-                    HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, TRUE, colour);
+                    msg = strcat("(", TeamToString(SBAR.QueueTeam), " ");
                 }
+                else if (SBAR.UndercoverTeam)
+                {
+                    msg = strcat(TeamToString(SBAR.UndercoverTeam), " ");
+                }
+                string msg2 = "";
+                if (SBAR.DisguiseSkin)
+                {
+                    msg2 = strcat(SBAR.QueueTeam ? "" : "(", ClassToString(SBAR.DisguiseSkin), ")");
+                }
+                else if (SBAR.QueueSkin)
+                {
+                    msg2 = strcat(" ", ClassToString(SBAR.QueueSkin), ")");
+                }
+                else if (SBAR.UndercoverSkin)
+                {
+                    msg2 = strcat(ClassToString(SBAR.UndercoverSkin));
+                }
+                msg = strcat(msg, msg2);
+                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, TRUE, colour);
             }
             break;
         case PC_ENGINEER:

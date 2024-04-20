@@ -6,7 +6,6 @@ void (entity pe_player, float pf_class, float is_user) CF_Spy_ChangeSkin;
 void (entity pe_player, float pf_team_no, float is_user) CF_Spy_ChangeColor;
 void (float issilent, float force) FO_Spy_Feign;
 void () FO_Spy_Unfeign;
-void () CF_Spy_Invisible;
 void () CF_Spy_DisguiseStop;
 
 float (float pf_team_no, float pf_class) CF_GetClassRestriction;
@@ -557,13 +556,11 @@ void (float inp) Menu_Spy_Input = {
         }
     }
     if (inp == 1) {
-        if (invis_only)
-            CF_Spy_Invisible();
-        else if (self.is_undercover == 2)
+        if (self.is_undercover == SPY_DISGUISING)
             CF_Spy_DisguiseStop();
         else
             Menu_Spy_Skin();
-    } else if (inp == 2 && !invis_only) {
+    } else if (inp == 2) {
         FO_Spy_DisguiseLast(self, TRUE);
     } else if (inp == 3) {
         FO_Spy_Feign(1, 0);
@@ -593,17 +590,10 @@ void (entity pe_player) Menu_Spy = {
         return;
     }
 
-    if (invis_only) {
-        if (pe_player.is_undercover == 1)
-            s_skin    = Q"\s[1]\s Become visible         \n";
-        else if (pe_player.is_undercover == 2)
-            s_skin    = Q"\s[1]\s Stop going invisible   \n";
-        else
-            s_skin    = Q"\s[1]\s Go invisible           \n";
-    } else if (pe_player.is_undercover == 2)
+    if (pe_player.is_undercover == SPY_DISGUISING)
         s_skin    = Q"\s[1]\s Stop disguising        \n";
 
-    if ((!pe_player.last_selected_skin && !pe_player.last_team) || invis_only)
+    if (!pe_player.last_selected_skin && !pe_player.last_team)
         s_last = "\n";
 
     if (IsFeigned(pe_player))

@@ -928,7 +928,7 @@ entity(entity scanner, float scanrange, float enemies,
                                 (scanner.team_no > 0)) {
                                 if ((head.playerclass == 8) &&
                                     (head.team_no != scanner.team_no)) {
-                                    if (!IsFeigned(head) && (invis_only != 1)) {
+                                    if (!IsFeigned(head)) {
                                         if (head.undercover_team ==
                                             scanner.team_no) {
                                             return (head);
@@ -942,7 +942,7 @@ entity(entity scanner, float scanrange, float enemies,
                                 (scanner.team_no > 0)) {
                                 if ((head.playerclass == 8) &&
                                     (head.team_no != scanner.team_no)) {
-                                    if (!IsFeigned(head) && (invis_only != 1)) {
+                                    if (!IsFeigned(head)) {
                                         if (head.undercover_team !=
                                             scanner.team_no) {
                                             return (head);

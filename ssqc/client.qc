@@ -304,7 +304,6 @@ void () DecodeLevelParms = {
     if (!(toggleflags & TFLAG_FIRSTENTRY)) {
         toggleflags = parm10;
         flagem_checked = 0;
-        invis_only = 0;
 
         if (coop || !deathmatch)
             toggleflags = toggleflags | TFLAG_CLASS_PERSIST;
@@ -312,7 +311,7 @@ void () DecodeLevelParms = {
         if(nextmap == "") {
             nextmap = strzone(mapname);
         }
-        
+
         ent = get_tfdet();
         if (ent != world) {
 
@@ -571,16 +570,13 @@ void () DecodeLevelParms = {
 
         // turn off spy [off]
         spy_off = CF_GetSetting("spy", "spy", "off");
-	
+
         // Scout Scanner spike on / off
         scoutscanspike = CF_GetSetting("sss", "scoutscanspike", "on");
 
         // HwGuy Assault Cannon Range default as 0 to disable, and die time once range hit.
         asscanrange = CF_GetSetting("acr", "asscanrange", "0");
         asscanrangedie = CF_GetSetting("acrd", "asscanrangedie", "0");
-
-        // enable spy invisibility [off]
-        invis_only = CF_GetSetting("s", "spyinvis", "off");
 
         // allow scout dash [on]
         scoutdash = CF_GetSetting("sd", "scoutdash", "on");
@@ -2800,45 +2796,41 @@ void () CheckPowerups = {
     if (self.playerclass == 0 && !votemode) {
         self.modelindex = modelindex_null;
     } else {
-        if ((self.is_undercover == 1) && (invis_only == 1)) {
+        if (self.invisible_finished) {
+            if (self.pstate & PSTATE_INVISIBLE) {
+                if (self.invisible_finished < (time + 10)) {
+                    self.invisible_finished = time + 666;
+                }
+            }
+            if (self.invisible_sound < time) {
+                FO_Sound(self, CHAN_AUTO, "items/inv3.wav", 0.5, 2);
+                self.invisible_sound = time + ((random() * 3) + 1);
+            }
+            if (self.invisible_finished < (time + 3)) {
+                if (self.invisible_time == 1) {
+                    sprint(self, PRINT_HIGH,
+                            "Ring of shadows magic is fading\n");
+                    stuffcmd(self, "bf\n");
+                    FO_Sound(self, CHAN_AUTO, "items/inv2.wav", 1, 1);
+                    self.invisible_time = time + 1;
+                }
+                if (self.invisible_time < time) {
+                    self.invisible_time = time + 1;
+                    stuffcmd(self, "bf\n");
+                }
+            }
+            if (self.invisible_finished < time) {
+                self.items &= ~IT_INVISIBILITY;
+                self.invisible_finished = 0;
+                self.invisible_time = 0;
+            }
             self.frame = 0;
             self.modelindex = modelindex_eyes;
         } else {
-            if (self.invisible_finished) {
-                if (self.pstate & PSTATE_INVISIBLE) {
-                    if (self.invisible_finished < (time + 10)) {
-                        self.invisible_finished = time + 666;
-                    }
-                }
-                if (self.invisible_sound < time) {
-                    FO_Sound(self, CHAN_AUTO, "items/inv3.wav", 0.5, 2);
-                    self.invisible_sound = time + ((random() * 3) + 1);
-                }
-                if (self.invisible_finished < (time + 3)) {
-                    if (self.invisible_time == 1) {
-                        sprint(self, PRINT_HIGH,
-                               "Ring of shadows magic is fading\n");
-                        stuffcmd(self, "bf\n");
-                        FO_Sound(self, CHAN_AUTO, "items/inv2.wav", 1, 1);
-                        self.invisible_time = time + 1;
-                    }
-                    if (self.invisible_time < time) {
-                        self.invisible_time = time + 1;
-                        stuffcmd(self, "bf\n");
-                    }
-                }
-                if (self.invisible_finished < time) {
-                    self.items &= ~IT_INVISIBILITY;
-                    self.invisible_finished = 0;
-                    self.invisible_time = 0;
-                }
-                self.frame = 0;
-                self.modelindex = modelindex_eyes;
-            } else {
-                self.modelindex = modelindex_player;
-            }
+            self.modelindex = modelindex_player;
         }
     }
+
     if (self.invincible_finished) {
         if (self.pstate & PSTATE_INVINCIBLE) {
             if (self.invincible_finished < (time + 10)) {

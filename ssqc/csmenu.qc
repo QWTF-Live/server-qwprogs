@@ -79,7 +79,6 @@ void UpdateClientMenu_Spy(entity pl) = {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET); 
     WriteByte(MSG_MULTICAST, MSG_CLIENT_MENU);
     WriteFloat(MSG_MULTICAST, CLIENT_MENU_SPY);
-    WriteFloat(MSG_MULTICAST, invis_only);
     WriteFloat(MSG_MULTICAST, pl.last_selected_skin);
     WriteFloat(MSG_MULTICAST, pl.last_team);
     multicast('0 0 0', MULTICAST_ONE_NOSPECS); 

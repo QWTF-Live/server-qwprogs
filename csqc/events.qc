@@ -222,7 +222,6 @@ void() CSQC_Parse_Event = {
                     FO_Menu_Scout(2, scanner_on, scanner_flags);
                     break;
                 case CLIENT_MENU_SPY:
-                    SBAR.InvisOnly = readfloat();
                     last_selected_skin = readfloat();
                     last_team = readfloat();
                     FO_Menu_Spy(2);
@@ -654,13 +653,11 @@ void ParseSBAR()
 
             if (SBAR.IsUndercover == 1)
             {
-                SBAR.InvisOnly = readfloat();
                 SBAR.UndercoverTeam = readfloat();
                 SBAR.UndercoverSkin = readfloat();
             }
             else if (SBAR.IsUndercover == 2)
             {
-                SBAR.InvisOnly = readfloat();
                 SBAR.UndercoverTimer = readfloat();
                 SBAR.UndercoverTeam = readfloat();
                 SBAR.DisguiseTeam = readfloat();

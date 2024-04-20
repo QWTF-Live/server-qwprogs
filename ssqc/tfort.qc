@@ -6,7 +6,6 @@ void () TeamFortress_AmmoboxTouch;
 void () TeamFortress_ExplodePerson;
 void () CF_Medic_Regenerate;
 void () TeamFortress_CheckforCheats;
-void () TeamFortress_RegenerateCells;
 void (entity pe_player, float f_type) CF_Identify;
 
 float () CloseToSpawnPoint;
@@ -413,10 +412,6 @@ void () TeamFortress_Inventory = {
         if (self.ammo_detpack > 1)
             sprint(self, PRINT_HIGH, "s");
         sprint(self, PRINT_HIGH, "\n");
-    }
-
-    if (self.playerclass == PC_SPY && invis_only) {
-        sprint(self, PRINT_HIGH, "Invisibility device\n");
     }
 
     if (self.armorvalue > 0)
@@ -1160,7 +1155,7 @@ void () TeamFortress_SetEquipment = {
     self.is_building = Eng_NotBuilding;
     self.is_detpacking = 0;
     self.special_next = 0;
-    self.is_undercover = 0;
+    self.is_undercover = SPY_NO_DISGUISE;
     self.next_feign_time = 0;
     self.is_unabletospy = 0;
     self.disguise_skin = 0;
@@ -1649,13 +1644,6 @@ void () TeamFortress_SetEquipment = {
         else
             self.maxarmor = PC_SPY_MAXARMOR;
 
-        if (invis_only == 1) {
-            te = spawn();
-            te.nextthink = time + PC_SPY_CELL_REGEN_TIME;
-            te.think = TeamFortress_RegenerateCells;
-            te.owner = self;
-            te.classname = "timer";
-        }
     } else if (self.playerclass == PC_ENGINEER) {
         if (spawnfull) {
             self.ammo_rockets = PC_ENGINEER_MAXAMMO_ROCKET;
@@ -1863,7 +1851,7 @@ void () TeamFortress_RemoveTimers = {
     local entity te;
 
     self.leg_damage = 0;
-    self.is_undercover = 0;
+    self.is_undercover = SPY_NO_DISGUISE;
     RemoveConc(self);
 
     if (self.is_building && engineer_move) {
@@ -2435,35 +2423,6 @@ void (string halias, string commands) TeamFortress_AliasString = {
     stuffcmd(self, " \"");
     stuffcmd(self, commands);
     stuffcmd(self, "\"\n");
-};
-
-void () TeamFortress_RegenerateCells = {
-    if (self.owner.playerclass == PC_SPY) {
-        self.nextthink = time + PC_SPY_CELL_REGEN_TIME;
-
-        if (self.owner.is_undercover == 1) {
-            if (self.owner.ammo_cells == 0) {
-                self.owner.is_undercover = 0;
-                self.owner.modelindex = modelindex_player;
-                self.owner.items &= ~IT_INVISIBILITY;
-            } else {
-                self.owner.ammo_cells =
-                    self.owner.ammo_cells - PC_SPY_CELL_USAGE;
-                if (self.owner.ammo_cells < 0)
-                    self.owner.ammo_cells = 0;
-            }
-        } else {
-            if (self.owner.ammo_cells >= self.owner.maxammo_cells)
-                return;
-
-            self.owner.ammo_cells =
-                self.owner.ammo_cells + PC_SPY_CELL_REGEN_AMOUNT;
-
-            if (self.owner.ammo_cells > self.owner.maxammo_cells)
-                self.owner.ammo_cells = self.owner.maxammo_cells;
-        }
-        return;
-    }
 };
 
 void () TeamFortress_CheckforCheats = {

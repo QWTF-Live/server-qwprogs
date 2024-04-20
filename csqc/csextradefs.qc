@@ -292,7 +292,6 @@ typedef struct {
     float AuraStatus;
     // spy
     float IsUndercover;
-    float InvisOnly;
     float UndercoverTeam;
     float UndercoverSkin;
     float UndercoverTimer;

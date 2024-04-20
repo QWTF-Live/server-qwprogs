@@ -18,8 +18,8 @@ void () player_touch = {
     local float found;
     te = world;
 
-    if ((invis_only == 0) &&
-        ((self.playerclass == 8) || (other.playerclass == 8))) {
+    // XXX rewrite
+    if (self.playerclass == PC_SPY || other.playerclass == PC_SPY) {
         if (other.classname == "player") {
             if ((self.undercover_team != 0) || (self.undercover_skin != 0)) {
                 if (((other.playerclass == PC_SPY) ||

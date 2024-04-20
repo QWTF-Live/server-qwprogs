@@ -2260,11 +2260,7 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
         case TF_ENGINEER_TOGGLESENTRY:
             FO_Engineer_ToggleSentry(); break;
         case TF_SPY_SPY:
-            if (invis_only)
-                CF_Spy_Invisible();
-            else
-                Menu_Spy_Skin();
-            break;
+            Menu_Spy_Skin(); break;
         case TF_SPY_FEIGN:
             FO_Spy_FeignCmd(0); break;
         case TF_SPY_FEIGN_SILENT:
@@ -2466,7 +2462,7 @@ void () W_WeaponFrame = {
         return;
     }
 
-    if (self.impulse == TF_WEAPLAST && self.is_undercover != 2) {
+    if (self.impulse == TF_WEAPLAST && self.is_undercover != SPY_DISGUISING) {
         W_ChangeWeaponLast();
         self.impulse = 0;
     }

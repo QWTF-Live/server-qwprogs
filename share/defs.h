@@ -1094,11 +1094,14 @@ enum {
 #define PC_SPY_GRENADE_MAX_1		4
 #define PC_SPY_GRENADE_MAX_2		1
 #define PC_SPY_TF_ITEMS			0
-#define PC_SPY_CELL_REGEN_TIME		5
-#define PC_SPY_CELL_REGEN_AMOUNT	1
-#define PC_SPY_CELL_USAGE		3	// Amount of cells spent while invisible
 #define PC_SPY_GO_UNDERCOVER_TIME	4	// Time it takes to go undercover
 #define PC_SPY_TRANQSPEED			1500
+
+enum {
+    SPY_NO_DISGUISE,
+    SPY_DISGUISED,
+    SPY_DISGUISING,
+};
 
 // Class Details for ENGINEER
 #define PC_ENGINEER_SKIN		22	// Not used anymore

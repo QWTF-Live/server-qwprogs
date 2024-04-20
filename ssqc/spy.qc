@@ -315,57 +315,11 @@ void (float issilent) FO_Spy_FeignCmd = {
         FO_Spy_Feign(issilent, 0);
 }
 
-void () CF_Spy_Invisible = {
-    local entity e_timer;
-
-    if (self.effects & (EF_DIMLIGHT | EF_BRIGHTLIGHT)) {
-        sprint(self, PRINT_MEDIUM, "You cannot become invisible while glowing\n");
-        return;
-    }
-
-    if (self.is_unabletospy) {
-        sprint(self, PRINT_HIGH, "You cannot become invisible right now\n");
-        return;
-    }
-
-    if (self.is_undercover == 1 || self.items & IT_INVISIBILITY) {
-
-        self.items = self.items - IT_INVISIBILITY;
-        self.invisible_finished = 0;
-        self.invisible_time = 0;
-        self.is_undercover = 0;
-        self.modelindex = modelindex_player;
-
-    } else if (self.is_undercover == 2) {
-
-        sprint(self, PRINT_HIGH, "You become visible again\n");
-
-        self.is_undercover = 0;
-
-    } else if (self.ammo_cells > 1) {
-
-        sprint(self, PRINT_HIGH, "Going invisible...\n");
-
-        self.is_undercover = 2;
-        self.undercover_timer = PC_SPY_GO_UNDERCOVER_TIME;
-
-        // create a timer for 4 seconds
-        e_timer = spawn();
-        e_timer.classname = "spytimer";
-        e_timer.owner = self;
-        e_timer.think = CF_Spy_UndercoverThink;
-        e_timer.nextthink = time + 1;
-    }
-
-    Status_Refresh(self);
-
-};
-
 void () CF_Spy_DisguiseStop = {
     local entity e_timer;
     local string s_class, s_team;
 
-    if (!self.is_undercover)
+    if (self.is_undercover == SPY_NO_DISGUISE)
         return;
 
     // set undercover class if spy had the time to change class
@@ -383,11 +337,11 @@ void () CF_Spy_DisguiseStop = {
     // show what's left of the disguise
     if (self.undercover_skin || self.undercover_team) {
         sprint(self, PRINT_HIGH, "Disguised as ", s_team, " ", s_class, "\n");
-        self.is_undercover = 1;
+        self.is_undercover = SPY_DISGUISED;
         self.last_team = self.undercover_team;
     } else {
         sprint(self, PRINT_HIGH, "You stop going undercover\n");
-        self.is_undercover = 0;
+        self.is_undercover = SPY_NO_DISGUISE;
     }
 
     self.disguise_skin = 0;
@@ -415,7 +369,7 @@ void (entity player, float is_user) FO_Spy_DisguiseLast = {
         return;
     }
 
-    if (self.is_undercover == 2 && player.last_selected_skin != player.disguise_skin) {
+    if (self.is_undercover == SPY_DISGUISING && player.last_selected_skin != player.disguise_skin) {
         CF_Spy_DisguiseStop();
     }
 
@@ -455,7 +409,7 @@ void (entity player, float is_user) FO_Spy_DisguiseLastSpawned = {
         return;
     }
 
-    if (self.is_undercover == 2 && enemy_to_disguise_as.skin != player.disguise_skin) {
+    if (self.is_undercover == SPY_DISGUISING && enemy_to_disguise_as.skin != player.disguise_skin) {
         CF_Spy_DisguiseStop();
     }
 
@@ -560,63 +514,55 @@ void () CF_Spy_UndercoverThink = {
         return;
 
     // stop if spy is not going undercover
-    if (self.owner.is_undercover != 2)
+    if (self.owner.is_undercover != SPY_DISGUISING)
         return;
 
-    // make spy invisible if invis_only is turned on
-    if (invis_only) {
-        self.owner.items = self.owner.items | IT_INVISIBILITY;
-        self.owner.frame = 0;
-        self.owner.modelindex = modelindex_eyes;
-        self.owner.is_undercover = 1;
-    } else {
 
-        // don't check for color cheating for next 10 seconds
-        self.owner.immune_to_check = time + 10;
+    // don't check for color cheating for next 10 seconds
+    self.owner.immune_to_check = time + 10;
 
-        if (self.skin) {
-            self.owner.undercover_skin = self.skin;
-            self.owner.disguise_skin = 0;
-            self.owner.queue_skin = 0;
-            self.owner.is_undercover = 1;
-            TeamFortress_SetSkin(self.owner);
+    if (self.skin) {
+        self.owner.undercover_skin = self.skin;
+        self.owner.disguise_skin = 0;
+        self.owner.queue_skin = 0;
+        self.owner.is_undercover = SPY_DISGUISED;
+        TeamFortress_SetSkin(self.owner);
 
-            if (self.owner.queue_team) {
-                CF_Spy_ChangeColor(self.owner, self.owner.queue_team, FALSE);
-            } else {
-                if (self.owner.undercover_team)
-                    s_team = TeamFortress_TeamGetColorString(self.owner.undercover_team);
-                else
-                    s_team = TeamFortress_TeamGetColorString(self.owner.team_no);
-                if (self.owner.undercover_skin)
-                    s_class = TeamFortress_GetClassName(self.owner.undercover_skin);
-                else
-                    s_class = "Spy";
-                sprint(self.owner, PRINT_HIGH, "Disguised as ", s_team, " ", s_class, "\n");
-            }
-
-        } else if (self.team) {
-            self.owner.undercover_team = self.team;
-            self.owner.last_team = self.team;
-            self.owner.queue_team = 0;
-            self.owner.is_undercover = 1;
-            TeamFortress_SetSkin(self.owner);
-
-            if (self.owner.queue_skin) {
-                CF_Spy_ChangeSkin(self.owner, self.owner.queue_skin, FALSE);
-            } else {
+        if (self.owner.queue_team) {
+            CF_Spy_ChangeColor(self.owner, self.owner.queue_team, FALSE);
+        } else {
+            if (self.owner.undercover_team)
                 s_team = TeamFortress_TeamGetColorString(self.owner.undercover_team);
-                if (self.owner.undercover_skin)
-                    s_class = TeamFortress_GetClassName(self.owner.undercover_skin);
-                else
-                    s_class = "Spy";
-                sprint(self.owner, PRINT_HIGH, "Disguised as ", s_team, " ", s_class, "\n");
-            }
+            else
+                s_team = TeamFortress_TeamGetColorString(self.owner.team_no);
+            if (self.owner.undercover_skin)
+                s_class = TeamFortress_GetClassName(self.owner.undercover_skin);
+            else
+                s_class = "Spy";
+            sprint(self.owner, PRINT_HIGH, "Disguised as ", s_team, " ", s_class, "\n");
         }
 
-        TeamFortress_SpyCalcName(self.owner);
+    } else if (self.team) {
+        self.owner.undercover_team = self.team;
+        self.owner.last_team = self.team;
+        self.owner.queue_team = 0;
+        self.owner.is_undercover = SPY_DISGUISED;
+        TeamFortress_SetSkin(self.owner);
 
+        if (self.owner.queue_skin) {
+            CF_Spy_ChangeSkin(self.owner, self.owner.queue_skin, FALSE);
+        } else {
+            s_team = TeamFortress_TeamGetColorString(self.owner.undercover_team);
+            if (self.owner.undercover_skin)
+                s_class = TeamFortress_GetClassName(self.owner.undercover_skin);
+            else
+                s_class = "Spy";
+            sprint(self.owner, PRINT_HIGH, "Disguised as ", s_team, " ", s_class, "\n");
+        }
     }
+
+    TeamFortress_SpyCalcName(self.owner);
+
 
     Status_Refresh(self.owner);
     if (self.owner.menu_input == Menu_Spy_Input)
@@ -648,12 +594,12 @@ void (entity pe_player, float pf_class, float is_user) CF_Spy_ChangeSkin = {
         pe_player.queue_skin = 0;
         TeamFortress_SetSkin(pe_player);
         if (!pe_player.undercover_team)
-            pe_player.is_undercover = 0;
+            pe_player.is_undercover = SPY_NO_DISGUISE;
         return;
     }
 
     // queue skin change if currently going undercover
-    if (pe_player.is_undercover == 2) {
+    if (pe_player.is_undercover == SPY_DISGUISING) {
         pe_player.queue_skin = pf_class;
         return;
     }
@@ -664,7 +610,7 @@ void (entity pe_player, float pf_class, float is_user) CF_Spy_ChangeSkin = {
     else if(pe_player.undercover_skin != pf_class)
         sprint(pe_player, PRINT_HIGH, "Changing costumes...\n");
 
-    pe_player.is_undercover = 2;
+    pe_player.is_undercover = SPY_DISGUISING;
     pe_player.disguise_skin = pf_class;
     pe_player.disguise_team = 0;
 
@@ -705,13 +651,13 @@ void (entity pe_player, float pf_team_no, float is_user) CF_Spy_ChangeColor = {
         pe_player.disguise_team = 0;
         pe_player.queue_team = 0;
         if (!pe_player.undercover_skin)
-            pe_player.is_undercover = 0;
+            pe_player.is_undercover = SPY_NO_DISGUISE;
         TeamFortress_SetSkin(pe_player);
         return;
     }
 
     // queue team change if currently going undercover
-    if (pe_player.is_undercover == 2) {
+    if (pe_player.is_undercover == SPY_DISGUISING) {
         pe_player.queue_team = pf_team_no;
         return;
     }
@@ -719,7 +665,7 @@ void (entity pe_player, float pf_team_no, float is_user) CF_Spy_ChangeColor = {
     // prepare disguise
     if (!pe_player.undercover_skin)
         sprint(pe_player, PRINT_HIGH, "Going undercover...\n");
-    pe_player.is_undercover = 2;
+    pe_player.is_undercover = SPY_DISGUISING;
     pe_player.disguise_skin = 0;
     pe_player.disguise_team = pf_team_no;
 
@@ -1149,36 +1095,24 @@ void () TranquiliserTimer = {
 void (entity spy) Spy_RemoveDisguise = {
     local float coverblown = 0;
 
-    if (invis_only != 1) {
-        if (spy.playerclass == 8) {
-            if (spy.undercover_team != 0) {
-                spy.immune_to_check = time + 10;
-                spy.undercover_team = 0;
-                spy.disguise_team = 0;
-                coverblown = 1;
-            }
-            if (spy.undercover_skin != 0) {
-                spy.immune_to_check = time + 10;
-                spy.undercover_skin = 0;
-                spy.disguise_skin = 0;
-                spy.skin = 0;
-                coverblown = 1;
-            }
-            spy.is_undercover = 0;
-            Status_Refresh(self);
-            TeamFortress_SetSkin(spy);
-            TeamFortress_SpyCalcName(spy);
+    if (spy.playerclass == PC_SPY) {
+        if (spy.undercover_team != 0) {
+            spy.immune_to_check = time + 10;
+            spy.undercover_team = 0;
+            spy.disguise_team = 0;
+            coverblown = 1;
         }
-    } else if (spy.is_undercover) {
-        coverblown = 1;
-        spy.is_undercover = 0;
-        spy.modelindex = modelindex_player;
-        if (spy.items & IT_INVISIBILITY) {
-            spy.invisible_finished = 0;
-            spy.invisible_time = 0;
-            spy.items = spy.items - IT_INVISIBILITY;
+        if (spy.undercover_skin != 0) {
+            spy.immune_to_check = time + 10;
+            spy.undercover_skin = 0;
+            spy.disguise_skin = 0;
+            spy.skin = 0;
+            coverblown = 1;
         }
+        spy.is_undercover = SPY_NO_DISGUISE;
         Status_Refresh(self);
+        TeamFortress_SetSkin(spy);
+        TeamFortress_SpyCalcName(spy);
     }
 
     local entity timer = find(world, classname, "spytimer");

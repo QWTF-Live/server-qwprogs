@@ -514,7 +514,6 @@ float burstgren_range;
 
 float old_grens;
 float fo_flash;
-float invis_only;
 float flagem_checked;
 float cease_fire;
 float drop_grenades;

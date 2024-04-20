@@ -358,15 +358,10 @@ void UpdateClientStatusBar(entity pl)
         case PC_SPY:
             WriteFloat(MSG_MULTICAST, pl.is_undercover);
             
-            if (pl.is_undercover == 1)
-            {
-                WriteFloat(MSG_MULTICAST, invis_only);
+            if (pl.is_undercover == SPY_DISGUISED) {
                 WriteFloat(MSG_MULTICAST, pl.undercover_team);
                 WriteFloat(MSG_MULTICAST, pl.undercover_skin);
-            }
-            else if (pl.is_undercover == 2)
-            {
-                WriteFloat(MSG_MULTICAST, invis_only);
+            } else if (pl.is_undercover == SPY_DISGUISING) {
                 WriteFloat(MSG_MULTICAST, pl.undercover_timer);
                 WriteFloat(MSG_MULTICAST, pl.undercover_team);
                 WriteFloat(MSG_MULTICAST, pl.disguise_team);
@@ -460,53 +455,43 @@ string(entity pl) DisguiseToString =
     local string skin = "";
     local string team = "";
 
-    if (pl.is_undercover == 1) {
-        if (self.items & IT_INVISIBILITY) {
-            st = Q"\sInvisible\s";
-        } else {
-            st = Q"\sUndercover\s: ";
-            if (pl.undercover_team) {
-                st = strcat(st, TeamToString(pl.undercover_team));
-                st = strcat(st, " ");
-            }
-            if (pl.undercover_skin)
-                st = strcat(st, ClassToString(pl.undercover_skin));
+    if (pl.is_undercover == SPY_DISGUISED) {
+        st = Q"\sUndercover\s: ";
+        if (pl.undercover_team) {
+            st = strcat(st, TeamToString(pl.undercover_team));
+            st = strcat(st, " ");
         }
-    } else if (pl.is_undercover == 2) {
-        if (invis_only) {
-            st = Q"\sInvisible\s in ";
-            st = strcat(st, ftos(pl.undercover_timer));
-            st = strcat(st, " seconds");
-        } else {
-            if (pl.disguise_team) {
-                team = strcat(team, "(");
-                team = strcat(team, TeamToString(pl.disguise_team));
-                if (!pl.queue_skin)
-                    team = strcat(team, ") ");
-            } else if (pl.queue_team) {
-                team = strcat(team, "(");
-                team = strcat(team, TeamToString(pl.queue_team));
-                team = strcat(team, " ");
-            } else if (pl.undercover_team) {
-                team = strcat(team, TeamToString(pl.undercover_team));
-                team = strcat(team, " ");
-            }
-            if (pl.disguise_skin) {
-                if (!pl.queue_team)
-                    skin = strcat(skin, "(");
-                skin = strcat(skin, ClassToString(pl.disguise_skin));
-                skin = strcat(skin, ")");
-            } else if (pl.queue_skin) {
-                skin = strcat(skin, " ");
-                skin = strcat(skin, ClassToString(pl.queue_skin));
-                skin = strcat(skin, ")");
-            } else if (pl.undercover_skin) {
-                skin = strcat(skin, ClassToString(pl.undercover_skin));
-            }
-            st = Q"\sUndercover\s: ";
-            st = strcat(st, team);
-            st = strcat(st, skin);
+        if (pl.undercover_skin)
+            st = strcat(st, ClassToString(pl.undercover_skin));
+    } else if (pl.is_undercover == SPY_DISGUISING) {
+        if (pl.disguise_team) {
+            team = strcat(team, "(");
+            team = strcat(team, TeamToString(pl.disguise_team));
+            if (!pl.queue_skin)
+                team = strcat(team, ") ");
+        } else if (pl.queue_team) {
+            team = strcat(team, "(");
+            team = strcat(team, TeamToString(pl.queue_team));
+            team = strcat(team, " ");
+        } else if (pl.undercover_team) {
+            team = strcat(team, TeamToString(pl.undercover_team));
+            team = strcat(team, " ");
         }
+        if (pl.disguise_skin) {
+            if (!pl.queue_team)
+                skin = strcat(skin, "(");
+            skin = strcat(skin, ClassToString(pl.disguise_skin));
+            skin = strcat(skin, ")");
+        } else if (pl.queue_skin) {
+            skin = strcat(skin, " ");
+            skin = strcat(skin, ClassToString(pl.queue_skin));
+            skin = strcat(skin, ")");
+        } else if (pl.undercover_skin) {
+            skin = strcat(skin, ClassToString(pl.undercover_skin));
+        }
+        st = Q"\sUndercover\s: ";
+        st = strcat(st, team);
+        st = strcat(st, skin);
     }
 
     return st;

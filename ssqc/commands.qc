@@ -977,7 +977,7 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             processedCmd = TRUE;
             string msg = "";
             if (TFL_IsLoggedIn())
-                msg = sprintf("You are logged in as %s\n", self.tfl_username);
+                msg = sprintf("You are logged in as %s", self.tfl_username);
             else
                 msg = sprintf("You are not logged in.  Type '/token' on discord for instructions\n");
             sprint(self, PRINT_HIGH, kQWTF, msg, "\n");

@@ -3105,6 +3105,7 @@ void () ClientConnect = {
 
     spawnfunc_FOPlayer();
 
+    self.connect_time = time;
     self.motd = 0;
     self.is_spectator = 0;
 

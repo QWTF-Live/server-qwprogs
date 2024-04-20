@@ -24,6 +24,10 @@ static void StoreCred(entity player) {
     if (!login_allow_nonce || player.fo_login == string_null || player.credential_stored)
         return;
 
+    // Back-off to allow csqc init time
+    if (time - player.connect_time < 5)
+        return;
+
     if (infokey(player, "*tfl_credential") != string_null) {
         player.credential_stored = 1;
         return;

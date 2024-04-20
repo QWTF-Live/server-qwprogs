@@ -18,6 +18,7 @@ void () SpectatorConnect = {
 
     local string st;
 
+    self.connect_time = time;
     self.playerclass = PC_UNDEFINED;
     self.classname = "observer";
     self.flags = 8;

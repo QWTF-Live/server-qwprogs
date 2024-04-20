@@ -808,3 +808,4 @@ float use_announcer;
 
 string game_token;
 .float oldbuttons;
+.float connect_time;

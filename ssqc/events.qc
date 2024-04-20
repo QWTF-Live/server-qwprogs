@@ -27,9 +27,7 @@ string () ISOTimemillis = {
 }
 
 string (entity pl) getEntityNameOrLogin = {
-    if (loginRequired)
-        return pl.login;
-    else if (fo_login_required)
+    if (fo_login_required)
         return pl.fo_login;
     else
         return clearString(pl.netname);

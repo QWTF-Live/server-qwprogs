@@ -745,13 +745,6 @@ float fo_login_required;
 float login_allow_nonce;
 string login_salt;
 
-//Player ID
-float loginRequired;
-string loginUrl;
-string webpageUrl;
-.string login;
-.float login_in_progress;
-
 //Logging fields
 float gametime;
 string gametimestamp;

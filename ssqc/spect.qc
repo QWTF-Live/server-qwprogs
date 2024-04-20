@@ -12,7 +12,6 @@
 void () SpectatorDisconnect;
 void () SpectatorImpulseCommand;
 void () SpectatorThink;
-void () Admin_Aliases;
 
 void () SpectatorConnect = {
     SetDimensions(TRUE);
@@ -24,21 +23,8 @@ void () SpectatorConnect = {
     self.flags = 8;
     self.is_spectator = 1;
 
-    if (infokey(self,"*login"))
-        self.login = infokey(self,"*login");
     self.fo_login = infokey(self,"*tfl_login");
-    self.is_admin = stof(infokey(self, "*admin"));
-
-    st = infokey(self, "apw");
-    if (st == string_null)
-        st = infokey(self, "adminpwd");
-    if (st) {
-        Admin_Check(st);
-        if (self.is_admin) 
-            Admin_Aliases();
-        else
-            self.is_admin = FALSE;
-    }
+    CheckClientAdmin();
 
     st = infokey(self, "em");
     if (st == string_null)

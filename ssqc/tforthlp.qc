@@ -12,10 +12,7 @@ void TeamFortress_MOTD() {
     if (votemode)
         return;
 
-    if (loginRequired && !self.login)
-        Menu_Login();
-    else
-        Menu_Team(0);
+    Menu_Team(0);
 
     float csqcactive = infokeyf(self, INFOKEY_P_CSQCACTIVE);
     if (csqcactive) {

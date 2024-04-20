@@ -126,11 +126,6 @@ string (string text) clearString = {
 	return text;
 }
 
-void () PrintLoginMessage =  {
-	CenterPrint6(self, "\n\n\n\n\n\nžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžŸ\n", "Login required, please use\n\s\"cmd login <login> <secret>\"\s \nbefore joining the game\n", "žžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžŸ\n", "If you don't have an account, visit\n\s", webpageUrl,"\s\n");																
-	return;	
-}
-
 void () EndGameThink = {
 	local string m = mapname;
 	if(vote_result != string_null && vote_result != "") {

@@ -201,10 +201,7 @@ string () GetPlayersName
         while (te != world) {
             if (te.team_no == tmp && te.playerclass) {
                 tmp2 = 1;
-                if (loginRequired)
-                    plname = te.login;
-                else
-                    plname = te.netname;
+                plname = te.netname;
                 st = strcat (st, "_");
                 if (strlen(plname) <= 13) {
                     st = strcat( st, plname );

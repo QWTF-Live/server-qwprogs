@@ -300,10 +300,7 @@ void (entity pl) PrintWho = {
     msg = strzone(string_null);
     msg = strcat(msg, infokey(pl,"name"));
     msg = strcat(msg, " - ");
-    if (pl.login != string_null)
-        msg = strcat(msg, pl.login);
-    else
-        msg = strcat(msg, "NOT LOGGED IN");
+    msg = strcat(msg, pl.fo_login != string_null ? pl.fo_login : "NOT LOGGED IN");
     if (pl.is_admin) {
         msg = strcat(msg, " (admin)");
     }
@@ -347,13 +344,8 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
             processedCmd = TRUE;
             if (arg_num == 2) {
                 Admin_Check(arg2);
-                if (self.is_admin) {
-                    Admin_Aliases();
-                }
-            }
-            if (arg_num == 1) {
+            } else {
                 sprint(self, PRINT_HIGH, "usage: cmd adminpwd password, where password is the admin password\n");
-                sprint(self, PRINT_HIGH, "\n");
             }
             break;
         case "setinfo":
@@ -940,33 +932,13 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
             break;
         case "login":
             processedCmd = TRUE;
-            if (arg_num == 2) {
-                if (self.login != string_null) {
-                    sprint (self, PRINT_HIGH, "You are already logged in\n");
-                }
-                else {
-                    performLogin(self,arg2,arg3);
-                }
-            }
-            else {
-                sprint (self, PRINT_HIGH, "Missing username/password\n");
-            }
-            break;
-        case "login-silent" :
-            processedCmd = TRUE;
-            if (arg3 != string_null) {
-                performLogin(self,arg2,arg3);
-            }
-            break;
-        case "fo-login":
-            processedCmd = TRUE;
             if (self.fo_login != string_null) {
                 sprint (self, PRINT_HIGH, "You are logged in\n");
             } else {
                 FoTryLogin(self);
             }
             break;
-        case "fo-login-silent":
+        case "login-silent":
             processedCmd = TRUE;
             if (self.fo_login == string_null)
                 FoTryLogin(self);

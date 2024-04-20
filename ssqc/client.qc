@@ -55,7 +55,6 @@ void () StartTimer;
 void () StopTimer;
 void () StartQuadRound;
 void (string cl_pwd) Admin_Check;
-void () Admin_Aliases;
 void () PreMatch_Message;
 void () UpdateReadyStatus;
 float () CheckAllPlayersReady;
@@ -774,19 +773,6 @@ void () DecodeLevelParms = {
         round_delay_time = CF_GetSetting("round_delay_time", "rdt", "30");
 
         map_restart_time = CF_GetSetting("map_restart_Time", "mrt", "120");
-
-        // enforces login
-        loginRequired = CF_GetSetting("loginrequired", "logreq", "0");
-
-        // login request https endpoint
-        loginUrl = infokey(world, "loginurl");
-
-        // server webpage address (required for login to work)
-        webpageUrl = infokey(world, "webpageurl");
-
-        if (loginRequired && (!loginUrl || !webpageUrl)) {
-            loginRequired = 0;
-        }
 
         // specify demo filehost address e.g. https://fortressone-demos.s3.amazonaws.com/sydney/staging/
         demo_files_address = FO_GetUserSettingString(world, "demo_files_address", "demofileaddy", "");
@@ -3099,6 +3085,15 @@ void () UpdateAllClientsTeamScores = {
     }
 }
 
+void CheckClientAdmin() {
+    self.is_admin = stof(infokey(self, "*admin"));
+    if (!self.is_admin) {
+        string st = FO_GetUserSettingString(self, "apw", "adminpwd", "")
+        if (st)
+            Admin_Check(st);
+    }
+}
+
 void () ClientConnect = {
     if (!infokeyf(self,INFOKEY_P_CSQCACTIVE)) {
         sprint(self, PRINT_HIGH, "FTE/CSQC is required for this server, please download the latest client package at www.fortressone.org\n");
@@ -3116,42 +3111,26 @@ void () ClientConnect = {
     if (self.netname == string_null)
         KickCheater(self);
 
-    if (infokey(self,"*login"))
-        self.login = infokey(self,"*login");
     self.fo_login = infokey(self,"*tfl_login");
-    self.is_admin = stof(infokey(self, "*admin"));
-
-    if (loginRequired && self.login == string_null)
-        sprint(self,2, "Login required, please use \"cmd login <login> <secret>\" \nbefore joining the game\n");
 
     TeamFortress_ExecMapScript(self);
     self.has_disconnected = 0;
+
+    CheckClientAdmin();
 
     if (intermission_running) {
         PutClientInIntermission();
         GotoNextMap();
     }
 
-    string st = infokey(self, "apw");
-    if (st == string_null)
-        st = infokey(self, "adminpwd");
-    if (st) {
-        Admin_Check(st);
-        if (self.is_admin)
-            Admin_Aliases();
-        else
-            self.is_admin = FALSE;
-    }
-
     if (clanbattle && (self.has_disconnected != 1)) {
-        st = infokey(self, "tf_id");
+        string st = infokey(self, "tf_id");
         self.tf_id = stof(st);
-        if (!loginRequired) {
-            if ((st != string_null) && (self.tf_id != 0))
-                RejoinWithTfId();
-            else
-                CreateTfIdAndJoin();
-        }
+
+        if ((st != string_null) && (self.tf_id != 0))
+            RejoinWithTfId();
+        else
+            CreateTfIdAndJoin();
     }
 
     InitAllStatuses(self);

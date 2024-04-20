@@ -2153,10 +2153,6 @@ void () DeadImpulses = {
         TeamFortress_ChangeClass(self.impulse - TF_CHANGEPC_SCOUT + 1);
     } else if ((self.playerclass != 0) && (self.impulse == TF_CHANGETEAM)
                && (deathmatch == 3) && (!cb_prematch)) {
-        if (loginRequired && !self.login) {
-            sprint (self, 2, "Login required, please use \"cmd login <login> <secret>\" before joining the game\n");
-            return;
-        }
         Menu_Team(0);
     } else if ((self.playerclass != 0) && (self.impulse == TF_CHANGECLASS)
                && (deathmatch == 3) && (!cb_prematch)) {
@@ -2404,16 +2400,6 @@ void () ButtonFrame = {
 }
 
 void () W_WeaponFrame = {
-    if (self.login_in_progress) {
-        CenterPrint(self, "Trying to log in...");
-    }
-
-    if (loginRequired && !self.login) {
-        PrintLoginMessage();
-        self.impulse = 0;
-        return;
-    }
-
     TeamFortress_QueuedDetpipe();
 
     if (self.menu_input) {

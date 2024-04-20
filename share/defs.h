@@ -1498,12 +1498,11 @@ enum {
 #define ALL_TIME_DEFENCE	2
 
 // web request index
-#define BR_LOGIN_REQUEST		1
-#define FO_QUAD_STARTED_REQUEST		2
-#define FO_QUAD_FINISHED_REQUEST	3
-#define FO_LOGIN_REQUEST		4
-#define TFL_ANNOUNCE 			5
-#define TFL_RESULT 			6
+#define FO_QUAD_STARTED_REQUEST		1
+#define FO_QUAD_FINISHED_REQUEST	2
+#define FO_LOGIN_REQUEST		3
+#define TFL_ANNOUNCE 			4
+#define TFL_RESULT 			5
 
 #define SPEC_MAXSPEED 1000
 
@@ -1659,6 +1658,20 @@ TFAlias client_aliases[] = {
     {"placepracspawn",          TF_PRACSPAWN_PLACE},
     {"removepracspawn",         TF_PRACSPAWN_REMOVE},
     {"tracktarget",             0, "cmd tracktarget", 0, "cmd track target"},
+    // Admin commands
+    {"countplayers", TF_ADMIN_COUNTPLAYERS},
+    {"deal", TF_ADMIN_CYCLEDEAL},
+    {"kick", TF_ADMIN_KICK},
+    {"ban", TF_ADMIN_BAN},
+    {"next", TF_ADMIN_NEXT},
+    {"ceasefire", TF_ADMIN_CEASEFIRE},
+    {"listips", TF_ADMIN_LISTIPS},
+    {"clan", TF_ADMIN_CLANMODE},
+    {"quadmode", TF_ADMIN_QUADMODE},
+    {"adminmenu", 0, "cmd adminmenu"},
+    {"startmatch", TF_ADMIN_FORCESTARTMATCH},
+    {"readystatus", TF_ADMIN_READYSTATUS},
+    {"ceasefire", 0, "cmd ceasefire"},
 };
 
 TFAlias csqc_aliases[] = {

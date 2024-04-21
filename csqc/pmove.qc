@@ -875,7 +875,7 @@ void PM_InputFrame() {
     float type;
     if (input_buttons & BUTTON_JUMP) {
         if (game_state.is_spectator ||
-            (game_state.is_player && CVARF(fo_smartjump) &&
+            (game_state.is_player && CVARF(fo_smartjump) && game_state.is_alive &&
             PM_GetWaterLevel(PM_Org(), &type) >= 2 && vlen(input_movevalues) == 0)) {
             input_buttons &= ~BUTTON_JUMP;
             input_movevalues.z = CVARF(cl_upspeed);

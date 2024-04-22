@@ -53,6 +53,7 @@ void () MatchThink =
         bprint(2, " remaining\n");
     }
     gametime++;
+    gametime_string = ftos(gametime);
     self.nextthink = (time + 1);
 };
 
@@ -276,6 +277,7 @@ void () PreMatch_Think = {
             self.nextthink = (time + 0.1);
             self.think = SUB_Remove;
             gametime = 0;
+            gametime_string = "0";
             canlog = 1;
             LogEventGameStart();
             p = find(world, classname, "player");
@@ -286,7 +288,6 @@ void () PreMatch_Think = {
                     p.movetype = 3;
                 }
                 p.classtime = gametime;
-                LogEventPlayerStart(p);
                 p = find(p, classname, "player");
             }
             if (!quadmode)

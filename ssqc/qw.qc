@@ -471,6 +471,7 @@ float round_start_time;
 float round_end_time;
 float map_restart_time;
 float gametime;
+string gametime_string;
 float is_countdown;
 float duelmode;
 float duel_reset_delay;
@@ -746,7 +747,6 @@ string login_salt;
 
 //Logging fields
 float gametime;
-string gametimestamp;
 float logfilehandle;
 float canlog;
 .float classtime;

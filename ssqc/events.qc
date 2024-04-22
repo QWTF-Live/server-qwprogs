@@ -40,25 +40,34 @@ void (string evt) logevent = {
     fputs(logfilehandle, evt);
 }
 
-void (entity player) LogEventPlayerStart = {
+
+.float logged_start;
+void LogEventPlayerStart(entity player) {
     if (canlog == 0)
         return;
     if (isPlayerValid(player) == FALSE)
         return;
+    if (player.logged_start)
+        return;
+    player.logged_start = TRUE;
 
-    string event;
-    event = sprintf(",\n{\"type\": \"playerStart\", \"player\": \"%s\", \"classtime\": %s, \"time\": %s, \"gameTimeStamp\": \"%s\"}", getEntityNameOrLogin(player), ftos(player.classtime), ftos(gametime), gametimestamp);
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "playerStart"},
+        {KV_S, "player", getEntityNameOrLogin(player)},
+        {KV_I, "playerClass", ftos(player.playerclass)},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
 void () LogEventGameStart = {
-    gametimestamp = ISOTimemillis();
     if (canlog == 0)
         return;
-    string event;
     entity player;
     float numplayers = 0;
-    player = find (world, classname, "player");	
+    player = find (world, classname, "player");
 
     while (player) {
         if (isPlayerValid(player) == TRUE)
@@ -67,18 +76,32 @@ void () LogEventGameStart = {
     }
 
     KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
         {KV_S, "type", "gameStart"},
+        {KV_S, "wall_time", ISOTimemillis()},
         {KV_S, "map", mapname},
         {KV_I, "numPlayers", ftos(numplayers)},
         {KV_I, "numTeams", ftos(number_of_teams)},
-        {KV_S, "time", ftos(gametime)},
         {KV_S, "demo", cvar_string("server_demo")},
-        {KV_S, "gameTimeStamp", gametimestamp},
+        {KV_I, "time", gametime_string},
         {KV_S, "gameToken", game_token},
         {KV_S, "shard", infokey(world, "shard")},
     };
 
-    event = JSON_Wrap(kvs.length, kvs);
+    string event = strcat("[\n", JSON_Wrap(kvs.length, kvs), ",\n");
+    logevent(event);
+}
+
+void LogEventRoundStart() {
+    if (canlog == 0)
+        return;
+
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "roundStart"},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
@@ -90,16 +113,17 @@ void (entity player, float previous, float next, float timeplayed) LogEventChang
     if (previous == 0)
         return;
 
-    string event;
-    event = sprintf(",\n{\"type\": \"changeClass\", \"player\": \"%s\", \"playerClass\": %s, \"nextClass\": %s, \"team\": %s, \"timePlayed\": %s, \"time\": %s, \"gameTimeStamp\": \"%s\"}",
-            getEntityNameOrLogin(player),
-            ftos(previous),
-            ftos(next),
-            ftos(player.team_no),
-            ftos(timeplayed),
-            ftos(gametime),
-            gametimestamp
-            );
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "changeClass"},
+        {KV_S, "player", getEntityNameOrLogin(player)},
+        {KV_I, "playerClass", ftos(previous)},
+        {KV_I, "nextClass", ftos(next)},
+        {KV_I, "team", ftos(player.team_no)},
+        {KV_I, "timePlayed", ftos(timeplayed)},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
@@ -143,10 +167,6 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
     if (canlog == 0)
         return;
 
-    string event;
-    string attackEvent;
-    string targetEvent;
-    string part1, part2;
     string damageKind;
     string attackername;
     string targetname;
@@ -182,25 +202,22 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
     }
 
-    if (getEntityNameOrLogin(target) != "") {
-        part1 = sprintf(",\n{\"type\": \"damageDone\", \"kind\": \"%s\", \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, \"target\": \"%s\", \"targetClass\": %s, \"targetTeam\": %s, ",
-                damageKind,
-                attackername,
-                ftos(attacker.playerclass),
-                ftos(attacker.team_no),
-                getEntityNameOrLogin(target),
-                ftos(target.playerclass),
-                ftos(target.team_no));
-        part2 = sprintf("\"inflictor\": \"%s\", \"damage\": %s, \"time\": %s, \"gameTimeStamp\": \"%s\"}", 
-                inflictorId,
-                ftos(truedam),
-                ftos(gametime),
-                gametimestamp
-                );
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "damageDone"},
+        {KV_S, "kind", damageKind},
+        {KV_S, "player", attackername},
+        {KV_I, "playerClass", ftos(attacker.playerclass)},
+        {KV_I, "playerTeam", ftos(attacker.team_no)},
+        {KV_S, "target", getEntityNameOrLogin(target)},
+        {KV_I, "targetClass", ftos(target.playerclass)},
+        {KV_I, "targetTeam", ftos(target.team_no)},
+        {KV_S, "inflictor", inflictorId},
+        {KV_I, "damage", ftos(truedam)},
+    };
 
-        event = strcat(part1, part2);
-        logevent(event);
-    }
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
+    logevent(event);
 }
 
 void (entity attacker, entity target, entity inflictor) LogEventKill = {
@@ -261,22 +278,20 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
     }
 
-    string event, part1, part2;
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "kill"},
+        {KV_S, "kind", killKind},
+        {KV_S, "player", attackername},
+        {KV_I, "playerClass", ftos(attacker.playerclass)},
+        {KV_I, "playerTeam", ftos(attacker.team_no)},
+        {KV_S, "target", targetname},
+        {KV_I, "targetClass", ftos(target.playerclass)},
+        {KV_I, "targetTeam", ftos(target.team_no)},
+        {KV_S, "inflictor", inflictorId},
+    };
 
-    part1 = sprintf(",\n{\"type\": \"kill\", \"kind\": \"%s\", \"player\": \"%s\", \"playerClass\": %s, \"playerTeam\": %s, \"target\": \"%s\", \"targetClass\": %s, \"targetTeam\": %s, ",
-            killKind,
-            attackername, 
-            ftos(attacker.playerclass), 
-            ftos(attacker.team_no), 
-            targetname, 
-            ftos(target.playerclass), 
-            ftos(target.team_no));
-    part2 = sprintf("\"inflictor\": \"%s\", \"time\": %s, \"gameTimeStamp\": \"%s\"}", 
-            inflictorId,					
-            ftos(gametime),
-            gametimestamp
-            );
-    event = strcat(part1, part2);
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
@@ -299,13 +314,15 @@ void (entity player) LogEventGoal = {
     if (canlog == 0)
         return;
 
-    string event;
-    event = sprintf(",\n{\"type\": \"goal\", \"team\": %s, \"player\": \"%s\", \"playerClass\": \"%s\", \"time\": %s, \"gameTimeStamp\": \"%s\"}", 
-            ftos(player.team_no),
-            getEntityNameOrLogin(player), 
-            ftos(player.playerclass), 
-            ftos(gametime), 
-            gametimestamp);
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "goal"},
+        {KV_I, "team", ftos(player.team_no)},
+        {KV_S, "player", getEntityNameOrLogin(player)},
+        {KV_I, "playerClass", ftos(player.playerclass)},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
@@ -315,43 +332,62 @@ void (entity player) LogEventPickupGoal = {
     if (canlog == 0)
         return;
 
-    string event;
-    event = sprintf(",\n{\"type\": \"pickup\", \"team\": %s, \"player\": \"%s\", \"playerClass\": \"%s\", \"time\": %s, \"gameTimeStamp\": \"%s\"}", 
-            ftos(player.team_no),
-            getEntityNameOrLogin(player),
-            ftos(player.playerclass), 
-            ftos(gametime), 
-            gametimestamp);
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "pickup"},
+        {KV_S, "team", ftos(player.team_no)},
+        {KV_S, "player", getEntityNameOrLogin(player)},
+        {KV_I, "playerClass", ftos(player.playerclass)},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
 void (entity player, float timecarried) LogEventFumble = {
     if (canlog == 0)
         return;
-    string event;
-    event = sprintf(",\n{\"type\": \"fumble\", \"team\": %s, \"player\": \"%s\", \"playerClass\": \"%s\", \"timeCarried\": %s, \"time\": %s, \"gameTimeStamp\": \"%s\"}", 
-            ftos(player.team_no),
-            getEntityNameOrLogin(player),
-            ftos(player.playerclass), 
-            ftos(timecarried), 
-            ftos(gametime), 
-            gametimestamp);
+
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "fumble"},
+        {KV_I, "team", ftos(player.team_no)},
+        {KV_S, "player", getEntityNameOrLogin(player)},
+        {KV_I, "playerClass", ftos(player.playerclass)},
+        {KV_I, "timeCarried", ftos(timecarried)},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
 void (entity attacker) LogEventAttack = {
     if (canlog == 0)
         return;
-    string event;
-    event = sprintf(",\n{\"type\": \"attack\", \"player\": \"%s\", \"playerClass\": \"%s\", \"inflictor\": \"%s\", \"time\": %s, \"gameTimeStamp\": \"%s\"}", getEntityNameOrLogin(attacker), ftos(attacker.playerclass), GetWeaponName(FO_PlayerCurrentWeapon(attacker)), ftos(gametime), gametimestamp);
+
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "attack"},
+        {KV_S, "player", getEntityNameOrLogin(attacker)},
+        {KV_I, "playerClass", ftos(attacker.playerclass)},
+        {KV_S, "inflictor", GetWeaponName(FO_PlayerCurrentWeapon(attacker))},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
 
 void () LogEventGameEnd = {
     if (canlog == 0)
         return;
-    string event;
-    event = sprintf(",\n{\"type\": \"gameEnd\", \"time\": %s, \"gameTimeStamp\": \"%s\"}", ftos(gametime), gametimestamp);
+
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "gameEnd"},
+        {KV_S, "wall_time", ISOTimemillis()},
+    };
+
+    string event = strcat(JSON_Wrap(kvs.length, kvs), "\n]");
     logevent(event);
 }
 
@@ -385,25 +421,17 @@ void () LogEventTeamScores = {
         winning_team = 0;
     }
 
-    string teamscores;
-    teamscores = sprintf("\"team1Score\": %s", ftos(team1score));
-    if (number_of_teams > 1)
-        teamscores = strcat(teamscores, sprintf(", \"team2Score\": %s", ftos(team2score)));
-    if (number_of_teams > 2)
-        teamscores = strcat(teamscores, sprintf(", \"team3Score\": %s", ftos(team3score)));
-    if (number_of_teams > 3)
-        teamscores = strcat(teamscores, sprintf(", \"team4Score\": %s", ftos(team4score)));
+    KeyVal kvs[] = {
+        {KV_I, "time", gametime_string},
+        {KV_S, "type", "teamScores"},
+        {KV_I, "winningTeam", ftos(winning_team)},
+        {KV_I, "numTeams", ftos(number_of_teams)},
+        {KV_I, "team1Score", ftos(team1score)},
+        {KV_I, "team2Score", ftos(team2score)},
+        {KV_I, "team3Score", ftos(team2score)},
+        {KV_I, "team4Score", ftos(team2score)},
+    };
 
-    string teamnames;
-    teamnames = sprintf("\"team1Name\": \"%s\"", GetTeamName(1));
-    if (number_of_teams > 1)
-        teamnames = strcat(teamnames, sprintf(", \"team2Name\": \"%s\"", GetTeamName(2)));
-    if (number_of_teams > 2)
-        teamnames = strcat(teamnames, sprintf(", \"team3Name\": \"%s\"", GetTeamName(3)));
-    if (number_of_teams > 3)
-        teamnames = strcat(teamnames, sprintf(", \"team4Name\": \"%s\"", GetTeamName(4)));
-
-    string event;
-    event = sprintf(",\n{\"type\": \"teamScores\", %s, %s, \"winningTeam\": %s, \"time\": %s, \"gameTimeStamp\": \"%s\"}", teamscores, teamnames, ftos(winning_team), ftos(gametime), gametimestamp);
+    string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }

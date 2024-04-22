@@ -21,7 +21,7 @@ struct KeyVal {
 };
 
 string JSON_Wrap(int n, KeyVal* key_vals) {
-    string result = "{\n";
+    string result = "{ ";
     int last = n - 1;
     for (int i = 0; i < n; i++) {
         result = strcat(result, " \"", key_vals[i].key,"\":");
@@ -30,9 +30,10 @@ string JSON_Wrap(int n, KeyVal* key_vals) {
         else
             result = strcat(result, key_vals[i].val);
 
-        result = strcat(result, i < last ? ",\n" : "\n");
+        if (i < last)
+            result = strcat(result, ", ");
     }
-    result = strcat(result, "}\n");
+    result = strcat(result, " }");
     return result;
 }
 
@@ -218,10 +219,10 @@ void ReportMatchResult(int report_type) {
     KeyVal fvs[] = {
         {KV_S, "server_name", infokey(world, "hostname")},
         {KV_S, "server_address", cvar_string("sv_serverip")},
+        {KV_S, "region", infokey(world, "tfl_region")},
         {KV_S, "shard", infokey(world, "shard")},
         {KV_S, "game_token", game_token},
         {KV_I, "report_type", ftos(report_type)},
-        {KV_S, "channel_id", discord_channel_id},
         {KV_S, "map", mapname},
         {KV_I, "teams", JSON_Array(2, teams),
     };

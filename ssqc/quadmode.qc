@@ -382,6 +382,8 @@ void () FO_RoundChange = {
 		e = find(e, targetname, "fo_roundchange");
 	}
 	self = oldself;
+
+  LogEventRoundStart();
 };
 
 void () QuadRoundOver = {
@@ -464,6 +466,7 @@ void () QuadRoundThink = {
 		}
 	}
 	gametime++;
+	gametime_string = ftos(gametime);
 	self.nextthink = (time + 1);
 };
 

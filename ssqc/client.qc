@@ -2139,11 +2139,12 @@ void () PutClientInServer = {
     int prev_playerclass = self.playerclass;
 
     if (deathmatch == 3) {
+        LogEventPlayerStart(self);
         if(self.nextpc != self.playerclass) {
             if (self.playerclass != 0) {
                 local float timeplayed = gametime - self.classtime;
                 LogEventChangeClass(self, self.playerclass, self.nextpc, timeplayed);
-                self.classtime = gametime; 
+                self.classtime = gametime;
             }
             self.playerclass = self.nextpc;
         }
@@ -3085,7 +3086,7 @@ void () UpdateAllClientsTeamScores = {
 void CheckClientAdmin() {
     self.is_admin = stof(infokey(self, "*admin"));
     if (!self.is_admin) {
-        string st = FO_GetUserSettingString(self, "apw", "adminpwd", "")
+        string st = FO_GetUserSettingString(self, "apw", "adminpwd", "");
         if (st)
             Admin_Check(st);
     }

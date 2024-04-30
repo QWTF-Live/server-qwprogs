@@ -634,7 +634,6 @@ void TeamFortress_Build(float objtobuild, float rotation) {
     newmis.colormap = self.colormap;
     newmis.weapon = objtobuild;
     rotation = (180 + rotation + 360) % 360;
-    printf("2 Build with %d rotation\n", rotation);
     newmis.angles_y = anglemod(self.angles_y + rotation);
     newmis.velocity = '0 0 8';
     newmis.movetype = 6;

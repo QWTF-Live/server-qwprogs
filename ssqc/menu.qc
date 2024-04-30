@@ -832,7 +832,7 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
             if (te.classname == "building_sentrygun") {
                 if (te.real_owner == self){
                     sprint (self, PRINT_HIGH, "You dismantled the sentry gun and got 65 cells\n");
-                    self.ammo_cells = self.ammo_cells + 65;
+                    self.ammo_cells = min(self.maxammo_cells, self.ammo_cells + 65);
                     dremove (te.trigger_field);
                     dremove (te);
                     self.has_sentry = 0;
@@ -851,7 +851,7 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
             if (te.classname == "building_dispenser") {
                 if (te.real_owner == self) {
                     sprint (self, PRINT_HIGH, "You dismantled the dispenser and got 50 cells\n");
-                    self.ammo_cells = self.ammo_cells + 50;
+                    self.ammo_cells = min(self.maxammo_cells, self.ammo_cells + 50);
                     dremove (te);
                     self.has_dispenser = 0;
                     dismantle_dispenser = 1;

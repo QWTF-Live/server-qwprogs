@@ -704,6 +704,8 @@ float WP_CheckAmmo(FO_WeapInfo* wi) {
     return ammo >= wi->ammo_per_shot;
 }
 
+void WP_DeactivateBuildingPreview();
+
 void WP_ChangeWeapon(Slot slot) {
     if (!WP_CheckAmmo(SlotWI(slot)))
         return;
@@ -712,6 +714,9 @@ void WP_ChangeWeapon(Slot slot) {
     pstate_pred.current_slot = slot;
     pstate_pred.weaponframe = 0;
     // UpdateViewModel will propagate.
+
+    if (pengine.preview && SlotIndex(slot) != 3)
+        WP_DeactivateBuildingPreview();
 }
 
 // Alternate between opt1/opt2, activating opt1 if neither is active.

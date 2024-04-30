@@ -337,20 +337,47 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
 
         case "+preview_sentry":
-            if (!SBAR.HasSentry && WP_GetAmmo(AMMO_CELLS) >= 130)
-                WP_ActivateBuildingPreview(1);
+            if (pstate_pred.playerclass != PC_ENGINEER)
+                break;
+
+            if (!SBAR.HasSentry) {
+               if (WP_GetAmmo(AMMO_CELLS) >= 130) {
+                   localcmd("slot4\n");
+                   WP_ActivateBuildingPreview(1);
+               }
+            } else {
+                localcmd("cmd build destroy sentry\n");
+            }
             break;
         case "-preview_sentry":
+            if (pstate_pred.playerclass != PC_ENGINEER ||
+                pengine.preview != 1)
+                break;
+
             WP_DeactivateBuildingPreview();
-            localcmd("cmd build sentry\n");
+            localcmd("weaplast;cmd build sentry\n");
             break;
+
         case "+preview_dispenser":
-            if (!SBAR.HasDispenser && WP_GetAmmo(AMMO_CELLS) >= 100)
-                WP_ActivateBuildingPreview(2);
+            if (pstate_pred.playerclass != PC_ENGINEER)
+                break;
+
+            if (!SBAR.HasDispenser) {
+               if (WP_GetAmmo(AMMO_CELLS) >= 100) {
+                   localcmd("slot4\n");
+                   WP_ActivateBuildingPreview(2);
+               }
+            } else {
+                localcmd("cmd build destroy dispenser\n");
+            }
             break;
         case "-preview_dispenser":
+            if (pstate_pred.playerclass != PC_ENGINEER ||
+                pengine.preview != 2)
+                break;
+
             WP_DeactivateBuildingPreview();
-            localcmd("cmd build dispenser\n");
+            localcmd("weaplast;cmd build dispenser\n");
             break;
 
         case "fo_beta_pmove":

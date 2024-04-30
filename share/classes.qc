@@ -213,3 +213,76 @@ void NB_ConcCapAction(entity ent, float player_class, float* tfstate,
         NB_ConcCap(ent, NB_CONC_CAP_LAND);
     }
 }
+
+float Build_CheckArea(entity obj, entity builder) {
+    vector src, end;
+    float pos;
+    entity te;
+
+    pos = pointcontents(obj.origin);
+    if (pos == CONTENT_SOLID || pos == CONTENT_SKY)
+        return -1;
+
+    src = obj.origin + obj.maxs + '24 24 16';
+    pos = pointcontents(src);
+    if (pos == CONTENT_SOLID || pos == CONTENT_SKY)
+        return -2;
+
+    end = obj.origin + obj.mins - '16 16 16';
+    traceline(src, end, MOVE_NOMONSTERS, obj);
+    if (trace_fraction != 1)
+        return -3;
+    pos = pointcontents(end);
+    if (pos == CONTENT_SOLID || pos == CONTENT_SKY)
+        return -4;
+
+    src_x = (obj.origin_x + obj.mins_x) - 16;
+    src_y = (obj.origin_y + obj.maxs_y) + 16;
+    src_z = (obj.origin_z + obj.maxs_z) + 16;
+    pos = pointcontents(src);
+    if (pos == CONTENT_SOLID || pos == CONTENT_SKY)
+        return -5;
+
+    end_x = (obj.origin_x + obj.maxs_x) + 16;
+    end_y = (obj.origin_y + obj.mins_y) - 16;
+    end_z = (obj.origin_z + obj.mins_z) - 16;
+    traceline(src, end, 1, obj);
+    if (trace_fraction != 1)
+        return -6;
+    pos = pointcontents(end);
+    if (pos == CONTENT_SOLID || pos == CONTENT_SKY)
+        return -7;
+
+    traceline(builder.origin, obj.origin, MOVE_NOMONSTERS, builder);
+
+    if (trace_fraction != 1)
+        return -8;
+
+    te = findradius(obj.origin, 64);
+    if (te != world)
+        return -9;
+
+    return 1;
+};
+
+#if 0
+float Build_CheckArea(entity obj, entity builder) {
+    float r = _Build_CheckArea(obj, builder);
+    float dbg = TRUE;
+#ifdef CSQC
+    /* printf("G %0.2f %s %d\n", trace_fraction, trace_ent.classname); */
+    dbg = (input_impulse == 150);
+#endif
+
+    if (dbg) {
+        printf("%s> r=%d B_CA [%v] [%v]\n", qc_prefix(), r, builder.origin, obj.origin);
+        if (r < 0) {
+            printf(" %0.2f [%s] [%s]\n", trace_fraction, trace_ent.classname, trace_ent.model);
+            printf(" mins=[%v] maxs=[%v]\n", obj.mins, obj.maxs);
+            printf(" t1=[%v] t2=[%v]\n", t1, t2);
+        }
+    }
+
+    return r <= 0 ? 0 : 1;
+}
+#endif

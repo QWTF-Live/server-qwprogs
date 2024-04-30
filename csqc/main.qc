@@ -68,6 +68,11 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     FO_Predict_Init();
     CsGrenTimer::Init();
 
+    registercommand("+preview_sentry");
+    registercommand("-preview_sentry");
+    registercommand("+preview_dispenser");
+    registercommand("-preview_dispenser");
+
     registercommand("+slot");
     registercommand("-slot");
     registercommand("+button");
@@ -164,6 +169,7 @@ void FO_CussCrosshair(float width, float height);
 void Hud_UpdateView(float width, float height, float menushown, float perf_sample);
 void UpdateTeamColorCrosshair();
 void PMD_DrawGraphs(float width);
+void WP_PreviewSentry();
 
 DEFCVAR_FLOAT(fov, 90);
 
@@ -180,6 +186,8 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
     // Draw original sbar, viewsize honoured automatically.
     if (!CVARF(fo_fte_hud) || CVARF(fo_legacy_sbar))
         setproperty(VF_DRAWENGINESBAR, 1);
+
+    WP_PreviewSentry();
 
     float mask = MASK_ENGINE;
     if (!intermission)
@@ -305,6 +313,9 @@ static void DeactivatePlusSlot(int idx) {
     plus_slot.impulse = TF_SLOT1 + next_idx;
 }
 
+void WP_ActivateBuildingPreview(float type);
+void WP_DeactivateBuildingPreview();
+
 noref float(string cmd) CSQC_ConsoleCommand = {
     tokenize_console(cmd);
     float val;
@@ -323,6 +334,23 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
         case "-slot":
             DeactivatePlusSlot(stoi(argv(1)) - 1);
+            break;
+
+        case "+preview_sentry":
+            if (!SBAR.HasSentry && WP_GetAmmo(AMMO_CELLS) >= 130)
+                WP_ActivateBuildingPreview(1);
+            break;
+        case "-preview_sentry":
+            WP_DeactivateBuildingPreview();
+            localcmd("cmd build sentry\n");
+            break;
+        case "+preview_dispenser":
+            if (!SBAR.HasDispenser && WP_GetAmmo(AMMO_CELLS) >= 100)
+                WP_ActivateBuildingPreview(2);
+            break;
+        case "-preview_dispenser":
+            WP_DeactivateBuildingPreview();
+            localcmd("cmd build dispenser\n");
             break;
 
         case "fo_beta_pmove":

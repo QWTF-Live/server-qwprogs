@@ -888,6 +888,7 @@ float(string key, optional float assumevalue) serverkeyfloat = #0:serverkeyfloat
 
 vector PM_Org();
 vector PM_Vel();
+float PM_onground();
 
 struct veci {
     vector v;

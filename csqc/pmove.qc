@@ -36,6 +36,7 @@ static struct {
 
 vector PM_Org() { return PM_Enabled() ? pm.ent.origin : pmove_org; }
 vector PM_Vel() { return PM_Enabled() ? pm.ent.velocity : pmove_vel; }
+float PM_onground() { return PM_Enabled() ? pm.ent.flags & FL_ONGROUND : pmove_onground; }
 inline entity PM_Ent() { return pm.ent; }
 
 float CSQC_JumpSounds_Active() {
@@ -131,7 +132,7 @@ void PM_PredictJump_Engine() {
     static float last_onground, last_vel_z;
 
     float jumping = input_buttons & BUTTON_JUMP;
-    float onground = pmove_onground; //pmove_onground;
+    float onground = pmove_onground;
     float landing = (onground && !last_onground);
     float vel_z = pmove_vel_z ?: recent_pmove_vel_z;
 

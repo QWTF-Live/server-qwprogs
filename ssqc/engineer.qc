@@ -18,7 +18,6 @@ void (entity disp) Engineer_SentryGun_Upgrade;
 void (entity disp) Engineer_SentryGun_Repair;
 void () Menu_Engineer_Cancel;
 void () CF_CheckBuilding;
-float (entity obj, entity builder) CheckArea;
 
 void () LaserBolt_Think = {
     self.solid = SOLID_TRIGGER;
@@ -534,63 +533,6 @@ void () TeamFortress_EngineerBuildStop = {
     }
 }
 
-float (entity obj, entity builder) CheckArea = {
-    local vector src;
-    local vector end;
-    local float pos;
-    local entity te;
-
-    pos = pointcontents(obj.origin);
-    if ((pos == -2) || (pos == -6)) {
-        return (0);
-    }
-    src_x = (obj.origin_x + obj.maxs_x) + 24;
-    src_y = (obj.origin_y + obj.maxs_y) + 24;
-    src_z = (obj.origin_z + obj.maxs_z) + 16;
-    pos = pointcontents(src);
-    if ((pos == -2) || (pos == -6)) {
-        return (0);
-    }
-    end_x = (obj.origin_x + obj.mins_x) - 16;
-    end_y = (obj.origin_y + obj.mins_y) - 16;
-    end_z = (obj.origin_z + obj.mins_z) - 16;
-    traceline(src, end, 1, obj);
-    if (trace_fraction != 1) {
-        return (0);
-    }
-    pos = pointcontents(end);
-    if ((pos == -2) || (pos == -6)) {
-        return (0);
-    }
-    src_x = (obj.origin_x + obj.mins_x) - 16;
-    src_y = (obj.origin_y + obj.maxs_y) + 16;
-    src_z = (obj.origin_z + obj.maxs_z) + 16;
-    pos = pointcontents(src);
-    if ((pos == -2) || (pos == -6)) {
-        return (0);
-    }
-    end_x = (obj.origin_x + obj.maxs_x) + 16;
-    end_y = (obj.origin_y + obj.mins_y) - 16;
-    end_z = (obj.origin_z + obj.mins_z) - 16;
-    traceline(src, end, 1, obj);
-    if (trace_fraction != 1) {
-        return (0);
-    }
-    pos = pointcontents(end);
-    if ((pos == -2) || (pos == -6)) {
-        return (0);
-    }
-    traceline(builder.origin, obj.origin, 1, builder);
-    if (trace_fraction != 1) {
-        return (0);
-    }
-    te = findradius(obj.origin, 64);
-    if (te != world) {
-        return (0);
-    }
-    return (1);
-};
-
 void (float objtobuild) TeamFortress_Build = {
     if (cb_prematch) {
         sprint(self, PRINT_MEDIUM, "You cannot build during prematch\n");
@@ -659,7 +601,7 @@ void (float objtobuild) TeamFortress_Build = {
         btime = time + 5;
         self.sentry_ticks = 0;
     }
-    if (CheckArea(newmis, self) == 0) {
+    if (Build_CheckArea(newmis, self) < 0) {
         sprint(self, PRINT_HIGH, "Not enough room to build here\n");
         dremove(newmis);
         return;
@@ -781,8 +723,8 @@ void (entity bld) CheckBelowBuilding = {
     }
     traceline(bld.origin, below, 1, bld);
     if (trace_fraction == 1) {
-        bld.movetype = 6;
-        bld.flags = bld.flags - (bld.flags & 512);
+        bld.movetype = MOVETYPE_TOSS;
+        bld.flags &= ~FL_ONGROUND;
     }
 };
 

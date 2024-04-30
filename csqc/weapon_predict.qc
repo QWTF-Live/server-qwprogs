@@ -40,6 +40,9 @@ struct pengine_t {
     entity pweap_ent;
     entity viewmodel;
 
+    float preview;
+    entity building_preview, building_owner;
+
     // Must include MASK_PRED_VIEWMODEL or we lose updates.
     // We only add/remove MASK_VIEWMODEL and MASK_PRED_PROJECTILE
     float view_mask;
@@ -349,6 +352,7 @@ void WPP_UpdateEnable(float force) {
             entity player = edict_num(player_localentnum);
             pengine.player_entnum = player_localentnum;
             pengine.player_ent = player;
+            player.classname = "player_ent:";
             pengine.pweap_ent.owner = player;
         } else {
             pengine.player_entnum = -1;
@@ -925,6 +929,81 @@ void WP_HandleGrenadeInputs() {
 float PM_Enabled();
 void PM_AddNudgeDash(float cseq);
 
+
+static float disp_index, sentry_index;
+
+static void WP_InitSentryPreview() {
+    // This is a bit annoying with pmove and !pmove..
+    entity building_owner = spawn();
+    building_owner.classname = "building_owner";
+    building_owner.solid = SOLID_NOT;
+
+    entity building = spawn();
+    building.classname = "building_preview";
+    building.owner = building_owner;
+
+    building.drawmask = 0;
+    building.alpha = 0.7;
+    setsize(building, '0 0 0', '0 0 0');
+
+    sentry_index = getmodelindex("progs/turrbase.mdl");
+    disp_index = getmodelindex("progs/disp.mdl");
+
+    pengine.building_preview = building;
+    pengine.building_owner = building_owner;
+}
+
+void WP_ActivateBuildingPreview(float type) {
+    if (type == 1) {
+        setmodelindex(pengine.building_preview, sentry_index);
+    } else {
+        setmodelindex(pengine.building_preview, disp_index);
+    }
+    setsize(pengine.building_preview, '0 0 0', '0 0 0');
+    pengine.preview = type;
+}
+
+void WP_DeactivateBuildingPreview() {
+    pengine.preview = 0;
+    pengine.building_preview.drawmask = 0;
+}
+
+void WP_PreviewSentry() {
+    static float next_update;
+    if (!pengine.preview || time < next_update)
+        return;
+    next_update = time + 1.0/300;
+
+    entity building_preview = pengine.building_preview;
+
+    vector b_angles = input_angles;
+    b_angles_x = 0;
+    b_angles_y = anglemod(b_angles_y + 180);
+
+    building_preview.angles = b_angles;
+    vector b_forward = normalize([v_forward.x, v_forward.y, 0]);
+    setorigin(building_preview, PM_Org() + b_forward * 64);
+    setorigin(building_preview.owner, PM_Org());
+
+    const vector kColInvalid = '1 0.2 0.2';
+    const vector kColJump = '1 0.6 0.2';
+    const vector kColValid = '0.2 1.0 0.2';
+
+    if (Build_CheckArea(building_preview, building_preview.owner) < 0)
+        building_preview.colormod = kColInvalid;
+    else if (!PM_onground())
+        building_preview.colormod = kColJump;
+    else
+        building_preview.colormod = kColValid;
+
+    vector org = building_preview.origin;
+    tracebox(org, '-16 -16 0', '16 16 48', org + '0 0 -400', 1, building_preview);
+    if (trace_fraction > 0)
+        setorigin(building_preview, trace_endpos + '0 0 0');
+
+    building_preview.drawmask = MASK_ENGINE;
+}
+
 static void WP_Special() {
     if (prematch)
         return;
@@ -1351,14 +1430,17 @@ inline float get_phys_time(entity e) {
 
 void FO_Predict_Init() {
     entity viewmodel = spawn();
+    viewmodel.classname = "viewmodel";
     viewmodel.drawmask = MASK_PRED_ENT;
     viewmodel.renderflags = RF_VIEWMODEL | RF_DEPTHHACK;
     pengine.viewmodel = viewmodel;
 
     WP_InitSniper();
+    WP_InitSentryPreview();
 
     // Entity we'll attach locally generated sound to.
     pred_sound_entity = spawn();
+    pred_sound_entity.classname = "pred_sound";
 
     INIT_MOVING_AVG(avg_ping);
     InitFppProjectiles();
@@ -2157,6 +2239,7 @@ static void WP_UpdatePredict() {
     }
 
     WP_UpdateViewModel();
+    WP_PreviewSentry();
 }
 
 DEFCVAR_FLOAT(fo_beta_noskip_predict, 0);

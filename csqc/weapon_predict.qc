@@ -40,7 +40,7 @@ struct pengine_t {
     entity pweap_ent;
     entity viewmodel;
 
-    float preview;
+    float preview, preview_rotation;
     entity building_preview, building_owner;
 
     // Must include MASK_PRED_VIEWMODEL or we lose updates.
@@ -983,7 +983,8 @@ void WP_PreviewSentry() {
 
     vector b_angles = input_angles;
     b_angles_x = 0;
-    b_angles_y = anglemod(b_angles_y + 180);
+    float angle_mod = (180 + pengine.preview_rotation + 360) % 360;
+    b_angles_y = anglemod(b_angles_y + angle_mod);
 
     building_preview.angles = b_angles;
     vector b_forward = normalize([v_forward.x, v_forward.y, 0]);
@@ -2287,4 +2288,7 @@ void WP_ServerFrame() {
 
     if (game_state.spawn_gen != prev_game_state.spawn_gen)
         PM_Refresh();
+
+    if (!game_state.is_alive)
+        WP_DeactivateBuildingPreview();
 }

@@ -115,6 +115,19 @@ float(float evtype, float scanx, float chary, float devid) CSQC_InputEvent = {
                     case K_ESCAPE:
                         FO_Menu_Game(TRUE);
                         return TRUE;
+
+                    case K_MWHEELUP:
+                        if (pengine.preview != 0) {
+                            pengine.preview_rotation += 45;
+                            return TRUE;
+                        }
+                        break;
+                    case K_MWHEELDOWN:
+                        if (pengine.preview != 0) {
+                            pengine.preview_rotation -= 45;
+                            return TRUE;
+                        }
+                        break;
                 }
                 break;
             default:

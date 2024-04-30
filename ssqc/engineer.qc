@@ -533,7 +533,7 @@ void () TeamFortress_EngineerBuildStop = {
     }
 }
 
-void (float objtobuild) TeamFortress_Build = {
+void TeamFortress_Build(float objtobuild, float rotation) {
     if (cb_prematch) {
         sprint(self, PRINT_MEDIUM, "You cannot build during prematch\n");
         return;
@@ -633,7 +633,9 @@ void (float objtobuild) TeamFortress_Build = {
     newmis.think = TeamFortress_FinishedBuilding;
     newmis.colormap = self.colormap;
     newmis.weapon = objtobuild;
-    newmis.angles_y = anglemod(self.angles_y + 180);
+    rotation = (180 + rotation + 360) % 360;
+    printf("2 Build with %d rotation\n", rotation);
+    newmis.angles_y = anglemod(self.angles_y + rotation);
     newmis.velocity = '0 0 8';
     newmis.movetype = 6;
     newmis.solid = 2;

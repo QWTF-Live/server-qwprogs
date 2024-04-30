@@ -68,11 +68,6 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     FO_Predict_Init();
     CsGrenTimer::Init();
 
-    registercommand("+preview_sentry");
-    registercommand("-preview_sentry");
-    registercommand("+preview_dispenser");
-    registercommand("-preview_dispenser");
-
     registercommand("+slot");
     registercommand("-slot");
     registercommand("+button");
@@ -214,6 +209,61 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
 
 void W_ChangeToSlotAlternate(string opt1, string opt2, string opt3, string opt4);
 
+DEFCVAR_FLOAT(tf_build_preview, 1);
+
+void WP_ActivateBuildingPreview(float type);
+void WP_DeactivateBuildingPreview();
+
+
+static float BuildPreview(int type, int plus) {
+    if (pstate_pred.playerclass != PC_ENGINEER || CVARF(tf_build_preview) == 0)
+        return FALSE;
+
+    if (type == 1) {
+        if (plus) {
+            if (!SBAR.HasSentry) {
+                if (WP_GetAmmo(AMMO_CELLS) >= ENG_SENTRY_COST) {
+                    localcmd("slot4\n");
+                    WP_ActivateBuildingPreview(1);
+                } else {
+                    cprint(sprintf("You need %d more cells to build a sentry gun",
+                                   ENG_SENTRY_COST - WP_GetAmmo(AMMO_CELLS)));
+                }
+            } else {
+                localcmd("cmd build destroy sentry\n");
+            }
+        } else {
+            if (pengine.preview == 1) {
+                WP_DeactivateBuildingPreview();
+                localcmd(sprintf("weaplast; cmd build sentry %d\n",
+                                 pengine.preview_rotation));
+            }
+        }
+    } else if (type == 2) {
+        if (plus) {
+            if (!SBAR.HasDispenser) {
+                if (WP_GetAmmo(AMMO_CELLS) >= ENG_DISPENSER_COST) {
+                    localcmd("slot4\n");
+                    WP_ActivateBuildingPreview(2);
+                } else {
+                    cprint(sprintf("You need %d more cells to build a dispenser",
+                                   ENG_DISPENSER_COST - WP_GetAmmo(AMMO_CELLS)));
+                }
+            } else {
+                localcmd("cmd build destroy dispenser\n");
+            }
+        } else {
+            if (pengine.preview == 2) {
+                WP_DeactivateBuildingPreview();
+                localcmd(sprintf("weaplast; cmd build dispenser %d\n",
+                                 pengine.preview_rotation));
+            }
+        }
+    }
+
+    return TRUE;
+}
+
 static const float kDebounce = 0.025;
 
 struct SlotState {
@@ -248,6 +298,11 @@ static void CommandButton(int plus, int button) {
     if (button < 3 || button > 7)
         return;
     button -= 3;
+
+    if ((button == 0 || button == 1) && BuildPreview(2 - button, plus)) {
+        active_buttons &= ~(BUTTON_SPECIAL1 | BUTTON_SPECIAL2);
+        return;
+    }
 
     float mask = debounce_button[button].button;
 
@@ -313,9 +368,6 @@ static void DeactivatePlusSlot(int idx) {
     plus_slot.impulse = TF_SLOT1 + next_idx;
 }
 
-void WP_ActivateBuildingPreview(float type);
-void WP_DeactivateBuildingPreview();
-
 noref float(string cmd) CSQC_ConsoleCommand = {
     tokenize_console(cmd);
     float val;
@@ -334,50 +386,6 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
         case "-slot":
             DeactivatePlusSlot(stoi(argv(1)) - 1);
-            break;
-
-        case "+preview_sentry":
-            if (pstate_pred.playerclass != PC_ENGINEER)
-                break;
-
-            if (!SBAR.HasSentry) {
-               if (WP_GetAmmo(AMMO_CELLS) >= 130) {
-                   localcmd("slot4\n");
-                   WP_ActivateBuildingPreview(1);
-               }
-            } else {
-                localcmd("cmd build destroy sentry\n");
-            }
-            break;
-        case "-preview_sentry":
-            if (pstate_pred.playerclass != PC_ENGINEER ||
-                pengine.preview != 1)
-                break;
-
-            WP_DeactivateBuildingPreview();
-            localcmd("weaplast;cmd build sentry\n");
-            break;
-
-        case "+preview_dispenser":
-            if (pstate_pred.playerclass != PC_ENGINEER)
-                break;
-
-            if (!SBAR.HasDispenser) {
-               if (WP_GetAmmo(AMMO_CELLS) >= 100) {
-                   localcmd("slot4\n");
-                   WP_ActivateBuildingPreview(2);
-               }
-            } else {
-                localcmd("cmd build destroy dispenser\n");
-            }
-            break;
-        case "-preview_dispenser":
-            if (pstate_pred.playerclass != PC_ENGINEER ||
-                pengine.preview != 2)
-                break;
-
-            WP_DeactivateBuildingPreview();
-            localcmd("weaplast;cmd build dispenser\n");
             break;
 
         case "fo_beta_pmove":

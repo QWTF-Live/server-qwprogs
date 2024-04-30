@@ -18,7 +18,7 @@ void (entity spy) Spy_RemoveDisguise;
 
 void (entity eng, string bld) DestroyBuilding;
 
-void (float objtobuild) TeamFortress_Build;
+void (float objtobuild, float rotation) TeamFortress_Build;
 
 void () lvl1_sentry_stand;
 void () lvl2_sentry_stand;
@@ -85,7 +85,6 @@ void () Menu_Engineer_Update;
 void () Menu_EngineerFix_Dispenser;
 void () Menu_EngineerFix_SentryGun;
 
-void (float inp) Menu_Engineer_Input;
 void (float inp) Menu_EngineerFix_Dispenser_Input;
 void (float inp) Menu_EngineerFix_SentryGun_Input;
 
@@ -792,7 +791,8 @@ void () Menu_Demoman_Cancel = {
     Status_Menu(self, Menu_Demoman_Cancel_Input, s_detpack, s_cancel);
 }
 
-void (float inp) Menu_Engineer_Input = {
+// TODO: Refactor...
+void Menu_Engineer_Input(float inp, float arg = 0) {
     local float dismantle_sentrygun;
     local float dismantle_dispenser;
     local entity te;
@@ -814,14 +814,14 @@ void (float inp) Menu_Engineer_Input = {
 
     if (inp == 1 && !self.has_sentry) {
         if (self.ammo_cells >= ENG_SENTRY_COST)
-            TeamFortress_Build(2);
+            TeamFortress_Build(2, arg);
         else
             Status_Print(self, "\n\n\n\n\n\n\n", strcat("You need ", ftos(ENG_SENTRY_COST), " cells to build a sentry gun"));
     }
     
     if (inp == 2 && !self.has_dispenser) {
         if (self.ammo_cells >= ENG_DISPENSER_COST)
-            TeamFortress_Build(1);
+            TeamFortress_Build(1, arg);
         else
             Status_Print(self, "\n\n\n\n\n\n\n", strcat("You need ", ftos(ENG_DISPENSER_COST), " cells to build a dispenser"));
     }
@@ -864,6 +864,10 @@ void (float inp) Menu_Engineer_Input = {
     }
 
 };
+
+static void Old_Menu_Engineer_Input(float inp) {
+    Menu_Engineer_Input(inp);
+}
 
 void (entity player) Menu_Engineer = {
     local entity te, dist_checker;
@@ -920,7 +924,7 @@ void (entity player) Menu_Engineer = {
         dist_checker.nextthink = time + 0.3;
     }
 
-    Status_Menu(player, Menu_Engineer_Input, s_action, s_sentry, s_disp, s_dsentry, s_ddisp, s_nothing);
+    Status_Menu(player, Old_Menu_Engineer_Input, s_action, s_sentry, s_disp, s_dsentry, s_ddisp, s_nothing);
 };
 
 void () Menu_Engineer_Update = {

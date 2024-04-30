@@ -210,6 +210,7 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
 void W_ChangeToSlotAlternate(string opt1, string opt2, string opt3, string opt4);
 
 DEFCVAR_FLOAT(tf_build_preview, 1);
+DEFCVAR_FLOAT(tf_build_preview_range, 1);
 
 void WP_ActivateBuildingPreview(float type);
 void WP_DeactivateBuildingPreview();

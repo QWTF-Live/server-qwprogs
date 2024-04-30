@@ -936,6 +936,7 @@ void PM_AddNudgeDash(float cseq);
 
 
 static float disp_index, sentry_index;
+static float part_sentry_range[2];
 
 static void WP_InitSentryPreview() {
     // This is a bit annoying with pmove and !pmove..
@@ -956,6 +957,9 @@ static void WP_InitSentryPreview() {
 
     pengine.building_preview = building;
     pengine.building_owner = building_owner;
+
+    part_sentry_range[0] = particleeffectnum("sentry_radius_max");
+    part_sentry_range[1] = particleeffectnum("sentry_radius_fast");
 }
 
 void WP_ActivateBuildingPreview(float type) {
@@ -972,6 +976,8 @@ void WP_DeactivateBuildingPreview() {
     pengine.preview = 0;
     pengine.building_preview.drawmask = 0;
 }
+
+DEFCVAR_FLOAT(tf_build_preview_range, 1);
 
 void WP_PreviewSentry() {
     static float next_update;
@@ -1008,6 +1014,14 @@ void WP_PreviewSentry() {
         setorigin(building_preview, trace_endpos + '0 0 0');
 
     building_preview.drawmask = MASK_ENGINE;
+
+    static float next_particles;
+    if (pengine.preview == 1 && CVARF(tf_build_preview_range) &&
+        time > next_particles) {
+        pointparticles(part_sentry_range[0], building_preview.origin);
+        pointparticles(part_sentry_range[1], building_preview.origin);
+        next_particles = time + 0.025;
+    }
 }
 
 static void WP_Special() {

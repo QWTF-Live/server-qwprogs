@@ -76,10 +76,44 @@ static string gas_p[] = {
 	ramp 0 0 0 0.4\
 }\n"};
 
+static string sentry_p[] = {
+"r_part sentry_radius_max\
+{\
+	texture \"particles/flare2.tga\"\
+	count 200\
+	scale 8\
+	scalefactor 0\
+	alpha 0.8\
+	die 0.5\
+	diesubrand 0.2\
+	rgb 255 50 50\
+	friction 0 0 1\
+	spawnorg 1000 0\
+	spawnmode circle\
+	clipcount 0\
+};\n",
+"r_part sentry_radius_fast\
+{\
+	texture \"particles/flare2.tga\"\
+	count 100\
+	scale 8\
+	scalefactor 0\
+	alpha 0.4\
+	die 0.5\
+	diesubrand 0.2\
+	rgb 255 255 50\
+	friction 0 0 1\
+	spawnorg 500 0\
+	spawnmode circle\
+	clipcount 0\
+};\n"};
+
 void Register_Particles() {
     localcmd("wait\n");  // Synchronizes some unknown race
     localcmd(gas_p[0]);
     localcmd(gas_p[1]);
     localcmd(gas_p[2]);
+    localcmd(sentry_p[0]);
+    localcmd(sentry_p[1]);
 }
 

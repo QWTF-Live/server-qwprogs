@@ -326,6 +326,13 @@ static void CommandButton(int plus, int button) {
     }
 }
 
+static void SwapTo(int idx) {
+    // Don't generate impulse when unnecessary
+    if (SlotIndex(pstate_pred.current_slot) != idx &&
+            SlotIndex(pstate_pred.queue_slot) != idx)
+        plus_slot.impulse = TF_SLOT1 + idx;
+}
+
 static void ActivatePlusSlot(int idx) {
     if (idx < 0 || idx >= TF_NUM_SLOTS)
         return;
@@ -341,7 +348,7 @@ static void ActivatePlusSlot(int idx) {
     plus_slot.state[idx].activated = time;
     plus_slot.state[idx].until = time + kDebounce;
 
-    plus_slot.impulse = TF_SLOT1 + idx;
+    SwapTo(idx);
 }
 
 static void DeactivatePlusSlot(int idx) {
@@ -366,7 +373,7 @@ static void DeactivatePlusSlot(int idx) {
         }
     }
 
-    plus_slot.impulse = TF_SLOT1 + next_idx;
+    SwapTo(next_idx);
 }
 
 noref float(string cmd) CSQC_ConsoleCommand = {
@@ -776,6 +783,10 @@ static void InputFrameDebounce() {
 
     // Slot debounce
     if (plus_slot.num == 0 && plus_slot.impulse == 0)
+        return;
+
+    // Don't clobber
+    if (plus_slot.impulse && input_impulse)
         return;
 
     if (plus_slot.num > 0) {

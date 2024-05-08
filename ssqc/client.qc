@@ -2012,6 +2012,9 @@ void (entity player, string field, float fieldval) CheckSetInfoKey =
 };
 
 void (entity player) UpdateScoreboardInfo = {
+    if (time < player.next_scoreboard_update)
+        return;
+    player.next_scoreboard_update = time + 1;
 
     CheckSetInfoKey(player, "afflicted", player.afflicted);
     CheckSetInfoKey(player, "teamafflicted", player.teamafflicted);

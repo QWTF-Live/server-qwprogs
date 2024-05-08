@@ -892,7 +892,11 @@ void drawShowScoresPanel(PanelID panelid, string text) {
     position = [0,0];
     sui_text(position, mediumtext, "Scoreboard", textcolour, 1, 0);
 
-    for (i = 0; i < FO_SCOREBOARDLINES_LENGTH; i++) {
+    static float next_update, max_num;
+    float update = time >= next_update;
+    float limit = update ? FO_SCOREBOARDLINES_LENGTH - 1: max_num;
+
+    for (i = 0; i <= limit; i++) {
         float ping = getplayerkeyfloat(i, INFOKEY_P_PING);
         if (!ping)
             continue;
@@ -910,11 +914,18 @@ void drawShowScoresPanel(PanelID panelid, string text) {
         FO_ScoreBoardTeam* team = &score_board.team[sbl_team_no];
         FO_ScoreBoardLine* sbl = &team->lines[team->count++];
 
+        string name = getplayerkeyvalue(i, INFOKEY_P_NAME);
+
+        if (update)
+            max_num = i;
+        else if (name == sbl->name)
+            continue;
+
+        sbl->name = name;
         sbl->ping = ping;
         sbl->pl = getplayerkeyfloat(i, INFOKEY_P_PACKETLOSS);
         float class = getplayerkeyfloat(i, "playerclass");
         sbl->classtext = ClassToString(class);
-        sbl->name = getplayerkeyvalue(i, INFOKEY_P_NAME);
         sbl->score = getplayerkeyfloat(i, INFOKEY_P_FRAGS);
         sbl->caps = getplayerkeyfloat(i, "caps");
         sbl->touches = getplayerkeyfloat(i, "touches");
@@ -925,7 +936,7 @@ void drawShowScoresPanel(PanelID panelid, string text) {
         sbl->teamafflicted = getplayerkeyfloat(i, "teamafflicted");
         sbl->damagegiven = getplayerkeyfloat(i, "damagegiven");
         sbl->damagetaken = getplayerkeyfloat(i, "damagetaken");
-        sbl->team_no = getplayerkeyfloat(i, "team_no");
+        sbl->team_no = sbl_team_no;
         sbl->ready = getplayerkeyfloat(i, "ready");
         sbl->chat = getplayerkeyfloat(i, "chat");
 
@@ -935,6 +946,10 @@ void drawShowScoresPanel(PanelID panelid, string text) {
             sbl->classtext = (spec == 1) ? "Spectator" : "Observer";
         }
     }
+
+    if (update)
+        next_update = time + 0.25;
+
 
     float sbCount = 0;
 

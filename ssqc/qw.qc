@@ -753,6 +753,7 @@ float canlog;
 .float goalrunningtime;
 
 // csqc scoreboard fields
+.float next_scoreboard_update;
 .float caps;
 .float touches;
 .float kills;

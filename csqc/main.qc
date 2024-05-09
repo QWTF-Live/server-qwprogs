@@ -328,9 +328,12 @@ static void CommandButton(int plus, int button) {
 
 static void SwapTo(int idx) {
     // Don't generate impulse when unnecessary
-    if (SlotIndex(pstate_pred.current_slot) != idx &&
-            SlotIndex(pstate_pred.queue_slot) != idx)
-        plus_slot.impulse = TF_SLOT1 + idx;
+    if ((SlotIndex(pstate_pred.current_slot) == idx &&
+                IsSlotNull(pstate_pred.queue_slot)) ||
+        (SlotIndex(pstate_pred.queue_slot) == idx))
+        return;
+
+    plus_slot.impulse = TF_SLOT1 + idx;
 }
 
 static void ActivatePlusSlot(int idx) {
@@ -785,23 +788,23 @@ static void InputFrameDebounce() {
     if (plus_slot.num == 0 && plus_slot.impulse == 0)
         return;
 
-    // Don't clobber
-    if (plus_slot.impulse && input_impulse)
-        return;
-
     if (plus_slot.num > 0) {
         for (int i = 0; i < 4; i++)
             if (!plus_slot.state[i].on && plus_slot.state[i].activated)
                 DeactivatePlusSlot(i);
-
-        if (plus_slot.num > 0)
-            input_buttons |= BUTTON_ATTACK;
     }
+
+    // Don't clobber
+    if (plus_slot.impulse && input_impulse)
+        return;
 
     if (plus_slot.impulse) {
         input_impulse = plus_slot.impulse;
         plus_slot.impulse = 0;
     }
+
+    if (plus_slot.num > 0)
+        input_buttons |= BUTTON_ATTACK;
 }
 
 noref void CSQC_Input_Frame() {

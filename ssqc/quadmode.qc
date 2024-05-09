@@ -70,9 +70,8 @@ void () PostFOQuadStarted = {
 				if (prefix_comma)
 					data = strcat(data, ",");
 
-				token = FO_GetUserSettingString(p, "_fo_token", "fo_token", "");
 				data = strcat(data, "          {\n");
-				data = strcat(data, "            \"auth_token\": \"", token, "\",\n");
+				data = strcat(data, "            \"id\": \"", p.fo_login, "\",\n");
 				data = strcat(data, "            \"playerclass\": \"", ftos(p.playerclass), "\"\n");
 				data = strcat(data, "          }\n");
 				prefix_comma = TRUE;
@@ -134,9 +133,8 @@ void () PostFOQuadFinalRoundStarted = {
 				if (prefix_comma)
 					data = strcat(data, ",");
 
-				token = FO_GetUserSettingString(p, "_fo_token", "fo_token", "");
 				data = strcat(data, "          {\n");
-				data = strcat(data, "            \"auth_token\": \"", token, "\",\n");
+				data = strcat(data, "            \"id\": \"", p.fo_login, "\",\n");
 				data = strcat(data, "            \"playerclass\": \"", ftos(p.playerclass), "\"\n");
 				data = strcat(data, "          }\n");
 				prefix_comma = TRUE;

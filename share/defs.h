@@ -976,7 +976,7 @@ enum {
 #define PC_DEMOMAN_GRENADE_INIT_1	4
 #define PC_DEMOMAN_GRENADE_INIT_2	4
 #define PC_DEMOMAN_GRENADE_MAX_1	4
-#define PC_DEMOMAN_GRENADE_MAX_2	4
+#define PC_DEMOMAN_GRENADE_MAX_2	2
 #define PC_DEMOMAN_TF_ITEMS		0
 
 // Class Details for COMBAT MEDIC
@@ -1003,7 +1003,7 @@ enum {
 #define PC_MEDIC_GRENADE_INIT_1		3
 #define PC_MEDIC_GRENADE_INIT_2		3
 #define PC_MEDIC_GRENADE_MAX_1		4
-#define PC_MEDIC_GRENADE_MAX_2		3
+#define PC_MEDIC_GRENADE_MAX_2		2
 #define PC_MEDIC_TF_ITEMS		0
 #define PC_MEDIC_REGEN_TIME		3	// Number of seconds between each regen.
 #define PC_MEDIC_REGEN_AMOUNT		2	// Amount of health regenerated each regen.
@@ -1065,7 +1065,7 @@ enum {
 #define PC_PYRO_GRENADE_INIT_1		1
 #define PC_PYRO_GRENADE_INIT_2		4
 #define PC_PYRO_GRENADE_MAX_1		4
-#define PC_PYRO_GRENADE_MAX_2		4
+#define PC_PYRO_GRENADE_MAX_2		1
 #define PC_PYRO_TF_ITEMS		0
 #define PC_PYRO_AIRBLAST_RANGE	        400
 #define PC_PYRO_AIRBLAST_CELLS			55
@@ -1100,7 +1100,7 @@ enum {
 #define PC_SPY_GRENADE_INIT_1		2
 #define PC_SPY_GRENADE_INIT_2		2
 #define PC_SPY_GRENADE_MAX_1		4
-#define PC_SPY_GRENADE_MAX_2		2
+#define PC_SPY_GRENADE_MAX_2		1
 #define PC_SPY_TF_ITEMS			0
 #define PC_SPY_CELL_REGEN_TIME		5
 #define PC_SPY_CELL_REGEN_AMOUNT	1
@@ -1129,7 +1129,7 @@ enum {
 #define PC_ENGINEER_GRENADE_INIT_1	2
 #define PC_ENGINEER_GRENADE_INIT_2	2
 #define PC_ENGINEER_GRENADE_MAX_1	4
-#define PC_ENGINEER_GRENADE_MAX_2	4
+#define PC_ENGINEER_GRENADE_MAX_2	2
 #define PC_ENGINEER_TF_ITEMS		0
 #define PC_ENGINEER_RAILSPEED		1500
 

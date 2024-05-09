@@ -901,7 +901,8 @@ void drawShowScoresPanel(PanelID panelid, string text) {
         if (!ping)
             continue;
 
-        int sbl_team_no = getplayerkeyfloat(i, "team_no");
+        int orig_team_no, sbl_team_no;
+        orig_team_no = sbl_team_no = getplayerkeyfloat(i, "team_no");
         switch (sbl_team_no) {
             case 1: case 2: case 3: case 4:
                 sbl_team_no -= 1;  // Maps to SC enum
@@ -936,7 +937,7 @@ void drawShowScoresPanel(PanelID panelid, string text) {
         sbl->teamafflicted = getplayerkeyfloat(i, "teamafflicted");
         sbl->damagegiven = getplayerkeyfloat(i, "damagegiven");
         sbl->damagetaken = getplayerkeyfloat(i, "damagetaken");
-        sbl->team_no = sbl_team_no;
+        sbl->team_no = orig_team_no;
         sbl->ready = getplayerkeyfloat(i, "ready");
         sbl->chat = getplayerkeyfloat(i, "chat");
 

@@ -935,25 +935,23 @@ void UpdateClientStatusBar(entity pl)
             }
 
             WriteFloat(MSG_MULTICAST, pl.has_sentry);
-            if (pl.has_sentry)
-            {
+            if (pl.has_sentry) {
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.weapon); // level
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.health);
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.ammo_shells);
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.ammo_rockets);
-                
+
             }
 
             WriteFloat(MSG_MULTICAST, pl.has_dispenser);
-            if (pl.has_dispenser)
-            {
+            if (pl.has_dispenser) {
                 entity disp;
                 disp = find(world, classname, "building_dispenser");
-                while (disp)
-                {
-                    if (disp.real_owner == pl)
-                    {
+                while (disp) {
+                    if (disp.real_owner == pl) {
                         WriteFloat(MSG_MULTICAST, disp.health);
+                        WriteFloat(MSG_MULTICAST, disp.ammo_cells);
+                        break;
                     }
                     disp = find(disp, classname, "building_dispenser");
                 }

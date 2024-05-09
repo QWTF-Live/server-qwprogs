@@ -615,6 +615,7 @@ void ParseSBAR()
             if (SBAR.HasDispenser)
             {
                 SBAR.DispenserHealth = readfloat();
+                SBAR.DispenserCells = readfloat();
             }
             break;
     }

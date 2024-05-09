@@ -314,6 +314,7 @@ typedef struct {
     float SentryAmmoRockets;
     float HasDispenser;
     float DispenserHealth;
+    float DispenserCells;
 } FO_SBAR;
 FO_SBAR SBAR;
 

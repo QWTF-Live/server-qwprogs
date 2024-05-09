@@ -1005,21 +1005,23 @@ void Hud_DrawClassInfoPanel(float playerclass)
                 basepos = pos;
                 msg = pstate_pred.server_time >= pstate_pred.special_next ?
                     "Impeller charged" : "Impeller recharging";
+
+                msg = strcat(msg, "\n\rCells: ", itos(WP_GetAmmo(AMMO_CELLS)));
+
                 HRC_drawOffsetString(panel->Orientation, msg, size, fontSize,
                         pos, basepos, FALSE, colour);
 
-                pos = [pos_x, pos_y + size_y + 4];
+                pos = [pos_x, pos_y + size_y + 8];
             }
-            if (SBAR.HasSentry)
-            {
+
+            if (SBAR.HasSentry) {
                 icon = ICON_ENGINEER_SG; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
                 msg = strcat("L: ", ftos(SBAR.SentryLevel), " H: ", ftos(rint(SBAR.SentryHealth)), " S: ", ftos(rint(SBAR.SentryAmmoShells)), " R: ", ftos(rint(SBAR.SentryAmmoRockets)));
                 HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
             }
-            else if (SBAR.IsBuilding)
-            {
+            else if (SBAR.IsBuilding) {
                 icon = ICON_ENGINEER_SG; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
@@ -1030,13 +1032,14 @@ void Hud_DrawClassInfoPanel(float playerclass)
             // disp
             pos = [pos_x, pos_y + size_y + 2];
             basepos = pos;
-            if (SBAR.HasDispenser)
-            {
+            if (SBAR.HasDispenser) {
                 icon = ICON_ENGINEER_DISP; //HudIcons[playerclass + 7].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
                 msg = strcat("H: ", ftos(rint(SBAR.DispenserHealth)));
-                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
+                msg = strcat(msg, " Cells: ", itos(SBAR.DispenserCells));
+                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize,
+                                     pos, basepos, FALSE, colour);
             }
             break;
     }

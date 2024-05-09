@@ -616,7 +616,7 @@ void WP_ServerUpdate(float sendflags) {
         pstate_server.weaponframe >= 1 && pstate_server.weaponframe < 8 &&
         pstate_pred.weaponframe >= 1 && pstate_pred.weaponframe < 8) {
         pstate_server.weaponframe = (pstate_server.weaponframe - 1) % 4;
-        if (pstate_pred.weaponframe > 4)
+        if (pstate_pred.weaponframe >= 4)
             pstate_server.weaponframe += 4;
         pstate_server.weaponframe += 1;
     }
@@ -2130,8 +2130,8 @@ void WP_UpdateViewModel() {
         viewmodel.modelindex = pmodelindex;
         viewmodel.lerpfrac = 0;
     } else if (viewmodel.frame != pframe) {
-        viewmodel.frame = pframe;
         viewmodel.frame2 = viewmodel.frame;
+        viewmodel.frame = pframe;
         viewmodel.lerpfrac = 1;
     }
 

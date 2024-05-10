@@ -72,6 +72,10 @@ static float ShowPlayerOutline(entity player) {
         (TFxEnabled(TFX_OFFENSE_OUTLINE) && IsAttacking(player)))
         return player.teamno == local_player.teamno;
 
+    if (TFxEnabled(TFX_SCOUT_SEE_ENEMIES) && player.teamno != team_no &&
+            pstate_pred.playerclass == PC_SCOUT)
+        return vlen(player.origin - PM_Org()) < 1000;
+
     return FALSE;
 }
 
@@ -295,19 +299,19 @@ static string rnds(string prefix) {
     return prefix;
 }
 
-void TF_Init() {
-#if 0
-    Deltalisten breaks some default shaders even without a forceoverride.  Quick
-    fix to unblock.
-
+void TFX_Init() {
+#if 1
+    // Note: Deltalisten breaks default shaders even without a forceoverride.
     deltalisten("progs/player.mdl", UpdatePlayer, 0);
-    deltalisten("progs/ff_flag.mdl", UpdateFlag, 0);
-    deltalisten("progs/tf_flag.mdl", UpdateFlag, 0);
+    /* deltalisten("progs/ff_flag.mdl", UpdateFlag, 0); */
+    /* deltalisten("progs/tf_flag.mdl", UpdateFlag, 0); */
 
     shader_team[0] = shaderforname(rnds("blue_team_outline"), OutlineShader("textures/sfx/quad.tga"));
     shader_team[1] = shaderforname(rnds("red_team_outline"), OutlineShader("textures/sfx/pent.tga"));
     shader_flag = shaderforname(rnds("flag_outline"), OutlineShader("textures/sfx/specular.tga"));
 
     shader_over_outline = shaderforname(rnds("over_outline"), "{ sort 7 }");
+    /* pengine.viewmodel.shader = shader_over_outline; */
+    pengine.viewmodel.effects |= EF_NODEPTHTEST;
 #endif
 }

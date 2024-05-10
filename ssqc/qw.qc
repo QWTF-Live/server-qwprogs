@@ -573,6 +573,7 @@ float scoutscanspike;
 float asscanrange;
 float asscanrangedie;
 float force_reload;
+float tfx_exp;
 
 float old_spanner;
 float old_dispenser;

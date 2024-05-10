@@ -255,6 +255,13 @@ void ActivateOrgGame() {
     SetAllRoles(9, 1, 4);  // 4 gren1 for engineer
     SetAllRoles(3, 1, 4);  // 4 gren1 for soldier
 
+    if (tfx_exp) {
+        SetAllRoles(1, 1, 2);  // 2 flash/conc for scout
+        SetAllRoles(1, 2, 2);
+        cussgrentime = 5;
+    }
+
+
     PC_PYRO_AIRBLAST_COOLDOWN = 10;
     PC_ENGINEER_GRENADE_TYPE_2_RANGE = 200;
 
@@ -1066,6 +1073,10 @@ void () DecodeLevelParms = {
         p = find(p, classname, "player");
     }
 */
+
+    tfx_exp = CF_GetSetting("tfx_exp", "tfx_exp", "1");
+    if (tfx_exp)
+        fo_config.tfx_flags |= TFX_SCOUT_SEE_ENEMIES;
 
     // Overrides other settings.
     new_balance = CF_GetSetting("new_balance", "new_balance", "1");

@@ -95,6 +95,7 @@ float RewindFlagEnabled(float flag) {
 
 enumflags {
     TFX_PREMATCH_EVERYTHING,
+    TFX_SCOUT_SEE_ENEMIES,
     TFX_SPEC_OUTLINE,
     TFX_SPEC_SEEFLAG,
     TFX_SPEC_GRENTIMER,
@@ -108,6 +109,7 @@ enumflags {
 
 string TFX_DESC[] = {
     "Prematch see everything",
+    "Scout sees enemies",
     "Spectators see outlines",
     "Spectators see flags",
     "Spectators see grenade timers",

@@ -73,8 +73,14 @@ static float ShowPlayerOutline(entity player) {
         return player.teamno == local_player.teamno;
 
     if (TFxEnabled(TFX_SCOUT_SEE_ENEMIES) && player.teamno != team_no &&
-            pstate_pred.playerclass == PC_SCOUT)
-        return vlen(player.origin - PM_Org()) < 1000;
+            pstate_pred.playerclass == PC_SCOUT) {
+        vector diff = player.origin - PM_Org();
+        float dz = diff_z;
+        diff_z = 0;
+
+        if ((vlen(diff) < 900) && (fabs(dz) < 400))
+            return TRUE;
+    }
 
     return FALSE;
 }

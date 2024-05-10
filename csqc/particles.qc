@@ -109,7 +109,7 @@ static string sentry_p[] = {
 };\n"};
 
 void Register_Particles() {
-    localcmd("wait\n");  // Synchronizes some unknown race
+    localcmd("wait\nwait\nwait\n");  // Synchronizes some unknown race
     localcmd(gas_p[0]);
     localcmd(gas_p[1]);
     localcmd(gas_p[2]);

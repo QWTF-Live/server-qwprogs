@@ -1074,7 +1074,7 @@ void () DecodeLevelParms = {
     }
 */
 
-    tfx_exp = CF_GetSetting("tfx_exp", "tfx_exp", "1");
+    tfx_exp = CF_GetSetting("tfx_exp", "tfx_exp", "0");
     if (tfx_exp)
         fo_config.tfx_flags |= TFX_SCOUT_SEE_ENEMIES;
 

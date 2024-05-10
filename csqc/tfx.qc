@@ -306,7 +306,13 @@ static string rnds(string prefix) {
 }
 
 void TFX_Init() {
-#if 1
+    static float once = FALSE;
+    if (once)
+        return;
+    once = TRUE;
+
+    printf("TFX active.\n");
+
     // Note: Deltalisten breaks default shaders even without a forceoverride.
     deltalisten("progs/player.mdl", UpdatePlayer, 0);
     /* deltalisten("progs/ff_flag.mdl", UpdateFlag, 0); */
@@ -319,5 +325,4 @@ void TFX_Init() {
     shader_over_outline = shaderforname(rnds("over_outline"), "{ sort 7 }");
     /* pengine.viewmodel.shader = shader_over_outline; */
     pengine.viewmodel.effects |= EF_NODEPTHTEST;
-#endif
 }

@@ -298,6 +298,8 @@ void WPP_Status() {
 }
 #undef PRINT_CONFIG
 
+void TFX_Init();
+
 void WPP_UpdateEnable(float force) {
     static float next_ping_update;
     static float PING_PERIOD = 0.250;
@@ -391,6 +393,9 @@ void WPP_UpdateEnable(float force) {
 
     if (pengine.viewmodel != __NULL__)
         WP_UpdateViewModel();
+
+    if (fo_config.tfx_flags)
+        TFX_Init();
 }
 
 DEFCVAR_FLOAT(fo_minping_min, 0);    // Can be used to set a lower-bound on

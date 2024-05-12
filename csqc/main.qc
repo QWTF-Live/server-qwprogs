@@ -274,7 +274,7 @@ struct SlotState {
 };
 
 static struct {
-    int num;
+    int num, cur;
     SlotState state[4];
     Slot under;
     float impulse;
@@ -325,14 +325,10 @@ static void CommandButton(int plus, int button) {
     }
 }
 
-static void SwapTo(int idx) {
-    // Don't generate impulse when unnecessary
-    if ((SlotIndex(pstate_pred.current_slot) == idx &&
-                IsSlotNull(pstate_pred.queue_slot)) ||
-        (SlotIndex(pstate_pred.queue_slot) == idx))
-        return;
-
-    plus_slot.impulse = TF_SLOT1 + idx;
+static Slot ActiveSlot() {
+    if (!IsSlotNull(pstate_pred.queue_slot))
+        return pstate_pred.queue_slot;
+    return pstate_pred.current_slot;
 }
 
 static void ActivatePlusSlot(int idx) {
@@ -343,14 +339,13 @@ static void ActivatePlusSlot(int idx) {
 
     if (!plus_slot.state[idx].activated) {
         if (plus_slot.num++ == 0)
-            plus_slot.under = !IsSlotNull(pstate_pred.queue_slot) ?
-                pstate_pred.queue_slot : pstate_pred.current_slot;
+            plus_slot.under = ActiveSlot();
     }
 
     plus_slot.state[idx].activated = time;
     plus_slot.state[idx].until = time + kDebounce;
-
-    SwapTo(idx);
+    plus_slot.cur = idx;
+    plus_slot.impulse = TF_SLOT1 + idx;
 }
 
 static void DeactivatePlusSlot(int idx) {
@@ -375,7 +370,8 @@ static void DeactivatePlusSlot(int idx) {
         }
     }
 
-    SwapTo(next_idx);
+    plus_slot.cur = next_idx;
+    plus_slot.impulse = TF_SLOT1 + next_idx;
 }
 
 noref float(string cmd) CSQC_ConsoleCommand = {
@@ -783,26 +779,25 @@ static void InputFrameDebounce() {
 
     input_buttons |= active_buttons | debounced_buttons;
 
-    // Slot debounce
-    if (plus_slot.num == 0 && plus_slot.impulse == 0)
-        return;
-
     if (plus_slot.num > 0) {
         for (int i = 0; i < 4; i++)
             if (!plus_slot.state[i].on && plus_slot.state[i].activated)
                 DeactivatePlusSlot(i);
     }
 
-    // Don't clobber
-    if (plus_slot.impulse && input_impulse)
-        return;
-
+    float can_fire = TRUE;
     if (plus_slot.impulse) {
-        input_impulse = plus_slot.impulse;
-        plus_slot.impulse = 0;
+        if (SlotIndex(ActiveSlot()) == plus_slot.cur) {
+            plus_slot.impulse = 0;
+        } else if (input_impulse == 0) {
+            input_impulse = plus_slot.impulse;
+            plus_slot.impulse = 0;
+        } else {
+            can_fire = FALSE;
+        }
     }
 
-    if (plus_slot.num > 0)
+    if (plus_slot.num > 0 && can_fire)
         input_buttons |= BUTTON_ATTACK;
 }
 

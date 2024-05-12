@@ -830,7 +830,6 @@ void (entity inflictor, entity attacker, float bounce,
     local entity te;
     local vector org;
 
-    printf("cussgrentime = %0.2f\n", cussgrentime);
     if (NewBalanceActive() && inflictor.owner.playerclass == PC_MEDIC)
         actual_cuss_time = 2;
 

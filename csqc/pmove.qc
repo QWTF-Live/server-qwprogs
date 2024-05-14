@@ -71,11 +71,11 @@ static void PM_Sounds(float is_jumping, float is_jumpframe,
 
     if (is_landing && last_vel_z < -300) {  // Hard or water land.
         if (fluidtype == CONTENT_WATER)
-            localsound("player/h2ojump.wav", CHAN_BODY, 1);
+            Predicted_Sound("player/h2ojump.wav", CHAN_BODY, 1);
         else if (last_vel_z < -650)  // Will take damage.
-            localsound("player/land2.wav", CHAN_VOICE, 1);
+            Predicted_Sound("player/land2.wav", CHAN_BODY, 1);
         else
-            localsound("player/land.wav", CHAN_VOICE, 1);
+            Predicted_Sound("player/land.wav", CHAN_BODY, 1);
     }
 
     // TODO: Model health above and not play jump when landing into death.
@@ -84,8 +84,9 @@ static void PM_Sounds(float is_jumping, float is_jumpframe,
         if (waterlevel >= 2) {
            if (time > swimsound_next) {
                swimsound_next = time + 1;
-               localsound(random() < 0.5 ? "misc/water1.wav" : "misc/water2.wav",
-                          CHAN_BODY, 1);
+               float rand = shared_prng(PRNG_MOVE);
+               Predicted_Sound(rand < 0.5 ? "misc/water1.wav" : "misc/water2.wav",
+                               CHAN_BODY, 1);
            }
         } else if (is_jumpframe) {
             // The default pmove implementation and server behave slightly
@@ -98,7 +99,7 @@ static void PM_Sounds(float is_jumping, float is_jumpframe,
             //    stairs when combined with (1).  We can test for this by
             //    watching to see whether we actually got a sufficiently large
             //    velocity increase.
-            localsound("player/plyrjmp8.wav", CHAN_AUTO, CVARF(fo_jumpvolume));
+            Predicted_Sound("player/plyrjmp8.wav", CHAN_AUTO, CVARF(fo_jumpvolume));
         }
     }
 
@@ -109,9 +110,9 @@ static void PM_Sounds(float is_jumping, float is_jumpframe,
             case CONTENT_WATER: sound = "player/inh2o.wav"; break;
             case CONTENT_SLIME: sound = "player/slimbrn2.wav"; break;
         }
-        localsound(sound, CHAN_BODY, 1);
+        Predicted_Sound(sound, CHAN_BODY, 1);
     } else if (waterlevel == 0 && last_waterlevel > 0) {  // Water exit.
-        localsound("misc/outwater.wav", CHAN_BODY, 1);
+        Predicted_Sound("misc/outwater.wav", CHAN_BODY, 1);
     }
 
     last_waterlevel = waterlevel;

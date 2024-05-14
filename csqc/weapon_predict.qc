@@ -576,9 +576,6 @@ void Attack_Finished(float attack_time) {
 ////////////////////////////////////////////////////////////////////////////////
 /// Weapon models
 ////////////////////////////////////////////////////////////////////////////////
-static entity pred_sound_entity;
-static float last_pred_sound;
-
 static inline Slot CurrentSlot() { return pstate_pred.current_slot; }
 static inline FO_WeapInfo* SlotWI(Slot slot) {
     return FO_SlotWeapInfo(pstate_pred.playerclass, slot);
@@ -588,11 +585,13 @@ inline FO_WeapInfo* WP_CurrentWeapon() {
     return SlotWI(CurrentSlot());
 }
 
+void Predicted_Sound(string samp, float chan, float vol);
+
 void RawPred_Sound(SoundIndex snd, float channel, float vol = 1) {
     if (snd == SND_NONE || pstate_pred.tfstate & TFSTATE_FLASHED)
         return;
 
-    localsound(Snd_Get(snd)->sound, channel, vol);
+    Predicted_Sound(Snd_Get(snd)->sound, channel, vol);
 }
 
 void Pred_Sound(SoundIndex snd, float vol = 1) {
@@ -1042,7 +1041,7 @@ static void WP_Special() {
             cooldown = 1;
             if (PM_Enabled() && IsEffectFrame()) {
                 PM_AddNudgeDash(pstate_pred.seq);
-                localsound("dash.wav", CHAN_BODY, 1);
+                Predicted_Sound("dash.wav", CHAN_BODY, 1);
             }
             break;
         // Note: hwguy handled by WP_HandleHeavyInputs
@@ -1462,10 +1461,6 @@ void FO_Predict_Init() {
 
     WP_InitSniper();
     WP_InitSentryPreview();
-
-    // Entity we'll attach locally generated sound to.
-    pred_sound_entity = spawn();
-    pred_sound_entity.classname = "pred_sound";
 
     INIT_MOVING_AVG(avg_ping);
     InitFppProjectiles();
@@ -2068,12 +2063,6 @@ void InitProjectileEnt(float sendflags) {
     float has_predicted = FALSE;
     if (PP_Enabled() && self.owner_entnum == pengine.player_entnum) {
         has_predicted = PredProjectile_MatchProjectile();
-
-        // Either missed prediction, or not active.  We don't want to condition
-        // on effect frames here as this isn't predicted; stronger: if we missed
-        // the sound we probably missed an effect frame!
-        if (!has_predicted)
-            RawPred_Sound(FPP_Get(self.fpp.index)->snd, CHAN_WEAPON);
     }
 
     if (!has_predicted) {
@@ -2310,4 +2299,70 @@ void WP_ServerFrame() {
 
     if (!game_state.is_alive)
         WP_DeactivateBuildingPreview();
+}
+
+
+// Sound
+struct SndLog {
+    string sound;
+    int channel;
+    float when;
+};
+
+static const float kSndLogSize = 20;
+SndLog sound_log[kSndLogSize];
+int snd_last;
+
+void SndLog_Append(string sound, int channel) {
+    int idx = snd_last++ % kSndLogSize;
+    SndLog* e = &sound_log[idx];
+    e->sound = sound;
+    e->channel = channel;
+    e->when = pstate_pred.server_time;
+    /* printf(" ** %0.3f: Pred> %s [when = %0.3f]\n", time, sound, e->when); */
+}
+
+float SndLog_Search(float stime, string sound, int channel) {
+    float eps = 1.5 * SERVER_FRAME_DT;
+
+    for (int i = 1; i < kSndLogSize; i++) {
+        int idx = (snd_last - i + kSndLogSize) % kSndLogSize;
+        SndLog* e = &sound_log[idx];
+
+        if (e->when > stime + eps)
+            continue;
+
+        if (e->when < stime - eps) // Time ordered
+            return FALSE;
+
+        if (e->channel != channel || e->sound != sound)
+            continue;
+
+        return TRUE;
+
+    }
+
+    return FALSE;
+}
+
+void Predicted_Sound(string samp, float channel, float vol) {
+    localsound(samp, channel, vol);
+    SndLog_Append(samp, channel);
+}
+
+void Predictable_Sound(float stime, float ent_no, string samp, float chan,
+                       vector org, float vol) {
+    if (ent_no == pengine.player_entnum && SndLog_Search(stime, samp, chan))
+        return;
+
+    // Handle flash
+    if (pstate_pred.tfstate & TFSTATE_FLASHED)
+        return;
+
+    precache_sound(samp);
+    // Unlike search above, we do want to use localsound for spectators
+    if (ent_no == player_localentnum)
+        localsound(samp, chan, vol);
+    else
+        pointsound(org, samp, vol, ATTN_NORM);
 }

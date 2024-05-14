@@ -8,12 +8,29 @@ void FO_SetModel(entity e, string fomdl)
     setmodel(e, fomdl);
 }
 
+void MSG_Sound(entity targ, string samp, float chan, float vol) {
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_SOUND);
+    WriteFloat(MSG_MULTICAST, time);
+    WriteEntity(MSG_MULTICAST, targ);
+    WriteCoord(MSG_MULTICAST, targ.origin_x);
+    WriteCoord(MSG_MULTICAST, targ.origin_y);
+    WriteCoord(MSG_MULTICAST, targ.origin_z);
+    WriteString(MSG_MULTICAST, samp);
+    WriteFloat(MSG_MULTICAST, chan);
+    WriteFloat(MSG_MULTICAST, vol);
+    multicast(targ.origin, MULTICAST_PHS_R);
+}
+
 void FO_Sound(entity e, float chan, string samp, float vol, float atten)
 {
     float olddimens = e.dimension_seen;
     // make the sound go to no flash, so it isn't heard by those that are flashed
     e.dimension_seen = DMN_NOFLASH;
-    sound(e, chan, samp, vol, atten);
+    if (e.classname == "player")
+        MSG_Sound(e, samp, chan, vol);
+    else
+        sound(e, chan, samp, vol, atten);
     e.dimension_seen = olddimens;
 }
 

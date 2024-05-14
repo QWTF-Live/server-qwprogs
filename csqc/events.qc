@@ -354,6 +354,22 @@ void() CSQC_Parse_Event = {
 
             printf("Local cache of login credentials complete\n");
             break;
+        case MSG_SOUND:
+            float stime, vol, chan, targ;
+            vector org;
+            string samp;
+
+            stime = readfloat();
+            targ  = readentitynum();
+            org_x = readcoord();
+            org_y = readcoord();
+            org_z = readcoord();
+            samp  = readstring();
+            chan  = readfloat();
+            vol   = readfloat();
+
+            Predictable_Sound(stime, targ, samp, chan, org, vol);
+            break;
     }
 }
 
@@ -621,35 +637,8 @@ void ParseSBAR()
     }
 }
 
-float(float ent_num, float channel, string soundname, float vol, float attenuation, vector pos, float pitchmod) CSQC_Event_Sound = {
-    // Sound sent to our predicted weapon is expected to have been client-side.
-    if (ent_num == pengine.pweap_ent.entnum)
-        return 1;
-
-    // Sounds from remote entities are not local and we should always play.
-    if (ent_num != player_localentnum || game_state.is_spectator)
-        return 0;
-
-    // Sounds below this line are conditionally filtered.
-    switch(soundname) {
-        case "dash.wav":
-            if (PM_Enabled() & !CVARF(fopm_nonudge))
-                return 1;
-            break;
-        case "player/plyrjmp8.wav":
-        case "player/land.wav":
-        case "player/land2.wav":
-        case "player/h2ojump.wav":
-        case "misc/water1.wav":
-        case "misc/water2.wav":
-        case "player/inlava.wav":
-        case "player/inh2o.wav":
-        case "player/slimbrn2.wav":
-        case "misc/outwater.wav":
-            if (CSQC_JumpSounds_Active())
-                return 1;
-            break;
-    }
-
+float CSQC_Event_Sound(float ent_num, float channel, string soundname,
+                       float vol, float attenuation, vector pos,
+                       float pitchmod) = {
     return 0;
 }

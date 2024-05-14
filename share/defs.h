@@ -287,6 +287,7 @@ enumflags {
 
 enum {
     PRNG_WEAP,
+    PRNG_MOVE,
     PRNG_HWGUY,
     PRNG_CONC,
     PRNG_NUM_STATES,

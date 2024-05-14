@@ -384,7 +384,7 @@ static float Prediction_ChangedMask(entity player, entity src) {
     M4(FOWP_CLIP, clip_fired[0], clip_fired[1], clip_fired[2], clip_fired[3]);
     M2(FOWP_RELOAD, reload_started, reload_finished);
     M1(FOWP_SPECIAL, special_next);
-    M1(FOWP_RNG0, prng_base[PRNG_WEAP]);
+    M2(FOWP_RNG0, prng_base[PRNG_WEAP], prng_base[PRNG_MOVE]);
     M1(FOWP_RNG1, prng_base[PRNG_HWGUY]);
     M1(FOWP_RNG2, prng_base[PRNG_CONC]);
     M2(FOWP_PREDICT_FLAGS, predict_flags, effects);
@@ -609,8 +609,10 @@ void EntUpdate_WeaponPred(float isnew) {
         COMM(Float, special_next);
     }
 
-    if (sendflags & FOWP_RNG0)
+    if (sendflags & FOWP_RNG0) {
         COMM(Int, prng_base[PRNG_WEAP]);
+        COMM(Int, prng_base[PRNG_MOVE]);
+    }
     if (sendflags & FOWP_RNG1)
         COMM(Int, prng_base[PRNG_HWGUY]);
     if (sendflags & FOWP_RNG2)
@@ -954,11 +956,6 @@ void Pred_Sound(SoundIndex snd, float vol = 1) {
 
     entity target = self;
     string wav = snd_types[snd].sound;
-
-    if (ClientPred_Enabled(self, CSQC_PROJ_PRED)) {
-        target = self.predict_entity;
-        setorigin(target, self.origin);
-    }
 
     FO_Sound(target, CHAN_WEAPON, wav, vol, ATTN_NORM);
 }

@@ -2546,7 +2546,9 @@ void () PlayerJump = {
 
         if (self.swim_flag < time) {
             self.swim_flag = time + 1;
-            if (random() < 0.5)
+
+            float rand = shared_prng(PRNG_MOVE);
+            if (rand < 0.5)
                 FO_Sound(self, CHAN_BODY, "misc/water1.wav", 1, ATTN_NORM);
             else
                 FO_Sound(self, CHAN_BODY, "misc/water2.wav", 1, ATTN_NORM);
@@ -2705,7 +2707,9 @@ static void ConcUpdate() {
     }
 }
 
+float last_pre;
 void () PlayerPreThink = {
+    last_pre = time;
     FO_UpdateClientTime();
     ConcUpdate();
 
@@ -3010,10 +3014,10 @@ static void PlayerPostThinkAlive() {
                 }
                 fdmg = rint(fdmg);
                 TF_T_Damage(self, world, world, fdmg, 1, 0);
-                FO_Sound(self, CHAN_VOICE, "player/land2.wav", 1, ATTN_NORM);
+                FO_Sound(self, CHAN_BODY, "player/land2.wav", 1, ATTN_NORM);
                 self.deathtype = "falling";
             } else {
-                FO_Sound(self, CHAN_VOICE, "player/land.wav", 1, ATTN_NORM);
+                FO_Sound(self, CHAN_BODY, "player/land.wav", 1, ATTN_NORM);
             }
         }
     }

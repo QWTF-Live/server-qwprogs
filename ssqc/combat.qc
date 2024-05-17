@@ -735,9 +735,6 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
         }
     }
 
-    if (self.feign_next_damage && !IsFeigned(self))
-        FO_Spy_Feign(0, /* ignore rate-limit */ 1);
-
     self = oldself;
 };
 

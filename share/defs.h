@@ -462,10 +462,10 @@ struct Slot { int id; };
 #define TF_LOCKON                   58  // HWGuy: Turn Assault Cannon fire on
 #define TF_LOCKOFF                  59  // HWGuy: Turn Assault Cannon fire off
 #define TF_AIRBLAST                 60  // Pyro: Air blast
-#define TF_SPY_DIE                  61  // Spy: Feign death
-#define TF_SPY_DIE_ON               62  // Spy: Feign death next damage
-#define TF_SPY_DIE_OFF              63  // Spy: Unfeign
-#define TF_SPY_SILENT_DIE           64  // Spy: Silent feign death
+#define TF_SPY_FEIGN                61  // Spy: Feign death
+// unused 62
+#define TF_SPY_UNFEIGN              63  // Spy: Unfeign
+#define TF_SPY_FEIGN_SILENT         64  // Spy: Silent feign death
 #define TF_SPY_SPY                  65  // Spy: Bring up disguise menu
 #define TF_DISGUISE_ENEMY           66  // Spy: Disguise as enemy team
 #define TF_DISGUISE_LAST            67  // Spy: Use last disguise
@@ -1630,10 +1630,13 @@ TFAlias client_aliases[] = {
     {"-lock",                   TF_LOCKOFF},
     {"airblast",                TF_AIRBLAST},
     {"disguise",                0,  "fo_menu_disguise", TF_SPY_SPY},
-    {"+feign",                  TF_SPY_DIE_ON},
-    {"-feign",                  TF_SPY_DIE_OFF},
-    {"feign",                   TF_SPY_DIE},
-    {"sfeign",                  TF_SPY_SILENT_DIE},
+    {"feign",                   TF_SPY_FEIGN},
+    {"unfeign",                 TF_SPY_UNFEIGN},
+    {"+feign",                  TF_SPY_FEIGN},
+    {"-feign",                  TF_SPY_UNFEIGN},
+    {"sfeign",                  TF_SPY_FEIGN_SILENT},
+    {"+sfeign",                 TF_SPY_FEIGN_SILENT},
+    {"-sfeign",                 TF_SPY_UNFEIGN},
     {"dreset",                  TF_DISGUISE_RESET},
     {"dscout",                  TF_DISGUISE_SCOUT},
     {"dsniper",                 TF_DISGUISE_SNIPER},

@@ -53,7 +53,6 @@ void () TeamFortress_Scan;
 void () TeamFortress_Discard;
 void () TeamFortress_Discard_DropAmmo;
 void (float issilent) FO_Spy_FeignCmd;
-void (float issilent) FO_Spy_ToggleFeign;
 void () FO_Engineer_ToggleDispenser;
 void () FO_Engineer_ToggleSentry;
 void TeamFortress_QueuedDetpipe();
@@ -1930,7 +1929,7 @@ static struct {
     {TF_MEDIC_AURA_TOGGLE},
     {TF_HVYWEAP_LOCK_TOGGLE},
     {TF_AIRBLAST},
-    {TF_SPY_DIE, TF_DISGUISE_LAST_SPAWNED},
+    {TF_SPY_FEIGN, TF_DISGUISE_LAST_SPAWNED},
     {0, 0},
 };
 
@@ -1995,8 +1994,9 @@ static int ImpulseAllowed(int impulse) {
             case TF_SPECIAL_SKILL1:
             case TF_SPECIAL_SKILL2:
             case TF_MEDIC_HELPME:
-            case TF_SPY_DIE:
-            case TF_SPY_SILENT_DIE:
+            case TF_SPY_FEIGN:
+            case TF_SPY_FEIGN_SILENT:
+            case TF_SPY_UNFEIGN:
             case TF_GRENADE_1:
             case TF_GRENADE_2:
             case TF_GRENADE_PT_1:
@@ -2038,8 +2038,9 @@ static int ImpulseAllowed(int impulse) {
             return self.playerclass == PC_SCOUT;
 
         case TF_SPY_SPY:
-        case TF_SPY_DIE:
-        case TF_SPY_SILENT_DIE:
+        case TF_SPY_FEIGN:
+        case TF_SPY_FEIGN_SILENT:
+        case TF_SPY_UNFEIGN:
         case TF_DISGUISE_RESET:
         case TF_DISGUISE_SCOUT:
         case TF_DISGUISE_SNIPER:
@@ -2293,12 +2294,12 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
             else
                 Menu_Spy_Skin();
             break;
-        case TF_SPY_DIE:
+        case TF_SPY_FEIGN:
             FO_Spy_FeignCmd(0); break;
-        case TF_SPY_DIE_ON:
-            FO_Spy_FeignOnNextDamage(); break;
-        case TF_SPY_SILENT_DIE:
+        case TF_SPY_FEIGN_SILENT:
             FO_Spy_FeignCmd(1); break;
+        case TF_SPY_UNFEIGN:
+            FO_Spy_Unfeign(); break;
         case TF_DISGUISE_RESET:
             CF_Spy_ChangeSkin(self, 8, TRUE);
             CF_Spy_ChangeColor(self, self.team_no, TRUE);
@@ -2574,10 +2575,9 @@ void () W_WeaponFrame = {
         case TF_CHANGEPC_RANDOM:
         case TF_INVENTORY:
         case FLAG_INFO:
-        case TF_SPY_DIE:
-        case TF_SPY_DIE_ON:
-        case TF_SPY_DIE_OFF:
-        case TF_SPY_SILENT_DIE:
+        case TF_SPY_FEIGN:
+        case TF_SPY_UNFEIGN:
+        case TF_SPY_FEIGN_SILENT:
         case TF_PLAYER_READY:
         case TF_PLAYER_NOT_READY:
             ImpulseCommands();

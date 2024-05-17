@@ -2089,7 +2089,6 @@ void () PutClientInServer = {
     self.saveme_time = 0;
     self.display_tip = 0;
     self.tip_type = 0;
-    self.feign_next_damage = 0;
     self.conc_state.mag = 0;
     self.detpipe_queued = 0;
 

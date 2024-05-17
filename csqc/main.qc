@@ -560,11 +560,11 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
         case "+rj":
             if (WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO)
-                localcmd("+button4\n");
+                localcmd("slot1; +button4\n");
             break;
         case "-rj":
             if (WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO)
-                localcmd("-button4\n");
+                localcmd("-button4; weaplast\n");
             break;
         case "wpp_status":
             WPP_Status();

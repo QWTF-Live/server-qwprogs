@@ -1923,12 +1923,12 @@ static struct {
 } special_impulses[] = {
     {0, 0},
     {TF_DASH, TF_SCAN},
-    {TF_ZOOMTOGGLE},
+    {TF_ZOOMTOGGLE, 0},
     {0, 0},
     {TF_PB_DETONATE, TF_DETPACK_5},
-    {TF_MEDIC_AURA_TOGGLE},
-    {TF_HVYWEAP_LOCK_TOGGLE},
-    {TF_AIRBLAST},
+    {TF_MEDIC_AURA_TOGGLE, 0},
+    {TF_HVYWEAP_LOCK_TOGGLE, 0},
+    {TF_AIRBLAST, 0},
     {TF_SPY_FEIGN, TF_DISGUISE_LAST_SPAWNED},
     {0, 0},
 };
@@ -2437,10 +2437,6 @@ void () ButtonFrame = {
 
     if (input_buttons & BUTTON_SPECIAL2) {
         switch (self.playerclass) {
-            case PC_SOLDIER:
-            case PC_PYRO:
-                ExecImpulseCommand(TF_SPECIAL_SKILL1);
-                break;
             case PC_SCOUT:
             case PC_DEMOMAN:
             case PC_SPY:

@@ -864,6 +864,7 @@ float crosshair_team_no;
 float all_time;
 float painfinished;
 float jump_counter;
+float attack_counter;
 float last_id_time;
 
 vector FO_Hud_Icon_Size = [24, 24, 0];

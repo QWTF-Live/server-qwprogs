@@ -5,7 +5,6 @@
 void (entity pe_player, float pf_class, float is_user) CF_Spy_ChangeSkin;
 void (entity pe_player, float pf_team_no, float is_user) CF_Spy_ChangeColor;
 void (float issilent, float force) FO_Spy_Feign;
-void () FO_Spy_FeignOnNextDamage;
 void () FO_Spy_Unfeign;
 void () CF_Spy_Invisible;
 void () CF_Spy_DisguiseStop;

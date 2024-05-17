@@ -571,7 +571,7 @@ void () DecodeLevelParms = {
         feign_msg = CF_GetSetting("fm", "feign_msg", "on");
 
         // rate limit on feign
-        feign_rate_limit = CF_GetSetting("frl", "feign_rate_limit", "1");
+        feign_rate_limit = CF_GetSetting("frl", "feign_rate_limit", "2");
 
         // turn off spy [off]
         spy_off = CF_GetSetting("spy", "spy", "off");
@@ -2100,7 +2100,6 @@ void () PutClientInServer = {
     self.saveme_time = 0;
     self.display_tip = 0;
     self.tip_type = 0;
-    self.feign_next_damage = 0;
     self.conc_state.mag = 0;
     self.detpipe_queued = 0;
 
@@ -3074,8 +3073,7 @@ void () PlayerPostThink = {
         TeamFortress_MOTD();
 
     if (self.deadflag || self.playerclass == 0) {
-        DeadImpulses();
-        self.impulse = 0;
+        ImpulseCommands();
     } else {
         PlayerPostThinkAlive();
     }

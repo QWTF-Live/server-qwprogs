@@ -39,91 +39,6 @@ void () AutoId = {
     self.nextthink = time + 0.03;
 };
 
-void () UseSpecialSkill = {
-    local vector src;
-
-    self.impulse = 0;
-    switch (self.playerclass)
-    {
-        case PC_SCOUT:
-            self.impulse = TF_DASH;
-            break;
-        case PC_SNIPER:
-            self.impulse = TF_ZOOMTOGGLE;
-            break;
-        case PC_DEMOMAN:
-            self.impulse = TF_PB_DETONATE;
-            break;
-        case PC_MEDIC:
-            self.impulse = TF_MEDIC_AURA_TOGGLE;
-            break;
-        case PC_HVYWEAP:
-            self.impulse = TF_HVYWEAP_LOCK_TOGGLE;
-            break;
-        case PC_PYRO:
-            self.impulse = TF_AIRBLAST;
-            break;
-        case PC_SPY:
-            self.impulse = TF_SPY_DIE;
-            break;
-        case PC_ENGINEER:
-            self.impulse = TF_ENGINEER_TOGGLEDISPENSER;
-            break;
-        case PC_UNDEFINED:
-            if (self.enemy == world) {
-                src = self.origin + v_forward * 10;
-                src_z = self.absmin_z + self.size_z * 0.7;
-                traceline(src, src + v_forward * 2048, 0, self);
-                if ((trace_ent != world) && (trace_ent.origin != world.origin)) {
-                    sprint(self, PRINT_HIGH, "Locked onto ",
-                            trace_ent.classname, "\n");
-                    self.enemy = trace_ent;
-                    self.camdist = vlen(self.enemy.origin - self.origin);
-                    self.camangle = self.origin - self.enemy.origin;
-                    self.camangle_z = 0 - self.camangle_z;
-                    self.camangle = vectoangles(self.camangle);
-                }
-            } else {
-                sprint(self, PRINT_HIGH, "Removed lock\n");
-                self.enemy = world;
-            }
-            break;
-    }
-};
-
-void () UseSpecialSkill2 = {
-    local vector src;
-
-    self.impulse = 0;
-    switch (self.playerclass)
-    {
-        case PC_SCOUT:
-            self.impulse = TF_SCAN;
-            break;
-        case PC_SNIPER:
-            break;
-        case PC_SOLDIER:
-            break;
-        case PC_DEMOMAN:
-            self.impulse = TF_DETPACK_5;
-            break;
-        case PC_MEDIC:
-            break;
-        case PC_HVYWEAP:
-            break;
-        case PC_PYRO:
-            break;
-        case PC_SPY:
-            self.impulse = TF_DISGUISE_LAST_SPAWNED;
-            break;
-        case PC_ENGINEER:
-            self.impulse = TF_ENGINEER_TOGGLESENTRY;
-            break;
-        case PC_UNDEFINED:
-            break;
-    }
-};
-
 void () RemoveAutoIdTimer = {
     local entity te = find(world, classname, "aitimer");
     while (te != world) {
@@ -794,10 +709,12 @@ void (entity timer) FO_SpawnThrownGrenade = {
 }
 
 void (float inp) TeamFortress_PrimeThrowGrenade = {
-    if (self.tfstate & TFSTATE_GREN_MASK_PRIMED)
-        TeamFortress_ThrowGrenade();
-    else
+    if (self.tfstate & TFSTATE_GREN_MASK_PRIMED) {
+        if (!IsFeigned(self))
+                TeamFortress_ThrowGrenade();
+    } else {
         TeamFortress_PrimeGrenade(inp, TRUE);
+    }
 
     if (FO_ClassGren(self.playerclass, inp - 1)->id == GREN_CALTROP)
         TeamFortress_ThrowGrenade();

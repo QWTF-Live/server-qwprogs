@@ -532,6 +532,7 @@ void EntUpdate_WeaponPred(float isnew) {
     }
 
     if (sendflags & FOWP_PMOVE) {
+        COMM_PM(Byte, movetype);
         COMM_PM(Coord, origin[0]);
         COMM_PM(Coord, origin[1]);
         COMM_PM(Coord, origin[2]);

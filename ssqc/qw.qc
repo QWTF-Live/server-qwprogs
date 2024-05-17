@@ -51,7 +51,6 @@ float remote_client_time();
 .float is_building;             // TRUE for an ENGINEER if they're building something
 .float is_detpacking;           // TRUE for a DEMOMAN if they're setting a detpack
 .float is_button_feigning;      // TRUE for a SPY if they're feigning death with +feign or +special
-.float feign_next_damage;       // TRUE for a SPY if they're going to feign death on next damage
 .float is_unabletospy;          // TRUE for a SPY if they can't go undercover
 .float is_zooming;              // TRUE for a SNIPER if they're currently zoomed in
 .float has_throwngren;          // TRUE for a player that has thrown a grenade (won't get a free suicide)
@@ -437,6 +436,7 @@ float already_chosen_map;
 .float antispam_assault_cannon; // don't spam assault cannon messages
 .float antispam_cannon_air;     // don't spam assault cannon air messages
 .float antispam_incendiary_cannon; // don't spam incendiary cannon messages
+.float antispam_feign;
 
 // status bar stuff
 .string StatusString;           // current centerprint text (strzone'd!)

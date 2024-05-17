@@ -431,7 +431,7 @@ struct Slot { int id; };
 #define TF_RELOAD_SLOT3             27  // Reload weapon slot 3
 #define TF_RELOAD                   28  // Reload current weapon
 #define TF_RELOAD_NEXT              29  // Reload next weapon with a non-full clip
-#define TF_SPECIAL_SKILL            30  // Class special
+#define TF_SPECIAL_SKILL1           30  // Class special
 #define TF_DROPFLAG                 31  // Drop flag
 #define TF_DROPKEY                  32  // Drop key
 #define TF_DISCARD                  33  // Discard useless ammo
@@ -462,10 +462,10 @@ struct Slot { int id; };
 #define TF_LOCKON                   58  // HWGuy: Turn Assault Cannon fire on
 #define TF_LOCKOFF                  59  // HWGuy: Turn Assault Cannon fire off
 #define TF_AIRBLAST                 60  // Pyro: Air blast
-#define TF_SPY_DIE                  61  // Spy: Feign death
-#define TF_SPY_DIE_ON               62  // Spy: Feign death next damage
-#define TF_SPY_DIE_OFF              63  // Spy: Unfeign
-#define TF_SPY_SILENT_DIE           64  // Spy: Silent feign death
+#define TF_SPY_FEIGN                61  // Spy: Feign death
+// unused 62
+#define TF_SPY_UNFEIGN              63  // Spy: Unfeign
+#define TF_SPY_FEIGN_SILENT         64  // Spy: Silent feign death
 #define TF_SPY_SPY                  65  // Spy: Bring up disguise menu
 #define TF_DISGUISE_ENEMY           66  // Spy: Disguise as enemy team
 #define TF_DISGUISE_LAST            67  // Spy: Use last disguise
@@ -489,7 +489,7 @@ struct Slot { int id; };
 #define TF_PRACSPAWN_PLACE          85
 #define TF_PRACSPAWN_REMOVE         86
 #define TF_DISGUISE_LAST_SPAWNED    87  // Spy: Disguise as last enemy to spawn
-#define TF_SPECIAL_SKILL_2          88  // Class special 2
+#define TF_SPECIAL_SKILL2           88  // Class special 2
 #define TF_ENGINEER_TOGGLESENTRY    89  // Engineer: Build or detonate sentry
 #define TF_ENGINEER_TOGGLEDISPENSER 90  // Engineer: Build or detonate dispenser
 // unused                           91
@@ -501,7 +501,7 @@ struct Slot { int id; };
 // unused                           97
 // unused                           98
 // unused                           99
-// unused                           100
+#define TF_PREMATCH_INVULN          100
 #define TF_CHANGETEAM               101 // Bring up team selection menu
 #define TF_TEAM_1                   102 // Join team 1
 #define TF_TEAM_2                   103 // Join team 2
@@ -1577,8 +1577,8 @@ TFAlias client_aliases[] = {
     {"dropflag",                TF_DROPFLAG},
     {"dropitems",               TF_DROPFLAG},
     {"showloc",                 TF_DISPLAYLOCATION},
-    {"special",                 TF_SPECIAL_SKILL},
-    {"special2",                TF_SPECIAL_SKILL_2},
+    {"special",                 TF_SPECIAL_SKILL1},
+    {"special2",                TF_SPECIAL_SKILL2},
     {"saveme",                  TF_MEDIC_HELPME},
     {"discard",                 TF_DISCARD},
     {"discard_drop_ammo",       TF_DISCARD_DROP_AMMO},
@@ -1608,14 +1608,20 @@ TFAlias client_aliases[] = {
     {"zoomin",                  TF_ZOOMIN},
     {"zoomout",                 TF_ZOOMOUT},
     {"detpipe",                 TF_PB_DETONATE},
-    {"+det5",                   TF_DETPACK_5},
-    {"-det5",                   TF_DETPACK_STOP},
-    {"+det20",                  TF_DETPACK_20},
-    {"-det20",                  TF_DETPACK_STOP},
-    {"+det50",                  TF_DETPACK_50},
-    {"-det50",                  TF_DETPACK_STOP},
-    {"+det255",                 TF_DETPACK},
-    {"-det255",                 TF_DETPACK_STOP},
+    {"+detpack",                0, "cmd detpack %1"},
+    {"-detpack",                0, "cmd detpack stop"},
+    {"+det5",                   0, "+detpack 5"},
+    {"-det5",                   0, "-detpack"},
+    {"+det20",                  0, "+detpack 20"},
+    {"-det20",                  0, "-detpack"},
+    {"+det50",                  0, "+detpack 50"},
+    {"-det50",                  0, "-detpack"},
+    {"+det255",                 0, "+detpack 255"},
+    {"-det255",                 0, "-detpack"},
+    {"det5",                    0, "cmd detpack 5"},
+    {"det20",                   0, "cmd detpack 20"},
+    {"det50",                   0, "cmd detpack 50"},
+    {"det255",                  0, "cmd detpack 255"},
     {"aura",                    TF_MEDIC_AURA_TOGGLE},
     {"locktoggle",              TF_HVYWEAP_LOCK_TOGGLE},
     {"lock",                    TF_LOCKON},
@@ -1624,10 +1630,13 @@ TFAlias client_aliases[] = {
     {"-lock",                   TF_LOCKOFF},
     {"airblast",                TF_AIRBLAST},
     {"disguise",                0,  "fo_menu_disguise", TF_SPY_SPY},
-    {"+feign",                  TF_SPY_DIE_ON},
-    {"-feign",                  TF_SPY_DIE_OFF},
-    {"feign",                   TF_SPY_DIE},
-    {"sfeign",                  TF_SPY_SILENT_DIE},
+    {"feign",                   TF_SPY_FEIGN},
+    {"unfeign",                 TF_SPY_UNFEIGN},
+    {"+feign",                  TF_SPY_FEIGN},
+    {"-feign",                  TF_SPY_UNFEIGN},
+    {"sfeign",                  TF_SPY_FEIGN_SILENT},
+    {"+sfeign",                 TF_SPY_FEIGN_SILENT},
+    {"-sfeign",                 TF_SPY_UNFEIGN},
     {"dreset",                  TF_DISGUISE_RESET},
     {"dscout",                  TF_DISGUISE_SCOUT},
     {"dsniper",                 TF_DISGUISE_SNIPER},
@@ -1678,6 +1687,8 @@ TFAlias client_aliases[] = {
 TFAlias csqc_aliases[] = {
     {"+special",                0, "+button 3"},
     {"-special",                0, "-button 3"},
+    {"+special1",               0, "+button 3"},
+    {"-special1",               0, "-button 3"},
     {"+special2",               0, "+button 4"},
     {"-special2",               0, "-button 4"},
     {"+grenade1",               0, "+button 5"},

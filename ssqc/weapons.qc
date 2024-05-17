@@ -2100,7 +2100,6 @@ static int ImpulseAllowed(int impulse) {
 }
 
 void ExecImpulseCommand(int impulse, int arg = 0) {
-    int o = impulse;
     if (impulse == TF_SPECIAL_SKILL1) {
         if (cb_prematch)
             impulse = TF_PREMATCH_INVULN;
@@ -2411,18 +2410,23 @@ void () ButtonFrame = {
     float keyups = changed_buttons & ~input_buttons;
 
     if (input_buttons & BUTTON_SPECIAL1) {
-        switch (self.playerclass) {
-            case PC_SCOUT:
-            case PC_DEMOMAN:
-            case PC_PYRO:
-                ExecImpulseCommand(TF_SPECIAL_SKILL1);
-                break;
-            case PC_MEDIC:
-            case PC_HVYWEAP:
-            case PC_SPY:
+        if (cb_prematch) {
                 if (keydowns & BUTTON_SPECIAL1)
                     ExecImpulseCommand(TF_SPECIAL_SKILL1);
-                break;
+        } else {
+            switch (self.playerclass) {
+                case PC_SCOUT:
+                case PC_DEMOMAN:
+                case PC_PYRO:
+                    ExecImpulseCommand(TF_SPECIAL_SKILL1);
+                    break;
+                case PC_MEDIC:
+                case PC_HVYWEAP:
+                case PC_SPY:
+                    if (keydowns & BUTTON_SPECIAL1)
+                        ExecImpulseCommand(TF_SPECIAL_SKILL1);
+                    break;
+            }
         }
     }
 

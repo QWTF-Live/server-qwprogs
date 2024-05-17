@@ -612,10 +612,10 @@ void WP_ServerUpdate(float sendflags) {
     // Match up melee animations when they don't match.  The easiest way for
     // this to happen is effectframe miss.
     if (IsSlotMelee(pstate_server.current_slot) &&
-        pstate_server.weaponframe >= 1 && pstate_server.weaponframe < 8 &&
-        pstate_pred.weaponframe >= 1 && pstate_pred.weaponframe < 8) {
+            pstate_server.weaponframe >= 1 && pstate_server.weaponframe < 8 &&
+            pstate_pred.weaponframe >= 1 && pstate_pred.weaponframe < 8) {
         pstate_server.weaponframe = (pstate_server.weaponframe - 1) % 4;
-        if (pstate_pred.weaponframe >= 4)
+        if (pstate_pred.weaponframe > 4)
             pstate_server.weaponframe += 4;
         pstate_server.weaponframe += 1;
     }

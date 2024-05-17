@@ -98,6 +98,8 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     registercommand("fo_min_ping");
 
+    registercommand("+aux_attack");
+    registercommand("-aux_attack");
     registercommand("+aux_jump");
     registercommand("-aux_jump");
     registercommand("+rj");
@@ -124,7 +126,6 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     MenuPanel = getHudPanel(HUDP_MENU);
 
     is_admin = FALSE;
-    jump_counter = 0;
 
     num_mapvotes = 0;
     vote_selected_item = world;
@@ -292,7 +293,7 @@ static var struct DebounceButton {
     {BUTTON7},
 };
 
-static float active_buttons, debounced_buttons;
+static float next_forced_buttons, forced_buttons, active_buttons, debounced_buttons;
 
 static void CommandButton(int plus, int button) {
     if (button < 3 || button > 7)
@@ -325,10 +326,33 @@ static void CommandButton(int plus, int button) {
     }
 }
 
+
+
 static Slot ActiveSlot() {
     if (!IsSlotNull(pstate_pred.queue_slot))
         return pstate_pred.queue_slot;
     return pstate_pred.current_slot;
+}
+
+static Slot push_stack_one;
+static string PushSlotCmd(Slot slot) {
+    Slot active = ActiveSlot();
+    if (!IsSameSlot(active, slot)) {
+        push_stack_one = active;
+        return sprintf("impulse %d;", TF_SLOT1 + SlotIndex(slot));
+    } else {
+        push_stack_one = SlotNull;
+        return "";
+    }
+}
+
+static string PopSlotCmd() {
+    if (IsSlotNull(push_stack_one))
+        return "";
+
+    string result = sprintf("impulse %d; ", TF_SLOT1 + SlotIndex(push_stack_one));
+    push_stack_one = SlotNull;
+    return result;
 }
 
 static void ActivatePlusSlot(int idx) {
@@ -541,29 +565,56 @@ noref float(string cmd) CSQC_ConsoleCommand = {
                 FO_Show_Scores(FALSE);
             }
             break;
+        case "+aux_attack":
+            attack_counter++;
+            next_forced_buttons |= BUTTON_ATTACK;
+            break;
+        case "-aux_attack":
+            attack_counter--;
+            if (attack_counter <= 0) {
+                attack_counter = 0;
+                next_forced_buttons &= ~BUTTON_ATTACK;
+            }
+            break;
         case "+aux_jump":
             jump_counter++;
-            localcmd("+jump\n");
+            next_forced_buttons |= BUTTON_JUMP;
             break;
         case "-aux_jump":
             jump_counter--;
-
-            if (jump_counter < 0) {
+            if (jump_counter <= 0) {
                 jump_counter = 0;
+                next_forced_buttons &= ~BUTTON_JUMP;
             }
-
-            if (!jump_counter) {
-                localcmd("-jump\n");
-            }
-
             break;
         case "+rj":
-            if (WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO)
-                localcmd("slot1; +button4\n");
+            string opt_wait = "";
+            switch (WP_PlayerClass()) {
+                case PC_SOLDIER:
+                case PC_PYRO:
+                    localcmd(PushSlotCmd(MakeSlot(1)), "+aux_attack; +aux_jump\n");
+                    break;
+
+                case PC_ENGINEER:
+                    localcmd(PushSlotCmd(MakeSlot(3)), "+aux_attack; +aux_jump\n");
+                    break;
+
+                case PC_DEMOMAN:
+                    localcmd("detpipe; +aux_jump;\n");
+                    break;
+            }
             break;
         case "-rj":
-            if (WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO)
-                localcmd("-button4; weaplast\n");
+            switch (WP_PlayerClass()) {
+                case PC_SOLDIER:
+                case PC_PYRO:
+                case PC_ENGINEER:
+                    localcmd(PopSlotCmd(), "-aux_attack; -aux_jump\n");
+                    break;
+                case PC_DEMOMAN:
+                    localcmd("-aux_jump\n");
+                    break;
+            }
             break;
         case "wpp_status":
             WPP_Status();
@@ -777,7 +828,8 @@ static void InputFrameDebounce() {
                 CommandButton(FALSE, i + 3);
     }
 
-    input_buttons |= active_buttons | debounced_buttons;
+    input_buttons |= (forced_buttons | active_buttons | debounced_buttons);
+    forced_buttons = next_forced_buttons;
 
     if (plus_slot.num > 0) {
         for (int i = 0; i < 4; i++)
@@ -804,11 +856,6 @@ static void InputFrameDebounce() {
 noref void CSQC_Input_Frame() {
     InputFrameDebounce();
     Sync_GameState();
-
-    // Intercept rocket jump;
-    if ((WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO) &&
-        (input_buttons & BUTTON_SPECIAL2))
-        input_buttons |= BUTTON_ATTACK | BUTTON_JUMP;
 
     // Handle zoom
     float prev_zoomed_in = zoomed_in;

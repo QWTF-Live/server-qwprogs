@@ -1930,7 +1930,7 @@ static struct {
     {TF_HVYWEAP_LOCK_TOGGLE, 0},
     {TF_AIRBLAST, 0},
     {TF_SPY_FEIGN, TF_DISGUISE_LAST_SPAWNED},
-    {0, 0},
+    {TF_ENGINEER_TOGGLEDISPENSER, TF_ENGINEER_TOGGLESENTRY},
 };
 
 static int ImpulseAllowed(int impulse) {

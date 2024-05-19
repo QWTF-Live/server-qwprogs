@@ -10,6 +10,10 @@ void() CSQC_Parse_Event = {
     local float goalno;
     entity te;
     switch (msgtype) {
+        case MSG_TFL_CONFIG:
+            TFL_ReceiveConfig();
+            break;
+
         case MSG_FLAGINFOINIT:
             float index = readfloat();
             goalno = readfloat();

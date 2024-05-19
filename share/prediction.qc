@@ -446,7 +446,13 @@ void sprint_pred(entity client, float msglevel, string s) {
 }
 #endif
 
-#ifdef CSQC
+#ifdef SSQC
+void WriteVector(float to, vector val) {
+    WriteCoord(to, val_x);
+    WriteCoord(to, val_y);
+    WriteCoord(to, val_z);
+}
+#else /* CSQC */
 float() ReadByte = #360;
 float() ReadShort = #362;
 float() ReadCoord = #364;
@@ -454,6 +460,10 @@ float() ReadAngle = #365;
 float() ReadFloat = #367;
 float() ReadEntity = #368;
 int() ReadInt = #0:readint;
+
+vector ReadVector(float to, vector val) {
+    return [ReadCoord(), ReadCoord(), ReadCoord()];
+}
 
 void InitWeapPredEnt(entity e);
 void WP_ServerUpdate(float sendflags);
@@ -465,41 +475,33 @@ void WPP_UpdateEnable(float force);
 #endif
 
 #ifdef SSQC
-#define COMM(_type, _field) Write##_type(MSG_ENTITY, fo_config.##_field)
-float WP_SendConfig(entity to_player, float sendflags) {
-    WriteByte(MSG_ENTITY, ENT_CONFIG);
-#else
-#define COMM(_type, _field) fo_config.##_field = Read##_type()
-void EntUpdate_Config() {
-#endif
-    COMM(Byte, qc_physics);
-    COMM(Byte, min_ping_ms);
-    COMM(Float, static_newmis_ms);
-    COMM(Float, dynamic_newmis_ms);
-    COMM(Byte, max_rewind_ms);
-    COMM(Byte, max_rewind_slow_projectile_ms);
-    COMM(Byte, max_rewind_fast_projectile_ms);
-    COMM(Byte, max_rewind_grenade_ms);
-    COMM(Short, rewind_fast_projectile_thresh);
-    COMM(Byte, rewind_flags);
-    COMM(Short, tfx_flags);
-    COMM(Byte, clown_flags);
-    COMM(Float, clown_grav);
-    COMM(Byte, wp_default_min_ping_ms);
-    COMM(Byte, wp_global_disable);
-    COMM(Byte, gren_beta_disable);
-    COMM(Byte, old_ng_rof);
-    COMM(Short, fo_concuss);
-    COMM(Byte, new_balance);
-    COMM(Byte, new_balance_flags);
+#define SEND_CFG_OP(_ig1, _ctype, _ig2 , _field) \
+    Write##_ctype(MSG_MULTICAST, fo_config.##_field);
 
-#ifdef SSQC
-    return TRUE;
-#else
-    WPP_UpdateEnable(TRUE);
-#endif
+void TFL_SendConfig(entity target) {
+    float msg_t;
+
+    if (target == world) {
+        msg_t = MULTICAST_ALL_R;
+    } else {
+        msg_entity = target;
+        msg_t = MULTICAST_ONE_R;
+    }
+
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_TFL_CONFIG);
+    TMPL_CONFIG_DATA(SEND_CFG_OP)
+    multicast('0 0 0', msg_t);
 }
-#undef COMM
+#else
+#define RECV_CFG_OP(_ig1, _ctype, _ig2 , _field) \
+    fo_config.##_field = Read##_ctype();
+
+void TFL_ReceiveConfig() {
+    TMPL_CONFIG_DATA(RECV_CFG_OP)
+}
+#endif
+
 
 #ifdef SSQC
 #define GETF(_field) self.owner.predict_state.##_field
@@ -532,7 +534,6 @@ void EntUpdate_WeaponPred(float isnew) {
     }
 
     if (sendflags & FOWP_PMOVE) {
-        COMM_PM(Byte, movetype);
         COMM_PM(Coord, origin[0]);
         COMM_PM(Coord, origin[1]);
         COMM_PM(Coord, origin[2]);
@@ -747,8 +748,6 @@ void Predict_InitDefaultConfig() {
 
 #ifdef SSQC
 
-entity config_entity;
-
 #define CONFIG_UPDATE(_flag, _ps_short, _field) \
     do { string _cur = ftos(fo_config.##_field); \
       float _val; \
@@ -787,7 +786,8 @@ static float ParseFlags(string str) {
     return result;
 }
 
-static void WeaponPred_CheckConfigUpdate() {
+entity config_update;
+static void TflCheckConfigUpdate() {
     float update = FALSE;
 
     // Target is also the long form localinfo name.
@@ -837,30 +837,21 @@ static void WeaponPred_CheckConfigUpdate() {
     if (!ForwardDoorsPossible())
         fo_config.rewind_flags &= ~REWIND_FORWARD_DOORS;
 
-    static float last_force_refresh;
-    if (time > last_force_refresh + 5) {
-        update = TRUE;
-        last_force_refresh = time;
-    }
-
     if (update)
-        config_entity.SendFlags = 1;
-    config_entity.nextthink = time + 0.25;
+        TFL_SendConfig(world);
+
+    config_update.nextthink = time + 1;
 };
 #undef CLAMP_UPDATE
 #undef CONFIG_UPDATE
 
+
 void Predict_Init() {
     Predict_InitDefaultConfig();
 
-    config_entity = spawn();
-
-    config_entity.dimension_seen = DMN_FLASH | DMN_NOFLASH;
-    config_entity.pvsflags = PVSF_IGNOREPVS;
-    config_entity.SendEntity = WP_SendConfig;
-
-    config_entity.think = WeaponPred_CheckConfigUpdate;
-    config_entity.nextthink = time + 0.5;
+    config_update = spawn();
+    config_update.think = TflCheckConfigUpdate;
+    config_update.nextthink = time + 1;
 }
 
 void Predict_InitPlayer(entity player) {

@@ -3053,6 +3053,18 @@ static void PlayerPostThinkAlive() {
 }
 
 void FoLoginIfRequired(entity player);
+
+void PlayerPeriodicThink(float is_player) {
+    if (time < self.periodic_think_time)
+        return;
+    self.periodic_think_time = time + 1;
+
+    if (infokeyf(self, "*config") != 1) {
+        TFL_SendConfig(self);
+        forceinfokey(self, "*config", "1");
+    }
+}
+
 void () PlayerPostThink = {
     FoLoginIfRequired(self);
     FO_CheckClientThink();
@@ -3070,6 +3082,7 @@ void () PlayerPostThink = {
     FOPlayer fop = (FOPlayer)self;
     fop.RewindUpdate();
     Predict_Update(TRUE);
+    PlayerPeriodicThink(TRUE);
 };
 
 void () UpdateAllClientsTeamScores = {

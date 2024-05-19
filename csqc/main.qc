@@ -300,9 +300,26 @@ static void CommandButton(int plus, int button) {
         return;
     button -= 3;
 
-    if ((button == 0 || button == 1) && BuildPreview(2 - button, plus)) {
-        active_buttons &= ~(BUTTON_SPECIAL1 | BUTTON_SPECIAL2);
-        return;
+    if (button == 0 || button == 1) {
+        float alt_mask = 0;
+        switch (WP_PlayerClass()) {
+            case PC_SOLDIER:
+            case PC_PYRO:
+                if (button == 1) {
+                    localcmd(plus ? "+rj\n" : "-rj\n");
+                    alt_mask = BUTTON_SPECIAL2;
+                }
+                break;
+            case PC_ENGINEER:
+                if (BuildPreview(2 - button, plus))
+                    alt_mask = BUTTON_SPECIAL1 | BUTTON_SPECIAL2;
+                break;
+        }
+
+        if (alt_mask) {
+            active_buttons &= ~alt_mask;
+            return;
+        }
     }
 
     float mask = debounce_button[button].button;

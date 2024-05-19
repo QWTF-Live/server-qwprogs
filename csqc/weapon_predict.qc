@@ -2304,7 +2304,7 @@ struct SndLog {
     float when;
 };
 
-static const float kSndLogSize = 20;
+static const float kSndLogSize = 50;
 SndLog sound_log[kSndLogSize];
 int snd_last;
 
@@ -2314,11 +2314,10 @@ void SndLog_Append(string sound, int channel) {
     e->sound = sound;
     e->channel = channel;
     e->when = pstate_pred.server_time;
-    /* printf(" ** %0.3f: Pred> %s [when = %0.3f]\n", time, sound, e->when); */
 }
 
 float SndLog_Search(float stime, string sound, int channel) {
-    float eps = 1.5 * SERVER_FRAME_DT;
+    float eps = 2.1 * SERVER_FRAME_DT;
 
     for (int i = 1; i < kSndLogSize; i++) {
         int idx = (snd_last - i + kSndLogSize) % kSndLogSize;

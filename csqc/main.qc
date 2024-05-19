@@ -305,6 +305,7 @@ static void CommandButton(int plus, int button) {
         switch (WP_PlayerClass()) {
             case PC_SOLDIER:
             case PC_PYRO:
+            case PC_DEMOMAN:
                 if (button == 1) {
                     localcmd(plus ? "+rj\n" : "-rj\n");
                     alt_mask = BUTTON_SPECIAL2;

@@ -27,6 +27,7 @@ DEFCVAR_FLOAT(fo_nofirealpha, -1);
 DEFCVAR_FLOAT(fo_hue_weaponswap, 0);
 
 static float wp_ready;
+static const float kRenderDt = 1.0 / 144.0;
 
 struct pengine_t {
     float pp_enabled;
@@ -982,7 +983,7 @@ void WP_PreviewSentry() {
     static float next_update;
     if (!pengine.preview || time < next_update)
         return;
-    next_update = time + 1.0/300;
+    next_update = time + kRenderDt;
 
     entity building_preview = pengine.building_preview;
 
@@ -2069,6 +2070,12 @@ void InitProjectileEnt(float sendflags) {
 }
 
 void WP_UpdateViewModel() {
+    static float next;
+    if (time < next)
+        return;
+    float delta = time - (next - kRenderDt);
+    next = time + kRenderDt;
+
     entity viewmodel = pengine.viewmodel;
     float pmodelindex, pframe;
 
@@ -2124,7 +2131,7 @@ void WP_UpdateViewModel() {
         viewmodel.lerpfrac = 1;
     }
 
-    viewmodel.lerpfrac = max(0, viewmodel.lerpfrac - frametime * 10);
+    viewmodel.lerpfrac = max(0, viewmodel.lerpfrac - delta * 10);
 }
 
 struct {
@@ -2246,24 +2253,26 @@ static void WP_UpdatePredict() {
 
         WP_Frame();
     }
+}
+
+DEFCVAR_FLOAT(tfl_beta_noskip_predict, 0);
+float WP_ClientThink() {
+    static float lscf, lccf;
+    if (lscf != servercommandframe || lccf != clientcommandframe ||
+            CVARF(tfl_beta_noskip_predict)) {
+        pstate_pred = pstate_server;
+
+        if (WP_Enabled())
+            WP_UpdatePredict();
+
+        WP_GrenadeTimers();
+
+        lscf = servercommandframe;
+        lccf = clientcommandframe;
+    }
 
     WP_UpdateViewModel();
     WP_PreviewSentry();
-}
-
-DEFCVAR_FLOAT(fo_beta_noskip_predict, 0);
-float WP_ClientThink() {
-    static float lsf, lcf;
-    if (lsf == servercommandframe && lcf == clientcommandframe &&
-        !CVARF(fo_beta_noskip_predict))
-        return PREDRAW_NEXT;
-
-    pstate_pred = pstate_server;
-
-    if (WP_Enabled())
-        WP_UpdatePredict();
-
-    WP_GrenadeTimers();
     return PREDRAW_NEXT;
 }
 

@@ -881,7 +881,7 @@ void FO_CustomPhysics() {
             RewindSyncTime = ProjRewindForTravel;
         }
 
-        Phys_Advance(self, time, physf);
+        Phys_Advance(self, time + frametime, physf);
 
         if (RewindFlagEnabled(REWIND_PROJ_TRAVEL)) {
             RewindSyncTime = NoRewindSyncFn;
@@ -902,8 +902,11 @@ void FO_CustomPhysics() {
     // Once we lift physics, think execution comes with it.
     do {
         thinktime = self.nextthink;
-        if (thinktime <= 0 || thinktime > time)
+        if (thinktime <= 0 || thinktime > time + frametime)
             return;
+
+        if (thinktime < time)
+            thinktime = time;
 
         held_time = time;
         self.nextthink = 0;

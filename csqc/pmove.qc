@@ -264,6 +264,16 @@ enum {
     NA_ITIME_EXPLICIT_EXPIRE,
 };
 
+static string NAT_tos(int nat) {
+    switch (nat) {
+        case NA_SEQ: return "SEQ";
+        case NA_SEQTIME: return "SEQTIME";
+        case NA_ITIME: return "ITIME";
+        case NA_ITIME_EXPLICIT_EXPIRE: return "ITIME_EXPLICIT";
+    }
+    return sprintf("[NAT:%i]", nat);
+}
+
 struct PM_Nudge {
     float type;
 
@@ -297,7 +307,8 @@ static float nudge_expired(PM_Nudge* n) {
         case NA_SEQ: return n->seq + NUDGE_SEQ <= pstate_server.seq;
         case NA_SEQTIME:
             return n->seq + ceil(n->itime / SERVER_FRAME_DT) + NUDGE_SEQ <= pstate_server.seq;
-        case NA_ITIME: return n->itime + NUDGE_EPS <= pstate_server.server_time;  // Slack
+        case NA_ITIME:
+            return n->itime >= pstate_server.server_time + NUDGE_EPS;  // Slack
         case NA_ITIME_EXPLICIT_EXPIRE: return FALSE;  // TRUE handled above
     }
 
@@ -335,6 +346,16 @@ static void PM_RemoveSelfNudges() {
         return;
 
     PM_Nudge* n = self.nudge;
+
+    // We skip the removal of explicit expiry server ents, which have known
+    // cause and effect.  We do not do this for client ents as their removal
+    // means they've been replaced by an equivalent server ent.
+    if (n->nat == NA_ITIME_EXPLICIT_EXPIRE && self.entnum)
+        return;
+
+    // The removal arrives before the frame with the affect included.  Normally
+    // this coincides with the arrival of something else which replaces the
+    // nudge.
     n->expire_frame = servercommandframe;
 }
 
@@ -398,6 +419,8 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     n->nat = nat;
     n->seq = seq;
     n->itime = itime;
+    if (nat == NA_ITIME_EXPLICIT_EXPIRE)
+        n->expire_time = itime;
 
     // This is slightly imprecise, since you could throw a grenade then spawn
     // and jump on it, but it's more right than wrong; and the wrong cases lead
@@ -426,7 +449,8 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
         return;
 
     n->type = NT_BOUNCE;
-    n->nat = NA_ITIME;
+    n->nat = NA_ITIME_EXPLICIT_EXPIRE;
+    n->expire_time = itime;
     n->itime = itime;
 
     n->org = ent.origin;
@@ -467,7 +491,7 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
 
     PM_Nudge* n;
     if (exp.type == kRadiusDamage)
-        PM_AddNudgeExplosion(NA_ITIME, 0, itime, ent, dmg);
+        PM_AddNudgeExplosion(NA_ITIME_EXPLICIT_EXPIRE, 0, itime, ent, dmg);
     else
         PM_AddNudgeBounce(itime, ent, dmg);
 }
@@ -605,11 +629,10 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         if (pm.seq == clientcommandframe)
             PM_InputFrame();
 
-        pm.ent.pmove_flags &= PMF_JUMP_HELD;  // Auto-bunny.
         RunPlayerPhysics();
 
         if (!CVARF(fopm_nonudge) && pm.seq != clientcommandframe) {
-            float slack = (pm.seq == pm.server_seq + 1) ? NUDGE_EPS : 0;
+            float slack = 0;
             PM_ApplyNudges(ent, pm.seq, pm.interp_t, pm.interp_t + input_timelength, slack);
 
             if (pstate_pred.tfstate & TFSTATE_CONC) {
@@ -770,6 +793,9 @@ void PM_SyncTo(float seq) {
         return;
 
     entity ent = pm.ent;
+    // Bit of a hack to improve prediction quality.. some issues with jumps
+    // sounds that it fixes to look into...
+    cache_invalidated = TRUE;
     PM_RunMovement(SimPMSD(), seq);
 
     // Note: ~FL_ONGROUND and jump occur in same frame, produces JUMP_HELD
@@ -784,19 +810,19 @@ static void PM_HandleRemovedNudges() {
     if (!pstate_server.num_filter_ents)
         return;
 
-    float c = 0;
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
         if (nudge_expired(n))
             continue;
 
         for (float j = 0; j < pstate_server.num_filter_ents; j++) {
-            if (n->src_no == pstate_server.filter_ents[j]) {
+            if (n->nat != NA_SEQ && n->src_no == pstate_server.filter_ents[j]) {
                 n->nat = NA_SEQ;
                 n->seq = n->expire_frame = pstate_server.seq;
             }
         }
     }
+    pstate_server.num_filter_ents = 0;
 }
 
 void PM_ServerUpdate() {
@@ -827,7 +853,7 @@ void PM_ServerUpdate() {
 
     pm_so = pm_s;
     pm.server_seq = servercommandframe;
-    pm.seq = servercommandframe + 1;  // server state includes move
+    pm.seq = pm.server_seq + 1;  // server state includes move
     pm.interp_t = pstate_server.server_time;
     pm.ent.origin = pstate_server.pmove.origin;
     pm.ent.velocity = pstate_server.pmove.velocity;

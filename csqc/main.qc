@@ -658,9 +658,6 @@ noref float(string cmd) CSQC_ConsoleCommand = {
 void(float isnew) CSQC_Ent_Update = {
     float etype = readbyte();
     switch (etype) {
-        case ENT_WEAPONPRED:
-            EntUpdate_WeaponPred(isnew);
-            break;
         case ENT_PROJECTILE:
             EntUpdate_Projectile(isnew);
             break;

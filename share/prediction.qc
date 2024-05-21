@@ -10,12 +10,10 @@ string wp_version = "v1.1";
 
 enumflags {
     FOWP_CTIME,
-    FOWP_PMOVE,
     FOWP_IMPULSE,
     FOWP_TFSTATE,
     FOWP_LASTPRIME,
     FOWP_CLASSIC_CONC,
-    FOWP_CONCFINISH,
     FOWP_CLIP,
     FOWP_GREN,
     FOWP_THINK,
@@ -28,10 +26,17 @@ enumflags {
     FOWP_RNG1,
     FOWP_RNG2,
     FOWP_PREDICT_FLAGS,
+
+    // Below this not force-refreshed for pl
+
+    FOWP_CONCFINISH,
+    FOWP_PMOVE,
     FOWP_FILTER_ENTS,
     FOWP_LAST,
 };
 const float FOWP_ALL = FOWP_LAST - 1;
+const float FOWP_FIRST_PERIODIC = FOWP_IMPULSE;
+const float FOWP_LAST_PERIODIC = FOWP_PREDICT_FLAGS;
 
 enumflags {
     FOPP_INIT,
@@ -91,6 +96,13 @@ struct predict_tf_state {
 #else
     float filter_ents[MAX_FILTER_ENTS];
 #endif
+
+    // PMove
+    struct pmove_t {
+        int enabled;
+        vector origin;
+        vector velocity;
+    } pmove;
 
 #ifdef CSQC
     // Used for prediction, not actually communicated.  Reset each frame.
@@ -349,19 +361,11 @@ float* self_clip_fired(Slot slot) { return &pstate_pred.clip_fired[SlotIndex(slo
 #define M3(_bit, _f1, _f2, _f3) if (OP3(!=, ||, _f1, _f2, _f3)) { mask |= _bit; OP3(=, ;, _f1, _f2, _f3); }
 #define M4(_bit, _f1, _f2, _f3, _f4) if (OP4(!=, ||, _f1, _f2, _f3, _f4)) { mask |= _bit; OP4(=, ;, _f1, _f2, _f3, _f4); }
 
-.float pred_lastforce;
 .float pred_forcebit;
-.entity last_pred_src;
 .float predict_flags;
 
 static float Prediction_ChangedMask(entity player, entity src) {
-    if (src != player.last_pred_src) {
-        player.last_pred_src = src;
-        return FOWP_ALL;
-    }
-
     float mask = FOWP_CTIME;
-
     player.predict_state.server_time = time;
     player.predict_state.client_time = src.client_time;
     player.predict_state.client_ping = src.client_ping;
@@ -391,16 +395,10 @@ static float Prediction_ChangedMask(entity player, entity src) {
     M4(FOWP_GREN, no_grenades_1, no_grenades_2, primed_gren_type, primed_gren_exp)
 
     // Rotate through forced update fields.
-    if (time - player.pred_lastforce >= 100 * MSEC) {
-        player.pred_lastforce = time;
-
-        player.pred_forcebit <<= 1;
-        if (player.pred_forcebit >= FOWP_LAST)
-            player.pred_forcebit = 1;
-
-        if (player.pred_forcebit & (FOWP_PMOVE | FOWP_FILTER_ENTS) == 0)
-            mask |= player.pred_forcebit;
-    }
+    player.pred_forcebit <<= 1;
+    if (player.pred_forcebit < FOWP_FIRST_PERIODIC || player.pred_forcebit > FOWP_LAST_PERIODIC)
+        player.pred_forcebit = FOWP_FIRST_PERIODIC;
+    mask |= player.pred_forcebit;
 
     return mask;
 }
@@ -415,19 +413,20 @@ void Predict_AddFilterEnt(entity p, entity filter) {
     ps->filter_ents[ps->num_filter_ents++] = filter;
 }
 
-void Predict_InitPlayer(entity player);
 void Predict_SyncPmove(float is_player);
+
+void TFL_SendPredictState(entity to_player, float mask);
 
 void Predict_Update(float is_player) {
     Predict_SyncPmove(is_player);
-    Predict_InitPlayer(self);
 
     // When spectating, goalentity is our target.
     entity src = self.goalentity;
     if (!src)
         src = self;
 
-    self.predict_entity.SendFlags |= Prediction_ChangedMask(self, src);
+    float mask = Prediction_ChangedMask(self, src);
+    TFL_SendPredictState(self, mask);
 }
 
 #undef OP1
@@ -465,8 +464,6 @@ vector ReadVector(float to, vector val) {
     return [ReadCoord(), ReadCoord(), ReadCoord()];
 }
 
-void InitWeapPredEnt(entity e);
-void WP_ServerUpdate(float sendflags);
 void InitProjectileEnt(float sendflags);
 void WPP_UpdateEnable(float force);
 
@@ -502,38 +499,40 @@ void TFL_ReceiveConfig() {
 }
 #endif
 
-
 #ifdef SSQC
-#define GETF(_field) self.owner.predict_state.##_field
-#define COMM(_type, _field) Write##_type(MSG_ENTITY, GETF(_field))
-#define COMM_PM(_type, _field) Write##_type(MSG_ENTITY, self.owner.##_field)
-float WP_SendEntity(entity to_player, float sendflags) {
-    if (to_player != self.owner)
-        return FALSE;
-
-    WriteByte(MSG_ENTITY, ENT_WEAPONPRED);
-    WriteFloat(MSG_ENTITY, sendflags);
+#define GETF(_field) self.predict_state.##_field
+#define COMM(_type, _field) Write##_type(MSG_MULTICAST, GETF(_field))
+#define COMM_PM(_type, _field) Write##_type(MSG_MULTICAST, self.##_field)
+void TFL_SendPredictState(entity to_player, float mask) {
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_PREDICTSTATE);
+    WriteFloat(MSG_MULTICAST, mask);
 #else
-entity PM_Ent();
 #define GETF(_field) pstate_server.##_field
 #define COMM(_type, _field) GETF(_field) = Read##_type()
-#define COMM_PM(_type, _field) PM_Ent().##_field = Read##_type()
+#define COMM_PM(_type, _field) pstate_server.pmove.##_field = Read##_type()
 
-void EntUpdate_WeaponPred(float isnew) {
-    float sendflags = readfloat();
+void WP_ServerUpdate(float mask);
+
+// Careful: This arrives as the server frame increments; but it still reads as
+// the previous frame during message receive.  We push processing to
+// WP_ClientThink.
+void TFL_RecvPredictState() {
+    float mask = readfloat();
+    pstate_server.pmove.enabled = mask & FOWP_PMOVE;
 #endif
-    if (sendflags & FOWP_PREDICT_FLAGS) {
+    if (mask & FOWP_PREDICT_FLAGS) {
         COMM(Byte, predict_flags);
         COMM(Short, effects);
     }
 
-    if (sendflags & FOWP_CTIME) {
+    if (mask & FOWP_CTIME) {
         COMM(Float, client_time);
         COMM(Float, server_time);
         COMM(Short, client_ping);
     }
 
-    if (sendflags & FOWP_PMOVE) {
+    if (mask & FOWP_PMOVE) {
         COMM_PM(Coord, origin[0]);
         COMM_PM(Coord, origin[1]);
         COMM_PM(Coord, origin[2]);
@@ -542,7 +541,7 @@ void EntUpdate_WeaponPred(float isnew) {
         COMM_PM(Short, velocity[2]);
     }
 
-    if (sendflags & FOWP_FILTER_ENTS) {
+    if (mask & FOWP_FILTER_ENTS) {
         COMM(Byte, num_filter_ents);
         for (float i = 0; i < GETF(num_filter_ents); i++)
             COMM(Entity, filter_ents[i]);
@@ -551,89 +550,85 @@ void EntUpdate_WeaponPred(float isnew) {
 #endif
     }
 
-    if (sendflags & FOWP_CLASS) {
+    if (mask & FOWP_CLASS) {
         COMM(Byte, playerclass);
     }
 
-    if (sendflags & FOWP_IMPULSE) {
+    if (mask & FOWP_IMPULSE) {
         COMM(Byte, impulse);
         COMM(Byte, current_slot.id);
         COMM(Byte, queue_slot.id);
         COMM(Byte, last_slot.id);
     }
 
-    if (sendflags & FOWP_TFSTATE) {
+    if (mask & FOWP_TFSTATE) {
         COMM(Float, tfstate);
         COMM(Short, csqc_maxspeed);
     }
 
-    if (sendflags & FOWP_LASTPRIME) {
+    if (mask & FOWP_LASTPRIME) {
         COMM(Float, last_prime);
     }
 
-    if (sendflags & FOWP_CLASSIC_CONC) {
+    if (mask & FOWP_CLASSIC_CONC) {
         COMM(Float, conc_state.next);
         COMM(Byte, conc_state.mag);
     }
 
-    if (sendflags & FOWP_CONCFINISH) {
+    if (mask & FOWP_CONCFINISH) {
         COMM(Byte, conc_amp);
         COMM(Float, conc_finished);
         COMM(Float, conc_cap_time);
     }
 
-    if (sendflags & FOWP_THINK) {
+    if (mask & FOWP_THINK) {
         COMM(Float, client_nextthink);
         COMM(Float, client_thinkindex);
     }
 
-    if (sendflags & FOWP_WF) {
+    if (mask & FOWP_WF) {
         COMM(Byte, weaponframe);
     }
 
-    if (sendflags & FOWP_AF) {
+    if (mask & FOWP_AF) {
         COMM(Float, attack_finished);
     }
 
-    if (sendflags & FOWP_CLIP) {
+    if (mask & FOWP_CLIP) {
         COMM(Byte, clip_fired[0]);
         COMM(Byte, clip_fired[1]);
         COMM(Byte, clip_fired[2]);
         COMM(Byte, clip_fired[3]);
     }
 
-    if (sendflags & FOWP_RELOAD) {
+    if (mask & FOWP_RELOAD) {
         COMM(Float, reload_started);
         COMM(Float, reload_finished);
     }
 
-    if (sendflags & FOWP_SPECIAL) {
+    if (mask & FOWP_SPECIAL) {
         COMM(Float, special_next);
     }
 
-    if (sendflags & FOWP_RNG0) {
+    if (mask & FOWP_RNG0) {
         COMM(Int, prng_base[PRNG_WEAP]);
         COMM(Int, prng_base[PRNG_MOVE]);
     }
-    if (sendflags & FOWP_RNG1)
+    if (mask & FOWP_RNG1)
         COMM(Int, prng_base[PRNG_HWGUY]);
-    if (sendflags & FOWP_RNG2)
+    if (mask & FOWP_RNG2)
         COMM(Int, prng_base[PRNG_CONC]);
 
-    if (sendflags & FOWP_GREN) {
-        COMM(Short, no_grenades_1);
-        COMM(Short, no_grenades_2);
+    if (mask & FOWP_GREN) {
+        COMM(Byte, no_grenades_1);
+        COMM(Byte, no_grenades_2);
         COMM(Byte, primed_gren_type);
         COMM(Float, primed_gren_exp);
     }
 
 #ifdef SSQC
-    return TRUE;
-#else
-    if (isnew)
-        InitWeapPredEnt(self);
-    else
-        WP_ServerUpdate(sendflags);
+    msg_entity = to_player;
+    multicast('0 0 0', MULTICAST_ONE_NOSPECS);
 #endif
 }
 #undef COMM
@@ -852,27 +847,6 @@ void Predict_Init() {
     config_update = spawn();
     config_update.think = TflCheckConfigUpdate;
     config_update.nextthink = time + 1;
-}
-
-void Predict_InitPlayer(entity player) {
-    if (player.predict_entity)
-        return;
-
-    entity pe = spawn();
-    pe.owner = player;
-    pe.classname = "WeaponPred";
-    pe.dimension_seen = DMN_FLASH | DMN_NOFLASH;
-    pe.pvsflags = PVSF_IGNOREPVS;
-    pe.SendEntity = WP_SendEntity;
-    setorigin(pe, [0, 0, 0]);
-
-    player.pred_forcebit = 1;
-    player.predict_entity = pe;
-}
-
-void Predict_Destroy(entity player) {
-    if (player.predict_entity != __NULL__)
-        dremove(player.predict_entity);
 }
 
 void WeaponPred_DoServerClientThink() {

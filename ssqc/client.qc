@@ -69,8 +69,6 @@ entity (entity e)TeamFortress_GetPracticeSpawn;
 void () NextLevel;
 
 void StopAssCan();
-void Predict_InitPlayer(entity player);
-void Predict_Destroy(entity player);
 
 void () info_intermission =
 {
@@ -2132,8 +2130,6 @@ void () PutClientInServer = {
 
     DecodeLevelParms();
 
-    Predict_InitPlayer(self);
-
     if (self.playerclass != PC_CIVILIAN && TeamFortress_TeamIsCivilian(self.team_no)) {
         TeamFortress_ChangeClass(11);
     }
@@ -3282,8 +3278,6 @@ void () ClientDisconnect = {
     if(votemode) {
         UnvoteForMap(self);
     }
-
-    Predict_Destroy(self);
 };
 
 string (entity pe_target, entity pe_attacker, float pf_deathmsg) GetDeathMessage = {

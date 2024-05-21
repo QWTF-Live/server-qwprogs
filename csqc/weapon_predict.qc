@@ -2246,7 +2246,6 @@ static void WP_UpdatePredict() {
             pengine.is_effectframe = TRUE;
             pengine.last_effectframe = pframe;
             PM_SyncTo(pframe);
-            Conc_Update(&pstate_pred.conc_state, world, pstate_pred.server_time);
         } else {
             pengine.is_effectframe = FALSE;
         }

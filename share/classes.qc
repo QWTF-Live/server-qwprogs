@@ -115,50 +115,49 @@ void Conc_Stumble(entity ent, float stumble, float flip) {
     if (NextToWall(ent) && ent.velocity ==  '0 0 0')
         return;
 
+    flip = flip ? 1 : -1;
     // [*]: This preserves what looks to be a long-standing bug where y-vel ends
     // up propagating due to missed temporary to hold vel_x.
-    ent.velocity_x = flip * ent.velocity_y + stumble;
-    ent.velocity_y = flip * ent.velocity_x + stumble;
+    ent.velocity_x = rint(flip * ent.velocity_y + stumble);
+    ent.velocity_y = rint(flip * ent.velocity_x + stumble);
 }
 
 void Conc_Jump(ConcState* cs, entity ent) {
+    int bv = *prng_state(PRNG_CONC);
     float stumble = shared_crandom(PRNG_CONC) * cs->mag / 10;
     float flip = (shared_prng(PRNG_CONC) < 0.5) ? -1 : 1;
 
     // See [*] above.
-    ent.velocity_x = flip * ent.velocity_y + stumble;
-    ent.velocity_y = flip * ent.velocity_x + stumble;
+    ent.velocity_x = rint(flip * ent.velocity_y + stumble);
+    ent.velocity_y = rint(flip * ent.velocity_x + stumble);
 }
 
-#ifdef SSQC
-static inline void ConcAction(entity ent, float itime, float mag, float flip) {
-    Conc_Stumble(ent, mag, flip);
-}
-#else
-void PM_AddNudgeConc(float itime, float mag, float flip);
-static inline void ConcAction(entity ent, float itime, float mag, float flip) {
-    PM_AddNudgeConc(itime, mag, flip);
-}
-#endif
-
-float Conc_Update(ConcState *cs, entity ent, float ctime) {
-    if (!cs->mag  || ctime < cs->next)
+float Conc_Update(ConcState *cs, entity ent, float ctime, float pre_time = 0) {
+    if (!cs->mag  || ctime < cs->next || pre_time >= cs->next)
         return FALSE;
 
-    while (ctime >= cs->next) {
-        cs->mag = max(cs->mag - 1, 0);
-        if (!cs->mag) {
-            *self_tf_state() &= ~TFSTATE_CONC;
-            break;
-        }
-
-        float mag = shared_crandom(PRNG_CONC) * cs->mag * 10;
-        float flip = (shared_prng(PRNG_CONC) < 0.5) ? -1 : 1;
-        ConcAction(ent, cs->next, mag, flip);
-        cs->next += CONC_P;
+    cs->mag = max(cs->mag - 1, 0);
+    if (!cs->mag) {
+        *self_tf_state() &= ~TFSTATE_CONC;
+        return FALSE;
     }
 
+    Conc_Stumble(ent, cs->mag * cs->next_push, cs->next_flip);
+
+#ifdef SSQC
+    // Could use PRNG again now that pmove is fixed.. oh well
+    cs->next_push = random() * 10;
+    cs->next_flip = random() < 0.5 ? 0 : 1;
+    cs->next += CONC_P;
+#endif
     return TRUE;
+}
+
+float Conc_Next(ConcState* cs, float ctime) {
+    float next = cs->next;
+    while (next + CONC_P < ctime)
+        next += CONC_P;
+    return next;
 }
 
 float Class_ScaleMoment(float playerclass, float damage) {

@@ -380,7 +380,8 @@ static float Prediction_ChangedMask(entity player, entity src) {
     M4(FOWP_IMPULSE, impulse, current_slot.id, queue_slot.id, last_slot.id);
     M2(FOWP_TFSTATE, tfstate, csqc_maxspeed);
     M1(FOWP_LASTPRIME, last_prime);
-    M2(FOWP_CLASSIC_CONC, conc_state.next, conc_state.mag);
+    M4(FOWP_CLASSIC_CONC, conc_state.next, conc_state.mag,
+                          conc_state.next_push, conc_state.next_flip);
     M3(FOWP_CONCFINISH, conc_finished, conc_amp, conc_cap_time);
     M1(FOWP_WF, weaponframe);
     M1(FOWP_AF, attack_finished);
@@ -573,6 +574,8 @@ void TFL_RecvPredictState() {
     if (mask & FOWP_CLASSIC_CONC) {
         COMM(Float, conc_state.next);
         COMM(Byte, conc_state.mag);
+        COMM(Float, conc_state.next_push);
+        COMM(Byte, conc_state.next_flip);
     }
 
     if (mask & FOWP_CONCFINISH) {

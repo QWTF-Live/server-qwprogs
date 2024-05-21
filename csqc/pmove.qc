@@ -169,6 +169,14 @@ DEFCVAR_FLOAT(fopm_nonudge, 0);
 DEFCVAR_FLOAT(fopm_errortime, 0);
 DEFCVAR_FLOAT(fopm_debug, 0);
 
+DEFCVAR_FLOAT(fopm_explosion_eps, -1);
+static float NudgeExplosionEps() {
+    float val = CVARF(fopm_explosion_eps);
+    if (val == -1)
+        return 5;
+    return val;
+}
+
 DEFCVAR_FLOAT(fopmd_graph_x, -10);
 DEFCVAR_FLOAT(fopmd_graph_y, 100);
 DEFCVAR_FLOAT(fopmd_graph_w, 200);
@@ -243,7 +251,6 @@ void PM_InputFrame();
 
 enum {
     NT_EMPTY,
-    NT_CONC,
     NT_DASH,
     NT_EXPLOSION,
     NT_BOUNCE,
@@ -331,33 +338,6 @@ static void PM_RemoveSelfNudges() {
     n->expire_frame = servercommandframe;
 }
 
-void PM_AddNudgeConc(float itime, float mag, float flip) {
-    // This is kind of painful but not much easier..
-    static float filter_itime;
-    if (itime <= filter_itime)
-        return;
-    filter_itime = itime;
-
-    PM_Nudge* n = find_nudge_slot();
-    if (!n)
-        return;
-
-    n->type = NT_CONC;
-    n->nat = NA_ITIME_EXPLICIT_EXPIRE;
-    n->expire_time = itime;
-    n->expire_spawnseq = game_state.spawn_gen;
-
-    n->itime = itime;
-    n->org.x = mag;
-    n->org.y = flip;
-}
-
-static void PM_NudgeConc(PM_Nudge* nudge, entity ent) {
-    if (pointcontents(ent.origin) == CONTENT_WATER)
-        ent.flags |= FL_INWATER;  // pmove doesn't usually maintain this.
-    Conc_Stumble(ent, nudge->org.x, nudge->org.y);
-}
-
 static void PM_NudgeDash(PM_Nudge* nudge, entity ent) {
     ent.velocity = nudge->org;
 }
@@ -383,7 +363,7 @@ float nudge_i(PM_Nudge* n) {
 
 static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
     float dmg = nudge->aux;
-    if (vlen(ent.origin - nudge->org) > dmg + 40)
+    if (vlen(ent.origin - nudge->org) > dmg + 40 - NudgeExplosionEps())
         return;
 
     const float MOVE_WORLDONLY = 3;
@@ -462,7 +442,7 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
 static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
     float dmg = nudge->aux;
 
-    if (vlen(ent.origin - nudge->org) > dmg + 40)
+    if (vlen(ent.origin - nudge->org) > dmg + 40 - NudgeExplosionEps())
         return;
 
     vector targ_org = ent.origin + (ent.mins + ent.maxs) * 0.5;
@@ -555,9 +535,6 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
 
         pm.last_nudge = seq;
         switch (n->type) {
-            case NT_CONC:
-                PM_NudgeConc(n, ent);
-                break;
             case NT_DASH:
                 PM_NudgeDash(n, ent);
                 break;
@@ -604,6 +581,7 @@ static void RunDeadMovement(float endframe) {
 //   pmsd.seq --> endframe + 1
 static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     entity ent = pm.ent;
+    float saved_prng_conc = pstate_pred.prng_base[PRNG_CONC];
 
     if (pm.active_pmsd != pmsd || pm.seq > endframe) {
         ASSERTF_GT(endframe, pm.server_seq);
@@ -617,24 +595,34 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
 
     ASSERTF_GT(pm.seq, 0);
 
-    pm.ent.pmove_flags 0;  // With auto-bunny we only care about clearing
     while (pm.seq <= endframe) {
         if (!getinputstate(pm.seq))
             break;
 
+        pm.ent.pmove_flags &= ~PMF_JUMP_HELD;  // Auto-bunny.
         // We have to apply this on the leading edge since INPUT_FRAME
         // modifications do not occur until the frame is finalized.
         if (pm.seq == clientcommandframe)
             PM_InputFrame();
 
+        pm.ent.pmove_flags &= PMF_JUMP_HELD;  // Auto-bunny.
         RunPlayerPhysics();
 
-        if (!CVARF(fopm_nonudge)) {
+        if (!CVARF(fopm_nonudge) && pm.seq != clientcommandframe) {
             float slack = (pm.seq == pm.server_seq + 1) ? NUDGE_EPS : 0;
             PM_ApplyNudges(ent, pm.seq, pm.interp_t, pm.interp_t + input_timelength, slack);
 
-            if ((ent.pmove_flags & PMF_JUMP_HELD) && (pstate_pred.tfstate & TFSTATE_CONC))
-                Conc_Jump(&pstate_pred.conc_state, ent);
+            if (pstate_pred.tfstate & TFSTATE_CONC) {
+                if (pointcontents(ent.origin) == CONTENT_WATER)
+                    ent.flags |= FL_INWATER;  // pmove doesn't usually maintain this.
+                                              //
+                if (!Conc_Update(&pstate_pred.conc_state, pm.ent,
+                        pm.interp_t + input_timelength, pm.interp_t)) {
+                    if ((ent.pmove_flags & PMF_JUMP_HELD))
+                        Conc_Jump(&pstate_pred.conc_state, ent);
+                }
+
+            }
 
             if ((ent.pmove_flags & PMF_JUMP_HELD) && (pstate_pred.tfstate & TFSTATE_CONC_CAP)) {
                 NB_ConcCapAction(ent, pstate_pred.playerclass, &pstate_pred.tfstate,
@@ -649,6 +637,8 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
 
     // Add in anything that was applied after (for low packet rate protocols)
     input_angles = view_angles;
+    pstate_pred.prng_base[PRNG_CONC] = saved_prng_conc;
+
 }
 
 static void PM_SetEnabled(float enabled) {
@@ -799,11 +789,6 @@ static void PM_HandleRemovedNudges() {
         PM_Nudge* n = &nudges[i];
         if (nudge_expired(n))
             continue;
-
-        if (n->type == NT_CONC && n->itime < pstate_server.conc_state.next) {
-            n->expire_frame = -1;
-            continue;
-        }
 
         for (float j = 0; j < pstate_server.num_filter_ents; j++) {
             if (n->src_no == pstate_server.filter_ents[j]) {

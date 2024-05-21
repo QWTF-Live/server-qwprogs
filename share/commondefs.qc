@@ -23,6 +23,7 @@ struct FPPState {
 
 struct ConcState {
     float next, mag;
+    float next_push, next_flip;
 };
 .ConcState conc_state;
 

@@ -2713,11 +2713,8 @@ static void ConcUpdate() {
     }
 }
 
-float last_pre;
 void () PlayerPreThink = {
-    last_pre = time;
     FO_UpdateClientTime();
-    ConcUpdate();
 
     if (self.impulse) {
         if (self.impulse == TF_VOTENEXT) {
@@ -3002,6 +2999,8 @@ static void PlayerPostThinkAlive() {
     FO_FillCurrentWeapState(&ws);
     self.currentammo =
         (ws->wi)->ammo_type != AMMO_NONE ? *ws->ammo_remaining : 0;
+
+    ConcUpdate();
 
     if (((self.jump_flag < -300) && (self.flags & FL_ONGROUND)) &&
         (self.health > 0)) {

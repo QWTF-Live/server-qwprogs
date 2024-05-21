@@ -909,12 +909,12 @@ float (float pc) IsLegalClass = {
     return (TRUE);
 };
 
-float PmtBlockMaxSpeed();
-
 static void SetMaxSpeed(entity p, float speed) {
     p.csqc_maxspeed = speed;
-    if (!PmtBlockMaxSpeed())
-        p.maxspeed = speed;
+    if (p.playerclass != PC_UNDEFINED)
+        p.maxspeed = PC_SCOUT_MAXSPEED;
+    else
+        p.maxspeed = SPEC_MAXSPEED;
 }
 
 void (entity p) TeamFortress_SetSpeed = {
@@ -956,14 +956,8 @@ void (entity p) TeamFortress_SetSpeed = {
     if (p.leg_damage)
         new_max *= (10 - min(p.leg_damage, 6)) / 10;
 
-#if 0
-    // Clients cooperate to handle TFSTATE_AIMING transitions locally due to the
-    // frequent edges here and negative maxspeed/pmove interaction (bounds
-    // client prediction until maxspeed makes it to client, even though released
-    // on unpredicted earlier frame, leading to lots of skipping).
-        if (p.tfstate & TFSTATE_AIMING)
-            new_max = min(new_max, 80);
-#endif
+    if (p.tfstate & TFSTATE_AIMING)
+        new_max = min(new_max, 80);
 
     SetMaxSpeed(p, new_max);
 }

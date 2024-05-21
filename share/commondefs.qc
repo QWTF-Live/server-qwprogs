@@ -335,3 +335,7 @@ string NBF_DESC[] = {
     "Reworked conc speed cap",
     "No conc speed cap",
 };
+
+enumflags {
+    PMF_JUMP_HELD,
+};

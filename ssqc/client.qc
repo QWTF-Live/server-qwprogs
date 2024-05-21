@@ -3934,38 +3934,19 @@ void EndFrame() {
     AnnounceUpdate();
 }
 
-// this is to fix hack used to avoid fall damage, it currently breaks pm_airstep
-/*
-void() SV_RunClientCommand = {
+#if 0
+// Not used because (server) runstandardplayerphysics() does not handle airstep.
+void SV_RunClientCommand() {
+    if (vlen(input_movevalues) > self.csqc_maxspeed)
+        input_movevalues = normalize(input_movevalues) * self.csqc_maxspeed;
 
-    local float fdmg;
-
+    // Auto bunny
+    self.pmove_flags &= ~PMF_JUMP_HELD;
+    // Work around v_angle change bug
+    // Needs reset of v_angle to input_angles in postthink
+    vector cache_vangles = self.v_angle;
+    self.v_angle = input_angles;
     runstandardplayerphysics(self);
-
-    if (((self.jump_flag < -300) && (self.flags & 512)) &&
-        (self.health > 0)) {
-        if (self.watertype == -3) {
-            FO_Sound(self, CHAN_BODY, "player/h2ojump.wav", 1, ATTN_NORM);
-        } else {
-            if (self.jump_flag < -650) {
-                fdmg = 5;
-                fdmg = (fdmg * (self.jump_flag / 300)) * -1;
-                if (self.playerclass == 1) {
-                    fdmg = fdmg / 2;
-                } else {
-                    if (self.playerclass == 6) {
-                        fdmg = fdmg * 1.5;
-                    }
-                }
-                fdmg = rint(fdmg);
-                TF_T_Damage(self, world, world, fdmg, 1, 0);
-                FO_Sound(self, CHAN_VOICE, "player/land2.wav", 1, ATTN_NORM);
-                self.deathtype = "falling";
-            } else {
-                FO_Sound(self, CHAN_VOICE, "player/land.wav", 1, ATTN_NORM);
-            }
-        }
-    }
-    self.jump_flag = self.velocity_z;
+    self.v_angle = cache_vangles;
 }
-*/
+#endif

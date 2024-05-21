@@ -2,10 +2,6 @@ DEFCVAR_FLOAT(fo_jumpvolume, 1);
 
 #define STEPTIME 0.125
 
-enumflags {
-    PMF_JUMP_HELD,
-};
-
 // `seq` is the start of the first frame after which all input_*s are handled.
 // Running to `seq` will result in being on frame `seq + 1` in the resultant
 // state.  In the case that `seq == commandclientframe` this could only be
@@ -230,13 +226,12 @@ static void PM_ActivatePMS(PMS_Data *pmsd) {
     entity ent = pm.ent;
     ent.origin = pmsd->org;
     ent.velocity = pmsd->vel;
+    ent.pmove_flags = 0;  // Not clear there's anything to save/restore here.
 
     pm.seq = pmsd->seq;
     pm.server_seq = pmsd->server_seq;
     pm.interp_t = pmsd->interp_t;
     pm.active_pmsd = pmsd;
-
-    pm.ent.pmove_flags = 0;  // With auto-bunny we only care about clearing
 };
 
 static float cache_invalidated;
@@ -622,7 +617,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
 
     ASSERTF_GT(pm.seq, 0);
 
-    pm.ent.pmove_flags = 0;  // With auto-bunny we only care about clearing
+    pm.ent.pmove_flags 0;  // With auto-bunny we only care about clearing
     while (pm.seq <= endframe) {
         if (!getinputstate(pm.seq))
             break;
@@ -910,7 +905,7 @@ void PM_InputFrame() {
 
     // Technically the sync with pstate_pred being on the right frame is loose..
     if (pstate_pred.tfstate & TFSTATE_AIMING)
-        max_speed = 80;
+        max_speed = min(max_speed, 80);
 
     if (vlen(input_movevalues) > max_speed)
         input_movevalues = normalize(input_movevalues) * max_speed;

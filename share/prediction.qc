@@ -1001,16 +1001,10 @@ enum PmtState {
     PMT_INACTIVE,
     PMT_ACTIVE,
     PMT_ACTIVATE1,
-    PMT_ACTIVATE2,
     PMT_DEACTIVATE1,
     PMT_DEACTIVATE2,
 };
 
-float PmtBlockMaxSpeed() {
-    return self.pmt_nexttime != 0;  // When set, we're in transition edges.
-}
-
-void TeamFortress_SetSpeed(entity ent);
 void Predict_SyncPmove(float is_player) {
     if (time < self.pmt_nexttime)
         return;
@@ -1019,46 +1013,34 @@ void Predict_SyncPmove(float is_player) {
     float want_active = (ClientPred_Enabled(self, CSQC_PMOVE)) && is_player;
     float state = self.pmt_nextstate;
 
-    if (!active && want_active && state == PMT_INACTIVE)
+    if ((!!active) == (!!want_active))
+        return;
+
+    if (want_active && state == PMT_INACTIVE)
         state = PMT_ACTIVATE1;
-    else if (active && !want_active && state == PMT_ACTIVE)
+    else if (!want_active && state == PMT_ACTIVE)
         state = PMT_DEACTIVATE1;
 
-    if (state == PMT_ACTIVE || state == PMT_INACTIVE) {
-        self.pmt_nexttime = 0;
-
-        if (state == PMT_INACTIVE) {
-            if (ClientPred_Enabled(self, CSQC_FORCE_POS))
-                self.predict_flags |= PF_POS;
-            else
-                self.predict_flags &= ~PF_POS;
-        }
-        return;
-    }
-
-    float next_step = 0.1;
+    float next_step = 0.025;
     switch (state) {
         case PMT_ACTIVATE1:
-            self.predict_flags |= PF_POS;
-            self.maxspeed = SPEC_MAXSPEED;
-            self.pmt_nextstate = PMT_ACTIVATE2;
-            break;
-        case PMT_ACTIVATE2:
-            self.predict_flags |= PF_PMOVE;
-            self.nodrawtoclient = self;
-            TeamFortress_SetSpeed(self);
             sprint(self, PRINT_HIGH, "*** PMOVE ACTIVATED\n");
+            self.nodrawtoclient = self;
+            self.predict_flags |= PF_POS | PF_PMOVE;
+            self.maxspeed = SPEC_MAXSPEED;
             self.pmt_nextstate = PMT_ACTIVE;
             break;
         case PMT_DEACTIVATE1:
-            next_step = 2;
             self.nodrawtoclient = world;
-            TeamFortress_SetSpeed(self);
             self.pmt_nextstate = PMT_DEACTIVATE2;
+            // Just pause for client to catch up
             break;
         case PMT_DEACTIVATE2:
-            self.predict_flags &= ~(PF_PMOVE | PF_POS);
             sprint(self, PRINT_HIGH, "*** PMOVE DEACTIVATED\n");
+            float mask = PF_PMOVE;
+            if (!ClientPred_Enabled(self, CSQC_FORCE_POS))
+                mask |= PF_POS;
+            self.predict_flags &= ~mask;
             self.pmt_nextstate = PMT_INACTIVE;
             break;
     }

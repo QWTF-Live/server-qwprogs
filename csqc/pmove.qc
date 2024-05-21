@@ -278,7 +278,7 @@ struct PM_Nudge {
 const static float NUDGE_SEQ = 3;
 const static float NUDGE_EPS = NUDGE_SEQ * SERVER_FRAME_DT;
 static PM_Nudge nudges[8];
-static float num_nudges;
+static float num_nudges, have_active_nudges;
 
 static float nudge_expired(PM_Nudge* n) {
     if (n->expire_frame && n->expire_frame <= pstate_server.seq)
@@ -303,6 +303,8 @@ static float nudge_expired(PM_Nudge* n) {
 }
 
 static PM_Nudge* find_nudge_slot() {
+    have_active_nudges = TRUE;
+
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[(num_nudges++) % nudges.length];
 
@@ -547,6 +549,9 @@ float MatchNudge(PM_Nudge* n, float seq, float sitime, float eitime, float slack
 
 // TODO: This obviously wants to be smarter
 static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, float slack = 0) {
+    if (!have_active_nudges)
+        return;
+
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
 
@@ -830,6 +835,15 @@ void PM_ServerUpdate() {
         return;
 
     PM_HandleRemovedNudges();
+    if (have_active_nudges) {
+        have_active_nudges = FALSE;
+        for (int i = 0; i < nudges.length; i++) {
+            if (!nudge_expired(&nudges[i])) {
+                have_active_nudges = TRUE;
+                break;
+            }
+        }
+    }
 
     pm_so = pm_s;
     pm.server_seq = servercommandframe;

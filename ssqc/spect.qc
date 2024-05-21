@@ -154,4 +154,5 @@ void () SpectatorThink = {
     }
 
     Predict_Update(FALSE);
+    PlayerPeriodicThink(FALSE);
 };

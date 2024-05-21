@@ -324,12 +324,8 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
     switch (arg1)
     {
         case "join":
-            if (self.is_spectator)
-                Predict_Destroy(self);
             return FALSE;
         case "observe":
-            if (!self.is_spectator)
-                Predict_Destroy(self);
             return FALSE;
         case "impulse":
             if (arg_num == 2) {

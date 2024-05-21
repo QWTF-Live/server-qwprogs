@@ -814,7 +814,7 @@ static void PM_HandleRemovedNudges() {
     }
 }
 
-void PM_Update(float sendflags) {
+void PM_ServerUpdate() {
     float was_enabled = PM_Enabled();
     float enabled = (pstate_server.predict_flags & PF_PMOVE) &&
                     game_state.is_player;
@@ -826,7 +826,7 @@ void PM_Update(float sendflags) {
         game_state.is_player != prev_game_state.is_player)
         PM_SetEnabled(enabled);
 
-    if (sendflags & FOWP_PMOVE == 0)
+    if (!pstate_server.pmove.enabled)
         return;
 
     PM_HandleRemovedNudges();
@@ -835,6 +835,8 @@ void PM_Update(float sendflags) {
     pm.server_seq = servercommandframe;
     pm.seq = servercommandframe + 1;  // server state includes move
     pm.interp_t = pstate_server.server_time;
+    pm.ent.origin = pstate_server.pmove.origin;
+    pm.ent.velocity = pstate_server.pmove.velocity;
     PM_SavePMS(&pm_s);
 
     if (!CVARF(fopm_nocache)) {

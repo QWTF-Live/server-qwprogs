@@ -1,6 +1,5 @@
 DEFCVAR_FLOAT(wpp_debug, 0);
 
-DEFCVAR_FLOAT(fo_wpp_beta, 0);
 DEFCVAR_FLOAT(fo_predict_weapons, 1);
 DEFCVAR_FLOAT(fo_predict_projectiles, 1);
 
@@ -26,7 +25,7 @@ DEFCVAR_FLOAT(fo_nofirealpha, -1);
 // purely visual, still have to wait for attack_finished.
 DEFCVAR_FLOAT(fo_hue_weaponswap, 0);
 
-static float wp_ready;
+static const float kRenderDt = 1.0 / 144.0;
 
 struct pengine_t {
     float pp_enabled;
@@ -37,7 +36,6 @@ struct pengine_t {
 
     float player_entnum;  // player_localentnum iff is_player == 1
     entity player_ent;
-    entity pweap_ent;
     entity viewmodel;
 
     float preview, preview_rotation;
@@ -250,10 +248,12 @@ void WPP_Status() {
             fo_config.wp_global_disable, wp_enabled, &pp_source);
 
     printf("Prediction Status:\n");
-    printf(" Weapon prediction %s %s\n",
+    printf(" Weapon: %s %s\n",
             wp_enabled ? "enabled" : "disabled", wp_source);
-    printf(" Projectile prediction %s %s\n",
+    printf(" Projectile: %s %s\n",
             pp_enabled ? "enabled" : "disabled", pp_source);
+    printf(" Movement: %s\n",
+            PM_Enabled() ? "enabled" : "disabled");
 
     float avg, variance;
     fill_avg_ping(&avg, &variance);
@@ -310,9 +310,6 @@ void WPP_UpdateEnable(float force) {
         next_ping_update = time + PING_PERIOD / avg_ping.samples.max_count;
     }
 
-    if (!wp_ready)
-        return;
-
     // Immediate updates any time there's a cvar change.
     static float next_wpp_enable_check;
     static float last_fo_predict_weapons, last_fo_predict_projectiles;
@@ -346,7 +343,7 @@ void WPP_UpdateEnable(float force) {
     static float once;
     if (wp_new != pengine.wp_enabled || !once) {
         if (!CVARF(fo_predict_projectiles) && game_state.is_player)
-            printf("FortressOne: Weapon prediction (no projectiles) %s %s\n",
+            printf("QWTF.live: Weapon prediction (no projectiles) %s %s\n",
                     wp_new ? "enabled" : "disabled", wp_source);
         pengine.wp_enabled = wp_new;
 
@@ -354,8 +351,7 @@ void WPP_UpdateEnable(float force) {
             entity player = edict_num(player_localentnum);
             pengine.player_entnum = player_localentnum;
             pengine.player_ent = player;
-            player.classname = "player_ent:";
-            pengine.pweap_ent.owner = player;
+            player.classname = "player_ent";
         } else {
             pengine.player_entnum = -1;
         }
@@ -363,7 +359,7 @@ void WPP_UpdateEnable(float force) {
 
     if (pp_new != pengine.pp_enabled || !once) {
         if (game_state.is_player)
-            printf("FortressOne: Weapon/Projectile prediction %s %s\n",
+            printf("QWTF.live: Weapon/Projectile prediction %s %s\n",
                     pp_new ? "enabled" : "disabled", pp_source);
         pengine.pp_enabled = pp_new;
 
@@ -391,11 +387,11 @@ void WPP_UpdateEnable(float force) {
     pengine.view_mask = MASK_PRED_ENT | MASK_VIEWMODEL |
                         (pp_new ? MASK_PRED_PROJECTILE : 0);
 
-    if (pengine.viewmodel != __NULL__)
-        WP_UpdateViewModel();
 
     if (fo_config.tfx_flags)
         TFX_Init();
+
+    WP_UpdateViewModel();
 }
 
 DEFCVAR_FLOAT(fo_minping_min, 0);    // Can be used to set a lower-bound on
@@ -603,11 +599,11 @@ void PredProj_Sound(int proj_type, float vol = 1) {
     Pred_Sound(FPP_Get(proj_type)->snd, vol);
 }
 
-void PM_Update(float sendflags);
+void PM_ServerUpdate();
 
 DEFCVAR_FLOAT(fo_beta_nudge_explosion, 0);
 
-void WP_ServerUpdate(float sendflags) {
+void WP_ProcessServerUpdate() {
     pstate_server.seq = servercommandframe;
 
     // Force WF to zero, in case we missed a packet.
@@ -630,7 +626,7 @@ void WP_ServerUpdate(float sendflags) {
     else
         phys_sim_dt = -1;
 
-    PM_Update(sendflags);
+    PM_ServerUpdate();
 }
 
 void FO_ReloadSound(float weapon) {
@@ -987,7 +983,7 @@ void WP_PreviewSentry() {
     static float next_update;
     if (!pengine.preview || time < next_update)
         return;
-    next_update = time + 1.0/300;
+    next_update = time + kRenderDt;
 
     entity building_preview = pengine.building_preview;
 
@@ -1452,16 +1448,18 @@ inline float get_phys_time(entity e) {
     }
 }
 
+float WP_ClientThink();
+
 void FO_Predict_Init() {
     entity viewmodel = spawn();
     viewmodel.classname = "viewmodel";
     viewmodel.drawmask = MASK_PRED_ENT;
     viewmodel.renderflags = RF_VIEWMODEL | RF_DEPTHHACK;
+    viewmodel.predraw = WP_ClientThink;
     pengine.viewmodel = viewmodel;
 
     WP_InitSniper();
     WP_InitSentryPreview();
-
     INIT_MOVING_AVG(avg_ping);
     InitFppProjectiles();
 
@@ -1606,7 +1604,8 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
   proj.origin = org;
   FPP_Init(fpp_type, proj);
 
-  float ms_ahead = pstate_server.client_ping;
+  float ms_ahead = (pstate_pred.server_time - pstate_server.server_time) * 1000;
+
   ProjectResult push_t = Forward_ProjectOffset(fpp_type, ms_ahead);
 
   float uncorrected_dt = max(ms_ahead - push_t.dynamic_ms, 0) / 1000.0;
@@ -1616,7 +1615,7 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
 
   // Note: We use true time here as created projectiles exist outside of pred.
   proj.starttime = time + uncorrected_dt - input_timelength / 2;
-  proj.endtime = proj.starttime + pstate_server.client_ping / 1000.0 + PP_EPS;
+  proj.endtime = proj.starttime + ms_ahead / 1000.0 + PP_EPS;
 
   proj.predraw = PP_PredrawPredicted;
   proj.drawmask = MASK_PRED_PROJECTILE;
@@ -2074,6 +2073,12 @@ void InitProjectileEnt(float sendflags) {
 }
 
 void WP_UpdateViewModel() {
+    static float next;
+    if (time < next)
+        return;
+    float delta = time - (next - kRenderDt);
+    next = time + kRenderDt;
+
     entity viewmodel = pengine.viewmodel;
     float pmodelindex, pframe;
 
@@ -2129,7 +2134,7 @@ void WP_UpdateViewModel() {
         viewmodel.lerpfrac = 1;
     }
 
-    viewmodel.lerpfrac = max(0, viewmodel.lerpfrac - frametime * 10);
+    viewmodel.lerpfrac = max(0, viewmodel.lerpfrac - delta * 10);
 }
 
 struct {
@@ -2251,41 +2256,30 @@ static void WP_UpdatePredict() {
 
         WP_Frame();
     }
+}
+
+DEFCVAR_FLOAT(tfl_beta_noskip_predict, 0);
+float WP_ClientThink() {
+    static float lscf, lccf;
+    if (lscf != servercommandframe || lccf != clientcommandframe ||
+            CVARF(tfl_beta_noskip_predict)) {
+        pstate_pred = pstate_server;
+
+        if (lscf != servercommandframe)
+            WP_ProcessServerUpdate();
+
+        if (WP_Enabled())
+            WP_UpdatePredict();
+
+        WP_GrenadeTimers();
+
+        lscf = servercommandframe;
+        lccf = clientcommandframe;
+    }
 
     WP_UpdateViewModel();
     WP_PreviewSentry();
-}
-
-DEFCVAR_FLOAT(fo_beta_noskip_predict, 0);
-float WP_ClientThink() {
-    static float lsf, lcf;
-    if (lsf == servercommandframe && lcf == clientcommandframe &&
-        !CVARF(fo_beta_noskip_predict))
-        return PREDRAW_NEXT;
-
-    pstate_pred = pstate_server;
-
-    if (WP_Enabled())
-        WP_UpdatePredict();
-
-    WP_GrenadeTimers();
-    return PREDRAW_NEXT;
-}
-
-entity WP_pmove_ent();
-
-static void RemoveWeapPredEnt() {
-    if (pengine.pweap_ent == self)
-        pengine.pweap_ent = world;
-}
-void InitWeapPredEnt(entity pe) {
-    pe.classname = "WeaponPredict";
-    pe.predraw = WP_ClientThink;
-    pe.drawmask = MASK_PRED_ENT;
-    pe.removefunc = RemoveWeapPredEnt;
-    pengine.pweap_ent = pe;
-
-    wp_ready = TRUE;
+    return PREDRAW_AUTOADD;
 }
 
 void PM_Refresh();
@@ -2309,7 +2303,7 @@ struct SndLog {
     float when;
 };
 
-static const float kSndLogSize = 20;
+static const float kSndLogSize = 50;
 SndLog sound_log[kSndLogSize];
 int snd_last;
 
@@ -2319,11 +2313,10 @@ void SndLog_Append(string sound, int channel) {
     e->sound = sound;
     e->channel = channel;
     e->when = pstate_pred.server_time;
-    /* printf(" ** %0.3f: Pred> %s [when = %0.3f]\n", time, sound, e->when); */
 }
 
 float SndLog_Search(float stime, string sound, int channel) {
-    float eps = 1.5 * SERVER_FRAME_DT;
+    float eps = 2.1 * SERVER_FRAME_DT;
 
     for (int i = 1; i < kSndLogSize; i++) {
         int idx = (snd_last - i + kSndLogSize) % kSndLogSize;

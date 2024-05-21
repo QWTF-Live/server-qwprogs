@@ -31,35 +31,36 @@ enumflags {
     FPF_NO_REWIND,
 };
 
+#define TMPL_CONFIG_DATA(_OP) \
+    _OP(1, Float, float, min_ping_ms) \
+    _OP(2, Byte,  float, qc_physics) \
+    _OP(2, Byte,  float, tfx_flags) \
+    _OP(2, Short, float, predict_flags) \
+    _OP(2, Short, float, rewind_flags) \
+    _OP(3, Byte,  float, static_newmis_ms) \
+    _OP(3, Byte,  float, dynamic_newmis_ms) \
+    _OP(3, Byte,  float, max_rewind_ms) \
+    _OP(3, Byte,  float, max_rewind_slow_projectile_ms) \
+    _OP(3, Byte,  float, max_rewind_fast_projectile_ms) \
+    _OP(3, Short, float, max_rewind_grenade_ms) \
+    _OP(3, Short, float, rewind_fast_projectile_thresh) \
+    _OP(3, Short, float, wp_default_min_ping_ms) \
+    _OP(4, Short, float, clown_flags) \
+    _OP(4, Short, float, clown_grav) \
+    _OP(5, Byte,  float, old_ng_rof) \
+    _OP(5, Byte,  float, wp_global_disable) \
+    _OP(5, Byte,  float, gren_beta_disable) \
+    _OP(5, Byte,  float, fo_concuss) \
+    _OP(6, Float, float, rj) \
+    _OP(7, Short, float, new_balance) \
+    _OP(7, Short, float, new_balance_flags)
+
+
 var struct {
-    float min_ping_ms;
-
-    float qc_physics;
-    float static_newmis_ms;
-    float dynamic_newmis_ms;
-    float rewind_flags;
-    float max_rewind_ms;
-    float max_rewind_slow_projectile_ms;
-    float max_rewind_fast_projectile_ms;
-    float max_rewind_grenade_ms;
-    float rewind_fast_projectile_thresh;
-    float wp_default_min_ping_ms;
-    float clown_flags;
-    float clown_grav;
-
-    float old_ng_rof;
-
-    float predict_flags;
-    float tfx_flags;
-
-    float wp_global_disable;
-    float gren_beta_disable;
-
-    float fo_concuss;
-    float rj;
-
-    float new_balance;
-    float new_balance_flags;
+#define DECLOP(_ig1, _ig2, _type, _field) \
+    _type _field;
+  TMPL_CONFIG_DATA(DECLOP)
+#undef DECLOP
 } fo_config;
 
 enumflags {
@@ -194,6 +195,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 
 #define MSG_FLAGINFOINIT    1
 #define MSG_FLAGINFO        2
+#define MSG_PREDICTSTATE    3
 
 #define MSG_SBAR            4
 #define MSG_GRENPRIMED      5
@@ -220,6 +222,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define MSG_HITFLAG         26
 #define MSG_RELOADSOUND     27
 #define MSG_CACHE_LOGIN     28
+#define MSG_TFL_CONFIG      29
 #define MSG_SOUND           30
 
 #define FLAGINFO_HOME       1

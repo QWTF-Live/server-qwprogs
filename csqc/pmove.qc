@@ -792,12 +792,12 @@ void PM_SyncTo(float seq) {
     if (!game_state.is_alive)
         return;
 
-    entity ent = pm.ent;
-    // Bit of a hack to improve prediction quality.. some issues with jumps
-    // sounds that it fixes to look into...
-    cache_invalidated = TRUE;
-    PM_RunMovement(SimPMSD(), seq);
+    // Skip using the cache; bit of a hack to improve prediction quality.. some
+    // issues with jumps sounds that it fixes to look into...  This isn't
+    // supposed to matter.
+    PM_RunMovement(&pm_s, seq);
 
+    entity ent = pm.ent;
     // Note: ~FL_ONGROUND and jump occur in same frame, produces JUMP_HELD
     float jumping = input_buttons & BUTTON_JUMP;
     float landing = pm.last_vel_z < 0 && (ent.flags & FL_ONGROUND);

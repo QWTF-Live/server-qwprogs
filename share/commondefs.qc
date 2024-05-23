@@ -53,6 +53,7 @@ enumflags {
     _OP(5, Byte,  float, gren_beta_disable) \
     _OP(5, Byte,  float, fo_concuss) \
     _OP(6, Float, float, rj) \
+    _OP(6, Float, float, pipe_cooldown) \
     _OP(7, Short, float, new_balance) \
     _OP(7, Short, float, new_balance_flags)
 

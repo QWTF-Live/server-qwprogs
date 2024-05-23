@@ -41,6 +41,8 @@ struct pengine_t {
     float preview, preview_rotation;
     entity building_preview, building_owner;
 
+    float pipe_cooldown;
+
     // Must include MASK_PRED_VIEWMODEL or we lose updates.
     // We only add/remove MASK_VIEWMODEL and MASK_PRED_PROJECTILE
     float view_mask;
@@ -1486,6 +1488,8 @@ void PP_Cleanup(entity proj) {
   if (proj.pred_next)
       proj.pred_next.pred_prev = proj.pred_prev;
 
+  self.colormod = proj.colormod;
+
   if (proj.removefunc) {
       entity tmp = self;
       self = proj;
@@ -1672,12 +1676,29 @@ static void FPP_ApplyGrenadeProperties(entity proj) {
     setsize(proj, [0,0,0], [0,0,0]);
     proj.skin = gdesc->skin;
     proj.avelocity = gdesc->avelocity;
+    proj.classname = gdesc->name;
+}
+
+DEFCVAR_FLOAT(tfl_render_pipe_lockout, 1);
+
+static void ApplyPipeMask(vector mask) {
+    entity* ents;
+    int c;
+
+    ents = find_list(classname, "pipe", EV_STRING, c);
+    for (int i = 0; i < c; i++)
+        ents[i].colormod = mask;
 }
 
 void W_FireGrenade(int gren_type) {
     entity proj = PP_CreateProjectile(FPP_GRENADE, PM_Org());
     proj.fpp.gren_type = gren_type;
     FPP_ApplyGrenadeProperties(proj);
+
+    if (CVARF(tfl_render_pipe_lockout)) {
+        ApplyPipeMask('10 0 0');
+        pengine.pipe_cooldown = time + fo_config.pipe_cooldown;
+    }
 }
 
 void W_FireAssaultCannon() {
@@ -2254,6 +2275,11 @@ static void WP_UpdatePredict() {
           pstate_pred.impulse = input_impulse;
 
         WP_Frame();
+    }
+
+    if (pengine.pipe_cooldown && time > pengine.pipe_cooldown) {
+        ApplyPipeMask('0 0 0');
+        pengine.pipe_cooldown = 0;
     }
 }
 

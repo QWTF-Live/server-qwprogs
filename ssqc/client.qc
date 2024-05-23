@@ -1084,6 +1084,7 @@ void () DecodeLevelParms = {
     if (org_game)  // This used to depend on new balance
         ActivateOrgGame();
 
+    Config_Final();
 };
 
 entity() FindIntermission =

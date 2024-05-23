@@ -742,6 +742,7 @@ void Predict_InitDefaultConfig() {
     fo_config.fo_concuss = 0;
     fo_config.new_balance = 0;
     fo_config.new_balance_flags = 0;
+    fo_config.pipe_cooldown = 0.5;
 }
 
 #ifdef SSQC
@@ -813,11 +814,16 @@ static void TflCheckConfigUpdate() {
     }
 
     // Not dynamically updatable.
-    static float read_rof_once = FALSE;
-    if (!read_rof_once) {
+    static float read_once = FALSE;
+    if (!read_once) {
         if (!fo_config.old_ng_rof)  // Don't overwrite huetf setting this.
             CONFIG_UPDATE(FALSE, "ongrof", old_ng_rof);
-        read_rof_once = TRUE;
+
+        if (pipecooldown_time != fo_config.pipe_cooldown) {
+            update = TRUE;
+            fo_config.pipe_cooldown = pipecooldown_time;
+        }
+        read_once = TRUE;
     }
 
     CONFIG_UPDATE(TRUE,  "rewind", rewind_flags);
@@ -846,10 +852,13 @@ static void TflCheckConfigUpdate() {
 
 void Predict_Init() {
     Predict_InitDefaultConfig();
+}
 
+void Config_Final() {
     config_update = spawn();
     config_update.think = TflCheckConfigUpdate;
-    config_update.nextthink = time + 1;
+
+    TflCheckConfigUpdate();  // Sets nextthink
 }
 
 void WeaponPred_DoServerClientThink() {

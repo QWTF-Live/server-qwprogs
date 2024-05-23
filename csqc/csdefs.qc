@@ -1439,3 +1439,5 @@ string(string digest, string data, ...) digest_hex = #639;
 #define K_BACKSLASH	92
 #endif
 #pragma noref 0
+
+entity*(.__variant fld, __variant match, int type=EV_STRING, __out int count) find_list = #0:find_list;

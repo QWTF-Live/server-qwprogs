@@ -1681,14 +1681,27 @@ static void FPP_ApplyGrenadeProperties(entity proj) {
 
 DEFCVAR_FLOAT(tfl_render_pipe_lockout, 1);
 
-static void ApplyPipeMask(vector mask) {
+static void RenderPipeLockout(float new_lockout) {
+    if (!CVARF(tfl_render_pipe_lockout) || (!pengine.pipe_cooldown && !new_lockout))
+        return;
+
+    if (new_lockout)
+        pengine.pipe_cooldown = time + fo_config.pipe_cooldown;
+
+    vector col;
+    if (time > pengine.pipe_cooldown) {
+        col = '0 0 0';
+        pengine.pipe_cooldown = 0;
+    } else {
+        col = '0 1 15';
+    }
+
     entity* ents;
     int c;
-
     ents = find_list(classname, "pipe", EV_STRING, c);
     for (int i = 0; i < c; i++)
         if (ents[i].owner == pengine.player_ent)
-            ents[i].colormod = mask;
+            ents[i].colormod = col;
 }
 
 void W_FireGrenade(int gren_type) {
@@ -1696,10 +1709,8 @@ void W_FireGrenade(int gren_type) {
     proj.fpp.gren_type = gren_type;
     FPP_ApplyGrenadeProperties(proj);
 
-    if (CVARF(tfl_render_pipe_lockout)) {
-        ApplyPipeMask('10 0 0');
-        pengine.pipe_cooldown = time + fo_config.pipe_cooldown;
-    }
+    if (gren_type == GREN_PIPE)
+        RenderPipeLockout(TRUE);
 }
 
 void W_FireAssaultCannon() {
@@ -2278,10 +2289,7 @@ static void WP_UpdatePredict() {
         WP_Frame();
     }
 
-    if (pengine.pipe_cooldown && time > pengine.pipe_cooldown) {
-        ApplyPipeMask('0 0 0');
-        pengine.pipe_cooldown = 0;
-    }
+    RenderPipeLockout(FALSE);
 }
 
 DEFCVAR_FLOAT(tfl_beta_noskip_predict, 0);

@@ -1687,7 +1687,8 @@ static void ApplyPipeMask(vector mask) {
 
     ents = find_list(classname, "pipe", EV_STRING, c);
     for (int i = 0; i < c; i++)
-        ents[i].colormod = mask;
+        if (ents[i].owner == pengine.player_ent)
+            ents[i].colormod = mask;
 }
 
 void W_FireGrenade(int gren_type) {

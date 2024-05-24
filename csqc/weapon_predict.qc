@@ -1693,7 +1693,7 @@ static void RenderPipeLockout(float new_lockout) {
         col = '0 0 0';
         pengine.pipe_cooldown = 0;
     } else {
-        col = '0 1 15';
+        col = '1 0.4';
     }
 
     entity* ents;

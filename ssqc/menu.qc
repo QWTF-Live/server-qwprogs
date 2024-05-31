@@ -790,16 +790,25 @@ void () Menu_Demoman_Cancel = {
     Status_Menu(self, Menu_Demoman_Cancel_Input, s_detpack, s_cancel);
 }
 
+enum {
+    MenuEng_Build_Sentry = 1,
+    MenuEng_Build_Disp = 2,
+    MenuEng_Destroy_Sentry = 3,
+    MenuEng_Destroy_Disp = 4,
+    MenuEng_Cancel = 5,
+};
+
 // TODO: Refactor...
 void Menu_Engineer_Input(float inp, float arg = 0) {
     local float dismantle_sentrygun;
     local float dismantle_dispenser;
     local entity te;
 
-    if (inp == 5)
+    if (inp == MenuEng_Cancel)
         return;
 
-    if (self.is_building) {
+    if (self.is_building &&
+        (inp == MenuEng_Destroy_Sentry || inp == MenuEng_Build_Disp)) {
         if (engineer_move) {
             Status_Print(self, "\n\n\n\n\n\n\n", strcat("You are already building something"));
             return;
@@ -811,21 +820,21 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
     dismantle_sentrygun = 0;
     dismantle_dispenser = 0;
 
-    if (inp == 1 && !self.has_sentry) {
+    if (inp == MenuEng_Build_Sentry && !self.has_sentry) {
         if (self.ammo_cells >= ENG_SENTRY_COST)
             TeamFortress_Build(2, arg);
         else
             Status_Print(self, "\n\n\n\n\n\n\n", strcat("You need ", ftos(ENG_SENTRY_COST), " cells to build a sentry gun"));
     }
     
-    if (inp == 2 && !self.has_dispenser) {
+    if (inp == MenuEng_Build_Disp && !self.has_dispenser) {
         if (self.ammo_cells >= ENG_DISPENSER_COST)
             TeamFortress_Build(1, arg);
         else
             Status_Print(self, "\n\n\n\n\n\n\n", strcat("You need ", ftos(ENG_DISPENSER_COST), " cells to build a dispenser"));
     }
 
-    if (inp == 3 && self.has_sentry) {
+    if (inp == MenuEng_Destroy_Sentry && self.has_sentry) {
         te = findradius(self.origin, ENG_BUILDING_DISMANTLE_DISTANCE);
         while (te) {
             if (te.classname == "building_sentrygun") {
@@ -844,7 +853,7 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
             DestroyBuilding(self, "building_sentrygun");
     }
 
-    if (inp == 4 && self.has_dispenser) {
+    if (inp == MenuEng_Destroy_Disp && self.has_dispenser) {
         te = findradius(self.origin, ENG_BUILDING_DISMANTLE_DISTANCE);
         while (te) {
             if (te.classname == "building_dispenser") {

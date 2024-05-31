@@ -1014,6 +1014,17 @@ void Hud_DrawClassInfoPanel(float playerclass)
                 pos = [pos_x, pos_y + size_y + 8];
             }
 
+            if (SBAR.IsBuilding) {
+                icon = SBAR.IsBuilding == Eng_BuildingDisp ?
+                    ICON_ENGINEER_DISP : ICON_ENGINEER_SG;
+                HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
+
+                msg = strcat(ftos(SBAR.BuildingPercentage), "%");
+                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
+
+                pos = [pos_x, pos_y + size_y + 2];
+            }
+
             if (SBAR.HasSentry) {
                 icon = ICON_ENGINEER_SG; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
@@ -1021,15 +1032,7 @@ void Hud_DrawClassInfoPanel(float playerclass)
                 msg = strcat("L: ", ftos(SBAR.SentryLevel), " H: ", ftos(rint(SBAR.SentryHealth)), " S: ", ftos(rint(SBAR.SentryAmmoShells)), " R: ", ftos(rint(SBAR.SentryAmmoRockets)));
                 HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
             }
-            else if (SBAR.IsBuilding) {
-                icon = ICON_ENGINEER_SG; //HudIcons[playerclass+6].icon;
-                HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
-                msg = strcat(ftos(SBAR.BuildingPercentage), "%");
-                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
-            }
-
-            // disp
             pos = [pos_x, pos_y + size_y + 2];
             basepos = pos;
             if (SBAR.HasDispenser) {

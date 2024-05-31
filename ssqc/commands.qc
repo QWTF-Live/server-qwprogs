@@ -693,7 +693,7 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
                         TeamFortress_EngineerBuildStop();
                         break;
                     }
-                    Menu_Engineer_Input(1, stof(arg3));
+                    Menu_Engineer_Input(MenuEng_Build_Sentry, stof(arg3));
                     break;
                 }
                 if(arg2 == "dispenser") {
@@ -701,16 +701,16 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
                         TeamFortress_EngineerBuildStop();
                         break;
                     }
-                    Menu_Engineer_Input(2, stof(arg3));
+                    Menu_Engineer_Input(MenuEng_Build_Disp, stof(arg3));
                     break;
                 }
                 if(arg2 == "destroy" && arg3) {
                     if(arg3 == "sentry") {
-                        Menu_Engineer_Input(3);
+                        Menu_Engineer_Input(MenuEng_Destroy_Sentry);
                         break;
                     }
                     if(arg3 == "dispenser") {
-                        Menu_Engineer_Input(4);
+                        Menu_Engineer_Input(MenuEng_Destroy_Disp);
                         break;
                     }
                 }

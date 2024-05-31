@@ -341,3 +341,9 @@ string NBF_DESC[] = {
 enumflags {
     PMF_JUMP_HELD,
 };
+
+enum {
+    Eng_NotBuilding = 0,  // Must be 0
+    Eng_BuildingDisp,
+    Eng_BuildingSentry,
+};

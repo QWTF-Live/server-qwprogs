@@ -1160,7 +1160,7 @@ void () TeamFortress_SetEquipment = {
         stuffcmd(self, st);
         stuffcmd(self, "\n");
     }
-    self.is_building = 0;
+    self.is_building = Eng_NotBuilding;
     self.is_detpacking = 0;
     self.airblast_cooldown = 0;
     self.is_undercover = 0;
@@ -1873,7 +1873,7 @@ void () TeamFortress_RemoveTimers = {
         TeamFortress_EngineerBuildStop();
     }
 
-    self.is_building = 0;
+    self.is_building = Eng_NotBuilding;
     self.building = world;
     if (self.tfstate & TFSTATE_AIMING) {
         self.tfstate &= ~TFSTATE_AIMING;

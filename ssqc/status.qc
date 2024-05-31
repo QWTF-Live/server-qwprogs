@@ -930,9 +930,7 @@ void UpdateClientStatusBar(entity pl)
             // building status??
             WriteFloat(MSG_MULTICAST, pl.is_building);
             if (pl.is_building)
-            {
                 WriteFloat(MSG_MULTICAST, pl.building_percentage);
-            }
 
             WriteFloat(MSG_MULTICAST, pl.has_sentry);
             if (pl.has_sentry) {
@@ -940,7 +938,6 @@ void UpdateClientStatusBar(entity pl)
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.health);
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.ammo_shells);
                 WriteFloat(MSG_MULTICAST, pl.sentry_ent.ammo_rockets);
-
             }
 
             WriteFloat(MSG_MULTICAST, pl.has_dispenser);
@@ -959,7 +956,7 @@ void UpdateClientStatusBar(entity pl)
             break;
     }
 
-    multicast('0 0 0', MULTICAST_ONE_NOSPECS); 
+    multicast('0 0 0', MULTICAST_ONE_NOSPECS);
 }
 
 void (entity pl) RefreshStatusBar = {

@@ -2423,6 +2423,7 @@ void () ButtonFrame = {
                 case PC_MEDIC:
                 case PC_HVYWEAP:
                 case PC_SPY:
+                case PC_ENGINEER:
                     if (keydowns & BUTTON_SPECIAL1)
                         ExecImpulseCommand(TF_SPECIAL_SKILL1);
                     break;
@@ -2444,6 +2445,7 @@ void () ButtonFrame = {
             case PC_SCOUT:
             case PC_DEMOMAN:
             case PC_SPY:
+            case PC_ENGINEER:
                 if (keydowns & BUTTON_SPECIAL2)
                     ExecImpulseCommand(TF_SPECIAL_SKILL2);
                 break;

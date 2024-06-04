@@ -347,3 +347,12 @@ enum {
     Eng_BuildingDisp,
     Eng_BuildingSentry,
 };
+
+#define STATIC_INIT_ONCE() \
+    static float _init = FALSE; \
+    if (_init) return; \
+    _init = TRUE
+
+#define PERIODIC(_p) \
+    static float _next; \
+    if (time > _next && (_next = time + _p))

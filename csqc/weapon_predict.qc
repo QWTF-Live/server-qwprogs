@@ -25,6 +25,10 @@ DEFCVAR_FLOAT(fo_nofirealpha, -1);
 // purely visual, still have to wait for attack_finished.
 DEFCVAR_FLOAT(fo_hue_weaponswap, 0);
 
+DEFCVAR_FLOAT(tf_forcecolors, 0);
+DEFCVAR_STRING(tf_color_enemy, "");
+DEFCVAR_STRING(tf_color_team, "");
+
 static const float kRenderDt = 1.0 / 144.0;
 
 struct pengine_t {
@@ -301,6 +305,7 @@ void WPP_Status() {
 #undef PRINT_CONFIG
 
 void TFX_Init();
+void RegisterPlayerListener();
 
 void WPP_UpdateEnable(float force) {
     static float next_ping_update;

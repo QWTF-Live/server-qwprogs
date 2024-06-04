@@ -48,6 +48,7 @@ DECLARE_PERF_SAMPLER(hud_timing, 60, 0.1);
 DECLARE_PERF_SAMPLER(hud_partial_timing, 60, 0.1);
 
 void ClientSettings_Check();
+void RegisterPlayerListener();
 
 noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     print("CSQC Started\n");
@@ -67,6 +68,8 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     Predict_InitDefaultConfig();
     FO_Predict_Init();
     CsGrenTimer::Init();
+    RegisterPlayerListener();
+
 
     registercommand("+slot");
     registercommand("-slot");

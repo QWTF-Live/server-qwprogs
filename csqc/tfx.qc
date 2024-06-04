@@ -1,4 +1,5 @@
 .entity outline;
+.entity csqc_player;
 .float grentimer_expires;  // TODO: integrate this
 .float teamno;
 static entity local_player;
@@ -10,6 +11,15 @@ enum {
     TeamRed = 2,
 };
 
+
+static float LocalTeam() {
+    static float next, teamno;
+    if (time >= next) {
+        teamno = getstatf(STAT_TEAMNO);
+        next = time + 0.1;
+    }
+    return teamno;
+}
 
 static float FlagCarried() {  // Just awful.
     for (int i = 0; i < FlagInfoLines.length; i++)
@@ -85,20 +95,21 @@ static float ShowPlayerOutline(entity player) {
     return FALSE;
 }
 
-static void RemoveOutline() {
+static void RemoveAttached() {
     if (self.outline != __NULL__)
         remove(self.outline);
+    if (self.csqc_player != __NULL__)
+        remove(self.csqc_player);
 }
 
 static void AddOutline(entity ent) {
     entity o = spawn();
     setmodelindex(o, ent.modelindex);
     o.classname = "outline";
-    o.fatness = 1;
     setsize(o, PLAYER_MINS, PLAYER_MAXS);
 
     ent.outline = o;
-    ent.removefunc = RemoveOutline;
+    ent.removefunc = RemoveAttached;
 }
 
 static void UpdateOutline(entity player) {
@@ -114,7 +125,7 @@ static void UpdateOutline(entity player) {
     o.drawmask = MASK_ENGINE;
     o.frame = player.frame;
     o.angles = player.angles;
-    if (player == local_player)
+    if (player.entnum == player_localentnum)
         o.renderflags |= RF_EXTERNALMODEL;
     setorigin(o, player.origin);
 
@@ -122,9 +133,6 @@ static void UpdateOutline(entity player) {
 
 float UpdatePlayer(float isnew) {
     if (isnew) {
-        if (self.entnum == player_localentnum && game_state.is_player)
-            local_player = self;
-
         AddOutline(self);
     }
 
@@ -138,6 +146,107 @@ float UpdatePlayer(float isnew) {
     UpdateOutline(self);
     return TRUE;
 }
+
+static void AddCSQCPlayer(entity src) {
+    if (src.csqc_player)
+        return;  // Should never happen...
+
+    entity csqc = spawn();
+    csqc.classname = "csqc_player";
+
+    setmodelindex(csqc, src.modelindex);
+    setsize(csqc, PLAYER_MINS, PLAYER_MAXS);
+
+    csqc.drawmask = 0;
+    src.removefunc = RemoveAttached;
+    src.csqc_player = csqc;
+}
+
+static string class_skins[] = {
+    "sco", "sni", "sol", "dem", "med", "hwg", "pyr", "spy", "eng",
+};
+
+void(entity e, float skinobj) applycustomskin = #378;
+float(string skinfilename, optional string skindata) loadcustomskin = #377;
+
+.string last_skin;
+.float next_skin_update;
+
+static void CSQC_UpdateSkin(entity src) {
+    static vector team_mod = '0.9 0.3 1',
+                  enemy_mod = '0.3 1 0.3';
+
+    PERIODIC(0.1) {
+        if (CVARS(tf_color_enemy) != "")
+            enemy_mod = stov(CVARS(tf_color_enemy));
+        if (CVARS(tf_color_team) != "")
+            team_mod = stov(CVARS(tf_color_team));
+    }
+
+    int enemy = 0;
+    string skin = "base";
+
+    if (tokenizebyseparator(src.last_skin, "_") == 2) {
+        skin = strcat("hv_", argv(1));
+        enemy = (LocalTeam() == 1) != (argv(0) == "blue");
+    }
+
+    entity csqc = src.csqc_player;
+    string skin_arg = strcat("qwskin ", skin);
+    setcustomskin(csqc, "", skin_arg);
+
+    csqc.colormod = enemy ? enemy_mod : team_mod;
+    /* csqc.glowmod = '0.1 0.1 0.1'; */
+}
+
+.float num_up;
+.float last_update;
+
+float CSQC_UpdatePlayer(float isnew) {
+    if (isnew)
+        AddCSQCPlayer(self);
+
+    if (self.entnum == player_localentnum)
+        self.renderflags |= RF_EXTERNALMODEL;
+    else
+        self.renderflags &= ~RF_EXTERNALMODEL;
+
+    entity csqc = self.csqc_player;
+    if (!CVARF(tf_forcecolors) || game_state.is_spectator) {
+        self.drawmask = MASK_ENGINE;
+        csqc.drawmask = 0;
+        return TRUE;
+    }
+
+    if (csqc.origin == self.origin && csqc.angles == self.angles &&
+        csqc.frame == self.frame && fabs(csqc.lerpfrac - self.lerpfrac) < 0.01 &&
+        csqc.frame2 == self.frame2)
+        return TRUE; // No update to propagate
+
+    // Prepare to draw CSQC model below.
+    self.drawmask = 0;
+    csqc.drawmask = MASK_ENGINE;
+    csqc.renderflags = self.renderflags;
+
+    csqc.frame2 = self.frame2;
+    csqc.frame = self.frame;
+    csqc.lerpfrac = self.lerpfrac;
+    csqc.angles = self.angles;
+    setorigin(csqc, self.origin);
+
+    if (time > self.next_skin_update) {
+        string sk = infokey(self, "skin");
+        if (sk != self.last_skin) {
+            self.last_skin = sk;
+            CSQC_UpdateSkin(self);
+        }
+        self.next_skin_update = time + 0.1;
+    }
+
+
+    return TRUE;
+}
+
 
 static float ShowTeamGrenTimer(float team, float my_team) {
     if (!game_state.is_player && TFxEnabled(TFX_SPEC_GRENTIMER))
@@ -166,7 +275,7 @@ static float RenderGrenTimer(entity p, float test_only) {
     vector po = p.origin + '0 0 40';
     vector o = PM_Org();
 
-    if (p == local_player)
+    if (p.entnum == player_localentnum)
         return FALSE;
 
     float diff = vlen(po - o);
@@ -305,16 +414,22 @@ static string rnds(string prefix) {
     return prefix;
 }
 
+void RegisterPlayerListener() {
+    STATIC_INIT_ONCE();
+
+    if (!CVARF(tf_forcecolors))
+        return;  // Must be set on connect currently
+
+    printf("PLAYER DELTALISTEN ACTIVE\n");
+    deltalisten("progs/player.mdl", CSQC_UpdatePlayer, 0);
+}
+
 void TFX_Init() {
-    static float once = FALSE;
-    if (once)
-        return;
-    once = TRUE;
+    STATIC_INIT_ONCE();
 
     printf("TFX active.\n");
 
-    // Note: Deltalisten breaks default shaders even without a forceoverride.
-    deltalisten("progs/player.mdl", UpdatePlayer, 0);
+    /* RegisterPlayerListener(); */
     /* deltalisten("progs/ff_flag.mdl", UpdateFlag, 0); */
     /* deltalisten("progs/tf_flag.mdl", UpdateFlag, 0); */
 

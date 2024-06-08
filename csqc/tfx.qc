@@ -196,7 +196,7 @@ static void CSQC_UpdateSkin(entity src) {
     setcustomskin(csqc, "", skin_arg);
 
     csqc.colormod = enemy ? enemy_mod : team_mod;
-    /* csqc.glowmod = '0.1 0.1 0.1'; */
+    csqc.glowmod = csqc.colormod;
 }
 
 .float num_up;

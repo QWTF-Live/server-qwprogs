@@ -166,6 +166,22 @@ static string class_skins[] = {
     "sco", "sni", "sol", "dem", "med", "hwg", "pyr", "spy", "eng",
 };
 
+static string ConvertClassic(string suffix) {
+    switch (suffix) {
+        case "sco": return "scout";
+        case "sni": return "snipe";
+        case "sol": return "sold";
+        case "dem": return "demo";
+        case "med": return "medic";
+        case "hwg": return "hwguy";
+        case "pyr": return "pyro";
+
+        // spy, eng
+        default: return suffix;
+    }
+};
+
+
 void(entity e, float skinobj) applycustomskin = #378;
 float(string skinfilename, optional string skindata) loadcustomskin = #377;
 
@@ -173,30 +189,58 @@ float(string skinfilename, optional string skindata) loadcustomskin = #377;
 .float next_skin_update;
 
 static void CSQC_UpdateSkin(entity src) {
-    static vector team_mod = '0.9 0.3 1',
-                  enemy_mod = '0.3 1 0.3';
+    static vector tf_color_team = '0.9 0.3 1',
+                  tf_color_enemy = '0.3 1 0.3',
+                  tf_color_attack = '0.2 0.7 0.2',
+                  tf_color_defense = '0.7 0.2 0.2';
 
     PERIODIC(0.1) {
         if (CVARS(tf_color_enemy) != "")
-            enemy_mod = stov(CVARS(tf_color_enemy));
+            tf_color_enemy = stov(CVARS(tf_color_enemy));
         if (CVARS(tf_color_team) != "")
-            team_mod = stov(CVARS(tf_color_team));
-    }
-
-    int enemy = 0;
-    string skin = "base";
-
-    if (tokenizebyseparator(src.last_skin, "_") == 2) {
-        skin = strcat("hv_", argv(1));
-        enemy = (LocalTeam() == 1) != (argv(0) == "blue");
+            tf_color_team = stov(CVARS(tf_color_team));
+        if (CVARS(tf_color_attack) != "")
+            tf_color_attack = stov(CVARS(tf_color_attack));
+        if (CVARS(tf_color_defense) != "")
+            tf_color_defense = stov(CVARS(tf_color_defense));
     }
 
     entity csqc = src.csqc_player;
-    string skin_arg = strcat("qwskin ", skin);
+    int enemy = 0, player_team = 0, is_attack;
+    string skin_name = "base";
+
+    if (tokenizebyseparator(src.last_skin, "_") == 2) {
+        player_team = argv(0) == "blue" ? 1 : 2;
+        is_attack = player_team == team_no_attack;
+        enemy = team_no != player_team;
+
+        string skin_prefix = "hv";
+        if (CVARF(tf_forcecolors) == 1)
+            skin_prefix = is_attack ? "blue" : "red";
+
+        skin_name = strcat(skin_prefix, "_", argv(1));
+    } else {
+        csqc.skin = src.skin;
+        return;
+    }
+
+    string skin_arg = strcat("qwskin ", skin_name, "\n");
     setcustomskin(csqc, "", skin_arg);
 
-    csqc.colormod = enemy ? enemy_mod : team_mod;
-    csqc.glowmod = csqc.colormod;
+    switch (CVARF(tf_forcecolors)) {
+        case 1:
+            csqc.colormod = src.colormod;
+            csqc.glowmod = src.glowmod;
+            break;  // Only skin swap
+        case 2:
+            csqc.colormod = is_attack ? tf_color_attack : tf_color_defense;
+            csqc.glowmod = csqc.colormod;
+            break;
+        case 3:
+            csqc.colormod = enemy ? tf_color_enemy : tf_color_team;
+            csqc.glowmod = csqc.colormod;
+            break;
+    }
 }
 
 .float num_up;
@@ -236,7 +280,7 @@ float CSQC_UpdatePlayer(float isnew) {
 
     if (time > self.next_skin_update) {
         string sk = infokey(self, "skin");
-        if (sk != self.last_skin) {
+        if (1 || sk != self.last_skin) {
             self.last_skin = sk;
             CSQC_UpdateSkin(self);
         }

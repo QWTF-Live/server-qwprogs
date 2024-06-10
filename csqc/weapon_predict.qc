@@ -25,9 +25,14 @@ DEFCVAR_FLOAT(fo_nofirealpha, -1);
 // purely visual, still have to wait for attack_finished.
 DEFCVAR_FLOAT(fo_hue_weaponswap, 0);
 
+// 1: Force blue/red
+// 2: Force attack/defense colors
+// 3: Force enemy/team colors
 DEFCVAR_FLOAT(tf_forcecolors, 0);
 DEFCVAR_STRING(tf_color_enemy, "");
 DEFCVAR_STRING(tf_color_team, "");
+DEFCVAR_STRING(tf_color_attack, "");
+DEFCVAR_STRING(tf_color_defense, "");
 
 static const float kRenderDt = 1.0 / 144.0;
 
@@ -2165,6 +2170,12 @@ void WP_UpdateViewModel() {
     }
 
     viewmodel.lerpfrac = max(0, viewmodel.lerpfrac - delta * 10);
+
+    if (CVARF(tf_forcecolors)) {
+        viewmodel.colormod = team_no == team_no_attack ?  '0.3 0.3 1' : '1 0.3 0.3';
+    } else {
+        viewmodel.colormod = '1 1 1';
+    }
 }
 
 struct {

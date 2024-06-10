@@ -859,7 +859,7 @@ struct GameState {
 
 GameState game_state, prev_game_state;
 
-float team_no;
+float team_no, team_no_attack;
 float crosshair_team_no;
 float all_time;
 float painfinished;

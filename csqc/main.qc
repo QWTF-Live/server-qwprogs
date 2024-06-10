@@ -912,6 +912,9 @@ void _Sync_ServerCommandFrame() {
     prev_game_state = game_state;
 
     team_no = getstatf(STAT_TEAMNO);
+    team_no_attack = getstatf(STAT_TEAMNO_ATTACK);
+    if (team_no_attack == 0)
+        team_no_attack = 1;
     all_time = getstatf(STAT_ALL_TIME);
     SBAR.ReadyStatus = getstatf(STAT_FLAGS);
 

@@ -704,9 +704,6 @@ float WP_CheckAmmo(FO_WeapInfo* wi) {
     if (wi->weapon == WEAP_MEDIKIT || wi->weapon == WEAP_SPANNER)
         return TRUE;
 
-    if (wi->weapon == WEAP_ASSAULT_CANNON && WP_GetAmmo(AMMO_CELLS) < 7)
-        return FALSE;
-
     int ammo = WP_GetAmmo(wi->ammo_type);
     return ammo >= wi->ammo_per_shot;
 }
@@ -1962,13 +1959,8 @@ void WP_Attack() {
         Attack_Finished(wi->attack_time);
 
     // Start the AC state machine when necessary.
-    if (wi->weapon == WEAP_ASSAULT_CANNON &&
-        (pstate_pred.tfstate & TFSTATE_AC_MASK) == 0) {
-        if (W_ConsumeAmmoIfPossible(AMMO_CELLS, PC_HVYWEAP_CELL_FIRE))
-            pstate_pred.tfstate |= TFSTATE_AC_SPINUP;
-        else
-          pstate_pred.client_thinkindex = 0;  // Just kidding, no cells.
-    }
+    if (wi->weapon == WEAP_ASSAULT_CANNON && (pstate_pred.tfstate & TFSTATE_AC_MASK) == 0)
+        pstate_pred.tfstate |= TFSTATE_AC_SPINUP;
 #if 0
     // If our latency is higher than forward projection, synchronize animation
     // with when it will actually start/finish.  The projectile internally

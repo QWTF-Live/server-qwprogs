@@ -1846,15 +1846,6 @@ float (float weap) W_OldGetSlot = {
     return 0;
 };
 
-static void W_AmmoError() {
-    if (self.noammo == 1)
-        sprint(self, PRINT_HIGH, "Not enough ammo\n");
-    else if (self.noammo == 2 && time >= self.antispam_assault_cannon) {
-        sprint(self, PRINT_HIGH, "Not enough cells to power the assault cannon\n");
-        self.antispam_assault_cannon = time + 3;
-    }
-}
-
 void W_ChangeWeaponSlot(Slot slot) {
     if (self.playerclass == 0)
         return;
@@ -1879,7 +1870,7 @@ void W_ChangeWeaponSlot(Slot slot) {
 
     // We still allow swapping to medikit/spanner with no ammo.
     if (*ws->ammo_remaining == 0 && !IsSlotMelee(slot)) {
-        W_AmmoError();
+        sprint(self, PRINT_HIGH, "Not enough ammo\n");
         return;
     }
 

@@ -189,22 +189,6 @@ float(string skinfilename, optional string skindata) loadcustomskin = #377;
 .float next_skin_update;
 
 static void CSQC_UpdateSkin(entity src) {
-    static vector tf_color_team = '0.9 0.3 1',
-                  tf_color_enemy = '0.3 1 0.3',
-                  tf_color_attack = '0.2 0.7 0.2',
-                  tf_color_defense = '0.7 0.2 0.2';
-
-    PERIODIC(0.1) {
-        if (CVARS(tf_color_enemy) != "")
-            tf_color_enemy = stov(CVARS(tf_color_enemy));
-        if (CVARS(tf_color_team) != "")
-            tf_color_team = stov(CVARS(tf_color_team));
-        if (CVARS(tf_color_attack) != "")
-            tf_color_attack = stov(CVARS(tf_color_attack));
-        if (CVARS(tf_color_defense) != "")
-            tf_color_defense = stov(CVARS(tf_color_defense));
-    }
-
     entity csqc = src.csqc_player;
     int enemy = 0, player_team = 0, is_attack;
     string skin_name = "base";
@@ -233,11 +217,11 @@ static void CSQC_UpdateSkin(entity src) {
             csqc.glowmod = src.glowmod;
             break;  // Only skin swap
         case 2:
-            csqc.colormod = is_attack ? tf_color_attack : tf_color_defense;
+            csqc.colormod = is_attack ? CVAR.tf_color_attack : CVAR.tf_color_defense;
             csqc.glowmod = csqc.colormod;
             break;
         case 3:
-            csqc.colormod = enemy ? tf_color_enemy : tf_color_team;
+            csqc.colormod = enemy ? CVAR.tf_color_enemy : CVAR.tf_color_team;
             csqc.glowmod = csqc.colormod;
             break;
     }

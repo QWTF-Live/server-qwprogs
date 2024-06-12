@@ -25,15 +25,6 @@ DEFCVAR_FLOAT(fo_nofirealpha, -1);
 // purely visual, still have to wait for attack_finished.
 DEFCVAR_FLOAT(fo_hue_weaponswap, 0);
 
-// 1: Force blue/red
-// 2: Force attack/defense colors
-// 3: Force enemy/team colors
-DEFCVAR_FLOAT(tf_forcecolors, 0);
-DEFCVAR_STRING(tf_color_enemy, "");
-DEFCVAR_STRING(tf_color_team, "");
-DEFCVAR_STRING(tf_color_attack, "");
-DEFCVAR_STRING(tf_color_defense, "");
-
 static const float kRenderDt = 1.0 / 144.0;
 
 struct pengine_t {
@@ -1547,10 +1538,6 @@ void FPP_Init(int fpp_type, entity proj) {
     proj.movetype = desc->movetype;
 }
 
-DEFCVAR_FLOAT(r_rocketlight, 1);
-DEFCVAR_FLOAT(r_rocketlight, 1);
-DEFCVAR_STRING(r_rocketlight_color, "2.0 1.0 0.25 200");  // Radius ignored.
-
 static float HasLight(int fpp_type) {
     if (!CVARF(r_rocketlight))
         return FALSE;
@@ -1582,7 +1569,7 @@ float PP_PredrawActive() {
     }
 
     if (HasLight(self.fpp.index))
-        dynamiclight_add(self.origin, 200, stov(CVARS(r_rocketlight_color)));
+        dynamiclight_add(self.origin, 200, CVAR.r_rocketlight_colour);
 
     return PREDRAW_AUTOADD;
 }

@@ -2,8 +2,6 @@ static entity render_hittexts[40];
 static float num_hittexts, num_render;
 static float next_render_update;
 
-static vector clr_noarmour, clr_reg, clr_friendly;
-
 static void AddRenderableHittext(entity hittext) {
     if (num_render < render_hittexts.length)
         render_hittexts[num_render++] = hittext;
@@ -40,13 +38,13 @@ static void RenderHitText(entity p) {
     vector clr;
 
     if (p.hittext_hitflags & HITFLAG_FRIENDLY) {
-        clr = clr_friendly;
+        clr = CVAR.fo_hittext_friendly;
     } else {
         if (CVARF(fo_hittext_noarmour) &&
             (p.hittext_hitflags & HITFLAG_NOARMOUR))
-            clr = clr_noarmour;
+            clr = CVAR.fo_hittext_noarmor;
         else
-            clr = clr_reg;
+            clr = CVAR.fo_hittext_reg;
     }
 
     vector c = project(po);
@@ -73,11 +71,6 @@ static void RenderHitText(entity p) {
 static void UpdateHitTextList() {
     if (time < next_render_update)
         return;
-
-    // Convert these periodically
-    clr_reg = stov(CVARS(fo_hittext_colour));
-    clr_noarmour = stov(CVARS(fo_hittext_colour2));
-    clr_friendly = stov(CVARS(fo_hittext_colour3));
 
     next_render_update = time + 0.1;
     num_render = 0;

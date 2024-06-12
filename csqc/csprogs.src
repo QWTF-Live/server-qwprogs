@@ -11,6 +11,7 @@ csdefs.qc
 csextradefs.qc
 
 ../share/debug.qc
+settings.qc
 profile.qc
 ../share/commondefs.qc
 ../share/common_helpers.qc
@@ -27,7 +28,6 @@ tfx.qc
 sui_sys.qc
 vote.qc
 status.qc
-settings.qc
 menu.qc
 particles.qc
 main.qc

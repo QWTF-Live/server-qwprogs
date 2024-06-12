@@ -53,12 +53,6 @@ void RegisterPlayerListener();
 noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     print("CSQC Started\n");
 
-    //    precache_model("progs/weapons/v_rock.mdl");
-
-    //     for (float i = 0; i < HudIcons.length; i++) {
-    //         precache_pic(HudIcons[i].icon);
-    //     }
-
     INIT_PERF_SAMPLER(frame_timing);
     INIT_PERF_SAMPLER(hud_timing);
     INIT_PERF_SAMPLER(hud_partial_timing);
@@ -908,6 +902,8 @@ void _Sync_ServerCommandFrame() {
     if (last_servercommandframe == servercommandframe)
         return;
     last_servercommandframe = servercommandframe;
+
+    UpdateCachedCvars();
 
     prev_game_state = game_state;
 

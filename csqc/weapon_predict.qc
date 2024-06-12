@@ -43,7 +43,7 @@ struct pengine_t {
 
     float pipe_cooldown;
 
-    // Must include MASK_PRED_VIEWMODEL or we lose updates.
+    // Must include MASK_PRED_ENT or we lose updates.
     // We only add/remove MASK_VIEWMODEL and MASK_PRED_PROJECTILE
     float view_mask;
 } pengine;
@@ -387,9 +387,7 @@ void WPP_UpdateEnable(float force) {
 
     setlocaluserinfo(0, "fo_wpp_status", ftos(wpp_status));
     // We always need to "render" the view model to trigger predraw compute.
-    pengine.view_mask = MASK_PRED_ENT | MASK_VIEWMODEL |
-                        (pp_new ? MASK_PRED_PROJECTILE : 0);
-
+    pengine.view_mask = MASK_PRED_ENT | (pp_new ? MASK_PRED_PROJECTILE : 0);
 
     if (fo_config.tfx_flags)
         TFX_Init();
@@ -2095,11 +2093,12 @@ void InitProjectileEnt(float sendflags) {
 }
 
 void WP_UpdateViewModel() {
-    static float next;
+    static float next, prev;
     if (time < next)
         return;
-    float delta = time - (next - kRenderDt);
+    float delta = time - prev;
     next = time + kRenderDt;
+    prev = time;
 
     entity viewmodel = pengine.viewmodel;
     float pmodelindex, pframe;
@@ -2155,7 +2154,6 @@ void WP_UpdateViewModel() {
         viewmodel.frame = pframe;
         viewmodel.lerpfrac = 1;
     }
-
     viewmodel.lerpfrac = max(0, viewmodel.lerpfrac - delta * 10);
 
     if (CVARF(tf_forcecolors)) {

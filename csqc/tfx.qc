@@ -185,15 +185,14 @@ static string ConvertClassic(string suffix) {
 void(entity e, float skinobj) applycustomskin = #378;
 float(string skinfilename, optional string skindata) loadcustomskin = #377;
 
-.string last_skin;
-.float next_skin_update;
 
 static void CSQC_UpdateSkin(entity src) {
     entity csqc = src.csqc_player;
     int enemy = 0, player_team = 0, is_attack;
     string skin_name = "base";
 
-    if (tokenizebyseparator(src.last_skin, "_") == 2) {
+    string skin_name = getplayerkeyvalue(self.colormap - 1, "skin");
+    if (tokenizebyseparator(skin_name, "_") == 2) {
         player_team = argv(0) == "blue" ? 1 : 2;
         is_attack = player_team == team_no_attack;
         enemy = team_no != player_team;
@@ -227,8 +226,7 @@ static void CSQC_UpdateSkin(entity src) {
     }
 }
 
-.float num_up;
-.float last_update;
+.float next_skin_update;
 
 float CSQC_UpdatePlayer(float isnew) {
     if (isnew)
@@ -238,6 +236,10 @@ float CSQC_UpdatePlayer(float isnew) {
         self.renderflags |= RF_EXTERNALMODEL;
     else
         self.renderflags &= ~RF_EXTERNALMODEL;
+
+    // Needs this for both cases since deltalisten() inadvertently blocks.
+    if (self.effects & EF_DIMLIGHT)
+        dynamiclight_add(self.origin, 200, CVAR.r_dimlight_colour);
 
     entity csqc = self.csqc_player;
     if (!CVARF(tf_forcecolors) || game_state.is_spectator) {
@@ -263,14 +265,10 @@ float CSQC_UpdatePlayer(float isnew) {
     setorigin(csqc, self.origin);
 
     if (time > self.next_skin_update) {
-        string sk = infokey(self, "skin");
-        if (1 || sk != self.last_skin) {
-            self.last_skin = sk;
-            CSQC_UpdateSkin(self);
-        }
+        CSQC_UpdateSkin(self);
+
         self.next_skin_update = time + 0.1;
     }
-
 
     return TRUE;
 }

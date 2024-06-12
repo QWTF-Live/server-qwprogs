@@ -443,7 +443,7 @@ static string rnds(string prefix) {
 void RegisterPlayerListener() {
     STATIC_INIT_ONCE();
 
-    if (!CVARF(tf_forcecolors))
+    if (!CVARF(tf_forcecolors) || isdemo())
         return;  // Must be set on connect currently
 
     printf("PLAYER DELTALISTEN ACTIVE\n");

@@ -455,14 +455,18 @@ float FO_NumClipStillLoading(FO_WeapInfo* wi, float now, float reload_finished) 
 
 float FO_CanReloadMsg(FO_WeapInfo* wi, int ammo_remaining, int clip_fired,
                       string* msg = __NULL__) {
-    if (clip_fired == 0) {
+
+    if (!wi->needs_reload || wi->ammo_type == AMMO_NONE) {
+        if (msg) *msg = "No clip for this weapon";
+    } else if (clip_fired == 0) {
         if (msg) *msg = "Clip full\n";
     } else if (ammo_remaining == 0) {
         if (msg) *msg = strcat("Out of ", AMMO_to_s[wi->ammo_type], "\n");
-    } else if (wi->clip_size - clip_fired == ammo_remaining) {
+    } else if ((wi->clip_size - clip_fired) * wi->ammo_per_shot >= ammo_remaining) {
         if (msg) *msg = strcat("All ", AMMO_to_s[wi->ammo_type], " are in the clip\n");
-    } else
+    } else {
         return TRUE;
+    }
 
     return FALSE;  // msg filled in above.
 }
@@ -574,16 +578,8 @@ void FO_ReloadFrame() {
 float FO_CanReload(Slot slot) {
     FO_WeapState ws;
     FO_FillWeapState(self, slot, &ws);
-    FO_WeapInfo* wi = ws->wi;
 
-    if (wi->ammo_type == AMMO_NONE)
-        return FALSE;
-
-    if (wi->needs_reload && *ws->clip_fired > 0
-        && *ws->ammo_remaining > wi->ammo_per_shot)
-        return TRUE;
-
-    return FALSE;
+    return FO_CanReloadMsg(ws->wi, *ws->ammo_remaining, *ws->clip_fired);
 }
 
 void FO_ReloadSlot(Slot slot, float force) {
@@ -632,9 +628,8 @@ float FO_CheckForReload() {
     FO_WeapInfo* wi = ws->wi;
 
     if (wi->needs_reload && *ws->clip_fired >= wi->clip_size &&
-        *ws->ammo_remaining > 0) {
-        if (force_reload)
-            FO_ReloadSlot(self.current_slot, TRUE);
+        *ws->ammo_remaining >= wi->ammo_per_shot) {
+        FO_ReloadSlot(self.current_slot, TRUE);
         return TRUE;
     } else {
         return FALSE;

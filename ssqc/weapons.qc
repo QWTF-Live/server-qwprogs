@@ -937,8 +937,6 @@ void () W_FireAssaultCannon = {
     FO_WeapState ws;
     FO_FillCurrentWeapState(&ws);
 
-    FO_CheckForReload();
-
     *ws->clip_fired += 1;
     *ws->ammo_remaining -= (ws->wi)->ammo_per_shot;
     Status_Refresh(self);
@@ -1577,10 +1575,6 @@ Slot W_BestWeaponSlot()  {
         Slot slot = MakeSlot(i);
         FO_FillWeapState(self, slot, &ws);
         FO_WeapInfo* wi = ws->wi;
-
-        // AC also takes cells to fire.
-        if (ws->weapon == WEAP_ASSAULT_CANNON && self.ammo_cells < 7)
-            continue;
 
         // We don't need to handle out of ammo medi/spanner here because of
         // fallback below.

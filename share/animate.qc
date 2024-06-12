@@ -302,8 +302,11 @@ void asscan_down_extra() {
     if (tidx >= 15) {  // 1.5s down
         *self_tf_state() &= ~(TFSTATE_AC_MASK | TFSTATE_AIMING);
         player_run();
-        if (self.ammo_cells < 7 || !FO_CheckForReload())
+
+        if (get_shells() == 0)
             W_ChangeToBestWeapon();
+        else
+            FO_CheckForReload();
     }
     Attack_Finished(wi->attack_time);
 };

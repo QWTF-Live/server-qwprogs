@@ -581,9 +581,6 @@ void () DecodeLevelParms = {
         asscanrange = CF_GetSetting("acr", "asscanrange", "0");
         asscanrangedie = CF_GetSetting("acrd", "asscanrangedie", "0");
 
-        // force reload [on]
-        force_reload = CF_GetSetting("fr", "forcereload", "on");
-
         // enable spy invisibility [off]
         invis_only = CF_GetSetting("s", "spyinvis", "off");
 

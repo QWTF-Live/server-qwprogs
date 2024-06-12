@@ -219,7 +219,6 @@ void WPP_Status() {
 
     printf("Config:\n");
     PRINT_CONFIG(min_ping_ms);
-    PRINT_CONFIG(qc_physics);
     PRINT_CONFIG(static_newmis_ms);
     PRINT_CONFIG(dynamic_newmis_ms);
     PRINT_CONFIG_ACTIVE(gren_beta_disable);
@@ -1682,8 +1681,6 @@ void (float ox) W_FireSpikes = {
 
 };
 
-static float QcPhysics() { return tf_config.qc_physics; }
-
 static float CanThrowGrenade(int gren_type) {
     if (pstate_pred.client_time < pstate_pred.last_prime + 0.8)
         return FALSE;  // Not time to throw yet, THROWING set if necessary.
@@ -1763,7 +1760,7 @@ static void WP_ExplodeGren() {
 }
 
 static void W_ThrowGren(float is_throw) {
-    if (!QcPhysics() || !RewindFlagEnabled(REWIND_GRENADES) || getstatf(STAT_NOFIRE))
+    if (!RewindFlagEnabled(REWIND_GRENADES) || getstatf(STAT_NOFIRE))
         return;
 
     if (pstate_pred.tfstate & TFSTATE_GREN_MASK_PRIMED == 0)
@@ -1861,11 +1858,8 @@ void WP_Attack() {
             case WEAP_GRENADE_LAUNCHER:
                 send_event = TRUE;
             case WEAP_PIPE_LAUNCHER:
-                if (QcPhysics())
-                    W_FireGrenade((wi->weapon == WEAP_GRENADE_LAUNCHER || prematch) ?
-                                  GREN_RED : GREN_PIPE);
-                else
-                    Pred_Sound(SND_GREN);
+                W_FireGrenade((wi->weapon == WEAP_GRENADE_LAUNCHER || prematch) ?
+                        GREN_RED : GREN_PIPE);
                 break;
 
             case WEAP_AXE:

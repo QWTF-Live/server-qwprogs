@@ -5,10 +5,6 @@ static const float phys_tic = 0.005;
 .float phys_time;  // Current physics time
 
 enumflags {
-    PHYSB_ENABLED,
-};
-
-enumflags {
     PHYSF_CONSUME_ALL,
     PHYSF_REWIND_PLAYERS,
     PHYSF_FORWARD_KNOCK,
@@ -18,9 +14,6 @@ enumflags {
 
 const float FL_FORWARD_KNOCK = FL_GODMODE;
 
-static inline float PhysFlagEnabled(float flag) {
-    return tf_config.qc_physics & flag;
-}
 void AugmentGrenadeImpact();
 
 #ifdef SSQC

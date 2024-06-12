@@ -726,7 +726,6 @@ void EntUpdate_Projectile(float isnew) {
 
 void Predict_InitDefaultConfig() {
     tf_config.min_ping_ms = 0;
-    tf_config.qc_physics = 1;
     tf_config.static_newmis_ms = 50;
     tf_config.dynamic_newmis_ms = 0;
     tf_config.rewind_flags = REWIND_DEFAULT_FLAGS;
@@ -809,7 +808,6 @@ static void TflCheckConfigUpdate() {
     }
 
     // Target is also the long form localinfo name.
-    CONFIG_UPDATE(FALSE, "qcp", qc_physics);
     CONFIG_UPDATE(FALSE, "snm", static_newmis_ms);
     CONFIG_UPDATE(FALSE, "dnm", dynamic_newmis_ms);
     CONFIG_UPDATE(FALSE, "mrt", max_rewind_ms);
@@ -975,7 +973,6 @@ void FOProj_Finalize(entity mis, float use_ctime=0) {
         newmis = __NULL__;
     }
     PredProj_Sound(fpp_type);
-    float csqc_networking = fo_projectiles;
 
     if (FPP_IsGrenade(fpp_type)) {
         FO_GrenInfo* gdesc = FO_GrenDesc(mis.fpp.gren_type);
@@ -984,32 +981,17 @@ void FOProj_Finalize(entity mis, float use_ctime=0) {
         mis.avelocity = gdesc->avelocity;
         mis.skin = gdesc->skin;
         mis.fpp.gren_type = gdesc->id;
-
-        // If we don't have physics synchronized between client and server, use
-        // engine-side for both.
-        csqc_networking = (csqc_networking && tf_config.qc_physics);
     }
 
     // After any model updates have occurred
     setsize(mis, '0 0 0', '0 0 0');
 
-    // We always need to init some of the state here (e.g. phys_time) as we
-    // always use the physics code client-side.
-    if (tf_config.qc_physics)
-        mis.customphysics = FO_CustomPhysics;
+    mis.customphysics = FO_CustomPhysics;
 
     Forward_Projectile(mis.fpp.index, mis, use_ctime);
 
-    // Below is conditional on using custom SendEntity.
-    if (csqc_networking) {
-        mis.SendEntity = PP_SendEntity;
-        mis.SendFlags = FOPP_INIT;
-    } else if (fpp_type == FPP_HANDGRENADE) {
-        entity target = self;
-        if (target.classname != "player")
-            target = target.owner;  // Handle call from timer on latched throw.
-        FO_Sound(target, CHAN_WEAPON, Snd_Get(SND_THROWGREN)->sound, 1, ATTN_NORM);
-    }
+    mis.SendEntity = PP_SendEntity;
+    mis.SendFlags = FOPP_INIT;
 }
 
 .float pmt_nexttime;

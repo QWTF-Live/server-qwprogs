@@ -622,8 +622,6 @@ float reverse_cap;
 float engineer_move;
 float grenade_lockout;
 
-float fo_projectiles;
-
 float fo_concuss;
 
 float numlocs;

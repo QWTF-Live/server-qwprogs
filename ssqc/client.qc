@@ -639,9 +639,6 @@ void () DecodeLevelParms = {
         asscanrange = CF_GetSetting("acr", "asscanrange", "0");
         asscanrangedie = CF_GetSetting("acrd", "asscanrangedie", "0");
         
-        // CSQC projectiles
-        fo_projectiles = CF_GetSetting("focp", "fo_csqc_projectiles", "on");
-
         // discord announcer
         use_announcer = CF_GetSetting("uda", "use_discord_announcer", "on");
 

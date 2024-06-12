@@ -34,7 +34,6 @@ enumflags {
 
 #define TMPL_CONFIG_DATA(_OP) \
     _OP(1, Byte, float, min_ping_ms) \
-    _OP(2, Byte,  float, qc_physics) \
     _OP(2, Byte,  float, tfx_flags) \
     _OP(2, Short, float, predict_flags) \
     _OP(2, Short, float, rewind_flags) \

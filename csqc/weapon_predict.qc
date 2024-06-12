@@ -62,13 +62,6 @@ float WP_PlayerClass() {
     return pstate_server.playerclass;
 }
 
-float WP_MinPing() {
-    if (CVARF(wpp_min_ping) == -1)
-        return fo_config.wp_default_min_ping_ms;
-    else
-        return CVARF(wpp_min_ping);
-}
-
 void WP_UpdateViewModel();
 
 inline float server_time_ms() {
@@ -156,8 +149,7 @@ float csqc_get_user_setting(string s_short, string s_long, string def);
 // Order of preference:
 //   server disable, client enable/disable, server/ping enable
 static float CalcPredEnabled(float current_enable, float cvar,
-                             float server_disable, float dependent_enabled,
-                             string* set_by) {
+                             float dependent_enabled, string* set_by) {
 
     if (!dependent_enabled) {
         // PP depends on WP, so !WP => !PP
@@ -170,11 +162,6 @@ static float CalcPredEnabled(float current_enable, float cvar,
         return FALSE;
     }
 
-    if (server_disable) {
-        *set_by = "[server disable]";
-        return FALSE;
-    }
-
     if (!cvar) {
         *set_by = "[disabled]";
         return FALSE;
@@ -182,39 +169,6 @@ static float CalcPredEnabled(float current_enable, float cvar,
 
     *set_by = "[default]";
     return TRUE;
-
-#if 0
-
-    if (WP_MinPing() == 0)
-        return current_enable;
-
-    float ping_enable, avg, variance;
-
-    fill_avg_ping(&avg, &variance);
-
-    if (variance > sq(15)) {
-        *set_by = "[ping not yet stable]";
-        return current_enable;  // variance too high, wait.
-    }
-
-    static float hyst = 0;
-    ping_enable = avg > WP_MinPing() - hyst;
-    if (ping_enable != current_enable) {
-        if (!hyst)  // avoid flip-flopping on boundary values.
-            hyst = 10;
-        else
-            hyst += 5;
-    }
-
-    if (ping_enable) {
-        *set_by = sprintf("[ping >%d] (avg=%0.0f var=%0.0f)",
-                WP_MinPing(), avg, variance);
-        return TRUE;
-    } else {
-        *set_by = sprintf("[lan mode <%d]", WP_MinPing());
-        return FALSE;
-    }
-#endif
 }
 
 static float client_delay_packets;
@@ -243,11 +197,8 @@ void WPP_Status() {
     string wp_source, pp_source;
     float wp_enabled = pengine.wp_enabled, pp_enabled = pengine.pp_enabled;
 
-    CalcPredEnabled(wp_enabled, CVARF(fo_predict_weapons),
-            fo_config.wp_global_disable, TRUE, &wp_source);
-
-    CalcPredEnabled(pp_enabled, CVARF(fo_predict_projectiles),
-            fo_config.wp_global_disable, wp_enabled, &pp_source);
+    CalcPredEnabled(wp_enabled, CVARF(fo_predict_weapons), TRUE, &wp_source);
+    CalcPredEnabled(pp_enabled, CVARF(fo_predict_projectiles), wp_enabled, &pp_source);
 
     printf("Prediction Status:\n");
     printf(" Weapon: %s %s\n",
@@ -271,8 +222,6 @@ void WPP_Status() {
     PRINT_CONFIG(qc_physics);
     PRINT_CONFIG(static_newmis_ms);
     PRINT_CONFIG(dynamic_newmis_ms);
-    PRINT_CONFIG(wp_default_min_ping_ms);
-    PRINT_CONFIG_ACTIVE(wp_global_disable);
     PRINT_CONFIG_ACTIVE(gren_beta_disable);
     PRINT_CONFIG_ACTIVE(old_ng_rof);
     PRINT_CONFIG(max_rewind_ms);
@@ -337,11 +286,8 @@ void WPP_UpdateEnable(float force) {
     float wp_new = -1, pp_new = -1;
     string wp_source, pp_source;
 
-    wp_new = CalcPredEnabled(wp_enabled, CVARF(fo_predict_weapons),
-            fo_config.wp_global_disable, TRUE, &wp_source);
-
-    pp_new = CalcPredEnabled(pp_enabled, CVARF(fo_predict_projectiles),
-            fo_config.wp_global_disable, wp_new, &pp_source);
+    wp_new = CalcPredEnabled(wp_enabled, CVARF(fo_predict_weapons), TRUE, &wp_source);
+    pp_new = CalcPredEnabled(pp_enabled, CVARF(fo_predict_projectiles), wp_new, &pp_source);
 
     static float once;
     if (wp_new != pengine.wp_enabled || !once) {

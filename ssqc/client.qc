@@ -271,10 +271,8 @@ void ActivateOrgGame() {
     if (CF_GetSetting("nbnc", "new_balance_no_cap", "0"))
         fo_config.new_balance_flags |= NBF_NO_CAP;
 
-    if (NB_UseMinPing()) {
-        if (fo_config.min_ping_ms < 50) // 50 min-ping
-            localcmd("localinfo mpm 50");
-    }
+    if (NB_UseMinPing())
+        min_ping_limit_ms = 50;
 }
 
 void () DecodeLevelParms = {

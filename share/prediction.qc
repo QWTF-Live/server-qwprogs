@@ -736,7 +736,6 @@ void Predict_InitDefaultConfig() {
     fo_config.max_rewind_fast_projectile_ms = 150;
     fo_config.max_rewind_grenade_ms = 50; // Only affects REWIND_GREN
     fo_config.rewind_fast_projectile_thresh = 1500;
-    fo_config.wp_default_min_ping_ms = 25;
     fo_config.clown_flags = 0;
     fo_config.clown_grav = 400;
     fo_config.fo_concuss = 0;
@@ -789,30 +788,6 @@ entity config_update;
 static void TflCheckConfigUpdate() {
     float update = FALSE;
 
-    // Target is also the long form localinfo name.
-    CONFIG_UPDATE(FALSE, "qcp", qc_physics);
-    CONFIG_UPDATE(FALSE, "mpm", min_ping_ms);
-    CONFIG_UPDATE(FALSE, "snm", static_newmis_ms);
-    CONFIG_UPDATE(FALSE, "dnm", dynamic_newmis_ms);
-    CONFIG_UPDATE(FALSE, "mrt", max_rewind_ms);
-    CONFIG_UPDATE(FALSE, "mrsp", max_rewind_slow_projectile_ms);
-    CONFIG_UPDATE(FALSE, "mrfp", max_rewind_fast_projectile_ms);
-    CONFIG_UPDATE(FALSE, "mrg", max_rewind_grenade_ms);
-    CONFIG_UPDATE(FALSE, "rfpt", rewind_fast_projectile_thresh);
-    CONFIG_UPDATE(FALSE, "wpdmp", wp_default_min_ping_ms);
-    CONFIG_UPDATE(FALSE, "wpgd", wp_global_disable);
-    CONFIG_UPDATE(FALSE, "gbd", gren_beta_disable);
-
-    if (fo_concuss != fo_config.fo_concuss) {
-        fo_config.fo_concuss = fo_concuss;
-        update = TRUE;
-    }
-
-    if ((new_balance & 1) != fo_config.new_balance) {
-        fo_config.new_balance = new_balance & 1;
-        update = TRUE;
-    }
-
     // Not dynamically updatable.
     static float read_once = FALSE;
     if (!read_once) {
@@ -824,6 +799,34 @@ static void TflCheckConfigUpdate() {
             fo_config.pipe_cooldown = pipecooldown_time;
         }
         read_once = TRUE;
+    }
+
+    float mpm = CF_GetSetting("mpm", "min_ping_ms", 0);
+    mpm = max(mpm, min_ping_limit_ms);
+    if (mpm != fo_config.min_ping_ms) {
+        fo_config.min_ping_ms = mpm;
+        update = TRUE;
+    }
+
+    // Target is also the long form localinfo name.
+    CONFIG_UPDATE(FALSE, "qcp", qc_physics);
+    CONFIG_UPDATE(FALSE, "snm", static_newmis_ms);
+    CONFIG_UPDATE(FALSE, "dnm", dynamic_newmis_ms);
+    CONFIG_UPDATE(FALSE, "mrt", max_rewind_ms);
+    CONFIG_UPDATE(FALSE, "mrsp", max_rewind_slow_projectile_ms);
+    CONFIG_UPDATE(FALSE, "mrfp", max_rewind_fast_projectile_ms);
+    CONFIG_UPDATE(FALSE, "mrg", max_rewind_grenade_ms);
+    CONFIG_UPDATE(FALSE, "rfpt", rewind_fast_projectile_thresh);
+    CONFIG_UPDATE(FALSE, "gbd", gren_beta_disable);
+
+    if (fo_concuss != fo_config.fo_concuss) {
+        fo_config.fo_concuss = fo_concuss;
+        update = TRUE;
+    }
+
+    if ((new_balance & 1) != fo_config.new_balance) {
+        fo_config.new_balance = new_balance & 1;
+        update = TRUE;
     }
 
     CONFIG_UPDATE(TRUE,  "rewind", rewind_flags);

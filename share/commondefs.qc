@@ -33,7 +33,7 @@ enumflags {
 };
 
 #define TMPL_CONFIG_DATA(_OP) \
-    _OP(1, Float, float, min_ping_ms) \
+    _OP(1, Byte, float, min_ping_ms) \
     _OP(2, Byte,  float, qc_physics) \
     _OP(2, Byte,  float, tfx_flags) \
     _OP(2, Short, float, predict_flags) \
@@ -45,11 +45,9 @@ enumflags {
     _OP(3, Byte,  float, max_rewind_fast_projectile_ms) \
     _OP(3, Short, float, max_rewind_grenade_ms) \
     _OP(3, Short, float, rewind_fast_projectile_thresh) \
-    _OP(3, Short, float, wp_default_min_ping_ms) \
     _OP(4, Short, float, clown_flags) \
     _OP(4, Short, float, clown_grav) \
     _OP(5, Byte,  float, old_ng_rof) \
-    _OP(5, Byte,  float, wp_global_disable) \
     _OP(5, Byte,  float, gren_beta_disable) \
     _OP(5, Byte,  float, fo_concuss) \
     _OP(6, Float, float, rj) \

@@ -789,3 +789,4 @@ string game_token;
 .float connect_time;
 
 .float periodic_think_time;
+float min_ping_limit_ms;

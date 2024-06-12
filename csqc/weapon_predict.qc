@@ -175,9 +175,9 @@ static float client_delay_packets;
 void(float seat, string keyname, string newvalue) setlocaluserinfo = #0:setlocaluserinfo;
 
 #define PRINT_CONFIG(_field) \
-    printf(" ." #_field " = %d\n", fo_config.##_field)
+    printf(" ." #_field " = %d\n", tf_config.##_field)
 #define PRINT_CONFIG_ACTIVE(_field) \
-    if (fo_config.##_field) printf(" ." #_field " = %d\n", fo_config.##_field)
+    if (tf_config.##_field) printf(" ." #_field " = %d\n", tf_config.##_field)
 
 static void PrintFlagField(string desc, float bits, float nbits,
                            string* bit_desc) {
@@ -212,7 +212,7 @@ void WPP_Status() {
     fill_avg_ping(&avg, &variance);
     printf(" inst_ping = %d client_ping = %d avg_ping = %d var = %d\n",
             inst_ping_ms, pstate_server.client_ping, avg, variance);
-    if (fo_config.min_ping_ms)
+    if (tf_config.min_ping_ms)
         printf(" client_delay_packets = %d\n", client_delay_packets);
     printf(" maxspeed = %d\n", pstate_server.csqc_maxspeed);
     printf("\n");
@@ -233,19 +233,19 @@ void WPP_Status() {
     printf("\n");
 
     PrintFlagField("Rewind Settings [rewind_flags=%d]\n",
-                   fo_config.rewind_flags, REWIND_DESC.length, REWIND_DESC);
+                   tf_config.rewind_flags, REWIND_DESC.length, REWIND_DESC);
 
-    PrintFlagField("TFX [tfx_flags=%d]:\n", fo_config.tfx_flags,
+    PrintFlagField("TFX [tfx_flags=%d]:\n", tf_config.tfx_flags,
                    TFX_DESC.length, TFX_DESC);
 
     PrintFlagField("Clown mode [clown_flags=%d]\n",
-                   fo_config.clown_flags, CLOWN_DESC.length, CLOWN_DESC);
+                   tf_config.clown_flags, CLOWN_DESC.length, CLOWN_DESC);
 
     PrintFlagField("NewBalance Flags [newbalance_flags=%d]:\n",
-                   fo_config.new_balance_flags, NBF_DESC.length, NBF_DESC);
+                   tf_config.new_balance_flags, NBF_DESC.length, NBF_DESC);
 
     PrintFlagField("Concs [fo_concuss=%d]\n",
-                   fo_config.fo_concuss, FO_CONC.length, FO_CONC);
+                   tf_config.fo_concuss, FO_CONC.length, FO_CONC);
 }
 #undef PRINT_CONFIG
 
@@ -335,7 +335,7 @@ void WPP_UpdateEnable(float force) {
     // We always need to "render" the view model to trigger predraw compute.
     pengine.view_mask = MASK_PRED_ENT | (pp_new ? MASK_PRED_PROJECTILE : 0);
 
-    if (fo_config.tfx_flags)
+    if (tf_config.tfx_flags)
         TFX_Init();
 
     WP_UpdateViewModel();
@@ -377,14 +377,14 @@ void UpdateFoMinPing(string arg) {
         float nv = stoi(arg);
 
         // Don't bother posting if we'll ignore it.
-        if (nv != fmp && nv > fo_config.min_ping_ms)
+        if (nv != fmp && nv > tf_config.min_ping_ms)
             localcmd(sprintf("say SET: fo_min_ping %d\n", nv));
 
         DelayPacketState.fo_min_ping = fmp = nv;
         DelayPacketState.user_controlled = FALSE;
     }
 
-    float min_ping = max(fo_config.min_ping_ms, fmp);
+    float min_ping = max(tf_config.min_ping_ms, fmp);
     printf("Min ping is: %d [%s specified]\n", min_ping,
             min_ping == fmp ? "client" : "server");
 }
@@ -426,7 +426,7 @@ void UpdateMinPing() {
 
     ModulateDelayPackets();
 
-    float min_ping = max(fo_config.min_ping_ms, DelayPacketState.fo_min_ping);
+    float min_ping = max(tf_config.min_ping_ms, DelayPacketState.fo_min_ping);
 
     if (!min_ping) {
         DelayPacketState.minv = 0;
@@ -1624,7 +1624,7 @@ static void RenderPipeLockout(float new_lockout) {
         return;
 
     if (new_lockout)
-        pengine.pipe_cooldown = time + fo_config.pipe_cooldown;
+        pengine.pipe_cooldown = time + tf_config.pipe_cooldown;
 
     vector col;
     if (time > pengine.pipe_cooldown) {
@@ -1682,7 +1682,7 @@ void (float ox) W_FireSpikes = {
 
 };
 
-static float QcPhysics() { return fo_config.qc_physics; }
+static float QcPhysics() { return tf_config.qc_physics; }
 
 static float CanThrowGrenade(int gren_type) {
     if (pstate_pred.client_time < pstate_pred.last_prime + 0.8)
@@ -2170,7 +2170,7 @@ static void PredictConc() {
         return;
     }
 
-    if (!fo_config.fo_concuss)
+    if (!tf_config.fo_concuss)
         return;  // Not enabled.
 
     if (pstate_server.tfstate & TFSTATE_CONC == 0)

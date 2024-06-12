@@ -61,7 +61,7 @@ var struct {
     _type _field;
   TMPL_CONFIG_DATA(DECLOP)
 #undef DECLOP
-} fo_config;
+} tf_config;
 
 enumflags {
     REWIND_PROJ_FIRE,
@@ -91,7 +91,7 @@ const float REWIND_DEFAULT_FLAGS = REWIND_PROJ_FIRE |
 
 
 float RewindFlagEnabled(float flag) {
-    return fo_config.rewind_flags & flag;
+    return tf_config.rewind_flags & flag;
 }
 
 enumflags {
@@ -123,7 +123,7 @@ string TFX_DESC[] = {
 };
 
 float TFxEnabled(float flag) {
-    return fo_config.tfx_flags & flag;
+    return tf_config.tfx_flags & flag;
 }
 
 const float TFX_DEFAULT_FLAGS = 0;
@@ -173,7 +173,7 @@ string CLOWN_DESC[] = {
 };
 
 inline float IsClownMode(int flag) {
-    return fo_config.clown_flags & flag;
+    return tf_config.clown_flags & flag;
 }
 
 const float SERVER_FPS = 77;
@@ -320,7 +320,7 @@ float new_balance;
 
 float NewBalanceActive() {
 #ifdef CSQC
-    return fo_config.new_balance;
+    return tf_config.new_balance;
 #else
     return new_balance & 1;
 #endif

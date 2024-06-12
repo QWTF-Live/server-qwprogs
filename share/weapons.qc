@@ -444,7 +444,7 @@ float FO_WeaponsMask(entity player) {
 #endif
 
 float OldNgRof() {
-    return fo_config.old_ng_rof;
+    return tf_config.old_ng_rof;
 }
 
 // Slightly awkward construction, but convenient for calling from CSQC and SSQC.
@@ -855,8 +855,8 @@ vector CalcKnock(vector src, entity targ, float flags, float moment) {
     vector dir = normalize(targ.origin - src);
 
     vector result = dir * moment * mult;
-    if (fo_config.rj > 1)
-        result += dir * moment * fo_config.rj;
+    if (tf_config.rj > 1)
+        result += dir * moment * tf_config.rj;
 
     return result;
 }

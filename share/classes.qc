@@ -172,11 +172,11 @@ enum {
 };
 
 float NB_UseNewConc() {
-    return fo_config.new_balance_flags & NBF_CONC_NEW_CAP;
+    return tf_config.new_balance_flags & NBF_CONC_NEW_CAP;
 }
 
 float NB_NoCap() {
-    return fo_config.new_balance_flags & NBF_NO_CAP;
+    return tf_config.new_balance_flags & NBF_NO_CAP;
 }
 
 

@@ -266,10 +266,10 @@ void ActivateOrgGame() {
     float use_new_cap = CF_GetSetting("nbcc", "new_balance_conc_cap", "0");
 
     if (use_new_cap)
-        fo_config.new_balance_flags |= NBF_CONC_NEW_CAP;
+        tf_config.new_balance_flags |= NBF_CONC_NEW_CAP;
 
     if (CF_GetSetting("nbnc", "new_balance_no_cap", "0"))
-        fo_config.new_balance_flags |= NBF_NO_CAP;
+        tf_config.new_balance_flags |= NBF_NO_CAP;
 
     if (NB_UseMinPing())
         min_ping_limit_ms = 50;
@@ -978,7 +978,7 @@ void () DecodeLevelParms = {
             walls_block_emp = FALSE;
             solid_nailgren = TRUE;
             scoutscanspike = FALSE;
-            fo_config.old_ng_rof = TRUE;
+            tf_config.old_ng_rof = TRUE;
         }
 
         st = infokey(world, "huetf");
@@ -1027,7 +1027,7 @@ void () DecodeLevelParms = {
             Role_None.gren2_limits[8] = 3;
             max_active_gren2_soldier = 1;
             round_delay_time = 10;
-            fo_config.old_ng_rof = TRUE;
+            tf_config.old_ng_rof = TRUE;
         }
 
         // Must be after we've set up conditional options (e.g. hwguy reload).
@@ -1069,7 +1069,7 @@ void () DecodeLevelParms = {
 
     tfx_exp = CF_GetSetting("tfx_exp", "tfx_exp", "0");
     if (tfx_exp)
-        fo_config.tfx_flags |= TFX_SCOUT_SEE_ENEMIES;
+        tf_config.tfx_flags |= TFX_SCOUT_SEE_ENEMIES;
 
     // Overrides other settings.
     new_balance = CF_GetSetting("new_balance", "new_balance", "1");

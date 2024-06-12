@@ -672,7 +672,7 @@ static float IsFoConced() {
     if (IsClownMode(CLOWN_CONC))
         return TRUE;
 
-    if (!fo_config.fo_concuss)
+    if (!tf_config.fo_concuss)
         return FALSE;
 
     return pstate_pred.tfstate & TFSTATE_CONC;
@@ -817,8 +817,8 @@ void FO_ApplyCussInput() {
 
     float modify_forward = TRUE;
 
-    if ((!pmove_onground && (fo_config.fo_concuss & FOC_EASY_AIR)) ||
-        (pmove_onground && (fo_config.fo_concuss & FOC_EASY_GROUND)))
+    if ((!pmove_onground && (tf_config.fo_concuss & FOC_EASY_AIR)) ||
+        (pmove_onground && (tf_config.fo_concuss & FOC_EASY_GROUND)))
         modify_forward = input_buttons & BUTTON_ATTACK;
 
     if (modify_forward) {

@@ -255,9 +255,9 @@ void InitFppProjectiles() {
 }
 
 float max_rewind_credit_ms(int fpp_type) {
-    return (FPP_Get(fpp_type)->speed < fo_config.rewind_fast_projectile_thresh) ?
-        fo_config.max_rewind_slow_projectile_ms :
-        fo_config.max_rewind_fast_projectile_ms;
+    return (FPP_Get(fpp_type)->speed < tf_config.rewind_fast_projectile_thresh) ?
+        tf_config.max_rewind_slow_projectile_ms :
+        tf_config.max_rewind_fast_projectile_ms;
 }
 
 
@@ -275,22 +275,22 @@ static float static_newmis_ms(int fpp_type) {
     if (fpp_type == FPP_FLAMETHROWER || fpp_type == FPP_ASSAULT_CANNON)
         return 0;
 
-    return fo_config.static_newmis_ms - fo_config.dynamic_newmis_ms;
+    return tf_config.static_newmis_ms - tf_config.dynamic_newmis_ms;
 }
 
 inline float dynamic_newmis_ms() {
-    return fo_config.dynamic_newmis_ms;
+    return tf_config.dynamic_newmis_ms;
 }
 
 inline float fixed_newmis_ms(int fpp_type) {
-    return fo_config.static_newmis_ms;
+    return tf_config.static_newmis_ms;
 }
 
 float FO_RewindGrenMs(int gren_type) {
     if (!RewindFlagEnabled(REWIND_GRENADES))
         return 0;
 
-    float result = fo_config.max_rewind_grenade_ms;
+    float result = tf_config.max_rewind_grenade_ms;
     if (gren_type == GREN_CONC)
         result += 25;
 
@@ -306,7 +306,7 @@ float FO_RewindGrenDt(int gren_type) {
 
 float FO_RewindGrenWinDt(int gren_type) {
     if (!RewindFlagEnabled(REWIND_GRENADES) ||
-        fo_config.max_rewind_ms <= 50)
+        tf_config.max_rewind_ms <= 50)
         return 0;
 
     // There's no benefit to holding a conc grenade -- and it's beneficial to
@@ -316,7 +316,7 @@ float FO_RewindGrenWinDt(int gren_type) {
 
 float FO_MaxRewindGrenWinDt() {
     if (!RewindFlagEnabled(REWIND_GRENADES) ||
-        fo_config.max_rewind_ms <= 50)
+        tf_config.max_rewind_ms <= 50)
         return 0;
 
     // Large rewind possible, open up the window.
@@ -474,7 +474,7 @@ void WPP_UpdateEnable(float force);
 
 #ifdef SSQC
 #define SEND_CFG_OP(_ig1, _ctype, _ig2 , _field) \
-    Write##_ctype(MSG_MULTICAST, fo_config.##_field);
+    Write##_ctype(MSG_MULTICAST, tf_config.##_field);
 
 void TFL_SendConfig(entity target) {
     float msg_t;
@@ -493,7 +493,7 @@ void TFL_SendConfig(entity target) {
 }
 #else
 #define RECV_CFG_OP(_ig1, _ctype, _ig2 , _field) \
-    fo_config.##_field = Read##_ctype();
+    tf_config.##_field = Read##_ctype();
 
 void TFL_ReceiveConfig() {
     TMPL_CONFIG_DATA(RECV_CFG_OP)
@@ -725,41 +725,41 @@ void EntUpdate_Projectile(float isnew) {
 
 
 void Predict_InitDefaultConfig() {
-    fo_config.min_ping_ms = 0;
-    fo_config.qc_physics = 1;
-    fo_config.static_newmis_ms = 50;
-    fo_config.dynamic_newmis_ms = 0;
-    fo_config.rewind_flags = REWIND_DEFAULT_FLAGS;
-    fo_config.tfx_flags = TFX_DEFAULT_FLAGS;
-    fo_config.max_rewind_ms = 250;
-    fo_config.max_rewind_slow_projectile_ms = 150;
-    fo_config.max_rewind_fast_projectile_ms = 150;
-    fo_config.max_rewind_grenade_ms = 50; // Only affects REWIND_GREN
-    fo_config.rewind_fast_projectile_thresh = 1500;
-    fo_config.clown_flags = 0;
-    fo_config.clown_grav = 400;
-    fo_config.fo_concuss = 0;
-    fo_config.new_balance = 0;
-    fo_config.new_balance_flags = 0;
-    fo_config.pipe_cooldown = 0.5;
+    tf_config.min_ping_ms = 0;
+    tf_config.qc_physics = 1;
+    tf_config.static_newmis_ms = 50;
+    tf_config.dynamic_newmis_ms = 0;
+    tf_config.rewind_flags = REWIND_DEFAULT_FLAGS;
+    tf_config.tfx_flags = TFX_DEFAULT_FLAGS;
+    tf_config.max_rewind_ms = 250;
+    tf_config.max_rewind_slow_projectile_ms = 150;
+    tf_config.max_rewind_fast_projectile_ms = 150;
+    tf_config.max_rewind_grenade_ms = 50; // Only affects REWIND_GREN
+    tf_config.rewind_fast_projectile_thresh = 1500;
+    tf_config.clown_flags = 0;
+    tf_config.clown_grav = 400;
+    tf_config.fo_concuss = 0;
+    tf_config.new_balance = 0;
+    tf_config.new_balance_flags = 0;
+    tf_config.pipe_cooldown = 0.5;
 }
 
 #ifdef SSQC
 
 #define CONFIG_UPDATE(_flag, _ps_short, _field) \
-    do { string _cur = ftos(fo_config.##_field); \
+    do { string _cur = ftos(tf_config.##_field); \
       float _val; \
       if (_flag) \
         _val = ParseFlags(CF_GetSettingRaw(_ps_short, #_field, _cur)); \
       else \
         _val = CF_GetSetting(_ps_short, #_field, _cur); \
-      if (_val != fo_config.##_field) { \
-          fo_config.##_field = _val; update = TRUE; \
+      if (_val != tf_config.##_field) { \
+          tf_config.##_field = _val; update = TRUE; \
       } \
     } while (0)
 #define CLAMP_UPDATE(_field, _clamp_low, _clamp_high) \
-    do { if (fo_config.##_field < _clamp_low || fo_config.##_field > _clamp_high) { \
-        fo_config.##_field = max(min(fo_config.##_field, _clamp_high), _clamp_low); \
+    do { if (tf_config.##_field < _clamp_low || tf_config.##_field > _clamp_high) { \
+        tf_config.##_field = max(min(tf_config.##_field, _clamp_high), _clamp_low); \
         update = TRUE; \
     } } while (0)
 
@@ -791,20 +791,20 @@ static void TflCheckConfigUpdate() {
     // Not dynamically updatable.
     static float read_once = FALSE;
     if (!read_once) {
-        if (!fo_config.old_ng_rof)  // Don't overwrite huetf setting this.
+        if (!tf_config.old_ng_rof)  // Don't overwrite huetf setting this.
             CONFIG_UPDATE(FALSE, "ongrof", old_ng_rof);
 
-        if (pipecooldown_time != fo_config.pipe_cooldown) {
+        if (pipecooldown_time != tf_config.pipe_cooldown) {
             update = TRUE;
-            fo_config.pipe_cooldown = pipecooldown_time;
+            tf_config.pipe_cooldown = pipecooldown_time;
         }
         read_once = TRUE;
     }
 
     float mpm = CF_GetSetting("mpm", "min_ping_ms", 0);
     mpm = max(mpm, min_ping_limit_ms);
-    if (mpm != fo_config.min_ping_ms) {
-        fo_config.min_ping_ms = mpm;
+    if (mpm != tf_config.min_ping_ms) {
+        tf_config.min_ping_ms = mpm;
         update = TRUE;
     }
 
@@ -819,13 +819,13 @@ static void TflCheckConfigUpdate() {
     CONFIG_UPDATE(FALSE, "rfpt", rewind_fast_projectile_thresh);
     CONFIG_UPDATE(FALSE, "gbd", gren_beta_disable);
 
-    if (fo_concuss != fo_config.fo_concuss) {
-        fo_config.fo_concuss = fo_concuss;
+    if (fo_concuss != tf_config.fo_concuss) {
+        tf_config.fo_concuss = fo_concuss;
         update = TRUE;
     }
 
-    if ((new_balance & 1) != fo_config.new_balance) {
-        fo_config.new_balance = new_balance & 1;
+    if ((new_balance & 1) != tf_config.new_balance) {
+        tf_config.new_balance = new_balance & 1;
         update = TRUE;
     }
 
@@ -835,14 +835,14 @@ static void TflCheckConfigUpdate() {
     CONFIG_UPDATE(FALSE, "clown_grav", clown_grav);
     CONFIG_UPDATE(FALSE, "rj", rj);
 
-    CLAMP_UPDATE(dynamic_newmis_ms, 0, fo_config.static_newmis_ms);
+    CLAMP_UPDATE(dynamic_newmis_ms, 0, tf_config.static_newmis_ms);
     CLAMP_UPDATE(max_rewind_ms, 0, 250);
-    CLAMP_UPDATE(max_rewind_slow_projectile_ms, 0, fo_config.max_rewind_ms);
-    CLAMP_UPDATE(max_rewind_fast_projectile_ms, 0, fo_config.max_rewind_ms);
+    CLAMP_UPDATE(max_rewind_slow_projectile_ms, 0, tf_config.max_rewind_ms);
+    CLAMP_UPDATE(max_rewind_fast_projectile_ms, 0, tf_config.max_rewind_ms);
     CLAMP_UPDATE(max_rewind_grenade_ms, 0, 125);
 
     if (!ForwardDoorsPossible())
-        fo_config.rewind_flags &= ~REWIND_FORWARD_DOORS;
+        tf_config.rewind_flags &= ~REWIND_FORWARD_DOORS;
 
     if (update)
         TFL_SendConfig(world);
@@ -987,7 +987,7 @@ void FOProj_Finalize(entity mis, float use_ctime=0) {
 
         // If we don't have physics synchronized between client and server, use
         // engine-side for both.
-        csqc_networking = (csqc_networking && fo_config.qc_physics);
+        csqc_networking = (csqc_networking && tf_config.qc_physics);
     }
 
     // After any model updates have occurred
@@ -995,7 +995,7 @@ void FOProj_Finalize(entity mis, float use_ctime=0) {
 
     // We always need to init some of the state here (e.g. phys_time) as we
     // always use the physics code client-side.
-    if (fo_config.qc_physics)
+    if (tf_config.qc_physics)
         mis.customphysics = FO_CustomPhysics;
 
     Forward_Projectile(mis.fpp.index, mis, use_ctime);
@@ -1080,7 +1080,7 @@ ProjectResult Forward_ProjectOffset(int fpp_type, float ping) {
     } else if (fpp_type == FPP_HANDGRENADE) {
         static_credit = static_newmis_ms(fpp_type);
         if (RewindFlagEnabled(REWIND_GRENADES))
-            max_ping_credit = fo_config.max_rewind_grenade_ms;
+            max_ping_credit = tf_config.max_rewind_grenade_ms;
         else
             max_ping_credit = 0;
     } else {

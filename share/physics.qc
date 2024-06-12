@@ -19,7 +19,7 @@ enumflags {
 const float FL_FORWARD_KNOCK = FL_GODMODE;
 
 static inline float PhysFlagEnabled(float flag) {
-    return fo_config.qc_physics & flag;
+    return tf_config.qc_physics & flag;
 }
 void AugmentGrenadeImpact();
 
@@ -218,7 +218,7 @@ static void Phys_CapVel(entity e) {
     static const float limit = 32 / phys_tic;
 
     if (vlen(e.velocity) > limit) {
-        if (!fo_config.clown_flags)
+        if (!tf_config.clown_flags)
             printf("%s v=%d too fast, consider adaptive scaling\n",
                     e.model, vlen(e.velocity));
         // normalize(e.velocity) * limit;
@@ -254,7 +254,7 @@ float Phys_Advance(entity e, float target_time, float phys_flags) {
             RewindSyncTime(e, e.phys_time + step/2);
 
         if (IsClownMode(CLOWN_PROJ_GRAVITY))
-            e.velocity_z += -fo_config.clown_grav * step;
+            e.velocity_z += -tf_config.clown_grav * step;
         Phys_CapVel(e);
 
         switch (e.movetype) {

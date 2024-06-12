@@ -539,7 +539,6 @@ float discammo_pickup;
 float old_dropflag;
 float old_sniperrange;
 float detpipe_limit_world;
-float pipecooldown_time;
 float allpipes_cooldown;
 float medicaura;
 float old_biodamage;

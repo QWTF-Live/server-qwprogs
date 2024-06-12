@@ -1317,7 +1317,7 @@ void W_FireGrenade(vector org, vector v_ang, float use_ctime=0) {
         proj.nextthink = time + 2.5;
         proj.fpp.gren_type = GREN_RED;
     } else {
-        self.pipecooldown = time + pipecooldown_time;
+        self.pipecooldown = time + tf_config.pipe_cooldown;
         ExplodeOldestPipebomb();
         proj.classname = "pipebomb";
         proj.touch = PipebombTouch;

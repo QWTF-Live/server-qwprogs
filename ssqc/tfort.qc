@@ -582,7 +582,7 @@ void () TeamFortress_ShowTF = {
     } else {
         sprint(self, PRINT_HIGH, "Pipebomb limit (team):                  unlimited\n");
     }
-    CF_PrintSetting("Pipebomb cooldown time", pipecooldown_time, "", 0.5);
+    CF_PrintSetting("Pipebomb cooldown time", tf_config.pipe_cooldown, "", 0.5);
 
     sprint(self, PRINT_HIGH, "\n== Combat Medic ==\n");
     CF_PrintSetting("Medic aura ability", medicaura, "", 1);

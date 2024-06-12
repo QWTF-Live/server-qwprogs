@@ -49,7 +49,7 @@ float TeamFortress_DetonatePipebombs(float force) {
         if (pipes[i].owner != self)
             continue;
 
-        if (!force && pipes[i].created_at > time - pipecooldown_time)
+        if (!force && pipes[i].created_at > time - tf_config.pipe_cooldown)
             continue;
 
         deathmsg = pipes[i].flags & FL_ONGROUND ? pipes[i].weapon :

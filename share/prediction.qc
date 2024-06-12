@@ -787,18 +787,8 @@ entity config_update;
 static void TflCheckConfigUpdate() {
     float update = FALSE;
 
-    // Not dynamically updatable.
-    static float read_once = FALSE;
-    if (!read_once) {
-        if (!tf_config.old_ng_rof)  // Don't overwrite huetf setting this.
-            CONFIG_UPDATE(FALSE, "ongrof", old_ng_rof);
-
-        if (pipecooldown_time != tf_config.pipe_cooldown) {
-            update = TRUE;
-            tf_config.pipe_cooldown = pipecooldown_time;
-        }
-        read_once = TRUE;
-    }
+    // Not dynamically updatable:
+    //  old_ng_rof, pipe_cooldown
 
     float mpm = CF_GetSetting("mpm", "min_ping_ms", 0);
     mpm = max(mpm, min_ping_limit_ms);

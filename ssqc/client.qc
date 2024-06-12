@@ -515,9 +515,6 @@ void () DecodeLevelParms = {
         // maximum amount of pipebombs in game [unlimited]
         detpipe_limit_world = CF_GetSetting("dw", "detpipe_limit_world", "-1");
 
-        // set pipe cooldown time [0.5]
-        pipecooldown_time = CF_GetSetting("pcdt", "pipecooldown_time", "0.5");
-
         // cooldown applies to all pipes [on]
         allpipes_cooldown = CF_GetSetting("apcd", "allpipes_cooldown", "on");
 
@@ -858,7 +855,7 @@ void () DecodeLevelParms = {
             old_sniperrange = FALSE;
             Role_None.detpipe_limit = 6;
             detpipe_limit_world = -1;
-            pipecooldown_time = 0.5;
+            tf_config.pipe_cooldown = 0.5;
             medicaura = TRUE;
             old_biodamage = FALSE;
             cannon_lock = TRUE;
@@ -925,7 +922,7 @@ void () DecodeLevelParms = {
             old_sniperrange = TRUE;
             Role_None.detpipe_limit = 7;
             detpipe_limit_world = 7;
-            pipecooldown_time = 0.8;
+            tf_config.pipe_cooldown = 0.8;
             medicaura = FALSE;
             old_biodamage = TRUE;
             cannon_lock = FALSE;
@@ -1052,17 +1049,14 @@ void () DecodeLevelParms = {
     if (parm15)
         self.is_admin = parm15;
 
-/*
-    local entity p = find(world, classname, "player");
-    while (p != world) {
-        if (p.netname != "") {
-            if(infokeyf(p, INFOKEY_P_CSQCACTIVE)) {
-                UpdateClientMOTD(p);
-            }
-        }
-        p = find(p, classname, "player");
-    }
-*/
+    // Process these options after game modes which might set defaults above
+    float pipe_cooldown = CF_GetSetting("pcdt", "pipecooldown_time", "-1");
+    if (pipe_cooldown != -1)
+        tf_config.pipe_cooldown = pipe_cooldown;
+
+    float old_ngrof = CF_GetSetting("ongrof", "old_ng_rof", "-1");
+    if (old_ngrof != -1)
+        tf_config.old_ng_rof = old_ngrof;
 
     tfx_exp = CF_GetSetting("tfx_exp", "tfx_exp", "0");
     if (tfx_exp)

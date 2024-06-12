@@ -70,10 +70,10 @@ void UpdateCachedCvars() {
     next = time + kCvarUpdateInterval;
 
     CVAR.r_rocketlight_colour = stov_def(CVARS(r_rocketlight_colour), '2.0 1.0 0.25');
-    CVAR.tf_color_enemy = stov_def(CVARS(tf_color_enemy), '0.3 1 0.3');
-    CVAR.tf_color_team = stov_def(CVARS(tf_color_team), '0.9 0.3 1');
-    CVAR.tf_color_attack = stov_def(CVARS(tf_color_attack), '0.2 0.7 0.2');
-    CVAR.tf_color_defense = stov_def(CVARS(tf_color_defense), '0.7 0.2 0.2');
+    CVAR.tf_color_enemy = stov_def(CVARS(tf_color_enemy), '0 2 0');
+    CVAR.tf_color_team = stov_def(CVARS(tf_color_team), '1 0 1');
+    CVAR.tf_color_attack = stov_def(CVARS(tf_color_attack), '0.5 0.5 2');
+    CVAR.tf_color_defense = stov_def(CVARS(tf_color_defense), '2 0.5 0.5');
 
     CVAR.fo_hittext_reg = stov_def(CVARS(fo_hittext_colour), '1 1 1');
     CVAR.fo_hittext_noarmor = stov_def(CVARS(fo_hittext_colour2), '1 0 1');

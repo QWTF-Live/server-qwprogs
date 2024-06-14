@@ -344,11 +344,6 @@ DEFCVAR_FLOAT(fo_minping_min, 0);    // Can be used to set a lower-bound on
                                      // what minping will be chosen.
 DEFCVAR_FLOAT(cl_delay_packets, 0);  // Can be used to query, but not set.
 
-static void set_minping_delay_packets() {
-    localcmd(sprintf("cl_delay_packets %d\n", client_delay_packets));
-    setlocaluserinfo(0, "client_delay_packets", ftos(client_delay_packets));
-}
-
 struct {
     float last_val;
     float minv, user_controlled;
@@ -358,7 +353,8 @@ struct {
 static void UpdateDelayPackets(float val, float user) {
     string sv = sprintf("%d", val);
     setlocaluserinfo(0, "csqc_dp", user ? "0" : "1");
-    setlocaluserinfo(0, "client_delay_packets", sv);
+    setlocaluserinfo(0, "cl_delay_packets", sv);
+    setlocaluserinfo(0, "client_delay_packets", "");  // Remove legacy var
 
     DelayPacketState.user_controlled = user;
     DelayPacketState.last_val = val;

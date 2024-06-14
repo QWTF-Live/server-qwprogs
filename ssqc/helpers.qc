@@ -57,3 +57,7 @@ float ServerIsStaging() {
 
     return strstrofs(hostname, "Staging") >= 0;
 }
+
+float ServerIsLeague() {
+    return ServerRegion() == kRegionLeague;
+}

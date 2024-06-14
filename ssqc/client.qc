@@ -229,7 +229,7 @@ static void SetAllRoles(float pc, float gren, float limit) {
             Role_Defence.gren2_limits[pc] = limit;
 }
 
-static float NB_UseMinPing() {
+static float UseMinPing() {
     if (ServerIsOCE())
         return FALSE;
 
@@ -271,8 +271,15 @@ void ActivateOrgGame() {
     if (CF_GetSetting("nbnc", "new_balance_no_cap", "0"))
         tf_config.new_balance_flags |= NBF_NO_CAP;
 
-    if (NB_UseMinPing())
-        min_ping_limit_ms = 50;
+    if (UseMinPing()) {
+        min_ping_limit_ms = CF_GetSetting("mplm", "min_ping_limit_ms", "50");
+
+        // Default to 100 for league games when not set
+        if (ServerIsLeague()) {
+            if (CF_GetSetting("mpm", "min_ping_ms", "-1") == -1)
+                localcmd("localinfo mpm 100\n");
+        }
+    }
 }
 
 void () DecodeLevelParms = {

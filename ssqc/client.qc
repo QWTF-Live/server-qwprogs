@@ -3047,14 +3047,18 @@ static void PlayerPostThinkAlive() {
 
 void FoLoginIfRequired(entity player);
 
+.float sent_tf_config;
 void PlayerPeriodicThink(float is_player) {
     if (time < self.periodic_think_time)
         return;
     self.periodic_think_time = time + 1;
 
-    if (infokeyf(self, "*config") != 1) {
+    // This will generate extra sends on spec/client transition; but not worth
+    // making sure we have a unique *setinfo cookie (or clearing in
+    // SetChangeParms).
+    if (!self.sent_tf_config) {
         TFL_SendConfig(self);
-        forceinfokey(self, "*config", "1");
+        self.sent_tf_config = 1;
     }
 }
 

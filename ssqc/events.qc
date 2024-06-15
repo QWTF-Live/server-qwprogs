@@ -62,6 +62,8 @@ void LogEventPlayerStart(entity player) {
     logevent(event);
 }
 
+string GetGameFileName();
+
 void () LogEventGameStart = {
     if (canlog == 0)
         return;
@@ -86,6 +88,7 @@ void () LogEventGameStart = {
         {KV_I, "time", gametime_string},
         {KV_S, "gameToken", game_token},
         {KV_S, "shard", infokey(world, "shard")},
+        {KV_S, "mvd", strcat(GetGameFileName(), ".mvd.gz")},
     };
 
     string event = strcat("[\n", JSON_Wrap(kvs.length, kvs), ",\n");

@@ -316,17 +316,12 @@ void () PreMatch_Think = {
             if (stof(infokey(world, "demo_auto_left")) > 0) {
                 if (infokey(world, "serverdemo") == "on") {
 
-                    localcmd("record \"");
-                    str = strzone(GetGameFileName());
-                    game_filename = str;
-                    localcmd(strzone(str));
-                    localcmd("\"\n");
+                    str = GetGameFileName();
+                    localcmd(sprintf("record %s\n", str));
 
-                    str = strcat(str,".json");
-                    str = strcat(str);
+                    str = strcat(str, ".json");
                     fclose(logfilehandle);
-                    logfilehandle = fopen(str,FILE_WRITE);
-                    strunzone(str);
+                    logfilehandle = fopen(str, FILE_WRITE);
                 }
             }
         }

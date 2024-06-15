@@ -612,7 +612,7 @@ void W_FireIncendiaryCannon(vector org, vector v_ang, float use_ctime=0) {
 void () AirBlastReloadFinished = {
     self.owner.airblast_cooldown = 0;
     sprint(self.owner, PRINT_HIGH, "Airblast ready\n");
-    stuffcmd(self.owner, "play weapons/airblast.wav\n");
+    MSG_SoundOne(self.owner, "weapons/airblast.wav", CHAN_AUTO, 1);
     dremove(self);
 };
 

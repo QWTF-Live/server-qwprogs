@@ -343,7 +343,7 @@ void () PreMatch_Think = {
                 if (self.cnt2 < 6) {
                     cease_fire = 0;
                     cs_paused = 0;
-                    stuffcmd (p, "play buttons/switch04.wav\n");
+                    MSG_SoundOne(p, "buttons/switch04.wav", CHAN_AUTO, 1);
                 }
             }
             p = find(p, classname, "player");

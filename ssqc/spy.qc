@@ -971,44 +971,44 @@ void () HallucinationTimer = {
 
         if (old_grens != 1) {
             if (halltype2 < 0.1) {
-                stuffcmd(self.owner, "play weapons/r_exp3.wav\n");
+                MSG_SoundOne(self.owner, "weapons/r_exp3.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.15) {
-                stuffcmd(self.owner, "play weapons/rocket1i.wav\n");
+                MSG_SoundOne(self.owner, "weapons/rocket1i.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.2) {
-                stuffcmd(self.owner, "play weapons/sgun1.wav\n");
+                MSG_SoundOne(self.owner, "weapons/sgun1.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.25) {
-                stuffcmd(self.owner, "play weapons/guncock.wav\n");
+                MSG_SoundOne(self.owner, "weapons/guncock.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.3) {
-                stuffcmd(self.owner, "play weapons/ric1.wav\n");
+                MSG_SoundOne(self.owner, "weapons/ric1.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.35) {
-                stuffcmd(self.owner, "play weapons/ric2.wav\n");
+                MSG_SoundOne(self.owner, "weapons/ric2.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.4) {
-                stuffcmd(self.owner, "play weapons/ric3.wav\n");
+                MSG_SoundOne(self.owner, "weapons/ric3.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.45) {
-                stuffcmd(self.owner, "play weapons/spike2.wav\n");
+                MSG_SoundOne(self.owner, "weapons/spike2.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.5) {
-                stuffcmd(self.owner, "play weapons/tink1.wav\n");
+                MSG_SoundOne(self.owner, "weapons/tink1.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.55) {
                 CenterPrint2(self.owner, "\n\n\n",
                         Q"Your team \scaptured\s the flag!!");
-                stuffcmd(self.owner, "play weapons/grenade.wav\n");
+                MSG_SoundOne(self.owner, "weapons/grenade.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.6) {
-                stuffcmd(self.owner, "play weapons/bounce.wav\n");
+                MSG_SoundOne(self.owner, "weapons/bounce.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.65) {
-                stuffcmd(self.owner, "play weapons/shotgn2.wav\n");
+                MSG_SoundOne(self.owner, "weapons/shotgn2.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.7) {
-                stuffcmd(self.owner, "play wizard/wattack.wav\n");
+                MSG_SoundOne(self.owner, "wizard/wattack.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.75) {
-                stuffcmd(self.owner, "play items/r_item1.wav\n");
+                MSG_SoundOne(self.owner, "items/r_item1.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.8) {
-                stuffcmd(self.owner, "play items/r_item2.wav\n");
+                MSG_SoundOne(self.owner, "items/r_item2.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.85) {
                 CenterPrint(self.owner, "You are on fire!\n");
-                stuffcmd(self.owner, "play weapons/lhit.wav\n");
+                MSG_SoundOne(self.owner, "weapons/lhit.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.9) {
-                stuffcmd(self.owner, "play misc/r_tele1.wav\n");
+                MSG_SoundOne(self.owner, "misc/r_tele1.wav", CHAN_AUTO, 1);
             } else {
-                stuffcmd(self.owner, "play weapons/railgun.wav\n");
+                MSG_SoundOne(self.owner, "weapons/railgun.wav", CHAN_AUTO, 1);
             }
         }
     } else {
@@ -1031,27 +1031,27 @@ void () HallucinationTimer = {
 
         if (old_grens != 1) {
             if (halltype2 < 0.1) {
-                stuffcmd(self.owner, "play weapons/detpack.wav\n");
+                MSG_SoundOne(self.owner, "weapons/detpack.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.2) {
-                stuffcmd(self.owner, "play weapons/turrset.wav\n");
+                MSG_SoundOne(self.owner, "weapons/turrset.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.3) {
-                stuffcmd(self.owner, "play weapons/turrspot.wav\n");
+                MSG_SoundOne(self.owner, "weapons/turrspot.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.4) {
-                stuffcmd(self.owner, "play weapons/turridle.wav\n");
+                MSG_SoundOne(self.owner, "weapons/turridle.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.5) {
-                stuffcmd(self.owner, "play weapons/sniper.wav\n");
+                MSG_SoundOne(self.owner, "weapons/sniper.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.6) {
                 CenterPrint2(self.owner, "\n\n\n",
                         Q"Your flag has been \staken\s!!");
-                stuffcmd(self.owner, "play weapons/flmfire2.wav\n");
+                MSG_SoundOne(self.owner, "weapons/flmfire2.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.7) {
-                stuffcmd(self.owner, "play weapons/flmgrexp.wav\n");
+                MSG_SoundOne(self.owner, "weapons/flmgrexp.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.8) {
-                stuffcmd(self.owner, "play misc/vapeur2.wav\n");
+                MSG_SoundOne(self.owner, "misc/vapeur2.wav", CHAN_AUTO, 1);
             } else if (halltype2 < 0.9) {
-                stuffcmd(self.owner, "play weapons/asscan1.wav\n");
+                MSG_SoundOne(self.owner, "weapons/asscan1.wav", CHAN_AUTO, 1);
             } else {
-                stuffcmd(self.owner, "play weapons/asscan2.wav\n");
+                MSG_SoundOne(self.owner, "weapons/asscan2.wav", CHAN_AUTO, 1);
             }
         }
         dremove(te);

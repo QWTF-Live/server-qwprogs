@@ -32,7 +32,6 @@ void (string halias, float himpulse1, float himpulse2) TeamFortress_Alias;
 void (entity p) CheckAutoKick;
 void (entity p) KickCheater;
 
-void (entity p) TeamFortress_ExecClassScript;
 void (entity p) TeamFortress_ExecMapScript;
 
 void () PreMatch_Think;
@@ -1569,7 +1568,6 @@ void () ResetPlayers = {
 	while (te != world) {
 		if(!te.has_disconnected) {
             if(te.health > 0) {
-                stuffcmd(te, "f_respawn\n");
                 if(round_winner_print_health) {
                     bprint(PRINT_HIGH, te.netname, ": \sHealth:\s ", ftos(te.health), " \sArmour:\s " , ftos(te.armorvalue), "\n");
                 }
@@ -2156,7 +2154,6 @@ void () PutClientInServer = {
         else {
             self.tfstate =
                 self.tfstate - (self.tfstate & TFSTATE_RANDOMPC);
-            TeamFortress_ExecClassScript(self);
         }
     }
 
@@ -2176,7 +2173,6 @@ void () PutClientInServer = {
             self.playerclass = 1 + floor(random() * (10 - 1));
         }
         self.tfstate = TFSTATE_RANDOMPC;
-        TeamFortress_ExecClassScript(self);
     } else
         self.tfstate = 0;
 

@@ -63,7 +63,6 @@ void () ResetPlayersDelayed = {
     } else {
         bprint(PRINT_HIGH, Q"\sReset in \x10", ftos(duel_reset_timer), "\x11\s\n");
         FO_Sound(self, CHAN_AUTO, "buttons/switch04.wav", 1, ATTN_NONE);
-        //stuffcmd (p, "play buttons/switch04.wav\n");
         duel_reset_timer--;
         self.nextthink = time + 1;
     }
@@ -167,14 +166,12 @@ void (entity targ, entity inflictor, entity attacker, float damage) HitSound = {
 
             if(zutmode && csqcactive)
                 return;	
-                
+
             if (trueattacker == targ)
                 return;
 
-            local string hitsound;
-            hitsound = infokey(trueattacker, "hitsound");
-
-            if (hitsound == "1" || hitsound == "2")
+            float hitsound = infokeyf(trueattacker, "hitsound");
+            if (hitsound == 1 || hitsound == 2)
             {
                 local float crit = 0;
 
@@ -198,18 +195,15 @@ void (entity targ, entity inflictor, entity attacker, float damage) HitSound = {
                 targteam = (targ.undercover_team == 0) ? targ.team_no : targ.undercover_team;
 
                 if (targteam != attacker.team_no) {
-                    if (crit == 1){
-                        stuffcmd(trueattacker, "play misc/hitsoundcrit.wav\n");		//sounds precached in weapons.qc
-                    }
-                    else { 
-                        stuffcmd(trueattacker, "play misc/hitsound.wav\n");		//sounds precached in weapons.qc
-                    }
+                    if (crit == 1)
+                        MSG_SoundOne(trueattacker, "misc/hitsoundcrit.wav", CHAN_AUTO, 1);
+                    else
+                        MSG_SoundOne(trueattacker, "misc/hitsound.wav", CHAN_AUTO, 1);
                 }
                 else {
-                    if (hitsound == "2"){
-                        stuffcmd(trueattacker, "play misc/hitsoundteam.wav\n");		//sounds precached in weapons.qc
-                    }
-                }	
+                    if (hitsound == 2)
+                        MSG_SoundOne(trueattacker, "misc/hitsoundteam.wav", CHAN_AUTO, 1);
+                }
             }
         }
     }
@@ -238,20 +232,20 @@ void (entity targ, entity attacker) KillSound = {
             if (killsound == "1" || killsound == "2" || killsound == "3"){
 
                 if (targ.team_no != trueattacker.team_no) {
-                    stuffcmd(trueattacker, "play misc/killsound.wav\n");
+                    MSG_SoundOne(trueattacker, "misc/killsound.wav", CHAN_AUTO, 1);
                     return;
                 }
                 else {
 
                     if (trueattacker == targ) {
                         if(killsound == "3") {
-                            stuffcmd(trueattacker, "play misc/killsoundteam.wav\n");	
+                            MSG_SoundOne(trueattacker, "misc/killsoundteam.wav", CHAN_AUTO, 1);
                         }
                         return;
                     }
 
                     if (killsound == "2" || killsound == "3") {
-                        stuffcmd(trueattacker, "play misc/killsoundteam.wav\n");
+                        MSG_SoundOne(trueattacker, "misc/killsoundteam.wav", CHAN_AUTO, 1);
                     }
 
                 }
@@ -262,7 +256,7 @@ void (entity targ, entity attacker) KillSound = {
         if (targ.classname == "player") {
             local string targkillsound = infokey(targ, "killsound");
             if (targkillsound == "3") {
-                stuffcmd(targ, "play misc/killsoundteam.wav\n");
+                MSG_SoundOne(targ, "misc/killsoundteam.wav", CHAN_AUTO, 1);
             }
         }
     }

@@ -8,7 +8,7 @@ void FO_SetModel(entity e, string fomdl)
     setmodel(e, fomdl);
 }
 
-void MSG_Sound(entity targ, string samp, float chan, float vol) {
+static void WriteMsgSound(entity targ, string samp, float chan, float vol) {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_SOUND);
     WriteFloat(MSG_MULTICAST, time);
@@ -19,7 +19,17 @@ void MSG_Sound(entity targ, string samp, float chan, float vol) {
     WriteString(MSG_MULTICAST, samp);
     WriteFloat(MSG_MULTICAST, chan);
     WriteFloat(MSG_MULTICAST, vol);
+}
+
+void MSG_Sound(entity targ, string samp, float chan, float vol) {
+    WriteMsgSound(targ, samp, chan, vol);
     multicast(targ.origin, MULTICAST_PHS_R);
+}
+
+void MSG_SoundOne(entity targ, string samp, float chan, float vol) {
+    msg_entity = targ;
+    WriteMsgSound(targ, samp, chan, vol);
+    multicast('0 0 0', MULTICAST_ONE_R);
 }
 
 void FO_Sound(entity e, float chan, string samp, float vol, float atten)

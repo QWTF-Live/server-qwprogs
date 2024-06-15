@@ -174,7 +174,6 @@ void (float inp) TeamFortress_ChangeClass = {
         sprint(self, PRINT_HIGH, "Your team has enough of that class\n");
         return;
     }
-    TeamFortress_ExecClassScript(self);
 
     // FIXME - should this be using putclientinserver instead?
     self.playerclass = inp;
@@ -252,7 +251,6 @@ void (float inp) TeamFortress_ChangeClass = {
     TeamFortress_SetHealth();
     TeamFortress_SetSpeed(self);
     TeamFortress_SetSkin(self);
-    TeamFortress_ExecClassScript(self);
     W_ChangeToBestWeapon();
     if (cease_fire) {
         sprint(self, PRINT_HIGH, "\n\nCease fire mode\n");
@@ -2596,31 +2594,6 @@ void (entity pl, float fr) TF_AddFrags = {
         }
     } else if (!(toggleflags & TFLAG_TEAMFRAGS))
         pl.frags = pl.real_frags;
-};
-
-void (entity p) TeamFortress_ExecClassScript = {
-    local float st = FO_GetUserSetting(p, "ec", "exec_class", "off");
-
-    if (st) {
-        if (p.playerclass == PC_SCOUT)
-            stuffcmd(p, "exec scout.cfg\n");
-        else if (p.playerclass == PC_SNIPER)
-            stuffcmd(p, "exec sniper.cfg\n");
-        else if (p.playerclass == PC_SOLDIER)
-            stuffcmd(p, "exec soldier.cfg\n");
-        else if (p.playerclass == PC_DEMOMAN)
-            stuffcmd(p, "exec demoman.cfg\n");
-        else if (p.playerclass == PC_MEDIC)
-            stuffcmd(p, "exec medic.cfg\n");
-        else if (p.playerclass == PC_HVYWEAP)
-            stuffcmd(p, "exec hwguy.cfg\n");
-        else if (p.playerclass == PC_PYRO)
-            stuffcmd(p, "exec pyro.cfg\n");
-        else if (p.playerclass == PC_SPY)
-            stuffcmd(p, "exec spy.cfg\n");
-        else if (p.playerclass == PC_ENGINEER)
-            stuffcmd(p, "exec engineer.cfg\n");
-    }
 };
 
 void (entity p) TeamFortress_ExecMapScript = {

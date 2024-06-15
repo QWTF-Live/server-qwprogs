@@ -133,11 +133,13 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     PM_Init();
 
-    ClientSettings_Check();
+    if (!isdemo)
+        ClientSettings_Check();
     SetupAliases();
 
     player_menu_type = 0;
-    FO_Menu_Game(TRUE);
+    if (!isdemo())
+        FO_Menu_Game(TRUE);
 
     pengine.view_mask = MASK_VIEWMODEL;  // Start with engine models.
     print("CSQC initialization finished\n");
@@ -895,6 +897,20 @@ DEFCVAR_FLOAT(fov, 90);
 
 void WP_UpdatePings();
 
+static string class_names[] = {
+    "scout", "sniper", "soldier", "demoman", "medic", "hwguy", "pyro", "spy", "engineer"
+};
+
+static void PlayerRespawned() {
+    if (csqc_get_user_setting("ec", "exec_class", "off")) {
+        int i = pstate_server.playerclass - 1;
+        if (i >= 0 && i < class_names.length)
+            localcmd(sprintf("exec %s.cfg\n", class_names[i]));
+    }
+
+    localcmd("f_respawn\n");
+}
+
 float last_servercommandframe;
 void _Sync_ServerCommandFrame() {
     // Server command frames are monotonically unique, we can skip processing
@@ -915,8 +931,9 @@ void _Sync_ServerCommandFrame() {
     SBAR.ReadyStatus = getstatf(STAT_FLAGS);
 
     game_state.localentnum = player_localentnum;
+    game_state.pc = pstate_server.playerclass;
 
-    if (team_no == 0 || stof(getplayerkeyvalue(player_localnum, "*spectator"))) {
+    if (team_no == 0 || stof(getplayerkeyvalue(player_localnum, "*spectator")) || isdemo()) {
         game_state.is_spectator = 1;
         game_state.is_player = 0;
     } else {
@@ -939,6 +956,11 @@ void _Sync_ServerCommandFrame() {
 
     CsGrenTimer::UpdateSoundStack();
     UpdateTeamColorCrosshair();
+
+    if ((prev_game_state.spawn_gen != game_state.spawn_gen ||
+         prev_game_state.pc != game_state.pc) &&
+        game_state.is_player && game_state.is_alive)
+        PlayerRespawned();
 }
 
 

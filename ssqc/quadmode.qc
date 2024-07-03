@@ -39,7 +39,7 @@ void () PostFOQuadStarted = {
 	local string demo_uri = strcat(demo_files_address, game_filename, game_filename_extension);
 	data = strcat(data, "    \"demo_uri\": \"", demo_uri, "\",\n");
 
-	string stats_uri = strcat("http://stats.qwtf.live:5000/view/", game_token);
+	string stats_uri = strcat("https://logs.qwtf.live/view/", game_token);
 	data = strcat(data, "    \"stats_uri\": \"", stats_uri, "\",\n");
 
 	data = strcat(data, "    \"server\": {\n");

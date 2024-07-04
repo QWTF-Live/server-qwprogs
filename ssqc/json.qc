@@ -230,6 +230,6 @@ void ReportMatchResult(int report_type) {
     string final = JSON_Wrap(fvs.length, fvs);
     dprint("Reporting to qwtf-live: ", final, "\n");
 
-    string endpoint = "http://stats.qwtf.live:5000/api/report";
+    string endpoint = "http://logs.qwtf.live/api/report";
     uri_post(endpoint, TFL_RESULT, "application/json", final);
 }

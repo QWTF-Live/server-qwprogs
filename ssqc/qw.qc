@@ -787,3 +787,5 @@ string game_token;
 
 .float periodic_think_time;
 float min_ping_limit_ms;
+
+string mvd_name;

@@ -302,12 +302,28 @@ string gameClockString() {
     float timelimit = stof(serverkey("timelimit"));
 
     float end = getstatf(STAT_ROUND_END);
+    if (end < time) {
+       if (CVARF(qwtf_web)) {  // Hack: Patch-up
+           // Time freezes during demo_jump so we can't infer from event, do some
+           // awfulness...  Depends on custom gettime..
+           float demtime = gettime(6);
+           if (demtime < 10)
+               end = 10;    // First prematch
+           else if (demtime < 610)
+               end = 610;   // First end
+           else if (demtime < 625)
+               end = 625;   // 15s Intermission
+           else
+               end = 1225;  // End
+           end += time - demtime;
+       }
+    }
     if (!end)
         end = timelimit * 60;
 
-    if (end && end > servertime) {
-        minutes = (end - servertime)/60;
-        seconds = (end - servertime)%60;
+    if (end && end > time) {
+        minutes = (end - time)/60;
+        seconds = (end - time)%60;
     } else {
         minutes = time/60;
         seconds = time%60;

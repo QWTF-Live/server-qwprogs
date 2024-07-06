@@ -49,6 +49,8 @@ DEFCVAR_STRING(r_rocketlight_colour, "");  // Radius ignored.
 
 DEFCVAR_STRING(r_dimlight_colour, "");
 
+DEFCVAR_FLOAT(qwtf_web, 0);
+
 struct {
     vector r_rocketlight_colour;
     vector tf_color_enemy, tf_color_team;

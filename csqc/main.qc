@@ -50,6 +50,8 @@ DECLARE_PERF_SAMPLER(hud_partial_timing, 60, 0.1);
 void ClientSettings_Check();
 void RegisterPlayerListener();
 
+void(float pause) setpause = #531;
+
 noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     print("CSQC Started\n");
 
@@ -140,6 +142,8 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     player_menu_type = 0;
     if (!isdemo())
         FO_Menu_Game(TRUE);
+    else
+        setpause(TRUE);
 
     pengine.view_mask = MASK_VIEWMODEL;  // Start with engine models.
     print("CSQC initialization finished\n");

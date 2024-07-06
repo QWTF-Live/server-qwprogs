@@ -87,6 +87,9 @@ void () LogEventGameStart = {
         {KV_S, "demo", cvar_string("server_demo")},
         {KV_I, "time", gametime_string},
         {KV_S, "gameToken", game_token},
+        {KV_S, "server_name", infokey(world, "hostname")},
+        {KV_S, "server_address", cvar_string("sv_serverip")},
+        {KV_S, "region", infokey(world, "tfl_region")},
         {KV_S, "shard", infokey(world, "shard")},
         {KV_S, "mvd", strcat(GetGameFileName(), ".mvd.gz")},
     };

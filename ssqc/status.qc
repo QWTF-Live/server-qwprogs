@@ -1572,3 +1572,11 @@ string(entity pl) BuildingToString ={
 
     return st;
 };
+
+void UpdateClient_SetNextEndTime(float next) {
+    round_end_time = next;
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_NEXT_END_TIME);
+    WriteFloat(MSG_MULTICAST, next);
+    multicast('0 0 0', MULTICAST_ALL_R);  // Actual primer has reliable transport.
+}

@@ -444,7 +444,7 @@ void () QuadRoundThink = {
             {
                 local string st;
                 st = ftos(round_delay_time);
-								round_end_time = time + round_delay_time + 1;
+                UpdateClient_SetNextEndTime(time + round_delay_time);
                 bprint(2, "ROUND TIME OVER\nNext round begins in ", st, " seconds\n");
             }
 
@@ -534,8 +534,8 @@ void () QuadRoundBegin = {
 		PostFOQuadFinalRoundStarted();
 
 	round_start_time = time;
-	round_end_time = round_start_time + round_time * 60 + 1;
 	UpdateClientQuadRoundBegin(te, round_time);
+	UpdateClient_SetNextEndTime(round_start_time + round_time * 60);
 
 	if (!self.cnt) {
 		self.cnt = stof(infokey (world, "round_time")) - 1;

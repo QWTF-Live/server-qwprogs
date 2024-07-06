@@ -43,6 +43,8 @@ struct pengine_t {
 
     float pipe_cooldown;
 
+    float next_end_time;
+
     // Must include MASK_PRED_ENT or we lose updates.
     // We only add/remove MASK_VIEWMODEL and MASK_PRED_PROJECTILE
     float view_mask;

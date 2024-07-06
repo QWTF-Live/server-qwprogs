@@ -303,7 +303,9 @@ string gameClockString() {
 
     float end = getstatf(STAT_ROUND_END);
     if (end < time) {
-       if (CVARF(qwtf_web)) {  // Hack: Patch-up
+        if (pengine.next_end_time > time)
+            end = pengine.next_end_time;
+        else if (CVARF(qwtf_web)) {  // Hack: Patch-up
            // Time freezes during demo_jump so we can't infer from event, do some
            // awfulness...  Depends on custom gettime..
            float demtime = gettime(6);
@@ -318,6 +320,7 @@ string gameClockString() {
            end += time - demtime;
        }
     }
+
     if (!end)
         end = timelimit * 60;
 

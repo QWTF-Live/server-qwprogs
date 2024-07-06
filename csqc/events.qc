@@ -9,6 +9,7 @@ void() CSQC_Parse_Event = {
     float msgtype = readbyte();
     local float goalno;
     entity te;
+
     switch (msgtype) {
         case MSG_PREDICTSTATE:
             TFL_RecvPredictState();
@@ -311,6 +312,10 @@ void() CSQC_Parse_Event = {
             FO_Hud_ShowPanel(HUDP_MOTD);
             break;
         case MSG_QUAD_ROUND_BEGIN:
+            break;
+        case MSG_NEXT_END_TIME:
+            // Inject external time for demo_jump
+            pengine.next_end_time = readfloat();
             break;
         case MSG_TEAM_SCORES:
             TeamScore[0] = readfloat();

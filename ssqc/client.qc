@@ -774,9 +774,6 @@ void () DecodeLevelParms = {
 
         map_restart_time = CF_GetSetting("map_restart_Time", "mrt", "120");
 
-        // specify demo filehost address e.g. https://fortressone-demos.s3.amazonaws.com/sydney/staging/
-        demo_files_address = FO_GetUserSettingString(world, "demo_files_address", "demofileaddy", "");
-
         // specify discord channel [""]
         discord_channel_id = infokey(world, "discord_channel_id");
 

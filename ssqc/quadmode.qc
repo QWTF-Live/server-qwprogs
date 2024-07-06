@@ -29,14 +29,7 @@ void () PostFOQuadStarted = {
 	data = strcat(data, "    \"round\": \"", ftos(rounds), "\",\n");
 	data = strcat(data, "    \"map\": \"", mapname, "\",\n");
 
-	local string game_filename_extension;
-	if (cvar("sv_demoAutoCompress")) {
-		game_filename_extension = ".mvd.gz";
-	} else {
-		game_filename_extension = ".mvd";
-	}
-
-	local string demo_uri = strcat(demo_files_address, game_filename, game_filename_extension);
+  string demo_uri = strcat("https://logs.qwtf.live/watch/", game_token);
 	data = strcat(data, "    \"demo_uri\": \"", demo_uri, "\",\n");
 
 	string stats_uri = strcat("https://logs.qwtf.live/view/", game_token);

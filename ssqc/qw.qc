@@ -492,7 +492,6 @@ float vote_anarchy_mode;
 float vote_total_votes;
 float vote_style;
 float vote_threshold;
-string game_filename;
 
 .float tf_id;
 

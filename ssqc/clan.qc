@@ -219,7 +219,7 @@ string () GetPlayersName
         return (st);
 };
 
-string () GetGameFileName = {
+void GenerateMvdName() {
     local float i;
     local string tmp;
     local entity t;
@@ -247,7 +247,14 @@ string () GetGameFileName = {
             str = strcat(str, "_vs");
         }
     }
-    str = clearString(str);
+    mvd_name = clearString(str);
+}
+
+string MvdName(float include_ext) {
+    string str = mvd_name;
+    if (include_ext)
+        str = strcat(str, ("sv_demoAutoCompress") ? ".mvd.gz" : ".mvd");
+
     return str;
 }
 
@@ -316,8 +323,8 @@ void () PreMatch_Think = {
             if (stof(infokey(world, "demo_auto_left")) > 0) {
                 if (infokey(world, "serverdemo") == "on") {
 
-                    mvd_name = GetGameFileName();
-                    localcmd(sprintf("record %s\n", mvd_name));
+                    GenerateMvdName();
+                    localcmd(sprintf("record %s\n", MvdName(FALSE)));
 
                     str = strcat(mvd_name, ".json");
                     fclose(logfilehandle);

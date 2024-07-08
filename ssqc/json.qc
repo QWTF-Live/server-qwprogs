@@ -183,6 +183,8 @@ enum {
     kReportEnd,
 };
 
+string MvdName(float include_ext);
+
 void ReportMatchResult(int report_type) {
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);
@@ -224,7 +226,8 @@ void ReportMatchResult(int report_type) {
         {KV_S, "game_token", game_token},
         {KV_I, "report_type", ftos(report_type)},
         {KV_S, "map", mapname},
-        {KV_I, "teams", JSON_Array(2, teams),
+        {KV_I, "teams", JSON_Array(2, teams)},
+        {KV_S, "mvd", MvdName(TRUE)},
     };
 
     string final = JSON_Wrap(fvs.length, fvs);

@@ -75,8 +75,6 @@ void () LogEventGameStart = {
         player = find (player, classname, "player");
     }
 
-    string demo_ext = cvar("sv_demoAutoCompress") ? ".mvd.gz" : ".mvd";
-
     KeyVal kvs[] = {
         {KV_I, "time", gametime_string},
         {KV_S, "type", "gameStart"},
@@ -91,7 +89,7 @@ void () LogEventGameStart = {
         {KV_S, "server_address", cvar_string("sv_serverip")},
         {KV_S, "region", infokey(world, "tfl_region")},
         {KV_S, "shard", infokey(world, "shard")},
-        {KV_S, "mvd", strcat(mvd_name, demo_ext)},
+        {KV_S, "mvd", MvdName(TRUE)},
     };
 
     string event = strcat("[\n", JSON_Wrap(kvs.length, kvs), ",\n");

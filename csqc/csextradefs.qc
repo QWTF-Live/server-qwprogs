@@ -907,3 +907,4 @@ void cvar_parse4(string s, __out veci target) {
 }
 
 float servertime;
+float is_demo;

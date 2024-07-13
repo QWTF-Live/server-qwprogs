@@ -1123,6 +1123,26 @@ void Hud_Draw(float width, float height)
     HudSettings.MousePos = [Mouse.x, Mouse.y];
 }
 
+void Hud_Demo(float width, float height) {
+    if (!TrackingPlayer())
+        return;
+
+    static vector pos;
+    static float next_update;
+    static string text;
+
+    const vector size = '14 14 0';
+    if (time > next_update) {
+        text = "^9POV:^7";
+        text = strcat(text, getplayerkeyvalue(player_localentnum - 1, INFOKEY_P_NAME));
+        float tw = stringwidth(text, TRUE, size);
+        pos = [(width - tw) / 2, height - size.y - 60, 0];
+        next_update = time + 0.25;
+    }
+
+    drawstring(pos, text, size, '1 1 1', 1, 0);
+}
+
 static const float HUDP_COUNT = HUDP_LAST - HUDP_FIRST + 1;
 
 struct {
@@ -1130,16 +1150,17 @@ struct {
     float idx;
 } incremental_hud;
 
-void Hud_UpdateView(float width, float height, float menushown, float perf_sample) {
+void Hud_UpdateView(float width, float height, float menushown) {
     ScreenSize = [width, height, menushown];
 
+    if (is_demo)
+      Hud_Demo(width, height);
+
     if (HRC_NewFrame()) {
-        float hts = perf_start_sample(&hud_timing, perf_sample);
         sui_begin(width, height);
         Menu_Draw(width, height, menushown);
         Hud_Draw(width, height);
         sui_end();
-        perf_finish_sample(&hud_timing, hts);
         return;
     }
 
@@ -1169,7 +1190,6 @@ void Hud_UpdateView(float width, float height, float menushown, float perf_sampl
     PanelID id = idx + HUDP_FIRST;
     // Time ordered and oldest.
     if (time >= incremental_hud.last_draw[idx] + HRC_fps_time()) {
-        float hts = perf_start_sample(&hud_partial_timing, perf_sample);
         FO_Hud_Panel* p = getHudPanel(id);
 
         sui_begin(width, height);
@@ -1177,7 +1197,6 @@ void Hud_UpdateView(float width, float height, float menushown, float perf_sampl
         HRC_SetActive(p);
         Hud_DrawPanel(getHudPanel(id));
         sui_end();
-        perf_finish_sample(&hud_partial_timing, hts);
 
         incremental_hud.last_draw[idx] = time;
         // We'll start searching from here for next incremental update.

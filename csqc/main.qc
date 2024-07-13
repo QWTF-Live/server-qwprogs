@@ -135,12 +135,13 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     PM_Init();
 
-    if (!isdemo)
+    is_demo = isdemo();
+    if (!is_demo)
         ClientSettings_Check();
     SetupAliases();
 
     player_menu_type = 0;
-    if (!isdemo())
+    if (!is_demo)
         FO_Menu_Game(TRUE);
     else
         setpause(TRUE);
@@ -164,19 +165,20 @@ noref void() CSQC_WorldLoaded = {
 
 void FO_CussView();
 void FO_CussCrosshair(float width, float height);
-void Hud_UpdateView(float width, float height, float menushown, float perf_sample);
+void Hud_UpdateView(float width, float height, float menushown);
 void UpdateTeamColorCrosshair();
 void PMD_DrawGraphs(float width);
 void WP_PreviewSentry();
 
 DEFCVAR_FLOAT(fov, 90);
 
+inline float TrackingPlayer() { return player_localentnum <= 32; }
+
 noref void(float width, float height, float menushown) CSQC_UpdateView = {
-    float fts = perf_start_sample(&frame_timing);
     clearscene();
     setproperty(VF_DRAWWORLD, 1);     // we want to draw our world!
 
-    if (!isdemo() || player_localentnum <= 32)
+    if (!is_demo || TrackingPlayer())
       setproperty(VF_DRAWCROSSHAIR, 1);
     FO_CussView();
 
@@ -199,14 +201,12 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
 
     renderscene();
 
-    FO_CussCrosshair(width, height);
+    //FO_CussCrosshair(width, height);
 
     TFxRenderGrenadeTimers();
     RenderHitTexts();
-    Hud_UpdateView(width, height, menushown, fts);
+    Hud_UpdateView(width, height, menushown);
     PMD_DrawGraphs(width);
-
-    perf_finish_sample(&frame_timing, fts);
 
     // Work around bug in some versions of FTE.  See pmove.qc
     recent_pmove_vel_z = pmove_vel_z;

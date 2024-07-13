@@ -17,11 +17,7 @@ void(PanelID ignored, string text) drawClipSize = {
 };
 
 void(PanelID ignored, string text) drawIdentify = {
-    if (time > last_id_time + 5)
-        return;
-
-    if (strlen(text) > 0 || fo_hud_editor)
-        Hud_DrawIdentifyPanel(text);
+    Hud_DrawIdentifyPanel(text);
 };
 
 void(PanelID ignored, string text) drawTeamScorePanel = {

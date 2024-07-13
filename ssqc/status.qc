@@ -791,12 +791,7 @@ void UpdateClientGrenadeThrown(entity pl) = {
 #endif
 }
 
-void UpdateClientIDString(entity pl) {
-    string ident = time < pl.ident_time ? pl.ident_string : "";
-
-    if (ident == "")  // No need to send null, we'll expire clientside.
-        return;
-
+void UpdateClientIDString(entity pl, string ident) {
     msg_entity = pl;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_ID);
@@ -1028,8 +1023,6 @@ void (entity pl) RefreshStatusBar = {
             }
             tg = find(tg, classname, "info_tfgoal");
         }
-        UpdateClientIDString(pl);
-        
         return;
     }
 
@@ -1061,7 +1054,6 @@ void (entity pl) RefreshStatusBar = {
         {
             //pl.StatusRefreshTime = time + 1;
             UpdateClientStatusBar(pl);
-            UpdateClientIDString(pl);
             
             // flag info
             if (CF_GetSetting("ssbfi", "server_sbflaginfo", "1"))
@@ -1170,80 +1162,6 @@ void (entity pl) RefreshStatusBar = {
             ct = strzone("\n\n\n\n\n\n");
         }
     }
-
-    if (!csqcactive)
-    {
-        // status line 1 column 1 - grenade timer
-        if (pl.StatusGrenTime > 0) {
-            st1 = strcat(Q"\sGrenade\s: ", ftos(pl.StatusGrenTime));
-            if (pl.fragstreak > 1 && pl.caps)
-                st1 = strcat(st1, " sec");
-            else
-                st1 = strcat(st1, " seconds");
-        } else
-            st1 = "";
-        // status line 1 column 3 - kill streak & caps
-        if (pl.fragstreak > 1) {
-            st2 = Q"\sKill Streak\s: ";
-            st2 = strcat(st2, strpadl(ftos(pl.fragstreak),2));
-        } else
-            st2 = "";
-        if (pl.caps) {
-            if (pl.fragstreak > 1)
-                st2 = strcat(st2, "  ");
-            st3 = Q"\sCaps\s: ";
-            st3 = strcat(st3, strpadl(ftos(pl.caps),2));
-        } else
-            st3 = "";
-        st2 = strcat(st2, st3);
-        // status line 1
-        if (pl.fragstreak > 1 && pl.caps) {
-            st2 = strpadl(st2, 25);
-            s1 = strpadr(st1, 15);
-        } else {
-            st2 = strpadl(st2, 20);
-            s1 = strpadr(st1, 20);
-        }
-        s1 = strcat(s1, st2);
-        s1 = strcat(s1, "\n");
-        s1 = strzone(s1);
-
-        // status line 2 column 1 - class specific information
-        st1 = GetSBClassInfo(pl, csqcactive);
-        
-        // status line 2
-        s2 = strpadr(st1, 40);
-        s2 = strcat(s2, "\n");
-        s2 = strzone(s2);
-
-        st1 = "";
-        st2 = "";
-
-        // status line 3 column 2 - clip size
-        st2 = strcat(Q"\sClip\s: ", ClipSizeToString(pl, csqcactive));
-
-        // status line 3 column 3 - grenade 1 count
-        st3 = strcat(Q"\sGren1\s: ", ftos(pl.no_grenades_1));
-
-        // status line 3 column 4 - grenade 2 count
-        st4 = strcat(Q"\sGren2\s: ", ftos(pl.no_grenades_2));
-
-        // status line 3
-        s3 = strcat(st1, st2);
-        s3 = strpadr(s3, 19);
-        s3 = strcat(s3, strpadl(strcat(st3, strcat("  ", st4)), 21));
-        s3 = strcat(s3, "\n");
-        s3 = strzone(s3);
-
-        // identify
-        if (pl.ident_string != string_null && time < pl.ident_time) {
-            ident = strcat(pl.ident_string, "\n\n");
-        } else {
-            ident = "\n\n\n\n";
-        }
-    }
-    centerprint(pl, pl.StatusString, pad, ident, ct, s1, s2, s3);
-    strunzone(pad); strunzone(ct); strunzone(s1); strunzone(s2); strunzone(s3);
 };
 
 string(float num) BlueScoreToString =

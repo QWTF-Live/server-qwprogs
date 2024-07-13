@@ -1064,8 +1064,9 @@ void Hud_DrawIdentifyPanel(string identify) {
         // click event
     }
 
-    if (time > last_id_time + 3)
-        return;
+    if (time > id_state.id_time + 3 || is_demo ||
+        game_state.spawn_gen != id_state.spawn_gen)
+          return;
 
     vector fontSize = FO_Hud_Icon_Font_Size * panel->Scale;
 

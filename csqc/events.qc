@@ -109,7 +109,8 @@ void() CSQC_Parse_Event = {
             ParseSBAR();
             break;
         case MSG_ID:
-            last_id_time = time;
+            id_state.id_time = time;
+            id_state.spawn_gen = game_state.spawn_gen;
             SBAR.Identify = readstring();
             break;
         case MSG_GRENPRIMED:

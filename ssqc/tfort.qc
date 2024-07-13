@@ -11,7 +11,7 @@ void (entity pe_player, float f_type) CF_Identify;
 
 float () CloseToSpawnPoint;
 
-void () AutoId = {
+static void ThinkAutoId() {
 
     // read autoid settings every 5 seconds
     if (time > self.owner.autoid_time) {
@@ -25,18 +25,8 @@ void () AutoId = {
         return;
     }
 
-    if (time > self.ident_time || !self.ident_time) {
-
-        // remove ident string from memory
-        if (self.ident_string != string_null) {
-            strunzone(self.ident_string);
-            self.ident_string = string_null;
-        }
-
-        CF_Identify(self.owner, self.owner.autoid_type);
-    }
-
-    self.nextthink = time + 0.03;
+    CF_Identify(self.owner, self.owner.autoid_type);
+    self.nextthink = time + 0.1;
 };
 
 void () RemoveAutoIdTimer = {
@@ -1855,7 +1845,7 @@ void () TeamFortress_StartTimers = {
     // start autoid timer
     timer = spawn();
     timer.nextthink = time + 0.3;
-    timer.think = AutoId;
+    timer.think = ThinkAutoId;
     timer.owner = self;
     timer.classname = "aitimer";
 }

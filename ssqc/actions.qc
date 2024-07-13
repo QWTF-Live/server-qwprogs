@@ -214,253 +214,229 @@ void (entity pe_player) FO_SpecTrackPoint = {
     }
 }
 
-void (entity pe_player) FO_Spectator_Identify = {
-    //ezquake draws player ids over their heads
-    if(pe_player.classname != "observer" || !infokeyf(pe_player, INFOKEY_P_CSQCACTIVE)) {
-        return;
-    }
-    
+static string TF_Spectator_Identify(entity pe_player) {
     makevectors(pe_player.v_angle);
     //start just forward of the player in case you're speccing someone
-    traceline(pe_player.origin + v_forward * 96, pe_player.origin + v_forward * 4096, MOVE_EVERYTHING, pe_player);
-    
-    if (trace_ent != world) {
-        local string s_id_string = "";
-        if(trace_ent.classname == "player") {
-            //s_id_string = strcat(trace_ent.netname, "\n", TeamFortress_TeamGetColorString(trace_ent.team_no), " ", TeamFortress_GetClassName(trace_ent.playerclass), "\n");
-            s_id_string = strcat(trace_ent.netname, "\n");
-            if(trace_ent.playerclass == PC_SPY) {
-                if (trace_ent.undercover_team || trace_ent.undercover_skin) {
-                    s_id_string = strcat(s_id_string, "\sDisguised as: \s ");
-                    if (trace_ent.undercover_team != 0)
-                        s_id_string = strcat(s_id_string, TeamFortress_TeamGetColorString(trace_ent.undercover_team));
-                    if (trace_ent.undercover_skin != 0)
-                        s_id_string = strcat(s_id_string, " ", TeamFortress_GetClassName(trace_ent.undercover_skin));
-                    s_id_string = strcat(s_id_string, "\n");
-                }
-            }
-            s_id_string = strcat(s_id_string, "\sH:\s ", ftos(trace_ent.health));
-            s_id_string = strcat(s_id_string, " \sA:\s ", ftos(trace_ent.armorvalue), "\n");
-        } else if(trace_ent.classname == "building_sentrygun") {
-            s_id_string = strcat(trace_ent.real_owner.netname, "'s Sentry Gun (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
-            s_id_string = strcat(s_id_string, "\sLevel:\s ", ftos(trace_ent.weapon), "\n");
-            s_id_string = strcat(s_id_string, "\sH:\s ", ftos(rint(trace_ent.health)), "\n");
-        } else if(trace_ent.classname == "building_sentrygun_base") {
-            s_id_string = strcat(trace_ent.real_owner.netname, "'s Sentry Gun (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
-            s_id_string = strcat(s_id_string, "\sLevel:\s ", ftos(trace_ent.oldenemy.weapon), "\n");
-            s_id_string = strcat(s_id_string, "\sH:\s ", ftos(rint(trace_ent.oldenemy.health)), "\n");
-        } else if(trace_ent.classname == "building_dispenser") {
-            s_id_string = strcat(trace_ent.real_owner.netname, "'s Dispenser (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
-            s_id_string = strcat(s_id_string, "\sH:\s ", ftos(rint(trace_ent.health)), "\n");
-        } else if(trace_ent.classname == "detpack") {
-            s_id_string = strcat(trace_ent.owner.netname, "'s Detpack (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
-            s_id_string = strcat(s_id_string, "\sTime Left:\s ", ftos(trace_ent.detpack_left), " seconds\n");
-        }
+    traceline(pe_player.origin + v_forward * 96,
+              pe_player.origin + v_forward * 4096, MOVE_NORMAL, pe_player);
 
-       // refresh status bar
-        pe_player.ident_time = time + 0.5;
-        if(pe_player.ident_string != s_id_string) {
-            pe_player.ident_string = s_id_string;
-            UpdateClientIDString(pe_player);
+    if (trace_ent == world)
+        return "";
+
+    string s_id_string = "";
+    if(trace_ent.classname == "player") {
+        s_id_string = strcat(trace_ent.netname, "\n");
+        if(trace_ent.playerclass == PC_SPY) {
+            if (trace_ent.undercover_team || trace_ent.undercover_skin) {
+                s_id_string = strcat(s_id_string, "\sDisguised as: \s ");
+                if (trace_ent.undercover_team != 0)
+                    s_id_string = strcat(s_id_string, TeamFortress_TeamGetColorString(trace_ent.undercover_team));
+                if (trace_ent.undercover_skin != 0)
+                    s_id_string = strcat(s_id_string, " ", TeamFortress_GetClassName(trace_ent.undercover_skin));
+                s_id_string = strcat(s_id_string, "\n");
+            }
         }
+        s_id_string = strcat(s_id_string, "\sH:\s ", ftos(trace_ent.health));
+        s_id_string = strcat(s_id_string, " \sA:\s ", ftos(trace_ent.armorvalue), "\n");
+    } else if (trace_ent.classname == "building_sentrygun") {
+        s_id_string = strcat(trace_ent.real_owner.netname, "'s Sentry Gun (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
+        s_id_string = strcat(s_id_string, "\sLevel:\s ", ftos(trace_ent.weapon), "\n");
+        s_id_string = strcat(s_id_string, "\sH:\s ", ftos(rint(trace_ent.health)), "\n");
+    } else if (trace_ent.classname == "building_sentrygun_base") {
+        s_id_string = strcat(trace_ent.real_owner.netname, "'s Sentry Gun (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
+        s_id_string = strcat(s_id_string, "\sLevel:\s ", ftos(trace_ent.oldenemy.weapon), "\n");
+        s_id_string = strcat(s_id_string, "\sH:\s ", ftos(rint(trace_ent.oldenemy.health)), "\n");
+    } else if (trace_ent.classname == "building_dispenser") {
+        s_id_string = strcat(trace_ent.real_owner.netname, "'s Dispenser (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
+        s_id_string = strcat(s_id_string, "\sH:\s ", ftos(rint(trace_ent.health)), "\n");
+    } else if (trace_ent.classname == "detpack") {
+        s_id_string = strcat(trace_ent.owner.netname, "'s Detpack (", TeamFortress_TeamGetColorString(trace_ent.team_no), ")\n");
+        s_id_string = strcat(s_id_string, "\sTime Left:\s ", ftos(trace_ent.detpack_left), " seconds\n");
     }
+
+    return s_id_string;
 }
 
-void (entity pe_player, float f_type) CF_Identify = {
-    if(pe_player.classname == "observer") {
-        FO_Spectator_Identify(pe_player);
-        return;
-    }
-    
-    local vector v_source;
-    
+static string TF_Player_Identify(entity pe_player, float f_type) {
+    vector v_source;
     makevectors(pe_player.v_angle);
     v_source = pe_player.origin + v_forward * 10;
     v_source_z = pe_player.absmin_z + pe_player.size_z * 0.7;
 
     traceline(v_source, v_source + v_forward * 2048, MOVE_LAGGED, pe_player);
-    if (trace_ent != world) {
-        local string s_id_string = "", s_class = "", s_name = "";
-        local float f_health = 0, f_maxhealth = 0, f_armor = 0, f_maxarmor = 0, f_friendly = 0, f_fakefriendly = 0, f_sentryhealth = 0, f_maxsentryhealth = 0;
+    if (trace_ent == world)
+        return "";
+    string s_id_string = "", s_class = "", s_name = "";
+    float f_health = 0, f_maxhealth = 0, f_armor = 0, f_maxarmor = 0,
+          f_friendly = 0, f_fakefriendly = 0, f_sentryhealth = 0,
+          f_maxsentryhealth = 0;
 
-        // don't identify targets above water if player is under water
-        if (pe_player.waterlevel == 3 && !trace_ent.waterlevel)
-            return;
+    // don't identify targets above water if player is under water
+    // don't identify targets under water if player is above water
+    if ((pe_player.waterlevel == 3 && !trace_ent.waterlevel) ||
+        (pe_player.waterlevel < 3 && trace_ent.waterlevel == 3))
+            return "";
 
-        // don't identify targets under water if player is above water
-        if (pe_player.waterlevel < 3 && trace_ent.waterlevel == 3)
-            return;
+    // show as friendly if target is on your team or disguised as your team
+    if (pe_player.team_no) {
+        if (pe_player.team_no == trace_ent.team_no) {
+            // ignore teammates if type is set to enemies only
+            if (f_type == 3)
+                return "";
+            f_friendly = 1;
+        } else if (pe_player.team_no == trace_ent.undercover_team) {
+            // ignore teammates if type is set to enemies only
+            if (f_type == 3)
+                return "";
+            f_fakefriendly = 1;
+            // ignore enemies if type is set to team only
+        } else if (f_type == 2) {
+            return "";
+        }
+    }
 
-        // show as friendly if target is on your team or disguised as your team
-        if (pe_player.team_no) {
+    // alive player is found
+    if (trace_ent.classname == "player" && trace_ent.health) {
+        s_name = trace_ent.netname;
+        if(votemode) {
+            if(trace_ent.vote_map) {
+                s_class = trace_ent.vote_map.netname;
+            } else {
+                s_class = "Has not voted";
+            }
+        } else {
+            // set class and name
+            s_class = TeamFortress_GetClassName(trace_ent.playerclass);
+
+            // set health if you're a medic
+            if (pe_player.playerclass == PC_MEDIC) {
+                f_health = trace_ent.health;
+                f_maxhealth = trace_ent.max_health;
+            }
+
+            // set armor if you're an engineer
+            else if (pe_player.playerclass == PC_ENGINEER) {
+                f_armor = trace_ent.armorvalue;
+                f_maxarmor = trace_ent.maxarmor;
+            }
+
+            // target is an enemy spy
+            if (trace_ent.playerclass == PC_SPY && !f_friendly) {
+                // don't identify feigning enemy spies
+                if (IsFeigned(trace_ent))
+                    return "";
+
+                // use undercover name if available
+                if (trace_ent.undercover_name != string_null)
+                    s_name = trace_ent.undercover_name;
+
+                // set class to undercover skin
+                if (trace_ent.undercover_skin)
+                    s_class = TeamFortress_GetClassName(trace_ent.undercover_skin);
+
+            }
+        }
+    } else if (trace_ent.classname == "building_dispenser") {
+
+        if (pe_player == trace_ent.real_owner)
+            s_name = "Your dispenser";
+        else
+            s_name = strcat(trace_ent.real_owner.netname, "'s dispenser");
+
+        s_class = "";
+    } else if (trace_ent.classname == "building_sentrygun" ||
+            trace_ent.classname == "building_sentrygun_base") {
+        if (pe_player == trace_ent.real_owner) {
+            s_name = "Your sentry gun";
+        } else {
+            s_name = strcat(trace_ent.real_owner.netname, "'s sentry gun");
 
             if (pe_player.team_no == trace_ent.team_no) {
-
-                // ignore teammates if type is set to enemies only
-                if (f_type == 3)
-                    return;
-
-                f_friendly = 1;
-
-            } else if (pe_player.team_no == trace_ent.undercover_team) {
-
-                // ignore teammates if type is set to enemies only
-                if (f_type == 3)
-                    return;
-
-                f_fakefriendly = 1;
-
-            // ignore enemies if type is set to team only
-            } else if (f_type == 2)
-                return;
-
+                f_sentryhealth = trace_ent.health;
+                f_maxsentryhealth = trace_ent.max_health;
+            }
         }
+        s_class = "";
+    } else {
+        return "";
+    }
 
-        // alive player is found
-        if (trace_ent.classname == "player" && trace_ent.health) {
-            
-            s_name = trace_ent.netname;
-            if(votemode) {
-                if(trace_ent.vote_map) {
-                    s_class = trace_ent.vote_map.netname;
-                } else {
-                    s_class = "Has not voted";
-                }
-            } else {
-                // set class and name
-                s_class = TeamFortress_GetClassName(trace_ent.playerclass);
+    s_name = strdecolorize(s_name);
 
-                // set health if you're a medic
-                if (pe_player.playerclass == PC_MEDIC) {
-                    f_health = trace_ent.health;
-                    f_maxhealth = trace_ent.max_health;
-                }
-
-                // set armor if you're an engineer
-                else if (pe_player.playerclass == PC_ENGINEER) {
-                    f_armor = trace_ent.armorvalue;
-                    f_maxarmor = trace_ent.maxarmor;
-                }
-
-                // target is an enemy spy
-                if (trace_ent.playerclass == PC_SPY && !f_friendly) {
-
-                    // don't identify feigning enemy spies
-                    if (IsFeigned(trace_ent))
-                        return;
-
-                    // use undercover name if available
-                    if (trace_ent.undercover_name != string_null)
-                        s_name = trace_ent.undercover_name;
-
-                    // set class to undercover skin
-                    if (trace_ent.undercover_skin)
-                        s_class = TeamFortress_GetClassName(trace_ent.undercover_skin);
-
-                }
-            }
-
-        // dispenser is found
-        } else if (trace_ent.classname == "building_dispenser") {
-
-            if (pe_player == trace_ent.real_owner)
-                s_name = "Your dispenser";
-            else
-                s_name = strcat(trace_ent.real_owner.netname, "'s dispenser");
-
-            s_class = "";
-
-        // sentry gun is found
-        } else if (trace_ent.classname == "building_sentrygun" || trace_ent.classname == "building_sentrygun_base") {
-            if (pe_player == trace_ent.real_owner)
-                s_name = "Your sentry gun";
-            else {
-                s_name = strcat(trace_ent.real_owner.netname, "'s sentry gun");
-
-                if (pe_player.team_no == trace_ent.team_no) {
-                    f_sentryhealth = trace_ent.health;
-                    f_maxsentryhealth = trace_ent.max_health;
-                }
-            }
-
-            s_class = "";
-        } else {
-            return;
+    // set name + health (if medic)
+    if (f_maxhealth && (f_friendly || f_fakefriendly)) {
+        s_id_string = strcat(s_name, "\n");
+        s_id_string = strcat(s_id_string, ftos(f_health));
+        if (id_extended) {
+            s_id_string = strcat(s_id_string, "/");
+            s_id_string = strcat(s_id_string, ftos(f_maxhealth));
         }
-
-        s_name = strdecolorize(s_name);
-
-        // set name + health (if medic)
-        if (f_maxhealth && (f_friendly || f_fakefriendly)) {
-            s_id_string = strcat(s_name, "\n");
-            s_id_string = strcat(s_id_string, ftos(f_health));
-            if (id_extended) {
-                s_id_string = strcat(s_id_string, "/");
-                s_id_string = strcat(s_id_string, ftos(f_maxhealth));
-            }
-            s_id_string = strcat(s_id_string, " hp\n");
+        s_id_string = strcat(s_id_string, " hp\n");
 
         // set name + armor (if engineer)
-        } else if (f_maxarmor && (f_friendly || f_fakefriendly)) {
-            s_id_string = strcat(s_name, "\n");
-            s_id_string = strcat(s_id_string, ftos(f_armor));
-            if (id_extended) {
-                s_id_string = strcat(s_id_string, "/");
-                s_id_string = strcat(s_id_string, ftos(f_maxarmor));
-            }
-            s_id_string = strcat(s_id_string, " armor\n");
+    } else if (f_maxarmor && (f_friendly || f_fakefriendly)) {
+        s_id_string = strcat(s_name, "\n");
+        s_id_string = strcat(s_id_string, ftos(f_armor));
+        if (id_extended) {
+            s_id_string = strcat(s_id_string, "/");
+            s_id_string = strcat(s_id_string, ftos(f_maxarmor));
+        }
+        s_id_string = strcat(s_id_string, " armor\n");
 
         // set name + health (if sentry + engineer)
-        } else if (f_maxsentryhealth) {
-            s_id_string = strcat(s_name, "\n");
-            if (id_extended) {
-                s_id_string = strcat(s_id_string, ftos(floor(f_sentryhealth)));
-                s_id_string = strcat(s_id_string, "/");
-                s_id_string = strcat(s_id_string, ftos(floor(f_maxsentryhealth)));
-                s_id_string = strcat(s_id_string, " health");
-            }
-            s_id_string = strcat(s_id_string, "\n");
+    } else if (f_maxsentryhealth) {
+        s_id_string = strcat(s_name, "\n");
+        if (id_extended) {
+            s_id_string = strcat(s_id_string, ftos(floor(f_sentryhealth)));
+            s_id_string = strcat(s_id_string, "/");
+            s_id_string = strcat(s_id_string, ftos(floor(f_maxsentryhealth)));
+            s_id_string = strcat(s_id_string, " health");
+        }
+        s_id_string = strcat(s_id_string, "\n");
 
         // just set name (if other class)
-        } else {
-            s_id_string = strcat("\n", s_name);
-            s_id_string = strcat(s_id_string, "\n");
-        }
+    } else {
+        s_id_string = strcat("\n", s_name);
+        s_id_string = strcat(s_id_string, "\n");
+    }
 
-        if (votemode) {
-            // in a voting scenario, set same vs different vote indicator
-            if(pe_player.vote_map && trace_ent.vote_map) {
-                if(pe_player.vote_map == trace_ent.vote_map) {
-                    s_id_string = strcat(s_id_string, "\bComrade\b\n");
-                } else {
-                    s_id_string = strcat(s_id_string, "\bOpposition\b\n");
-                }
+    if (votemode) {
+        // in a voting scenario, set same vs different vote indicator
+        if(pe_player.vote_map && trace_ent.vote_map) {
+            if(pe_player.vote_map == trace_ent.vote_map) {
+                s_id_string = strcat(s_id_string, "\bComrade\b\n");
+            } else {
+                s_id_string = strcat(s_id_string, "\bOpposition\b\n");
             }
-        } else {
-            // set friendly/enemy
-            if (f_friendly || f_fakefriendly)
-                s_id_string = strcat(s_id_string, "Friendly");
-            else
-                s_id_string = strcat(s_id_string, "Hostile");
         }
-        
-        // set class
-        if (s_class != "") {
-            s_id_string = strcat(s_id_string, " ");
-            s_id_string = strcat(s_id_string, s_class);
-        }
+    } else {
+        // set friendly/enemy
+        if (f_friendly || f_fakefriendly)
+            s_id_string = strcat(s_id_string, "Friendly");
+        else
+            s_id_string = strcat(s_id_string, "Hostile");
+    }
 
-        pe_player.ident_time = time + 0.5;
+    // set class
+    if (s_class != "") {
+        s_id_string = strcat(s_id_string, " ");
+        s_id_string = strcat(s_id_string, s_class);
+    }
 
-        // don't update memory when the id string is the same
-        if (pe_player.ident_string == s_id_string) {
-            Status_Refresh(pe_player);
-            return;
-        }
+    return s_id_string;
 
-        // refresh status bar
-        pe_player.ident_string = strzone(s_id_string);
-        Status_Refresh(pe_player);
+}
+
+void (entity player, float f_type) CF_Identify = {
+    if (time < self.owner.ident_time)
+        return;
+
+    string id_string = player.classname == "observer" ?
+        TF_Spectator_Identify(player) : TF_Player_Identify(player, f_type);
+
+    if (id_string != "") {
+        UpdateClientIDString(player, id_string);
+        player.ident_time = time + 0.5;
     }
 };
 

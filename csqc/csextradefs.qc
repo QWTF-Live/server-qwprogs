@@ -866,7 +866,11 @@ float all_time;
 float painfinished;
 float jump_counter;
 float attack_counter;
-float last_id_time;
+struct {
+    float id_time;
+    float spawn_gen;
+} id_state;
+
 
 vector FO_Hud_Icon_Size = [24, 24, 0];
 vector FO_Hud_Icon_Font_Size = [8, 8, 0];

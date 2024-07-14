@@ -41,6 +41,7 @@ void () SpectatorConnect = {
     self.motd = 0;
     if(infokeyf(self, INFOKEY_P_CSQCACTIVE)) {
         InitAllStatuses(self);
+        ClientsFlagUpdate(self);
         UpdateClientMOTD(self);
         UpdateClientTeamScores(self);
         UpdateClientPrematch(self, !cb_prematch);

@@ -646,20 +646,13 @@ void (entity Player, entity Goal) UpdateClientButtonStatus = {
     multicast('0 0 0', MULTICAST_ONE_NOSPECS);    
 }
 
-void (entity Player, entity Item) UpdateClientFlagStatus = {
-    if(!infokeyf(Player, INFOKEY_P_CSQCACTIVE))
-        return;
-    msg_entity = Player;
-    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET); 
-    WriteByte(MSG_MULTICAST, MSG_FLAGINFO); 
+void UpdateClientsFlagStatus(entity Item, entity only) {
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_FLAGINFO);
     WriteFloat(MSG_MULTICAST, Item.goal_no);
     if (Item.goal_state == 1 && Item.owner != world) {
         WriteFloat(MSG_MULTICAST, FLAGINFO_CARRIED);
-        if (Player == Item.owner) {
-            WriteString(MSG_MULTICAST, "YOU");
-        } else {
-            WriteString(MSG_MULTICAST, Item.owner.netname);
-        }
+        WriteString(MSG_MULTICAST, Item.owner.netname);
     } else {
         if (Item.origin != Item.oldorigin) {
             if((Item.nextthink - time) >= 0) {
@@ -667,9 +660,10 @@ void (entity Player, entity Item) UpdateClientFlagStatus = {
                 if(noreturn) {
                     WriteFloat(MSG_MULTICAST, -1);
                 } else {
-                    WriteFloat(MSG_MULTICAST, rint(Item.bubble_count - time));
+                    WriteFloat(MSG_MULTICAST, rint(Item.bubble_count));
                 }
-                if((Item.think == tfgoalitem_dropthink || Item.think == tfgoalitem_remove) && !Item.owner) {
+                if ((Item.think == tfgoalitem_dropthink ||
+                     Item.think == tfgoalitem_remove) && !Item.owner) {
                     WriteFloat(MSG_MULTICAST, FLAGINFO_LOCATION);
                     WriteCoord(MSG_MULTICAST, Item.origin_x);
                     WriteCoord(MSG_MULTICAST, Item.origin_y);
@@ -685,7 +679,12 @@ void (entity Player, entity Item) UpdateClientFlagStatus = {
             WriteFloat(MSG_MULTICAST, FLAGINFO_HOME);
         }
     }
-    multicast('0 0 0', MULTICAST_ONE_NOSPECS); 
+    if (only) {
+        msg_entity = only;
+        multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
+    } else {
+        multicast('0 0 0', MULTICAST_ALL_R);
+    }
 }
 
 string (entity Player, entity Item, float teamno) GetItemStatus = {
@@ -990,32 +989,6 @@ void (entity pl) RefreshStatusBar = {
 
     csqcactive = infokeyf(pl, INFOKEY_P_CSQCACTIVE);
     if(pl.classname == "observer" && csqcactive) {
-        if (tfdet)
-        {
-            for (float t = 1; t <= number_of_teams; t++) 
-            {
-                switch (t)
-                {
-                    case 1:
-                        te = Finditem(tfdet.display_item_status1);
-                        break;
-                    case 2:
-                        te = Finditem(tfdet.display_item_status2);
-                        break;
-                    case 3:
-                        te = Finditem(tfdet.display_item_status3);
-                        break;
-                    case 4:
-                        te = Finditem(tfdet.display_item_status4);
-                        break;
-                }
-
-                if (te)
-                {
-                    UpdateClientFlagStatus(pl, te);
-                }
-            }
-        }
         tg = find(world, classname, "info_tfgoal");
         while (tg) {
             if (tg.track_goal) {
@@ -1054,37 +1027,10 @@ void (entity pl) RefreshStatusBar = {
         {
             //pl.StatusRefreshTime = time + 1;
             UpdateClientStatusBar(pl);
-            
+
             // flag info
             if (CF_GetSetting("ssbfi", "server_sbflaginfo", "1"))
             {
-                if (tfdet)
-                {
-                    for (float t = 1; t <= number_of_teams; t++) 
-                    {
-                        switch (t)
-                        {
-                            case 1:
-                                te = Finditem(tfdet.display_item_status1);
-                                break;
-                            case 2:
-                                te = Finditem(tfdet.display_item_status2);
-                                break;
-                            case 3:
-                                te = Finditem(tfdet.display_item_status3);
-                                break;
-                            case 4:
-                                te = Finditem(tfdet.display_item_status4);
-                                break;
-                        }
-
-                        if (te)
-                        {
-                            UpdateClientFlagStatus(pl, te);
-                        }
-                    }
-                }
-
                 tg = find(world, classname, "info_tfgoal");
                 while (tg) {
                     if (tg.track_goal) {
@@ -1097,42 +1043,6 @@ void (entity pl) RefreshStatusBar = {
         else if (CF_GetSetting("ssbfi", "server_sbflaginfo", "1")) // no csqc but has sbflaginfo on and server_sbflaginfo is enabled
         {
             ct = "";
-            i = number_of_teams; // Extra newlines
-            for (float t = 1; t <= number_of_teams; t++) {
-                switch (t)
-                {
-                    case 1:
-                        te = Finditem(tfdet.display_item_status1);
-                        break;
-                    case 2:
-                        te = Finditem(tfdet.display_item_status2);
-                        break;
-                    case 3:
-                        te = Finditem(tfdet.display_item_status3);
-                        break;
-                    case 4:
-                        te = Finditem(tfdet.display_item_status4);
-                        break;
-                }
-
-                if (te)
-                {
-                    if(number_of_teams < 4) {
-                        ct = strcat(ct, strpadr(GetItemStatus(pl, te, t),40),"\n");
-                        if((te.think == tfgoalitem_dropthink || te.think == tfgoalitem_remove) && !te.owner && (te.origin != te.oldorigin)) {
-                            ct = strcat(ct, strpadr(strcat("\s Location: \s", getLocationName(te.origin)),40));
-                        }
-                        i += 1;
-                    } else {
-                        if((te.think == tfgoalitem_dropthink || te.think == tfgoalitem_remove) && !te.owner && (te.origin != te.oldorigin)) {
-                            ct = strcat(ct, strpadr(strcat(GetItemStatus(pl, te, t),"\s: \s", getLocationName(te.origin)),40));
-                        } else {
-                            ct = strcat(ct, strpadr(GetItemStatus(pl, te, t),40));
-                        }
-                    }
-                }
-                ct = strcat(ct, "\n");
-            }
             tg = find(world, classname, "info_tfgoal");
             while (tg) {
                 if (tg.track_goal && i < 6 && tg.goal_state == TFGS_DELAYED) {

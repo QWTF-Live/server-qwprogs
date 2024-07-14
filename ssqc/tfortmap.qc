@@ -612,19 +612,11 @@ void (entity AD) ParseTFDetect = {
 
 entity(float ino) Finditem =
 {
-    local entity tg;
-    //local string st;
-
-    tg = find(world, classname, "item_tfgoal");
-    while (tg) {
-        if (tg.goal_no == ino)
-            return (tg);
-        tg = find(tg, classname, "item_tfgoal");
-    }
-    //dprint("Could not find an item with a goal_no of ");
-    //st = ftos(ino);
-    //dprint(st);
-    //dprint(".\n");
+    int n;
+    entity* list = find_list(classname, "item_tfgoal", EV_STRING, n);
+    for (int i = 0; i < n; i++)
+        if (list[i].goal_no == ino)
+            return list[i];
     return world;
 };
 
@@ -2300,6 +2292,7 @@ void () ReturnItem = {
 
     if (self.enemy.touch == item_tfgoal_hidden_touch)
         return;
+    flag_update = 1;
 
     self.enemy.goal_state = 2;
     if ((self.enemy.goal_activation & 8192) &&

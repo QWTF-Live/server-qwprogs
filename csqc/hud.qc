@@ -618,11 +618,16 @@ void Hud_DrawFlagStatusBar()
 
             HRC_drawpic([pos_x, pos_y + sizey * i, 0], icon, [sizex, sizey, 0], iconcolour, alpha, 0);
 
-            if (FlagInfoLines[i].timeleft >= 0) 
-            {
-                string stime = ftos(FlagInfoLines[i].timeleft);
+            if (FlagInfoLines[i].time_return >= 0) {
+                float ret = max(FlagInfoLines[i].time_return - pstate_pred.server_time, 0);
+                string stime = sprintf("%0.1f", ret);
                 float smallfont = 6 * getHudPanel(HUDP_FLAGINFO)->Scale;
-                HRC_drawstring([pos_x + sizex - stringwidth(stime, 1, [smallfont, smallfont]), pos_y + sizey * (i + 1) - smallfont, 0], stime, [smallfont, smallfont], '1 1 1', 1, 0);
+                HRC_drawstring(
+                    [pos_x + sizex + smallfont * 1.5 -
+                        stringwidth(stime, 1, [smallfont, smallfont]),
+                     pos_y + sizey * (i + 1) -
+                       smallfont, 0],
+                    stime, [smallfont, smallfont], '1 1 1', 1, 0);
             }
         }
     }

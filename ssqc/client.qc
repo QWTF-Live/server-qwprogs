@@ -827,9 +827,6 @@ void () DecodeLevelParms = {
 	deathammo_cells = CF_GetSetting("dac", "deathammo_cells", "50");
 	deathammo_rockets = CF_GetSetting("dar", "deathammo_rockets", "10");
 
-        // enable server-side flaginfo on statusbar [on]
-        //        server_sbflaginfo = CF_GetSetting("ssbfi", "server_sbflaginfo", "1");
-
         reverse_cap = CF_GetSetting("rcap","reverse_cap", "0");
 
         if (reverse_cap) 
@@ -3107,6 +3104,8 @@ void CheckClientAdmin() {
     }
 }
 
+void ClientsFlagUpdate(entity only);
+
 void () ClientConnect = {
     if (!infokeyf(self,INFOKEY_P_CSQCACTIVE)) {
         sprint(self, PRINT_HIGH, "FTE/CSQC is required for this server, please download the latest client package at www.fortressone.org\n");
@@ -3148,6 +3147,7 @@ void () ClientConnect = {
     }
 
     InitAllStatuses(self);
+    ClientsFlagUpdate(self);
     UpdateClientMOTD(self);
     UpdateClientTeamScores(self);
     UpdateClientPrematch(self, !cb_prematch);
@@ -3920,8 +3920,32 @@ void () InitReverseCap = {
 
 }
 
+void ClientsFlagUpdate(entity only) {
+    if (only) {
+        // forced
+    } else if (flag_update) {
+        flag_update = 0;
+    } else {
+        return;
+    }
+
+    entity tfdet = find(world, classname, "info_tfdetect");
+    if (tfdet) {
+        float item_status[] = {tfdet.display_item_status1, tfdet.display_item_status2,
+                               tfdet.display_item_status3, tfdet.display_item_status4};
+
+        for (float i = 0; i < item_status.length; i++) {
+            entity fe = Finditem(item_status[i]);
+            if (fe)
+                UpdateClientsFlagStatus(fe, only);
+        }
+    }
+}
+
 void EndFrame() {
     AnnounceUpdate();
+
+    ClientsFlagUpdate(world);
 }
 
 #if 0

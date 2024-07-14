@@ -66,7 +66,7 @@ void() CSQC_Parse_Event = {
             string message = "";
             goalno = readfloat();
             float state = readfloat();
-            float timeleft = -1;
+            float time_return = -1;
             vector droploc = '0 0 0';
             string carrier = "";
             string locname = "";
@@ -80,9 +80,9 @@ void() CSQC_Parse_Event = {
                     break;
                 case FLAGINFO_DROPPED:
                     message = "^3DROPPED^7";
-                    timeleft = readfloat();
+                    time_return = readfloat();
                     float showloc = readfloat();
-                    if(showloc == FLAGINFO_LOCATION) {
+                    if (showloc == FLAGINFO_LOCATION) {
                         droploc_x = readcoord();
                         droploc_y = readcoord();
                         droploc_z = readcoord();
@@ -94,14 +94,15 @@ void() CSQC_Parse_Event = {
                     message = "^4RETURNING";
                     break;
             }
-            for(float i = 0; i < FlagInfoLines.length; i++) {
-                if(FlagInfoLines[i].id == goalno) {
+            for (float i = 0; i < FlagInfoLines.length; i++) {
+                if (FlagInfoLines[i].id == goalno) {
                     FlagInfoLines[i].message = message;
-                    FlagInfoLines[i].timeleft = timeleft;
+                    FlagInfoLines[i].time_return = time_return;
                     FlagInfoLines[i].state = state;
                     FlagInfoLines[i].loc = droploc;
                     FlagInfoLines[i].carrier = carrier;
                     FlagInfoLines[i].locname = locname;
+                    break;
                 }
             }
             break;

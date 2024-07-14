@@ -309,6 +309,7 @@ void (entity attacker, entity target, float tfstate) LogEventAffliction = {
 };
 
 void (entity player) LogEventGoal = {
+    flag_update = 1;
     if(player == world)
         return;
 
@@ -332,6 +333,7 @@ void (entity player) LogEventGoal = {
 
 
 void (entity player) LogEventPickupGoal = {
+    flag_update = 1;
     player.touches = player.touches + 1;
     if (canlog == 0)
         return;
@@ -349,6 +351,7 @@ void (entity player) LogEventPickupGoal = {
 }
 
 void (entity player, float timecarried) LogEventFumble = {
+    flag_update = 1;
     if (canlog == 0)
         return;
 

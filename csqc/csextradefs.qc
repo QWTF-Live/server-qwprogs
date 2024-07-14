@@ -364,7 +364,7 @@ typedef struct {
     string message;
     //string model;
     entity model;
-    float timeleft;
+    float time_return;
     float state;
     vector loc;
     string carrier;

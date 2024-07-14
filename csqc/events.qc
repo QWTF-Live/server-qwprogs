@@ -29,17 +29,17 @@ void() CSQC_Parse_Event = {
 
             //use next available
             if(index < 0) {
-                for(float i = 0; i < FlagInfoLines.length; i++) {
-                    if(FlagInfoLines[i].id == 0) {
+                for (float i = 0; i < FlagInfoLines.length; i++) {
+                    if (FlagInfoLines[i].id == 0 || FlagInfoLines[i].id == goalno) {
                         index = i;
                         break;
                     }
                 }
             }
-            if(index >= 0 && index < MAX_FLAGINFO_LINES) {
+            if (index >= 0 && index < MAX_FLAGINFO_LINES) {
                 FlagInfoLines[index].id = goalno;
                 FlagInfoLines[index].message = "";
-                if(mdl)
+                if (mdl)
                     precache_model(mdl);
                 te = spawn();
                 te.renderflags = RF_VIEWMODEL | RF_DEPTHHACK | RF_NOSHADOW;
@@ -50,10 +50,10 @@ void() CSQC_Parse_Event = {
 
                 string iconname = "sb_key1";
                 vector iconcolour = '1 1 1';
-                if(iconindex == FLAGINFO_ICON_FLAG) {
+                if (iconindex == FLAGINFO_ICON_FLAG) {
                     iconname = strcat("flag_", ftos(ownerteam));
                     iconcolour = '1 1 1';
-                } else if(iconindex == FLAGINFO_ICON_BUTTON) {
+                } else if (iconindex == FLAGINFO_ICON_BUTTON) {
                     iconname = strcat("off_icon_glow_", ftos(ownerteam));
                     iconcolour = '1 1 1';
                 }

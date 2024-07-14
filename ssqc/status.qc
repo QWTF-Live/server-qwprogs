@@ -581,9 +581,6 @@ void (entity pl, string s1, string s2, string s3, string s4, string s5, string s
 string getLocationName(vector location);
 
 void (entity Player, float index, entity Item, float icon) InitClientFlagStatus = {
-    if(!infokeyf(Player, INFOKEY_P_CSQCACTIVE) || !CF_GetSetting("ssbfi", "server_sbflaginfo", "1")) {
-        return;
-    }
     msg_entity = Player;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET); 
     WriteByte(MSG_MULTICAST, MSG_FLAGINFOINIT);
@@ -593,7 +590,12 @@ void (entity Player, float index, entity Item, float icon) InitClientFlagStatus 
     WriteFloat(MSG_MULTICAST, Item.skin);
     WriteFloat(MSG_MULTICAST, Item.owned_by);
     WriteFloat(MSG_MULTICAST, icon);
-    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS); 
+
+    if (msg_entity != world)
+        multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
+    else {
+        multicast('0 0 0', MULTICAST_ALL_R);  // For MVD pickup.
+    }
 }
 
 void (entity Player) InitAllStatuses = {

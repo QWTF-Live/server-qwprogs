@@ -331,6 +331,9 @@ void () PreMatch_Think = {
                     logfilehandle = fopen(str, FILE_WRITE);
                 }
             }
+        } else if (self.cnt2 == 1) {
+            InitAllStatuses(world);
+            flag_update = 1;
         }
         num = strzone(ftos(self.cnt2));
         p = find(world, classname, "player");

@@ -88,11 +88,6 @@ void WorldSpawnPost()
 }
 
 void () worldspawn = {
-    // Set this variable on connect so the client knows it has access to
-    // FortressOne aliases.
-    WriteByte(MSG_INIT, 9/*svc_stufftext*/);
-    WriteString(MSG_INIT, "set fo_serverscripts 1\n");
-
     round_end_time = 0;
 
     vote_started = -1;

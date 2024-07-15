@@ -112,10 +112,10 @@ void () worldspawn = {
         localcmd(strcat("serverinfo starttime \"", timestamp, "\"\n"));
     }
 
-    localcmd("serverinfo fo_rev \"");
+    localcmd("serverinfo qwtf_rev \"");
     localcmd(REV);
     localcmd("\"\n");
-    localcmd("serverinfo gametype \"fortressone\"\n");
+    localcmd("serverinfo gametype \"qwtflive\"\n");
 
     st = infokey(world, "*sv_gamedir");
     if ((st != string_null) && (st != "fortress"))

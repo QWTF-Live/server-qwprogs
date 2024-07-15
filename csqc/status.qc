@@ -437,7 +437,7 @@ void(PanelID panelid, string text) drawMOTDPanel = {
             );
             */
             if(strlen(SBAR.MOTD) <= 1) {
-                motd = "Welcome to FortressOne\nwww.fortressone.org";
+                motd = "Welcome to QWTF.Live\nlogs.qwtf.live";
             } else {
                 motd = SBAR.MOTD;
             }

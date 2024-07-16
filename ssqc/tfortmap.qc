@@ -1422,6 +1422,9 @@ void (entity Goal, entity AP, entity ActivatingGoal) AttemptToActivate = {
             AttemptToActivate(te, AP, Goal);
         }
     }
+
+    if (Goal.track_goal)
+        button_update = 1;
 };
 
 void (entity Goal, entity AP) DoGoalWork = {
@@ -1713,6 +1716,9 @@ void () DelayedResult = {
     entity oself = self;
     if (self.enemy.goal_state == TFGS_DELAYED)
         DoResults(self.enemy, self.owner, self.weapon);
+
+    if (self.enemy.track_goal)
+        button_update = 1;
 
     dremove(oself);
 };
@@ -2025,9 +2031,8 @@ void (entity Goal, entity AP, float addb) DoResults = {
     DoGroupWork(Goal, AP);
     DoGoalWork(Goal, AP);
     DoTriggerWork(Goal, AP);
-    if (Goal.classname == "info_tfgoal") {
+    if (Goal.classname == "info_tfgoal")
         SetupRespawn(Goal);
-    }
 };
 
 void () tfgoal_touch = {

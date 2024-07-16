@@ -780,6 +780,6 @@ string game_token;
 .float periodic_think_time;
 float min_ping_limit_ms;
 
-float flag_update;
+float flag_update, button_update;
 
 string mvd_name;

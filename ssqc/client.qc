@@ -3913,24 +3913,38 @@ void () InitReverseCap = {
 }
 
 void ClientsFlagUpdate(entity only) {
+    float do_flag = 0, do_button = 0;
     if (only) {
-        // forced
-    } else if (flag_update) {
+        do_flag = do_button = 1;  // forced
+    } else if (flag_update || button_update) {
+        do_flag = flag_update;
         flag_update = 0;
+        do_button = button_update;
+        button_update = 0;
     } else {
         return;
     }
 
-    entity tfdet = find(world, classname, "info_tfdetect");
-    if (tfdet) {
-        float item_status[] = {tfdet.display_item_status1, tfdet.display_item_status2,
-                               tfdet.display_item_status3, tfdet.display_item_status4};
+    if (do_flag) {
+        entity tfdet = find(world, classname, "info_tfdetect");
+        if (tfdet) {
+            float item_status[] = {tfdet.display_item_status1, tfdet.display_item_status2,
+                tfdet.display_item_status3, tfdet.display_item_status4};
 
-        for (float i = 0; i < item_status.length; i++) {
-            entity fe = Finditem(item_status[i]);
-            if (fe)
-                UpdateClientsFlagStatus(fe, only);
+            for (float i = 0; i < item_status.length; i++) {
+                entity fe = Finditem(item_status[i]);
+                if (fe)
+                    UpdateClientsFlagStatus(fe, only);
+            }
         }
+    }
+
+    if (do_button) {
+        int c;
+        entity* list = find_list(classname, "info_tfgoal", EV_STRING, c);
+        for (int i = 0; i < c; i++)
+            if (list[i].track_goal)
+                UpdateClientsButtonStatus(list[i], only);
     }
 }
 

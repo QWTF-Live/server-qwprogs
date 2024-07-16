@@ -122,8 +122,7 @@ void (entity Player) InitAllStatuses = {
 };
 
 float laststate;
-void (entity Player, entity Goal) UpdateClientButtonStatus = {
-    msg_entity = Player;
+void (entity Goal, entity only) UpdateClientsButtonStatus = {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_FLAGINFO);
     WriteFloat(MSG_MULTICAST, Goal.goal_no);
@@ -149,7 +148,13 @@ void (entity Player, entity Goal) UpdateClientButtonStatus = {
     } else {
         WriteFloat(MSG_MULTICAST, FLAGINFO_HOME);
     }
-    multicast('0 0 0', MULTICAST_ONE_NOSPECS);    
+
+    if (only) {
+        msg_entity = only;
+        multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
+    } else {
+        multicast('0 0 0', MULTICAST_ALL_R);
+    }
 }
 
 void UpdateClientsFlagStatus(entity Item, entity only) {
@@ -462,15 +467,6 @@ void (entity pl) RefreshStatusBar = {
     entity te = world, tg;
 
     pl.StatusRefreshTime = time + 1.5;
-    if (tfdet) {
-        tg = find(world, classname, "info_tfgoal");
-        while (tg) {
-            if (tg.track_goal) {
-                UpdateClientButtonStatus(pl, tg);
-            }
-            tg = find(tg, classname, "info_tfgoal");
-        }
-    }
 
     if (pl.classname != "observer")
         UpdateClientStatusBar(pl);

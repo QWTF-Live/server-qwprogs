@@ -529,7 +529,7 @@ struct Slot { int id; };
 #define TF_TEAM_LIST                125 // Display the players in each team
 #define TF_TEAM_SCORES              126 // Display team scores
 #define TF_STATUS_QUERY             127 // Displays current team balance and equilization ratios
-#define TF_NEXTTIP                  128 // Shows the next general/class tip
+// unused                           128
 // unused                           129
 // unused                           130
 #define TF_TOGGLEVOTE               131 // Toggle vote menu on/off
@@ -1565,7 +1565,6 @@ TFAlias client_aliases[] = {
     {"id",                      TF_ID},
     {"idteam",                  TF_ID_TEAM},
     {"idenemy",                 TF_ID_ENEMY},
-    {"nexttip",                 TF_NEXTTIP},
     {"votenext",                TF_VOTENEXT},
     {"votetrick",               TF_VOTETRICK},
     {"voterace",                TF_VOTERACE},

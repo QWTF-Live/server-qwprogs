@@ -66,9 +66,6 @@ float remote_client_time();
 .float has_voted_map;           // Map option that player voted for
 .float spawn_time;              // Time when player spawned
 .float menu_time;               // Time when vote map menu was first issued
-.float display_tip;             // Last class tip displayed
-.float tip_type;                // Whether the tip displayed is a general tip (1) or class tip (2)
-.float tip_time;                // Time when players last requested to see a tip
 .float vote_next;               // TRUE if player has voted for a map vote
 .float vote_trick;              // TRUE if player has voted for a trick map vote
 .float vote_race;               // TRUE if player has voted for a race map vote
@@ -437,8 +434,7 @@ float already_chosen_map;
 .float antispam_feign;
 
 // status bar stuff
-.string StatusString;           // current centerprint text (strzone'd!)
-.float StatusStringLines;       // how many lines the centerprint is
+.string StatusString;           // current centerprint text
 .float StatusStringTime;        // when text will time out
 .float StatusRefreshTime;       // when sbar is next printed
 .float StatusGrenTime;
@@ -556,7 +552,6 @@ float spawnfull;
 float stockfull;
 float stock_on_cap;
 float stock_reload;
-float classtips;
 float cussgrentime;
 float medicnocuss;
 float distance_based_cuss_duration;

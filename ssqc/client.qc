@@ -600,9 +600,6 @@ void () DecodeLevelParms = {
         // stock clip to full for reloading guns [on]
         stock_reload = CF_GetSetting("srd", "stock_reload", "on");
 
-        // display class tips [on]
-        classtips = CF_GetSetting("ct", "classtips", "on");
-
         // concussion grenade effect time [19]
         cussgrentime = CF_GetSetting("cgt", "cussgrentime", "10");
 
@@ -874,7 +871,6 @@ void () DecodeLevelParms = {
             stockfull = TRUE;
             stock_on_cap = TRUE;
             stock_reload = TRUE;
-            classtips = TRUE;
             sniperpower = TRUE;
             buildstatus = TRUE;
             old_hp_armor = FALSE;
@@ -941,7 +937,6 @@ void () DecodeLevelParms = {
             stockfull = FALSE;
             stock_on_cap = FALSE;
             stock_reload = FALSE;
-            classtips = FALSE;
             sniperpower = FALSE;
             buildstatus = FALSE;
             old_hp_armor = TRUE;
@@ -1004,7 +999,6 @@ void () DecodeLevelParms = {
             stockfull = FALSE;
             stock_on_cap = FALSE;
             stock_reload = FALSE;
-            classtips = FALSE;
             nohitsounds = TRUE;
             nohittext = TRUE;	//damned luddites
             zutmode = FALSE;
@@ -2082,8 +2076,6 @@ void () PutClientInServer = {
     self.vote_close = 0;
     self.has_throwngren = FALSE;
     self.saveme_time = 0;
-    self.display_tip = 0;
-    self.tip_type = 0;
     self.conc_state.mag = 0;
     self.detpipe_queued = 0;
 

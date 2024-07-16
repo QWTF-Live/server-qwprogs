@@ -2249,17 +2249,15 @@ void (entity Item, entity AP, entity Goal) tfgoalitem_GiveToPlayer = {
 
     if (Item.items & IT_KEY1) {
         AP.items = AP.items | IT_KEY1;
-        if (Item.message == string_null) {
+        if (Item.message == string_null)
             Status_Print(AP, "\n\n\n", "You got the enemy flag!");
-        }
         // else is taken care of in DoResults()
     }
 
     if (Item.items & IT_KEY2) {
         AP.items = AP.items | IT_KEY2;
-        if (Item.message == string_null) {
+        if (Item.message == string_null)
             Status_Print(AP, "\n\n\n", "You got the enemy flag!");
-        }
         // else is taken care of in DoResults()
     }
 
@@ -2926,7 +2924,7 @@ void (entity P) ForceRespawn = {
 };
 
 void () DropGoalItems = {
-    local entity te, search;
+    local entity te;
     local float timecarried;
     
     newmis = spawn();
@@ -2975,8 +2973,7 @@ void () DropGoalItems = {
                     }
                 }
 
-                Status_Print(self, "\n\n\n", "You dropped the flag!");
-                search = find(world, classname, "player");
+                entity search = find(world, classname, "player");
                 while (search) {
                     if ((search.team_no == self.team_no) && (self.team_no != 0)) {
                         if (search != self)

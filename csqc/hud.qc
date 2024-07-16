@@ -1152,6 +1152,22 @@ void Hud_Demo(float width, float height) {
 
 static const float HUDP_COUNT = HUDP_LAST - HUDP_FIRST + 1;
 
+static const vector CPRINT_SIZE = '12 12 0';
+
+void Hud_CenterPrint(string msg) {
+    center_message.message = msg;
+    center_message.expiry = time + 1;
+
+    center_message.x_offset = stringwidth(msg, 1, CPRINT_SIZE) / 2;
+    center_message.gen = game_state.spawn_gen;
+}
+
+static void Hud_RenderCenterPrint(float width, float height) {
+    vector pos = [width/2 - center_message.x_offset,
+                  height/4 - CPRINT_SIZE[1]/2, 0];
+    drawstring(pos, center_message.message, CPRINT_SIZE, '1 1 1', 1, 0);
+};
+
 struct {
     float last_draw[HUDP_COUNT];
     float idx;
@@ -1161,7 +1177,10 @@ void Hud_UpdateView(float width, float height, float menushown) {
     ScreenSize = [width, height, menushown];
 
     if (is_demo)
-      Hud_Demo(width, height);
+        Hud_Demo(width, height);
+
+    if (time < center_message.expiry && game_state.spawn_gen == center_message.gen)
+        Hud_RenderCenterPrint(width, height);
 
     if (HRC_NewFrame()) {
         sui_begin(width, height);

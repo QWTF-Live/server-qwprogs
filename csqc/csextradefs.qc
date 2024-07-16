@@ -361,8 +361,6 @@ typedef struct {
 
 typedef struct {
     float id;
-    string message;
-    //string model;
     entity model;
     float time_return;
     float state;
@@ -912,3 +910,11 @@ void cvar_parse4(string s, __out veci target) {
 
 float servertime;
 float is_demo;
+
+struct {
+    string message;
+    float expiry;
+
+    float gen;
+    float x_offset;
+} center_message;

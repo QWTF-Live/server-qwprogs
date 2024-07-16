@@ -512,7 +512,6 @@ void () TeamFortress_ShowTF = {
     CF_PrintSetting("Remember weapon", remember_weapon, "", 1);
     CF_PrintSetting("Pick up discarded ammo", discammo_pickup, "", 1);
     CF_PrintSetting("ID extras", id_extended, "", 1);
-    CF_PrintSetting("Display class tips", classtips, "", 1);
     CF_PrintSetting("Old grenades", old_grens, "", 1);
     CF_PrintSetting("Drop grenades on ground", drop_grenades, "", 1);
     CF_PrintSetting("Drop grenades in pack", drop_grenpack, "", 1);

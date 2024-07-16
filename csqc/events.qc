@@ -4,6 +4,7 @@ CsGrenTimer ParseGrenPrimed(float grentype, float explodes_at,
 void ParseHitFlag(vector targpos, float mitdmg, float rawdmg, float hitflag);														 
 float StartGrenTimer(float primed_at, float expires_at, float grentype, float play_sound);
 float FoLogin(string token, float print_error);
+void Hud_CenterPrint(string msg);
 
 void() CSQC_Parse_Event = {
     float msgtype = readbyte();
@@ -38,7 +39,6 @@ void() CSQC_Parse_Event = {
             }
             if (index >= 0 && index < MAX_FLAGINFO_LINES) {
                 FlagInfoLines[index].id = goalno;
-                FlagInfoLines[index].message = "";
                 if (mdl)
                     precache_model(mdl);
                 te = spawn();
@@ -63,7 +63,6 @@ void() CSQC_Parse_Event = {
             }
             break;
         case MSG_FLAGINFO:
-            string message = "";
             goalno = readfloat();
             float state = readfloat();
             float time_return = -1;
@@ -72,14 +71,14 @@ void() CSQC_Parse_Event = {
             string locname = "";
             switch (state) {
                 case FLAGINFO_HOME:
-                    message = "^2HOME";
                     break;
                 case FLAGINFO_CARRIED:
                     carrier = readstring();
-                    message = strcat("^1CARRIED^7 by ",carrier);
+
+                    float is_self = carrier ==
+                        getplayerkeyvalue(player_localentnum - 1, INFOKEY_P_NAME);
                     break;
                 case FLAGINFO_DROPPED:
-                    message = "^3DROPPED^7";
                     time_return = readfloat();
                     float showloc = readfloat();
                     if (showloc == FLAGINFO_LOCATION) {
@@ -87,23 +86,63 @@ void() CSQC_Parse_Event = {
                         droploc_y = readcoord();
                         droploc_z = readcoord();
                         locname = readstring();
-                        message = strcat(message," at ", locname);
                     }
                     break;
                 case FLAGINFO_RETURNING:
-                    message = "^4RETURNING";
                     break;
             }
             for (float i = 0; i < FlagInfoLines.length; i++) {
-                if (FlagInfoLines[i].id == goalno) {
-                    FlagInfoLines[i].message = message;
-                    FlagInfoLines[i].time_return = time_return;
-                    FlagInfoLines[i].state = state;
-                    FlagInfoLines[i].loc = droploc;
-                    FlagInfoLines[i].carrier = carrier;
-                    FlagInfoLines[i].locname = locname;
-                    break;
+                FlagInfoLine* fil = &FlagInfoLines[i];
+                if (fil->id != goalno)
+                    continue;
+
+                fil->time_return = time_return;
+                fil->state = state;
+                fil->loc = droploc;
+                string prev_carrier = fil->carrier;
+                fil->carrier = carrier;
+                fil->locname = locname;
+
+#if 0
+                string message = "";
+                float team_flag = team_no == i + 1;
+                string name = getplayerkeyvalue(player_localentnum - 1, INFOKEY_P_NAME);
+                float self = (carrier == name || prev_carrier == name);
+
+                switch (state) {
+                    case FLAGINFO_CARRIED:
+                        carrier = strdecolorize(carrier);
+                        if (self)
+                            message = "^2You have the enemy flag!";
+                        else if (team_flag)
+                            message = sprintf("^1%s took your flag!", carrier);
+                        else
+                            message = sprintf("^x595%s took the enemy flag!", carrier);
+                        break;
+                    case FLAGINFO_DROPPED:
+                        carrier = strdecolorize(carrier);
+                        if (self)
+                            message = "^1You dropped the enemy flag!";
+                        else if (team_flag)
+                            message = sprintf("^2%s dropped your flag!", prev_carrier);
+                        else
+                            message = sprintf("^3%s dropped the enemy flag!", prev_carrier);
+                        break;
+                    case FLAGINFO_RETURNING:
+                        message = "XXX";
+                        break;
+                    case FLAGINFO_HOME:
+                        if (team_flag)
+                            message = "^2Your flag returned!";
+                        else
+                            message = "^1The enemy flag is returning!";
+                        break;
                 }
+
+                if (message)
+                    Hud_CenterPrint(message);
+#endif
+                break;
             }
             break;
         case MSG_SBAR:

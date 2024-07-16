@@ -2186,12 +2186,6 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
             TeamFortress_PrimeThrowGrenade(1); break;
         case TF_GRENADE_PT_2:
             TeamFortress_PrimeThrowGrenade(2); break;
-        case TF_NEXTTIP:
-            self.display_tip = 0;
-            self.tip_type = 0;
-            self.tip_time = time;
-            Status_Refresh(self);
-            break;
         case TF_WEAPLAST:
             W_ChangeWeaponLast(); break;
         case TF_TOGGLEVOTE:

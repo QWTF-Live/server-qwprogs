@@ -1723,7 +1723,7 @@ void () DelayedResult = {
     dremove(oself);
 };
 
-void (entity Goal, entity AP, float addb) DoResults = {   
+void (entity Goal, entity AP, float addb) DoResults = {
     local entity te;
     local float winners;
     local float gotone;

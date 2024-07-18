@@ -434,8 +434,8 @@ float already_chosen_map;
 .float antispam_feign;
 
 // status bar stuff
-.string StatusString;           // current centerprint text
-.float StatusStringTime;        // when text will time out
+.float clear_status_message;
+
 .float StatusRefreshTime;       // when sbar is next printed
 .float StatusGrenTime;
 

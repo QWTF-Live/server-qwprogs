@@ -21,6 +21,11 @@ void () tfgoalitem_dropthink;
 void () tfgoalitem_remove;
 float (entity ent, string ps_short, string ps_setting, string ps_default) FO_GetUserSetting;
 
+static void PrintStatusMessage(entity pl, string message, float duration) {
+    centerprint(pl, message);
+    pl.clear_status_message = time + duration;
+}
+
 void (entity pl, string...count) Status_Print =
 {
     float i;
@@ -33,9 +38,7 @@ void (entity pl, string...count) Status_Print =
     if (pl.menu_input)
         return;
 
-    pl.StatusString = s;
-    pl.StatusStringTime = time + 1.5;
-    pl.StatusRefreshTime = time;
+    PrintStatusMessage(pl, s, 1);
 };
 
 void (entity pl, f_void_float func, string...count) Status_Menu =
@@ -46,9 +49,7 @@ void (entity pl, f_void_float func, string...count) Status_Menu =
     for (float i = 0; i < count; i++)
         s = strcat(s, ...(i, string));
 
-    pl.StatusString = s;
-    pl.StatusStringTime = time + 1.5;
-    pl.StatusRefreshTime = time;
+    PrintStatusMessage(pl, s, 1);
     pl.menu_input = func;
     pl.impulse = 0;
 };
@@ -462,6 +463,13 @@ void UpdateClientStatusBar(entity pl)
     multicast('0 0 0', MULTICAST_ONE_NOSPECS);
 }
 
+void HandleStatusString(entity pl) {
+    if (pl.clear_status_message && time > pl.clear_status_message) {
+        centerprint(pl, "");
+        pl.clear_status_message = 0;
+    }
+}
+
 void (entity pl) RefreshStatusBar = {
     entity tfdet = find(world, classname, "info_tfdetect");
     entity te = world, tg;
@@ -470,8 +478,6 @@ void (entity pl) RefreshStatusBar = {
 
     if (pl.classname != "observer")
         UpdateClientStatusBar(pl);
-
-    centerprint(pl, pl.StatusString);
 };
 
 string(float num) BlueScoreToString =

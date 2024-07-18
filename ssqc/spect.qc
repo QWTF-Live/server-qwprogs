@@ -150,9 +150,9 @@ void () SpectatorThink = {
     if (self.impulse)
         SpectatorImpulseCommand();
 
-    if (time >= self.StatusRefreshTime) {
+    HandleStatusString(self);
+    if (time >= self.StatusRefreshTime)
         RefreshStatusBar(self);
-    }
 
     Predict_Update(FALSE);
     PlayerPeriodicThink(FALSE);

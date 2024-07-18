@@ -3030,6 +3030,7 @@ static void PlayerPostThinkAlive() {
     }
 
     FO_HandleTFStateUpdate();
+    HandleStatusString(self);
     if (time >= self.StatusRefreshTime)
         RefreshStatusBar(self);
 }
@@ -3253,11 +3254,6 @@ void () ClientDisconnect = {
     self.team_no = 0;
     self.solid = 0;
     setsize(self, '0 0 0', '0 0 0');
-    if (self.StatusString)
-        strunzone(self.StatusString);
-    self.StatusString = string_null;
-
-
 
     if(cb_prematch) {
         //Check in case the player leaving is the last not-readied player

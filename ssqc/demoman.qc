@@ -235,8 +235,6 @@ void (float timer) TeamFortress_SetDetpack = {
     self.immune_to_check = time + 10;
     self.tfstate |= TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON;
 
-    Status_Refresh(self);
-
     self.pausetime = time + 3;
     stimer = ftos(timer);
 
@@ -272,7 +270,6 @@ void () TeamFortress_DetpackStop = {
     self.tfstate &= ~(TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON);
     self.detpack_left = 0;
 
-    Status_Refresh(self);
     self.pausetime = time;
 };
 
@@ -283,7 +280,6 @@ void () TeamFortress_DetpackSet = {
     if (self.owner.is_detpacking > 1) {
         self.owner.is_detpacking = self.owner.is_detpacking - 1;
         self.nextthink = time + 1.0;
-        Status_Refresh(self.owner);
         return;
     }
 
@@ -294,7 +290,6 @@ void () TeamFortress_DetpackSet = {
     oldself = self;
     self = self.owner;
     self.is_detpacking = 0;  // Weapon is queued.
-    Status_Refresh(self);
     self = oldself;
 
     newmis = spawn();
@@ -475,7 +470,6 @@ void () TeamFortress_DetpackDisarm = {
     self.owner.tfstate &= ~(TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON);
     TF_AddFrags(self.owner, 1);
     self.enemy.owner.detpack_left = 0;
-    Status_Refresh(self.enemy.owner);
 
     dremove(self.enemy.oldenemy);
     dremove(self.enemy);
@@ -490,7 +484,6 @@ void () TeamFortress_DetpackCountDown = {
     self.nextthink = time + 1;
     self.owner.detpack_left = self.health;
     self.health = self.health - 1;
-    Status_Refresh(self.owner);
 
     if (self.health < 10) {
 

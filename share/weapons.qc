@@ -529,11 +529,8 @@ inline void FO_FillCurrentWeapState(FO_WeapState* result) {
     FO_FillWeapState(self, self.current_slot, result);
 }
 
-void (entity pl) Status_Refresh;
 void (float att_delay) Attack_Finished;
 
-// Hack until we fix Status_Refresh() to not be awful.
-.float last_still_loading;
 void W_UpdateCurrentWeapon(entity pl);
 void sprint_pred(entity client, float msglevel, string s);
 
@@ -555,8 +552,6 @@ void FO_ReloadFrame() {
     if (self.reload_finished && (self.client_time >= self.reload_finished)) {
         self.tfstate &= ~TFSTATE_RELOADING;
         W_UpdateCurrentWeapon(self);
-        self.last_still_loading = 0;
-        Status_Refresh(self);
         sprint_pred(self, PRINT_HIGH, "Finished reloading\n");
 
         return;
@@ -564,15 +559,6 @@ void FO_ReloadFrame() {
 
     if (wi->weapon == WEAP_NONE)
         return;
-
-    float still_loading = FO_NumClipStillLoading(wi, self.client_time,
-                                                     self.reload_finished);
-
-    if (self.last_still_loading != still_loading) {
-        self.last_still_loading = still_loading;
-        FO_ReloadSound();
-        Status_Refresh(self);
-    }
 }
 
 float FO_CanReload(Slot slot) {
@@ -607,7 +593,6 @@ void FO_ReloadSlot(Slot slot, float force) {
     FO_ReloadSound();
 
     self.tfstate |= TFSTATE_RELOADING;
-    Status_Refresh(self);
 
     float reload_count = min(*ws->clip_fired, *ws->ammo_remaining);
     float reload_duration =
@@ -617,7 +602,6 @@ void FO_ReloadSlot(Slot slot, float force) {
     // have shots in clip that are discarded and other weirdness.)
     (*ws->clip_fired) -= reload_count;
 
-    self.last_still_loading = reload_count;
     self.reload_started = self.client_time;
     self.reload_finished = self.client_time + reload_duration;
 }
@@ -639,7 +623,6 @@ float FO_CheckForReload() {
 void FO_InstantReloadAllWeapons(entity player) {
     player.tfstate &= ~TFSTATE_RELOADING;
     player.reload_finished = 0;
-    player.last_still_loading = 0;
     for (int i = 0; i < TF_NUM_SLOTS; i++)
         player.clip_fired[i] = 0;
 }

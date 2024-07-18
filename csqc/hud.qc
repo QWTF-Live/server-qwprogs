@@ -927,21 +927,18 @@ void Hud_DrawClassInfoPanel(float playerclass)
             }
             break;
         case PC_PYRO:
-            if (SBAR.AirBlast)
-            {
+            if (pstate_pred.server_time < pstate_pred.special_next) {
                 icon = ICON_PYRO; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
                 msg = "Airblast Cooling Down";
-                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);    
-            }
-            else if (!SBAR.AirBlast)
-            {
+                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
+            } else {
                 icon = ICON_PYRO; //HudIcons[playerclass+6].icon;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
                 msg = "Airblast Ready";
-                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);    
+                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
             }
             break;
         case PC_SPY:

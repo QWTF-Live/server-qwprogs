@@ -1149,7 +1149,7 @@ void () TeamFortress_SetEquipment = {
     }
     self.is_building = Eng_NotBuilding;
     self.is_detpacking = 0;
-    self.airblast_cooldown = 0;
+    self.special_next = 0;
     self.is_undercover = 0;
     self.next_feign_time = 0;
     self.is_unabletospy = 0;
@@ -2545,10 +2545,8 @@ void (entity pl, float fr) TF_AddFrags = {
         return;
 
     pl.real_frags = pl.real_frags + fr;
-    if (fr == 1) {
+    if (fr == 1)
         pl.fragstreak = pl.fragstreak + 1;
-        Status_Refresh(pl);
-    }
 
     if (!pl.team_no)
         return;

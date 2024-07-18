@@ -264,7 +264,6 @@ FO_Hud_Icons AmmoIcons[] = {
 
 
 typedef struct {
-    string ClipSize;
     float FragStreak;
     float Caps;
     string Identify;
@@ -290,10 +289,6 @@ typedef struct {
     float HealCount;
     float HealAmount;
     float AuraStatus;
-    // hwguy
-    float LockedCannon;
-    // pyro
-    float AirBlast;
     // spy
     float IsUndercover;
     float InvisOnly;

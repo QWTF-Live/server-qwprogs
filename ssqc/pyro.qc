@@ -610,7 +610,6 @@ void W_FireIncendiaryCannon(vector org, vector v_ang, float use_ctime=0) {
 };
 
 void () AirBlastReloadFinished = {
-    self.owner.airblast_cooldown = 0;
     sprint(self.owner, PRINT_HIGH, "Airblast ready\n");
     MSG_SoundOne(self.owner, "weapons/airblast.wav", CHAN_AUTO, 1);
     dremove(self);
@@ -625,7 +624,6 @@ void FO_Airblast() = {
     if (time < self.special_next)
         return;
 
-    self.airblast_cooldown = 1;
     self.special_next = time + PC_PYRO_AIRBLAST_COOLDOWN;
     entity timer = spawn();
     timer.owner = self;
@@ -695,5 +693,4 @@ void FO_Airblast() = {
         if (ent.classname != "player")
             ent.SendFlags |= FOPP_POS;
     }
-    Status_Refresh(self);
 };

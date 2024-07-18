@@ -5,7 +5,6 @@ string(float num) BlueScoreToString;
 string(float num) RedScoreToString;
 string(float num) YellowScoreToString;
 string(float num) GreenScoreToString;
-string(entity pl, float csqcactive) ClipSizeToString;
 string(entity pl) SniperPowerToString;
 string(entity pl) DetpackToString;
 string(entity pl) AuraToString;
@@ -316,11 +315,8 @@ void UpdateClientStatusBar(entity pl)
     string msg = "";
     msg_entity = pl;
 
-    string clipMsg = ClipSizeToString(pl, TRUE);
-
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET); 
     WriteByte(MSG_MULTICAST, MSG_SBAR);
-    WriteString(MSG_MULTICAST, clipMsg);
     WriteFloat(MSG_MULTICAST, pl.fragstreak);
     WriteFloat(MSG_MULTICAST, pl.caps);
 
@@ -390,25 +386,9 @@ void UpdateClientStatusBar(entity pl)
             }
             break;
         case PC_HVYWEAP:
-            // ass can locked
-            float l = FALSE;
-            if (pl.tfstate & TFSTATE_LOCK)
-            {
-                l = TRUE;
-            }
-
-            WriteFloat(MSG_MULTICAST, l);
             break;
         case PC_PYRO:
-            if(pl.airblast_cooldown == 1)
-            {
-                WriteFloat(MSG_MULTICAST, TRUE);
-            }
-            else if (pl.airblast_cooldown == 0)
-            {
-                WriteFloat(MSG_MULTICAST, FALSE);
-            }
-            break; 
+            break;
         case PC_SPY:
             WriteFloat(MSG_MULTICAST, pl.is_undercover);
             
@@ -510,26 +490,6 @@ string(float num) GreenScoreToString =
         num = 999;
 
     return strcat(Q"\sGren\s:", strpadl(ftos(floor(num)), 3));
-};
-
-string(entity pl, float csqcactive) ClipSizeToString =
-{
-    FO_WeapState ws;
-    FO_FillCurrentWeapState(&ws);
-    FO_WeapInfo* wi = ws->wi;
-
-    if (!wi->needs_reload)
-        return "";
-
-    float clip_rem = min(wi->clip_size - *ws->clip_fired - pl.last_still_loading, 999);
-
-    string st = "";
-    if (csqcactive)
-        st = strcat(ftos(floor(clip_rem)), "/", ftos(wi->clip_size));
-    else
-        st = strcat(strpadl(ftos(clip_rem), 2), "/", strpadr(ftos(wi->clip_size), 3));
-
-    return st;
 };
 
 string(entity pl) DisguiseToString =

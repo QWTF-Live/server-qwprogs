@@ -702,8 +702,6 @@ void W_ChangeToBestWeapon() {
 }
 
 float WP_LockedCannon() {
-    if (!WP_Enabled())
-        return SBAR.LockedCannon;
     return pstate_pred.tfstate & TFSTATE_LOCK;
 }
 

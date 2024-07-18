@@ -45,7 +45,6 @@ void () CF_Spy_DisguiseStop;
 void Scout_ToggleScanner(float toggle_mask);
 void () TeamFortress_DetpackMenu;
 void () CF_Medic_AuraToggle;
-void () FO_LockToggle;
 void () FO_Airblast;
 void () TeamFortress_EngineerBuild;
 void () TeamFortress_EngineerBuildStop;
@@ -939,7 +938,6 @@ void () W_FireAssaultCannon = {
 
     *ws->clip_fired += 1;
     *ws->ammo_remaining -= (ws->wi)->ammo_per_shot;
-    Status_Refresh(self);
 
     local vector dir;
 
@@ -1658,11 +1656,9 @@ void () W_Attack = {
     } else if (ws.weapon == WEAP_SHOTGUN) {
         player_shot1();
         W_FireShotgun();
-        Status_Refresh(self);
     } else if (ws.weapon == WEAP_SUPER_SHOTGUN) {
         player_shot1();
         W_FireSuperShotgun();
-        Status_Refresh(self);
     } else if (ws.weapon == WEAP_NAILGUN) {
         player_nail1();
     } else if (ws.weapon == WEAP_SUPER_NAILGUN) {
@@ -1671,17 +1667,14 @@ void () W_Attack = {
         player_rocket1();
         self.ammo_rockets = self.ammo_rockets - 1;
         W_FireGrenade(self.origin, self.v_angle);
-        Status_Refresh(self);
     } else if (ws.weapon == WEAP_PIPE_LAUNCHER) {
         player_rocket1();
         self.ammo_rockets = self.ammo_rockets - 1;
         W_FireGrenade(self.origin, self.v_angle);
-        Status_Refresh(self);
     } else if (ws.weapon == WEAP_ROCKET_LAUNCHER) {
         player_rocket1();
         self.ammo_rockets = self.ammo_rockets - 1;
         W_FireRocket(self.origin, self.v_angle);
-        Status_Refresh(self);
     } else if (ws.weapon == WEAP_LIGHTNING) {
         player_light1();
         FO_Sound(self, CHAN_AUTO, "weapons/lstart.wav", 1, ATTN_NORM);
@@ -1876,7 +1869,6 @@ void W_ChangeWeaponSlot(Slot slot) {
 
     W_UpdateCurrentWeapon(self);
     W_PrintWeaponMessage();
-    Status_Refresh(self);
 };
 
 void W_ChangeQueuedWeaponIfReady() {
@@ -2253,7 +2245,8 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
         case TF_MEDIC_AURA_TOGGLE:
             CF_Medic_AuraToggle(); break;
         case TF_HVYWEAP_LOCK_TOGGLE:
-            FO_LockToggle(); break;
+            self.tfstate ^= TFSTATE_LOCK;
+            break;
         case TF_AIRBLAST:
             FO_Airblast(); break;
         case TF_ENGINEER_BUILD:
@@ -2511,8 +2504,7 @@ void () W_WeaponFrame = {
             else if (self.impulse == TF_LOCKOFF)
                 self.tfstate = self.tfstate - (self.tfstate & TFSTATE_LOCK);
             else if (self.impulse == TF_HVYWEAP_LOCK_TOGGLE)
-                FO_LockToggle();
-            Status_Refresh(self);
+                self.tfstate ^= TFSTATE_LOCK;
             self.impulse = 0;
             return;
         }

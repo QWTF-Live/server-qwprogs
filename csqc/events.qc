@@ -597,7 +597,6 @@ void ParseHitFlag(vector targpos, float mitdmg, float rawdmg, float hitflags) {
 
 void ParseSBAR()
 {
-    SBAR.ClipSize = readstring();
     SBAR.FragStreak = readfloat();
     SBAR.Caps = readfloat();
     float class_info = readfloat();
@@ -639,10 +638,8 @@ void ParseSBAR()
             }
             break;
         case PC_HVYWEAP:
-            SBAR.LockedCannon = readfloat();
             break;
         case PC_PYRO:
-            SBAR.AirBlast = readfloat();
             break;
         case PC_SPY:
             SBAR.IsUndercover = readfloat();

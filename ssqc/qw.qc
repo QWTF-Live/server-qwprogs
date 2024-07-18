@@ -758,7 +758,6 @@ string goal_class_names[7] = {
 .string broadcast_high;
 
 .float special_next;
-.float airblast_cooldown;
 float disable_resup_gren;
 
 // backend

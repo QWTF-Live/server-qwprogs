@@ -85,15 +85,6 @@ void StopAssCan() {
         player_asscan_down1();
 }
 
-void FO_LockToggle () {
-    self.tfstate ^= TFSTATE_LOCK;
-
-    Status_Refresh(self);
-    /* self.impulse = 0; */
-    /* this shouldn't be here, I think we just need to allow this impulse while shooting */
-    /* worth checking detpipes for this too */
-}
-
 float AssCanTryBeginFire() {
     if (get_shells() < 1)
         return FALSE;

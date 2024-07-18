@@ -613,7 +613,11 @@ void Hud_DrawFlagStatusBar()
             } 
             else if (FlagInfoLines[i].state == FLAGINFO_DROPPED && FlagInfoLines[i].locname) 
             {
-                HRC_drawstring([GetTextAlignOffset(pos_x,sizex,sizex,FlagInfoLines[i].locname,bigfont,getHudPanel(HUDP_FLAGINFO)->Orientation), pos_y + bigfontvoffset + sizey * i, 0], FlagInfoLines[i].locname, [bigfont,bigfont], '1 1 1', 1, 0);
+                HRC_drawstring([
+                    GetTextAlignOffset(pos_x, sizex, sizex, FlagInfoLines[i].locname,
+                                       bigfont, getHudPanel(HUDP_FLAGINFO)->Orientation), 
+                    pos_y + sizey * i + 2, 0],
+                    FlagInfoLines[i].locname, [bigfont,bigfont], '1 1 1', 1, 0);
             }
 
             HRC_drawpic([pos_x, pos_y + sizey * i, 0], icon, [sizex, sizey, 0], iconcolour, alpha, 0);
@@ -623,8 +627,10 @@ void Hud_DrawFlagStatusBar()
                 string stime = sprintf("%0.1f", ret);
                 float smallfont = 6 * getHudPanel(HUDP_FLAGINFO)->Scale;
                 HRC_drawstring(
-                    [pos_x + sizex + 3,
-                     pos_y + sizey * (i + 0.5) - 0.5 * smallfont, 0],
+                    [
+                    GetTextAlignOffset(pos_x, sizex, sizex, stime,
+                                       smallfont, getHudPanel(HUDP_FLAGINFO)->Orientation),
+                    pos_y + sizey * (i + 1) - smallfont - 2, 0],
                     stime, [smallfont, smallfont], '1 1 1', 1, 0);
             }
         }

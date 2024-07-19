@@ -11,6 +11,17 @@ void (entity pe_player, float f_type) CF_Identify;
 
 float () CloseToSpawnPoint;
 
+entity get_tfdet() {
+    static float once;
+    static entity tfdet;
+
+    if (!once) {
+        tfdet = find(world, classname, "info_tfdetect");
+    }
+
+    return tfdet;
+}
+
 static void ThinkAutoId() {
 
     // read autoid settings every 5 seconds

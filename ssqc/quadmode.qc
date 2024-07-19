@@ -464,7 +464,6 @@ void () QuadRoundThink = {
 void () QuadRoundBegin = {
 	local entity te;
 	local entity oldself;
-    //local entity tfdet;
 	local float counter;
 
 	local float round_time = stof(infokey(world, "round_time"));
@@ -482,15 +481,9 @@ void () QuadRoundBegin = {
 	team_no_attack = 1 + (rounds % 2);
     
     if(quad_roles) {
-        //tfdet = find(world, classname, "info_tfdetect");
         if(rounds % 2) {
             Team1_Role = &Role_Defence;
             Team2_Role = &Role_Attack;
-            //te = Finditem(tfdet.display_item_status1);
-            //if(te && te.owned_by == 1) {
-                //Quad_HideFlag(te);
-            //}
-            //te = Finditem(tfdet.display_item_status2);
         } else {
             Team1_Role = &Role_Attack;
             Team2_Role = &Role_Defence;

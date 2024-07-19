@@ -362,7 +362,7 @@ void (float update) Menu_Class = {
     }
 
     // print map specific class menu
-    local entity e_info = find(world, classname, "info_tfdetect");
+    local entity e_info = get_tfdet();
     if (e_info) {
         if (self.team_no == 1) {
             if (e_info.noise1 != string_null) {

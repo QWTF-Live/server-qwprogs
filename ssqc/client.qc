@@ -313,7 +313,7 @@ void () DecodeLevelParms = {
             nextmap = strzone(mapname);
         }
         
-        ent = find(world, classname, "info_tfdetect");
+        ent = get_tfdet();
         if (ent != world) {
 
             ParseTFDetect(ent);

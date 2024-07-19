@@ -274,8 +274,7 @@ void TF_Item_ApplyGlow()
     if (self.spawnflags & TFGI_NOGLOW)
         return;
         
-    local entity tfdet;  //info_tfdetect entity
-    tfdet = find(world, classname, "info_tfdetect");
+    entity tfdet = get_tfdet();
 
     if (tfdet && (tfdet.display_item_status1 == self.goal_no || tfdet.display_item_status2 == self.goal_no || tfdet.display_item_status3 == self.goal_no || tfdet.display_item_status4 == self.goal_no)) {
         self.effects = self.effects | TF_Item_GetGlow(self.owned_by);

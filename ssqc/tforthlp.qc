@@ -70,7 +70,7 @@ void TeamFortress_MOTD() {
 void () TeamFortress_HelpMap = {
     local entity te;
 
-    te = find(world, classname, "info_tfdetect");
+    te = get_tfdet();
     if (te) {
         if (te.non_team_broadcast != string_null) {
             sprint(self, PRINT_HIGH, te.non_team_broadcast);

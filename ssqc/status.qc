@@ -19,6 +19,7 @@ entity(float ino) Finditem;
 void () tfgoalitem_dropthink;
 void () tfgoalitem_remove;
 float (entity ent, string ps_short, string ps_setting, string ps_default) FO_GetUserSetting;
+entity get_tfdet();
 
 static void PrintStatusMessage(entity pl, string message, float duration) {
     centerprint(pl, message);
@@ -105,19 +106,19 @@ void (entity Player, float index, entity Item, float icon) InitClientFlagStatus 
 }
 
 void (entity Player) InitAllStatuses = {
-    entity tfdet = find(world, classname, "info_tfdetect");
+    entity tfdet = get_tfdet();
     if(tfdet) {
         InitClientFlagStatus(Player, 0, Finditem(tfdet.display_item_status1), FLAGINFO_ICON_FLAG);
         InitClientFlagStatus(Player, 1, Finditem(tfdet.display_item_status2), FLAGINFO_ICON_FLAG);
         InitClientFlagStatus(Player, 2, Finditem(tfdet.display_item_status3), FLAGINFO_ICON_FLAG);
         InitClientFlagStatus(Player, 3, Finditem(tfdet.display_item_status4), FLAGINFO_ICON_FLAG);
     }
-    tfdet = find(world, classname, "info_tfgoal");
-    while (tfdet) {
-        if (tfdet.track_goal) {
-            InitClientFlagStatus(Player, -1, tfdet, FLAGINFO_ICON_BUTTON);
-        }
-        tfdet = find(tfdet, classname, "info_tfgoal");
+
+    int c;
+    entity* goals = find_list(classname, "info_tfgoal", EV_STRING, c);
+    for (int i = 0; i < c; i ++) {
+        if (goals[i].track_goal)
+            InitClientFlagStatus(Player, -1, goals[i], FLAGINFO_ICON_BUTTON);
     }
 };
 
@@ -451,11 +452,7 @@ void HandleStatusString(entity pl) {
 }
 
 void (entity pl) RefreshStatusBar = {
-    entity tfdet = find(world, classname, "info_tfdetect");
-    entity te = world, tg;
-
     pl.StatusRefreshTime = time + 1.5;
-
     if (pl.classname != "observer")
         UpdateClientStatusBar(pl);
 };

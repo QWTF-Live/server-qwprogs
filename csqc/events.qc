@@ -665,22 +665,18 @@ void ParseSBAR()
         case PC_ENGINEER:
             SBAR.IsBuilding = readfloat();
             if (SBAR.IsBuilding)
-            {
-                SBAR.BuildingPercentage = readfloat();
-            }
-            
+                SBAR.BuildFinish = readfloat();
+
             SBAR.HasSentry = readfloat();
-            if (SBAR.HasSentry)
-            {
+            if (SBAR.HasSentry) {
                 SBAR.SentryLevel = readfloat();
                 SBAR.SentryHealth = readfloat();
                 SBAR.SentryAmmoShells = readfloat();
                 SBAR.SentryAmmoRockets = readfloat();
             }
-            
+
             SBAR.HasDispenser = readfloat();
-            if (SBAR.HasDispenser)
-            {
+            if (SBAR.HasDispenser) {
                 SBAR.DispenserHealth = readfloat();
                 SBAR.DispenserCells = readfloat();
             }

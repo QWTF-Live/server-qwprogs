@@ -1025,7 +1025,8 @@ void Hud_DrawClassInfoPanel(float playerclass)
                     ICON_ENGINEER_DISP : ICON_ENGINEER_SG;
                 HRC_drawpic(pos, icon, size, '1 1 1', 1, 0);
 
-                msg = strcat(ftos(SBAR.BuildingPercentage), "%");
+                float rem = max(SBAR.BuildFinish - pstate_pred.server_time, 0);
+                msg = sprintf("%0.1f sec remaining", rem);
                 HRC_drawOffsetString(panel->Orientation, msg, size, fontSize, pos, basepos, FALSE, colour);
 
                 pos = [pos_x, pos_y + size_y + 2];

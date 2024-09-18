@@ -13,7 +13,6 @@ string(entity pl) RangeToString;
 string(entity pl) ScannerToString;
 string(entity pl) DisguiseToString;
 string(entity pl) SentryDetailsToString;
-string(entity pl) BuildingToString;
 string(float pc) TeamFortress_GetClassName;
 entity(float ino) Finditem;
 void () tfgoalitem_dropthink;
@@ -245,29 +244,6 @@ string (entity Player, entity Item, float teamno) GetItemStatus = {
     return st;
 }
 
-string GetSBClassInfo(entity pl, float csqcactive)
-{
-    string st1 = "";
-    if (pl.playerclass == PC_SCOUT)
-        st1 = ScannerToString(pl);
-    else if (pl.playerclass == PC_SNIPER && (pl.tfstate & TFSTATE_AIMING))
-        st1 = SniperPowerToString(pl);
-    else if (pl.playerclass == PC_DEMOMAN && pl.detpack_left)
-        st1 = DetpackToString(pl);
-    else if (pl.playerclass == PC_MEDIC)
-        st1 = AuraToString(pl);
-    else if (pl.playerclass == PC_HVYWEAP)
-        st1 = AssaultCannonToString(pl);
-    else if (pl.playerclass == PC_SPY)
-        st1 = DisguiseToString(pl);
-    else if (pl.playerclass == PC_ENGINEER && pl.has_sentry)
-        st1 = SentryDetailsToString(pl);
-    if (pl.playerclass == PC_ENGINEER && pl.is_building)
-        st1 = BuildingToString(pl);
-
-    return st1;
-}
-
 void UpdateClientReloadSound(entity pl, float weapon) {
     if(!infokeyf(pl, INFOKEY_P_CSQCACTIVE))
         return;
@@ -415,7 +391,7 @@ void UpdateClientStatusBar(entity pl)
             // building status??
             WriteFloat(MSG_MULTICAST, pl.is_building);
             if (pl.is_building)
-                WriteFloat(MSG_MULTICAST, pl.building_percentage);
+                WriteFloat(MSG_MULTICAST, pl.building_finish);
 
             WriteFloat(MSG_MULTICAST, pl.has_sentry);
             if (pl.has_sentry) {
@@ -727,38 +703,6 @@ string(entity pl) SentryDetailsToString =
         st = strcat(Q"\sSentry\s: ", strcat(hp, ammo));
         st = strpadr(st, 32);
         st = strcat(st, strcat(Q"\slevel\s: ", ftos(self.sentry_ent.weapon)));
-    }
-
-    return st;
-};
-
-string(entity pl) BuildingToString ={
-    local string st = "";
-    local int dist_percentage;
-    local string dist_string;
-    local string hp;
-
-    if (engineer_move && self.sentry_ent) {
-        hp = strcat(strpadl(ftos(floor(self.sentry_ent.health)), 2), " hp");
-        st = strcat(st,strcat(Q"\sSentry\s: ", hp));
-        st = strpadr(st, 15);
-    }
-
-    if (!buildstatus)
-        return "Building...";
-
-    st = strcat(st, Q"\sReady\s: ");
-    st = strcat(st, ftos(pl.building_percentage));
-    st = strcat(st, "%");
-    if (!engineer_move) { //disabling max_distance for moving engineer
-        if (engineer_move) {
-            dist_percentage = (vlen(self.origin - self.sentry_ent.origin)/BUILD_SENTRYGUN_MAX_DISTANCE_ENGMOVE)*100;
-            st = strpadr(st, 26);
-            st = strcat(st, Q"\sDistance\s:");
-            dist_string = strcat(itos(dist_percentage),"%");
-            dist_string = strcat(Q"\x10", dist_string ,Q"\x11");
-            st = strcat(st, dist_string);
-        }
     }
 
     return st;

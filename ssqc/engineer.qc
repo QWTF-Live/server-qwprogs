@@ -526,7 +526,6 @@ void () TeamFortress_EngineerBuildStop = {
 
     Menu_Close(self);
     self.is_building = Eng_NotBuilding;
-    self.building_percentage = 0;
     if (!engineer_move) {
         self.tfstate &= ~(TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON);
         self.movetype = MOVETYPE_WALK;
@@ -588,7 +587,6 @@ void TeamFortress_Build(float objtobuild, float rotation) {
         newmis.mdl = "progs/disp.mdl";
         newmis.netname = "dispenser";
         btime = time + 2;
-        self.dispenser_ticks = 0;
         btype = Eng_BuildingDisp;
     } else if (objtobuild == 2) {
         if (self.has_sentry) {
@@ -601,7 +599,6 @@ void TeamFortress_Build(float objtobuild, float rotation) {
         newmis.mdl = "progs/turrbase.mdl";
         newmis.netname = "sentrygun";
         btime = time + 5;
-        self.sentry_ticks = 0;
         btype = Eng_BuildingSentry;
     }
     if (Build_CheckArea(newmis, self) < 0) {
@@ -620,7 +617,10 @@ void TeamFortress_Build(float objtobuild, float rotation) {
             return;
         }
     }
+
     self.is_building = btype;
+    self.building_finish = btime;
+
     if (!engineer_move) {
         self.immune_to_check = time + 5;
         self.tfstate |= TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON;
@@ -703,14 +703,7 @@ void () CF_CheckBuilding = {
         }
     }
 
-    if (self.is_building == Eng_BuildingSentry) {
-        self.sentry_ticks = self.sentry_ticks + 0.3;
-        self.building_percentage = ceil((self.sentry_ticks / 5) * 100);
-    } else if (self.is_building == Eng_BuildingDisp) {
-        self.dispenser_ticks = self.dispenser_ticks + 0.3;
-        self.building_percentage = ceil((self.dispenser_ticks / 2) * 100);
-    }
-
+    // XXX unnecessary...
     Status_Refresh(self);
 
     timer.nextthink = time + 0.3;
@@ -965,7 +958,7 @@ void () TeamFortress_FinishedBuilding = {
     oldself.owner = world;
     oldself.real_owner = self;
     self.is_building = Eng_NotBuilding;
-    self.building_percentage = 0;
+    self.building_finish = 0;
     if (!engineer_move) {
         self.tfstate &= ~(TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON);
         self.movetype = MOVETYPE_WALK;

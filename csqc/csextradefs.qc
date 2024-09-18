@@ -301,7 +301,7 @@ typedef struct {
     float QueueSkin;
     // engineer
     float IsBuilding;
-    float BuildingPercentage;
+    float BuildFinish;
     float HasSentry;
     float SentryLevel;
     float SentryHealth;

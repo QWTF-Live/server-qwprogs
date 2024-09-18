@@ -91,9 +91,6 @@ float remote_client_time();
 .float saveme_time;             // Time when player issued /saveme command
 .float undercover_timer;        // Seconds left until disguised
 .float power_time;              // The time when sniper power in status bar was last updated
-.float sentry_ticks;            // Used to indicate when engineer's sentry gun is finished building
-.float dispenser_ticks;         // Used to indicate when engineer's dispenser is finished building
-.float building_percentage;     // The building percentage shown in status bar
 .float fragstreak;              // Frag streak
 .float caps;                    // Caps during this game
 
@@ -193,6 +190,7 @@ float coop;
 
 .entity building;               // The building the ENGINEER is using
 .float building_wait;           // Used to prevent using a building again immediately
+.float building_finish;
 .entity real_owner;
 .float has_dispenser;           // TRUE for an ENGINEER if he has a dispenser
 .float has_sentry;              // TRUE for an ENGINEER if he has a sentry

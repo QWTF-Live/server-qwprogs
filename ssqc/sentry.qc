@@ -374,8 +374,8 @@ void () Sentry_Explode = {
 void () Sentry_Die = {
     sprint(self.real_owner, PRINT_HIGH, "Your sentry gun was destroyed\n");
     MSG_SoundOne(self.real_owner, "misc/chink.wav", CHAN_AUTO, 1);
-    self.real_owner.has_sentry = 0;
-    
+    self.real_owner.has_sentry = BUILD_STATE_NONE;
+
     self.tfstate = self.tfstate | TFSTATE_RESPAWN_READY;
     self.think = Sentry_Explode;
     self.nextthink = time + 0.1;

@@ -37,6 +37,7 @@ struct pengine_t {
     float player_entnum;  // player_localentnum iff is_player == 1
     entity player_ent;
     entity viewmodel;
+    entity renderself;
 
     float preview, preview_rotation;
     entity building_preview, building_owner;
@@ -1396,6 +1397,13 @@ void FO_Predict_Init() {
     viewmodel.renderflags = RF_VIEWMODEL | RF_DEPTHHACK;
     viewmodel.predraw = WP_ClientThink;
     pengine.viewmodel = viewmodel;
+
+    entity renderself = spawn();
+    renderself.solid = SOLID_NOT;
+    renderself.drawmask = 0;
+    precache_model("progs/player.mdl");
+    setmodel(renderself, "progs/player.mdl");
+    pengine.renderself = renderself;
 
     WP_InitSniper();
     WP_InitSentryPreview();

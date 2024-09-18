@@ -304,6 +304,10 @@ void() CSQC_Parse_Event = {
             break;
         case MSG_DISPENSER_POS:
             dispenser_pos = [readfloat(),readfloat(),readfloat()];
+            dispenser_angles = [readangle(),readangle(),readangle()];
+
+            makevectors(dispenser_angles);
+            dispenser_render_pos = dispenser_pos + v_forward * 16 + v_up * 32;
             break;
         case MSG_SERVER_ADMIN_INFO:
             is_admin = TRUE;

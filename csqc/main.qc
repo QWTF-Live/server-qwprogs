@@ -174,6 +174,88 @@ DEFCVAR_FLOAT(fov, 90);
 
 inline float TrackingPlayer() { return player_localentnum <= 32; }
 
+static inline float ShowDispCam() {
+    return pstate_server.playerclass == PC_ENGINEER &&
+           SBAR.HasDispenser == BUILD_STATE_BUILT;
+}
+
+static void UpdateRenderSelf() {
+    static float walkframe;
+    static float last_vel;
+    static float next_update, next_refresh;
+
+
+    entity fp = pengine.renderself;
+    fp.origin = PM_Org();
+    fp.angles = [input_angles.x, 0, 0];
+
+    if (time < next_update) {
+        fp.lerpfrac = 1 - (next_update - time) * 10;
+        return;
+    }
+
+    if (time > next_refresh) {
+        string skin_name = getplayerkeyvalue(player_localnum, "skin");
+        string skin_arg = strcat("qwskin ", skin_name, "\n");
+        setcustomskin(fp, "", skin_arg);
+        next_refresh = time + 1;
+    }
+
+    float vel = vlen(PM_Vel());
+    float next;
+
+    if ((vel && !last_vel) || (!vel && last_vel))
+        walkframe = -1;
+    last_vel = vel;
+
+
+    float base, melee = IsSlotMelee(pstate_pred.current_slot);
+    if (pstate_pred.client_time < pstate_pred.attack_finished)
+        base = 113 + (melee ? 6 : 0);
+    else if (vel)
+        base = 0 + (melee ? 0 : 6);  // WHY
+    else
+        base = 12 + (melee ? 6 : 0);
+
+    static float last_base, ofs;
+    if (base != last_base)
+        ofs = 0;
+    else
+        ofs = (ofs + 1) % 5;
+    last_base = base;
+
+    next = base + ofs;
+
+    fp.frame = fp.frame2;
+    fp.frame2 = next;
+    next_update = time + 0.1;
+}
+
+static void CSQC_DispCam(float width, float height) {
+    if (vlen(PM_Org() - dispenser_pos) > DISP_CAM_RANGE) {
+        drawstring('10 20 0', "DispCam out of range", '8 8', '1 0 0', 1, 0);
+        return;
+    }
+    clearscene();
+    setviewprop(VF_AFOV, 75);
+
+    const float size_x = 150, ratio = 9/16;
+    setviewprop(VF_MIN_X, 10);
+    setviewprop(VF_SIZE_X, size_x);
+    setviewprop(VF_MIN_Y, 20);
+    setviewprop(VF_SIZE_Y, size_x * ratio);
+
+    setviewprop(VF_ORIGIN, dispenser_render_pos);
+    setviewprop(VF_ANGLES, dispenser_angles);
+
+    addentities(MASK_ENGINE);
+
+    UpdateRenderSelf();
+    addentity(pengine.renderself);
+
+    renderscene();
+}
+
 noref void(float width, float height, float menushown) CSQC_UpdateView = {
     clearscene();
     setproperty(VF_DRAWWORLD, 1);     // we want to draw our world!
@@ -207,6 +289,9 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
     RenderHitTexts();
     Hud_UpdateView(width, height, menushown);
     PMD_DrawGraphs(width);
+
+    if (ShowDispCam())
+        CSQC_DispCam(width, height);
 
     // Work around bug in some versions of FTE.  See pmove.qc
     recent_pmove_vel_z = pmove_vel_z;

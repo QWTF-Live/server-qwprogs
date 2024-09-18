@@ -1699,3 +1699,11 @@ TFAlias csqc_aliases[] = {
 
 #define NB_CONC_CAP_AIR 1100
 #define NB_CONC_CAP_LAND 950
+
+enum {
+    BUILD_STATE_NONE = 0,
+    BUILD_STATE_BUILDING,
+    BUILD_STATE_BUILT,
+};
+
+#define DISP_CAM_RANGE 600

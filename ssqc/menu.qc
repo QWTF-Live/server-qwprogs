@@ -808,7 +808,7 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
         return;
 
     if (self.is_building &&
-        (inp == MenuEng_Destroy_Sentry || inp == MenuEng_Build_Disp)) {
+        (inp == MenuEng_Build_Sentry || inp == MenuEng_Build_Disp)) {
         if (engineer_move) {
             Status_Print(self, "\n\n\n\n\n\n\n", strcat("You are already building something"));
             return;
@@ -843,8 +843,11 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
                     self.ammo_cells = min(self.maxammo_cells, self.ammo_cells + 65);
                     dremove (te.trigger_field);
                     dremove (te);
-                    self.has_sentry = 0;
+                    self.has_sentry = BUILD_STATE_NONE;
                     dismantle_sentrygun = 1;
+
+                    if (self.is_building == Eng_BuildingSentry)  // Gross
+                        self.is_building = Eng_NotBuilding;
                 }
             }
             te = te.chain;
@@ -861,8 +864,11 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
                     sprint (self, PRINT_HIGH, "You dismantled the dispenser and got 50 cells\n");
                     self.ammo_cells = min(self.maxammo_cells, self.ammo_cells + 50);
                     dremove (te);
-                    self.has_dispenser = 0;
+                    self.has_dispenser = BUILD_STATE_NONE;
                     dismantle_dispenser = 1;
+
+                    if (self.is_building == Eng_BuildingDisp)  // Gross
+                        self.is_building = Eng_NotBuilding;
                 }
             }
             te = te.chain;

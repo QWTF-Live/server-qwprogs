@@ -515,9 +515,9 @@ void () TeamFortress_EngineerBuildStop = {
         }
         if (engineer_move) {
             if (te.classname == "building_sentrygun")
-                self.has_sentry = 0;
+                self.has_sentry = BUILD_STATE_NONE;
             else if (te.classname == "building_dispenser")
-                self.has_dispenser = 0;
+                self.has_dispenser = BUILD_STATE_NONE;
         }
         dremove(te);
         te = world;
@@ -654,14 +654,14 @@ void TeamFortress_Build(float objtobuild, float rotation) {
         newmis.max_health = newmis.health;
         newmis.takedamage = DAMAGE_AIM;
         if (objtobuild == 1) {
-            self.has_dispenser = TRUE;   
+            self.has_dispenser = BUILD_STATE_BUILDING;
             newmis.th_die = Dispenser_Die;
             self.ammo_cells = self.ammo_cells - ENG_DISPENSER_COST;
             newmis.classname = "building_dispenser";
         }
-        if (objtobuild == 2) {            
+        if (objtobuild == 2) {
             self.sentry_ent = newmis;
-            self.has_sentry = TRUE;            
+            self.has_sentry = BUILD_STATE_BUILDING;
             newmis.th_die = Sentry_Die;
             newmis.th_pain = Sentry_Pain;
             newmis.takedamage = DAMAGE_AIM;
@@ -761,6 +761,16 @@ void (entity disp) Dispenser_AmmoTick = {
     }
 
     self.disptimer = self.disptimer + 1;
+
+    float d = vlen(self.origin - self.real_owner.origin);
+    const float efmask = EF_RED;
+    if (d < DISP_CAM_RANGE) {
+        self.effects |= efmask;
+        self.colormod = '1 0 0';
+    } else {
+        self.effects &= ~efmask;
+        self.colormod = '0 0 0';
+    }
 }
 
 float (entity disp, entity pl) Dispenser_GiveShells = {
@@ -918,27 +928,26 @@ void () DispenserThink = {
 };
 
 void UpdateClient_Sentry(entity pl, entity sent) = {
-    if(!infokeyf(pl, INFOKEY_P_CSQCACTIVE))
-        return;
     msg_entity = pl;
-    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET); 
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_SENTRY_POS);
     WriteFloat(MSG_MULTICAST, sent.origin.x);
     WriteFloat(MSG_MULTICAST, sent.origin.y);
     WriteFloat(MSG_MULTICAST, sent.origin.z);
-    multicast('0 0 0', MULTICAST_ONE_NOSPECS); 
+    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
 }
 
 void UpdateClient_Dispenser(entity pl, entity disp) = {
-    if(!infokeyf(pl, INFOKEY_P_CSQCACTIVE))
-        return;
     msg_entity = pl;
-    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET); 
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_DISPENSER_POS);
     WriteFloat(MSG_MULTICAST, disp.origin.x);
     WriteFloat(MSG_MULTICAST, disp.origin.y);
     WriteFloat(MSG_MULTICAST, disp.origin.z);
-    multicast('0 0 0', MULTICAST_ONE_NOSPECS); 
+    WriteAngle(MSG_MULTICAST, disp.angles.x);
+    WriteAngle(MSG_MULTICAST, disp.angles.y);
+    WriteAngle(MSG_MULTICAST, disp.angles.z);
+    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
 }
 
 
@@ -967,7 +976,7 @@ void () TeamFortress_FinishedBuilding = {
 
     Menu_Close(self);
     if (oldself.weapon == 1) {
-        self.has_dispenser = TRUE;
+        self.has_dispenser = BUILD_STATE_BUILT;
         sprint(self, PRINT_HIGH, "You finish building the dispenser\n");
         teamsprint(self.team_no, self, self.netname);
         teamsprint(self.team_no, self, " has built a dispenser\n");
@@ -1006,11 +1015,9 @@ void () TeamFortress_FinishedBuilding = {
         FO_SetModel(oldself, oldself.mdl);
         setsize(oldself, '-8 -8 0', '8 8 24');
         setorigin(oldself, (oldself.origin + '0 0 8'));
-        if(csqcactive) {
-            UpdateClient_Dispenser(self, oldself);
-        }
+        UpdateClient_Dispenser(self, oldself);
     } else if (oldself.weapon == 2 || (engineer_move && oldself.weapon == 0)) {
-        self.has_sentry = TRUE;
+        self.has_sentry = BUILD_STATE_BUILT;
         sprint(self, PRINT_HIGH, "You finish building the sentry gun\n");
         teamsprint(self.team_no, self, self.netname);
         teamsprint(self.team_no, self, " has built a sentry gun\n");
@@ -1067,9 +1074,7 @@ void () TeamFortress_FinishedBuilding = {
         newmis.ammo_shells = 25;
         newmis.maxammo_shells = 100;
         newmis.maxammo_rockets = 20;
-        if(csqcactive) {
-            UpdateClient_Sentry(self, oldself);
-        }
+        UpdateClient_Sentry(self, oldself);
     }
     self = oldself;
 };
@@ -1130,7 +1135,7 @@ void () Dispenser_Explode = {
 
 void () Dispenser_Die = {
     sprint(self.real_owner, PRINT_HIGH, "Your dispenser was destroyed\n");
-    self.real_owner.has_dispenser = 0;
+    self.real_owner.has_dispenser = BUILD_STATE_NONE;
     self.think = Dispenser_Explode;
     self.nextthink = time + 0.1;
     if (self.real_owner.is_building == Eng_BuildingDisp) {
@@ -1144,7 +1149,7 @@ void (entity disp) Engineer_UseDispenser = {
     // engineer hits enemy dispenser - dismantle
     if(!(disp.team_no > 0 && disp.team_no == self.team_no)) {
         self.ammo_cells = self.ammo_cells + 50;
-        disp.real_owner.has_dispenser = 0;
+        disp.real_owner.has_dispenser = BUILD_STATE_NONE;
         bprint(PRINT_HIGH, self.netname, " dismantled ", disp.real_owner.netname, "'s dispenser\n");
         TF_AddFrags(self, 1);
         sprint(disp.real_owner, PRINT_HIGH, "Your dispenser was dismantled by ",self.netname,"\n");
@@ -1344,7 +1349,7 @@ void (entity gun) Engineer_UseSentryGun = {
             self.ammo_cells = self.ammo_cells + 65;
             if (self.ammo_cells > self.maxammo_cells)
                     self.ammo_cells = self.maxammo_cells;
-            gun.real_owner.has_sentry = 0;
+            gun.real_owner.has_sentry = BUILD_STATE_NONE;
             bprint(PRINT_HIGH, self.netname, " dismantled ", gun.real_owner.netname, "'s sentry gun\n");
             TF_AddFrags(self, 1);
             sprint(gun.real_owner, PRINT_HIGH, "Your sentry gun was dismantled by ",self.netname,"\n");
@@ -1527,9 +1532,9 @@ void RemoveEngEnt(entity bld, float explode) {
         TF_T_Damage(bld, world, world, 500, 0, 0);
     } else {
         if(bld.classname == "building_dispenser")
-            owner.has_dispenser = 0;
+            owner.has_dispenser = BUILD_STATE_NONE;
         if(bld.classname == "building_sentrygun") {
-            owner.has_sentry = 0;
+            owner.has_sentry = BUILD_STATE_NONE;
             if (bld.trigger_field != world)
                 dremove (bld.trigger_field);
         }

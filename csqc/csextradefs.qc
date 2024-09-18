@@ -85,7 +85,9 @@ float number_of_teams;
 float last_selected_skin;
 float last_team;
 vector sentry_pos;
-vector dispenser_pos;
+vector dispenser_pos, dispenser_render_pos;
+vector dispenser_angles;
+
 vector touched_dispenser_pos;
 //entity player_list_head;
 float player_menu_type;

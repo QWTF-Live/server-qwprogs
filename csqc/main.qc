@@ -184,10 +184,9 @@ static void UpdateRenderSelf() {
     static float last_vel;
     static float next_update, next_refresh;
 
-
     entity fp = pengine.renderself;
     fp.origin = PM_Org();
-    fp.angles = [input_angles.x, 0, 0];
+    fp.angles = [0, input_angles.y, input_angles.z];
 
     if (time < next_update) {
         fp.lerpfrac = 1 - (next_update - time) * 10;
@@ -232,18 +231,22 @@ static void UpdateRenderSelf() {
 }
 
 static void CSQC_DispCam(float width, float height) {
+    const vector cam_pos = '10 50 0';
+    const float cam_w = 150;
+
     if (vlen(PM_Org() - dispenser_pos) > DISP_CAM_RANGE) {
-        drawstring('10 20 0', "DispCam out of range", '8 8', '1 0 0', 1, 0);
+        drawstring(cam_pos, "DispCam out of range", '8 8', '1 0 0', 1, 0);
         return;
     }
     clearscene();
     setviewprop(VF_AFOV, 75);
 
-    const float size_x = 150, ratio = 9/16;
-    setviewprop(VF_MIN_X, 10);
-    setviewprop(VF_SIZE_X, size_x);
-    setviewprop(VF_MIN_Y, 20);
-    setviewprop(VF_SIZE_Y, size_x * ratio);
+    const vector size = [cam_w, cam_w * 9/16];
+
+    setviewprop(VF_MIN_X, cam_pos.x);
+    setviewprop(VF_SIZE_X, size.x);
+    setviewprop(VF_MIN_Y, cam_pos.y);
+    setviewprop(VF_SIZE_Y, size.y);
 
     setviewprop(VF_ORIGIN, dispenser_render_pos);
     setviewprop(VF_ANGLES, dispenser_angles);
@@ -253,6 +256,8 @@ static void CSQC_DispCam(float width, float height) {
     UpdateRenderSelf();
     addentity(pengine.renderself);
 
+    vector bd = '2 2';
+    drawfill(cam_pos - bd, size + 2 * bd, '0.5 0.7 0.5', 0.7);
     renderscene();
 }
 

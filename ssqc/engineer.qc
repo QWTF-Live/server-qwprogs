@@ -763,13 +763,10 @@ void (entity disp) Dispenser_AmmoTick = {
     self.disptimer = self.disptimer + 1;
 
     float d = vlen(self.origin - self.real_owner.origin);
-    const float efmask = EF_RED;
     if (d < DISP_CAM_RANGE) {
-        self.effects |= efmask;
         self.colormod = '1 0 0';
         self.real_owner.view2 = self;
     } else {
-        self.effects &= ~efmask;
         self.colormod = '0 0 0';
         self.real_owner.view2 = world;
     }

@@ -1706,4 +1706,4 @@ enum {
     BUILD_STATE_BUILT,
 };
 
-#define DISP_CAM_RANGE 600
+#define DISP_CAM_RANGE 1000

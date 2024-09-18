@@ -767,9 +767,11 @@ void (entity disp) Dispenser_AmmoTick = {
     if (d < DISP_CAM_RANGE) {
         self.effects |= efmask;
         self.colormod = '1 0 0';
+        self.real_owner.view2 = self;
     } else {
         self.effects &= ~efmask;
         self.colormod = '0 0 0';
+        self.real_owner.view2 = world;
     }
 }
 

@@ -396,8 +396,6 @@ void(PanelID panelid, string text) drawMOTDPanel = {
     if (time > motd_expiry && panel->Display)
         FO_Hud_HidePanel(panel->id);
 
-    //vector position = getPosition(id);
-    //vector size = getFillSize(id);
     vector position = getPanelPosition(panel); //panel.Position;
     vector size = panel.FillSize * panel.Scale;
     
@@ -1173,6 +1171,7 @@ var FO_Hud_Panel Hud_Panels[] = {
     {HUDP_SPEED, "speed", "Speed",                     '4 15',    '26 26',  1,1.4,0,0,0, drawTextPanel, {return CVARF(fo_fte_hud) ? ftos((int)PlanarSpeed()) : "";}, 0, 4},
     {HUDP_SPEEDBAR, "speedbar", "Speed Bar",           '4 30',    '150 10',  1,1.4,0,0,0, drawSpeedBar, {return "";}, 0, 4},
     {HUDP_PING, "ping", "Ping",           '4 15',    '120 12',  1,1.4,0,0,0, drawTextPanel, getPingPanelText, 0, HUD_SNAP_TOP_RIGHT},
+    {HUDP_DISPCAM, "dispcam", "DispCam",    '10 50',   '150 84', 1,   0,1,0,1, drawSimplePanel, {return "";}, 1},
     {HUDP_OPTIONS, "hudoptions", FO_HUD_OPTIONS_NAME,    '10 10',   '150 182',1,   0,1,0,1, doNothing, {return "";}, 1},
 };
 
@@ -1206,14 +1205,6 @@ vector (FO_Hud_Panel* panel, float scale) getScaledPanelPosition = {
 
 vector (FO_Hud_Panel* panel) getPanelPosition = {
     return getScaledPanelPosition(panel, panel.Scale);
-}
-
-vector(PanelID panelid) getPosition = {
-    FO_Hud_Panel* panel = getHudPanel(panelid);
-    return getPanelPosition(panel);
-}
-vector(PanelID panelid) getFillSize = {
-    return getHudPanel(panelid)->FillSize;
 }
 
 vector (FO_Hud_Panel* panel) getPanelFillSize = {

@@ -394,7 +394,7 @@ void Hud_DrawPanelLMP(FO_Hud_Panel* panel, string val, string icon, float icon_a
         return;
     
     vector pos;
-    pos = getPanelPosition(panel); //getPosition(fid);
+    pos = getPanelPosition(panel);
     vector scaledFillSize = panel.FillSize * panel.Scale;
     //if(scaledFill
 

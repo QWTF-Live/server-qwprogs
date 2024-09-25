@@ -522,7 +522,6 @@ void() Hud_DrawTeamScorePanel = {
     float alpha = 0;
     FO_Hud_Panel* panel = getHudPanel(HUDP_TEAMSCORE);
 
-    //vector size = getFillSize(id);
     float textScale = panel.Scale; //panel.TextScale; //panel.TextScale?panel.TextScale:panel.Scale;
     //float sizex, sizey;
     //sizex = size_x;
@@ -537,11 +536,9 @@ void() Hud_DrawTeamScorePanel = {
     fillsize = fillsize * textScale;
     vector position = getPanelPosition(panel);
 
-    if (hud_panel(panel->id, position, fillsize, alpha, getHudPanel(HUDP_TEAMSCORE)->Display))
-    {
-        // click event
-        if (fo_hud_editor)
-        {
+    if (hud_panel(panel->id, position, fillsize, alpha, getHudPanel(HUDP_TEAMSCORE)->Display)) {
+        if (fo_hud_editor) {
+            // click event
         }
     }
 
@@ -589,7 +586,6 @@ void Hud_DrawFlagStatusBar()
     vector fillsize = [sizex * 4, sizey * flagInfoCount];
     FO_Hud_Panel* panel = getHudPanel(HUDP_FLAGINFO);
     panel->FillSize = fillsize;
-    //pos = getPosition(HUDP_FLAGINFO); //getHudPanel(HUDP_FLAGINFO)->Position;
     pos = getScaledPanelPosition(panel, 1);
     float alpha = 0;
     if (hud_panel(panel->id, pos, fillsize, alpha, getHudPanel(HUDP_FLAGINFO)->Display)) {
@@ -652,7 +648,8 @@ void Hud_ScrollPanelSelector(float num, float numlines) { // XXX
 void Hud_DrawHudOptionsPanelSelector() {
     if(!fo_hud_editor)
         return;
-    vector pos = getPosition(HUDP_OPTIONS); //getHudPanel(HUDP_OPTIONS)->Position; //Start with option panel's pos
+
+    vector pos = getPanelPosition(getHudPanel(HUDP_OPTIONS));
     vector size = getHudPanel(HUDP_OPTIONS)->FillSize * getHudPanel(HUDP_OPTIONS)->Scale; //for simplicity, use the same size as options panel
     float textsize = 8 * (getHudPanel(HUDP_OPTIONS)->TextScale ? getHudPanel(HUDP_OPTIONS)->TextScale : getHudPanel(HUDP_OPTIONS)->Scale);
     if((pos.x + (size.x * 2)) < ScreenSize.x) {
@@ -698,7 +695,7 @@ void Hud_DrawHudOptionsPanel(float display, string text) {
         return;
     
     FO_Hud_Panel* panel = getHudPanel(HUDP_OPTIONS);
-    vector pos = getPosition(HUDP_OPTIONS); //getHudPanel(HUDP_OPTIONS)->Position;
+    vector pos = getPanelPosition(getHudPanel(HUDP_OPTIONS));
     vector size = panel->FillSize * panel->Scale;
     if (hud_panel(panel->id, pos, size, 0, panel->Display))
         panel->Status = 0;  // click event0

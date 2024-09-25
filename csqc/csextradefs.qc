@@ -434,6 +434,7 @@ enum PanelID:float {
     HUDP_SPEED,
     HUDP_SPEEDBAR,
     HUDP_PING,
+    HUDP_DISPCAM,
     HUDP_OPTIONS,  // Should be the last HUD element so that it's always on top.
     HUDP_LAST = HUDP_OPTIONS,
 
@@ -531,8 +532,6 @@ void () Hud_DrawFlagStatusBar;
 void () Hud_DrawTeamScorePanel;
 void () Hud_DrawMapMenuPanel;
 float(PanelID id, vector pos, vector size, float alpha, float enabled) hud_panel;
-vector(PanelID) getPosition;
-vector(PanelID) getFillSize;
 
 enum {
     D_drawpic,

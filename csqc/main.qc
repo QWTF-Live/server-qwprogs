@@ -231,8 +231,12 @@ static void UpdateRenderSelf() {
 }
 
 static void CSQC_DispCam(float width, float height) {
-    const vector cam_pos = '10 50 0';
     const float cam_w = 150;
+
+    vector cam_pos = getHudPanel(HUDP_DISPCAM)->Position;
+
+    if (fo_hud_editor)
+        return;
 
     if (vlen(PM_Org() - dispenser_pos) > DISP_CAM_RANGE) {
         drawstring(cam_pos, "DispCam out of range", '8 8', '1 0 0', 1, 0);

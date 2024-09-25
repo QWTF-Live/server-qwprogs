@@ -398,6 +398,7 @@ static void UpdateFlagOutline(entity flag) {
 }
 
 float UpdateFlag(float isnew) {
+#if 0
     if (isnew) {
         float mindex = self.modelindex;
         AddOutline(self);
@@ -405,6 +406,17 @@ float UpdateFlag(float isnew) {
     }
 
     UpdateFlagOutline(self);
+#endif
+
+    if (self.skin == team_no) {
+        const float m_alpha = 0.5, min_d = 50, max_d = 150;
+
+        float d = vlen(PM_Org() - self.origin);
+
+        d = max(d - min_d, 0);
+        d = d > max_d ? 1 : d / max_d;
+        self.alpha = m_alpha + d * (1 - m_alpha);
+    }
 
     return TRUE;
 }
@@ -456,8 +468,6 @@ void TFX_Init() {
     printf("TFX active.\n");
 
     /* RegisterPlayerListener(); */
-    /* deltalisten("progs/ff_flag.mdl", UpdateFlag, 0); */
-    /* deltalisten("progs/tf_flag.mdl", UpdateFlag, 0); */
 
     shader_team[0] = shaderforname(rnds("blue_team_outline"), OutlineShader("textures/sfx/quad.tga"));
     shader_team[1] = shaderforname(rnds("red_team_outline"), OutlineShader("textures/sfx/pent.tga"));
@@ -466,4 +476,12 @@ void TFX_Init() {
     shader_over_outline = shaderforname(rnds("over_outline"), "{ sort 7 }");
     /* pengine.viewmodel.shader = shader_over_outline; */
     pengine.viewmodel.effects |= EF_NODEPTHTEST;
+}
+
+void TFX_Flag_Init() {
+    STATIC_INIT_ONCE();
+
+    deltalisten("progs/ff_flag.mdl", UpdateFlag, 0);
+    deltalisten("progs/tf_flag.mdl", UpdateFlag, 0);
+    deltalisten("progs/tf_stan.mdl", UpdateFlag, 0);
 }

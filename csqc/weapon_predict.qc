@@ -252,6 +252,7 @@ void WPP_Status() {
 #undef PRINT_CONFIG
 
 void TFX_Init();
+void TFX_Flag_Init();
 void RegisterPlayerListener();
 
 void WPP_UpdateEnable(float force) {
@@ -339,6 +340,8 @@ void WPP_UpdateEnable(float force) {
 
     if (tf_config.tfx_flags)
         TFX_Init();
+
+    TFX_Flag_Init();
 
     WP_UpdateViewModel();
 }

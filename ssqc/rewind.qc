@@ -332,7 +332,7 @@ void RW_RestoreAll() {
 
 float (string ps_short, string ps_setting, string ps_default) CF_GetSetting;
 
-float RewindPlayersExceptSelf(float farthest_rewind_point) {
+float RewindPlayersExcept(entity except, float farthest_rewind_point) {
     float rewind_max_offset = (MAX_SNAPSHOTS - 1) * SERVER_FRAME_DT;
     farthest_rewind_point = max(farthest_rewind_point,
                                 time - rewind_max_offset);
@@ -344,7 +344,7 @@ float RewindPlayersExceptSelf(float farthest_rewind_point) {
     if (time - rewind_to < SERVER_FRAME_DT)
         return FALSE;
 
-    FOPlayer fop = (FOPlayer)self;
+    FOPlayer fop = (FOPlayer)except;
     fop.RewindExcept(rewind_to);
     return TRUE;
 }

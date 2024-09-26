@@ -57,7 +57,7 @@ static void EffStrip(entity player) {
 }
 
 float IsEngEnt(entity ent);
-void RemoveEngEnt(entity bld, float explode);
+void RemoveEngEnt(entity bld, float explode, float antilag);
 
 static void EffRemove(entity non_player) {
   if (non_player.classname == "player") {
@@ -67,7 +67,7 @@ static void EffRemove(entity non_player) {
 
   pointparticles(particleeffectnum("fo_airblast"), non_player.origin);
   if (IsEngEnt(non_player))
-    RemoveEngEnt(non_player, FALSE);
+    RemoveEngEnt(non_player, FALSE, FALSE);
   else
     dremove(non_player);
 }

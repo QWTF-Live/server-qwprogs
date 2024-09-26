@@ -2252,9 +2252,9 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
         case TF_ENGINEER_BUILD:
             TeamFortress_EngineerBuild(); break;
         case TF_ENGINEER_DETSENTRY:
-            DestroyBuilding(self, "building_sentrygun"); break;
+            DestroyBuilding(self, "building_sentrygun", TRUE); break;
         case TF_ENGINEER_DETDISP:
-            DestroyBuilding(self, "building_dispenser"); break;
+            DestroyBuilding(self, "building_dispenser", TRUE); break;
         case TF_ENGINEER_TOGGLEDISPENSER:
             FO_Engineer_ToggleDispenser(); break;
         case TF_ENGINEER_TOGGLESENTRY:

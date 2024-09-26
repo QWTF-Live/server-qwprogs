@@ -159,7 +159,7 @@ static void draw_beam(vector a, vector b, int effect) {
 void W_FireImpeller() {
     FO_Sound(self, CHAN_WEAPON, "weapons/lhit.wav", 1, ATTN_NORM);
 
-    float rewound = RewindPlayersExceptSelf(0);
+    float rewound = RewindPlayersExcept(self, 0);
 
     if (!cb_prematch)
         self.special_next = time + 3;
@@ -460,7 +460,7 @@ entity () FO_FindCurrentBuildingObject = {
 
 void () FO_Engineer_ToggleDispenser = {
     if (self.has_dispenser) {
-        DestroyBuilding(self, "building_dispenser");
+        DestroyBuilding(self, "building_dispenser", TRUE);
     } else {
         if (self.health <= 0) {
             sprint(self, PRINT_HIGH, "Can't build while dead.\n");
@@ -965,6 +965,7 @@ void () TeamFortress_FinishedBuilding = {
     self = self.owner;
     oldself.owner = world;
     oldself.real_owner = self;
+    oldself.building_finish = time;
     self.is_building = Eng_NotBuilding;
     self.building_finish = 0;
     if (!engineer_move) {
@@ -1520,15 +1521,21 @@ float IsEngEnt(entity ent) {
 
 }
 
-void RemoveEngEnt(entity bld, float explode) {
+void RemoveEngEnt(entity bld, float explode, float antilag) {
     entity owner = bld.real_owner;
+
     if (owner.building == bld) {
         Menu_Close(owner);
         owner.building = world;
     }
 
     if (explode) {
+        float rewound = FALSE;
+        if (antilag)
+            rewound = RewindPlayersExcept(owner, bld.building_finish);
         TF_T_Damage(bld, world, world, 500, 0, 0);
+        if (rewound)
+            FOPlayer::RestoreAll();
     } else {
         if(bld.classname == "building_dispenser")
             owner.has_dispenser = BUILD_STATE_NONE;
@@ -1541,43 +1548,40 @@ void RemoveEngEnt(entity bld, float explode) {
     }
 }
 
-void (entity eng, string bld, float explode) DestroyBuildingWithOptions = {
-    local entity te;
-    local entity oldself;
-    local float pos;
+void DestroyBuildingWithOptions(entity eng, string bld, float explode,
+        float antilag) {
+    entity te;
+    float pos;
 
     te = find(world, classname, bld);
     while (te) {
         if (te.real_owner == eng) {
             pos = pointcontents(te.origin);
-            if ((pos == -2) || (pos == -6)) {
-                oldself = self;
-                self = eng;
-                self.ammo_cells = self.ammo_cells + 100;
-                bound_other_ammo(self);
-                self = oldself;
+            if ((pos == CONTENT_SOLID) || (pos == CONTENT_SKY)) {
+                eng.ammo_cells += 100;
+                bound_other_ammo(eng);
             }
 
             spawn_tfog(te.origin);
-            RemoveEngEnt(te, explode);
+            RemoveEngEnt(te, explode, antilag);
 
         }
         te = find(te, classname, bld);
     }
 };
 
-void (entity eng, string bld) DestroyBuilding = {
-    DestroyBuildingWithOptions(eng, bld, TRUE);
+void (entity eng, string bld, float antilag) DestroyBuilding = {
+    DestroyBuildingWithOptions(eng, bld, TRUE, antilag);
 }
 
 void (entity eng) Engineer_QuietlyRemoveBuildings = {
-    DestroyBuildingWithOptions(eng, "building_dispenser", FALSE);
-    DestroyBuildingWithOptions(eng, "building_sentrygun", FALSE);
+    DestroyBuildingWithOptions(eng, "building_dispenser", FALSE, FALSE);
+    DestroyBuildingWithOptions(eng, "building_sentrygun", FALSE, FALSE);
 };
 
 void (entity eng) Engineer_RemoveBuildings = {
-    DestroyBuilding(eng, "building_dispenser");
-    DestroyBuilding(eng, "building_sentrygun");
+    DestroyBuilding(eng, "building_dispenser", FALSE);
+    DestroyBuilding(eng, "building_sentrygun", FALSE);
 };
 
 void () info_empblock = {

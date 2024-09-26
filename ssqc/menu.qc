@@ -15,7 +15,7 @@ float (float pf_team_no, float pf_class) CF_ClassIsRestricted;
 
 void (entity spy) Spy_RemoveDisguise;
 
-void (entity eng, string bld) DestroyBuilding;
+void (entity eng, string bld, float antilag) DestroyBuilding;
 
 void (float objtobuild, float rotation) TeamFortress_Build;
 
@@ -853,7 +853,7 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
             te = te.chain;
         }
         if (dismantle_sentrygun == 0)
-            DestroyBuilding(self, "building_sentrygun");
+            DestroyBuilding(self, "building_sentrygun", TRUE);
     }
 
     if (inp == MenuEng_Destroy_Disp && self.has_dispenser) {
@@ -874,7 +874,7 @@ void Menu_Engineer_Input(float inp, float arg = 0) {
             te = te.chain;
         }
         if (dismantle_dispenser == 0)
-            DestroyBuilding(self, "building_dispenser");
+            DestroyBuilding(self, "building_dispenser", TRUE);
     }
 
 };

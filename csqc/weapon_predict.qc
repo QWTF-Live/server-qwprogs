@@ -1176,8 +1176,7 @@ void WP_CheckSpecialReady() {
 
     switch (pstate_pred.playerclass) {
         case PC_ENGINEER:
-            if (NewBalanceActive())
-                printf("Impeller ready\n");
+            printf("Impeller ready\n");
             break;
     }
 }
@@ -1809,7 +1808,7 @@ void FO_FireAssCanPellet(vector org, vector dir, float proj_speed, int index) {
 }
 
 float NB_ImpellerCoolDown(FO_WeapInfo* wi) {
-    if (!NewBalanceActive() || wi->weapon != WEAP_IMPELLER)
+    if (wi->weapon != WEAP_IMPELLER)
         return FALSE;
 
     return pstate_pred.server_time < pstate_pred.special_next;

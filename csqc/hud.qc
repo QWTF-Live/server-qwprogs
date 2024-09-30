@@ -1011,18 +1011,16 @@ void Hud_DrawClassInfoPanel(float playerclass)
             }
             break;
         case PC_ENGINEER:
-            if (NewBalanceActive()) {
-                basepos = pos;
-                msg = pstate_pred.server_time >= pstate_pred.special_next ?
-                    "Impeller charged" : "Impeller recharging";
+            basepos = pos;
+            msg = pstate_pred.server_time >= pstate_pred.special_next ?
+                "Impeller charged" : "Impeller recharging";
 
-                msg = strcat(msg, "\n\rCells: ", itos(WP_GetAmmo(AMMO_CELLS)));
+            msg = strcat(msg, "\n\rCells: ", itos(WP_GetAmmo(AMMO_CELLS)));
 
-                HRC_drawOffsetString(panel->Orientation, msg, size, fontSize,
-                        pos, basepos, FALSE, colour);
+            HRC_drawOffsetString(panel->Orientation, msg, size, fontSize,
+                    pos, basepos, FALSE, colour);
 
-                pos = [pos_x, pos_y + size_y + 8];
-            }
+            pos = [pos_x, pos_y + size_y + 8];
 
             if (SBAR.IsBuilding) {
                 icon = SBAR.IsBuilding == Eng_BuildingDisp ?

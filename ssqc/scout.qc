@@ -830,7 +830,7 @@ void (entity inflictor, entity attacker, float bounce,
     local entity te;
     local vector org;
 
-    if (NewBalanceActive() && inflictor.owner.playerclass == PC_MEDIC)
+    if (inflictor.owner.playerclass == PC_MEDIC)
         actual_cuss_time = 2;
 
     head = findradius(inflictor.origin, bounce + 40);
@@ -873,7 +873,7 @@ void (entity inflictor, entity attacker, float bounce,
                     } else {
                         if (head.playerclass == PC_MEDIC)
                         {
-                            if ((NewBalanceActive() && NB_UseNewConc()) || NB_NoCap()) {
+                            if (NB_UseNewConc() || NB_NoCap()) {
                                 head = head.chain;
                                 continue;
                             }

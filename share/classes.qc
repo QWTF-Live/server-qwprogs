@@ -193,7 +193,7 @@ void NB_ConcCap(entity ent, float speed) {
 
 void NB_ConcCapAction(entity ent, float player_class, float* tfstate,
                       float gtime, float* cap_time, float action) {
-    if (!NewBalanceActive() || !NB_UseNewConc())
+    if (!NB_UseNewConc())
         return;
 
     const float kLockout = 0.5;

@@ -169,10 +169,7 @@ void () NapalmGrenadeExplode2 = {
             if (head.takedamage) {
                 deathmsg = DMSG_FLAME;
 
-                float aflags = TF_TD_FIRE;
-                if (NewBalanceActive())
-                    aflags |= TF_TD_NOMOMENTUM;
-
+                float aflags = TF_TD_FIRE | TF_TD_NOMOMENTUM;
                 TF_T_Damage(head, self, self.owner, explodeDam, TF_TD_NOTTEAM, aflags);
                 other = head;
                 Napalm_touch();

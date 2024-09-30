@@ -404,9 +404,6 @@ FO_WeapToItem weapon_to_items[] = {
 };
 
 float FO_WeapAvailable(float weapon) {
-    if (weapon == WEAP_IMPELLER && !NewBalanceActive())
-        return FALSE;
-
     return TRUE;
 }
 
@@ -415,9 +412,6 @@ FO_WeapInfo* FO_SlotWeapInfo(float playerclass, Slot slot) {
         return FO_GetWeapInfo(WEAP_NONE);
 
     float si = SlotIndex(slot);
-    if (playerclass == PC_ENGINEER && si == 2 && !NewBalanceActive())
-        return FO_GetWeapInfo(WEAP_NONE);
-
     float idx = SlotIndex(slot);
     float cf_pyro_impulses = IsPyroSlotSwapped();
     if (playerclass == PC_PYRO && cf_pyro_impulses && (idx == 0 || idx == 1))

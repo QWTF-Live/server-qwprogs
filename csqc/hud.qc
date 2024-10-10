@@ -596,40 +596,47 @@ void Hud_DrawFlagStatusBar()
         }
     }
 
+    float count = 0;
     for (float i = 0; i < flagInfoCount; i++) {
-        if (FlagInfoLines[i].id) {
-            alpha = FlagInfoLines[i].state == FLAGINFO_HOME ? CVARF(fo_hud_idle_alpha) : 1;
-            string icon = FlagInfoLines[i].icon.filename;
-            vector iconcolour = FlagInfoLines[i].icon.colour;
-            float bigfont = 8 * (getHudPanel(HUDP_FLAGINFO)->TextScale ? getHudPanel(HUDP_FLAGINFO)->TextScale : getHudPanel(HUDP_FLAGINFO)->Scale);
-            float bigfontvoffset = sizey / 2 - bigfont / 2; //Center text against the icon
-            if (FlagInfoLines[i].state == FLAGINFO_CARRIED) 
-            {
-                HRC_drawstring([GetTextAlignOffset(pos_x,sizex,sizex,FlagInfoLines[i].carrier,bigfont,getHudPanel(HUDP_FLAGINFO)->Orientation), pos_y + bigfontvoffset + sizey * i, 0], FlagInfoLines[i].carrier, [bigfont,bigfont], '1 0 0', 1, 0);
-            } 
-            else if (FlagInfoLines[i].state == FLAGINFO_DROPPED && FlagInfoLines[i].locname) 
-            {
-                HRC_drawstring([
-                    GetTextAlignOffset(pos_x, sizex, sizex, FlagInfoLines[i].locname,
-                                       bigfont, getHudPanel(HUDP_FLAGINFO)->Orientation), 
-                    pos_y + sizey * i + 2, 0],
-                    FlagInfoLines[i].locname, [bigfont,bigfont], '1 1 1', 1, 0);
-            }
+        FlagInfoLine* fi = &FlagInfoLines[i];
+        if (!fi->id)
+            continue;
 
-            HRC_drawpic([pos_x, pos_y + sizey * i, 0], icon, [sizex, sizey, 0], iconcolour, alpha, 0);
+        if (game_state.org_game && fi->team_no == team_no_attack)
+            continue;
 
-            if (FlagInfoLines[i].time_return >= 0) {
-                float ret = max(FlagInfoLines[i].time_return - time, 0);
-                string stime = sprintf("%0.1f", ret);
-                float smallfont = 6 * getHudPanel(HUDP_FLAGINFO)->Scale;
-                HRC_drawstring(
+        alpha = fi->state == FLAGINFO_HOME ? CVARF(fo_hud_idle_alpha) : 1;
+        string icon = fi->icon.filename;
+        vector iconcolour = fi->icon.colour;
+        float bigfont = 8 * (getHudPanel(HUDP_FLAGINFO)->TextScale ? getHudPanel(HUDP_FLAGINFO)->TextScale : getHudPanel(HUDP_FLAGINFO)->Scale);
+        float bigfontvoffset = sizey / 2 - bigfont / 2; //Center text against the icon
+        if (fi->state == FLAGINFO_CARRIED) {
+            HRC_drawstring([GetTextAlignOffset(pos_x,sizex,sizex,fi->carrier,bigfont,getHudPanel(HUDP_FLAGINFO)->Orientation), pos_y + bigfontvoffset + sizey * count, 0], fi->carrier, [bigfont,bigfont], '1 0 0', 1, 0);
+        }
+
+        else if (fi->state == FLAGINFO_DROPPED && fi->locname) {
+            HRC_drawstring([
+                    GetTextAlignOffset(pos_x, sizex, sizex, fi->locname,
+                        bigfont, getHudPanel(HUDP_FLAGINFO)->Orientation), 
+                    pos_y + sizey * count + 2, 0],
+                    fi->locname, [bigfont,bigfont], '1 1 1', 1, 0);
+        }
+
+        HRC_drawpic([pos_x, pos_y + sizey * count, 0], icon, [sizex, sizey, 0], iconcolour, alpha, 0);
+
+        if (fi->time_return >= 0) {
+            float ret = max(fi->time_return - time, 0);
+            string stime = sprintf("%0.1f", ret);
+            float smallfont = 6 * getHudPanel(HUDP_FLAGINFO)->Scale;
+            HRC_drawstring(
                     [
                     GetTextAlignOffset(pos_x, sizex, sizex, stime,
-                                       smallfont, getHudPanel(HUDP_FLAGINFO)->Orientation),
-                    pos_y + sizey * (i + 1) - smallfont - 2, 0],
+                        smallfont, getHudPanel(HUDP_FLAGINFO)->Orientation),
+                    pos_y + sizey * (count + 1) - smallfont - 2, 0],
                     stime, [smallfont, smallfont], '1 1 1', 1, 0);
-            }
         }
+
+        count++;
     }
 }
 

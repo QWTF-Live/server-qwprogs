@@ -358,6 +358,7 @@ typedef struct {
 
 typedef struct {
     float id;
+    float team_no;
     entity model;
     float time_return;
     float state;
@@ -368,6 +369,7 @@ typedef struct {
 } FlagInfoLine;
 
 FlagInfoLine FlagInfoLines[10];
+entity show_flag;
 
 /*
 typedef struct {
@@ -850,6 +852,7 @@ struct GameState {
     float is_ceasefire;
     float pc;
     float spawn_gen;
+    float org_game;
 };
 
 GameState game_state, prev_game_state;

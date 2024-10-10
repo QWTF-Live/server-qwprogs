@@ -39,12 +39,11 @@ void() CSQC_Parse_Event = {
             }
             if (index >= 0 && index < MAX_FLAGINFO_LINES) {
                 FlagInfoLines[index].id = goalno;
+                FlagInfoLines[index].team_no = ownerteam;
                 if (mdl)
                     precache_model(mdl);
                 te = spawn();
                 te.renderflags = RF_VIEWMODEL | RF_DEPTHHACK | RF_NOSHADOW;
-                te.origin = [5, 0, 0];
-                te.angles = '-60 0 0';
                 te.skin = skinindex;
                 te.owned_by = ownerteam;
 

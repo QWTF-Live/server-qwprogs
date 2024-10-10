@@ -1046,6 +1046,7 @@ void _Sync_ServerCommandFrame() {
     game_state.spawn_gen = getstatf(STAT_SPAWN_GEN);
 
     game_state.is_ceasefire = serverkeyfloat("pausestate");
+    game_state.org_game = getstatf(STAT_ORG_GAME);
     WP_ServerFrame();
 
     // Use an undocumented ezquake compat feature to figure out whether we

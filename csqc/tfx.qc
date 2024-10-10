@@ -418,6 +418,7 @@ float UpdateFlag(float isnew) {
         self.alpha = m_alpha + d * (1 - m_alpha);
     }
 
+    EffectToDynamicLight(self.origin, self.effects);
     return TRUE;
 }
 

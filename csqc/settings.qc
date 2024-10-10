@@ -48,6 +48,9 @@ DEFCVAR_FLOAT(r_rocketlight, 1);
 DEFCVAR_STRING(r_rocketlight_colour, "");  // Radius ignored.
 
 DEFCVAR_STRING(r_dimlight_colour, "");
+DEFCVAR_STRING(r_brightlight_colour, "");
+DEFCVAR_STRING(r_redlight_colour, "");
+DEFCVAR_STRING(r_bluelight_colour, "");
 
 DEFCVAR_FLOAT(qwtf_web, 0);
 
@@ -57,7 +60,8 @@ struct {
     vector tf_color_attack, tf_color_defense;
 
     vector fo_hittext_reg, fo_hittext_noarmor, fo_hittext_friendly;
-    vector r_dimlight_colour;
+    vector r_dimlight_colour, r_brightlight_colour;
+    vector r_redlight_colour, r_bluelight_colour;
 } CVAR;
 
 static vector stov_def(string val, vector def) {
@@ -81,5 +85,29 @@ void UpdateCachedCvars() {
     CVAR.fo_hittext_noarmor = stov_def(CVARS(fo_hittext_colour2), '1 0 1');
     CVAR.fo_hittext_friendly = stov_def(CVARS(fo_hittext_colour3), '1 0 0');
 
+    CVAR.r_brightlight_colour = stov_def(CVARS(r_brightlight_colour), '2 1 0.5');
     CVAR.r_dimlight_colour = stov_def(CVARS(r_dimlight_colour), '2 1 0.5');
+    CVAR.r_redlight_colour = stov_def(CVARS(r_redlight_colour), '3 0.5 0.5');
+    CVAR.r_bluelight_colour = stov_def(CVARS(r_bluelight_colour), '0.5 0.5 3');
+}
+
+void EffectToDynamicLight(vector org, float emask) {
+    const float MASK_ALL = EF_BRIGHTLIGHT | EF_DIMLIGHT | EF_RED | EF_BLUE;
+    if (emask & MASK_ALL == 0)
+        return;
+
+    float rad = 200;
+    vector col = '0 0 0';
+    if (emask & EF_BRIGHTLIGHT) {
+        col += CVAR.r_brightlight_colour;
+        rad = 400;
+    }
+    if (emask & EF_DIMLIGHT)
+        col += CVAR.r_dimlight_colour;
+    if (emask & EF_RED)
+        col += CVAR.r_redlight_colour;
+    if (emask & EF_BLUE)
+        col += CVAR.r_bluelight_colour;
+
+    dynamiclight_add(org, rad, col, 0, "", 0);
 }

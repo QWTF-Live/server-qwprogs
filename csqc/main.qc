@@ -71,6 +71,8 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     registercommand("-slot");
     registercommand("+button");
     registercommand("-button");
+    registercommand("+holdgren");
+    registercommand("-holdgren");
 
     registercommand("fo_beta_pmove");
     registercommand("fopm_cmd");
@@ -526,6 +528,18 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
         case "-button":
             CommandButton(FALSE, stoi(argv(1)));
+            break;
+        case "+holdgren":
+            if (pstate_pred.tfstate & TFSTATE_GREN_MASK_PRIMED == 0) {
+                float imp = stoi(argv(1)) != 1 ? TF_GRENADE_2 : TF_GRENADE_1;
+                localcmd(sprintf("impulse %d\n", imp));
+            }
+            break;
+        case "-holdgren":
+            if (!game_state.is_ceasefire) {
+                input_impulse = TF_GRENADE_T;
+                localcmd(sprintf("impulse %d\n", TF_GRENADE_T));
+            }
             break;
         case "+slot":
             ActivatePlusSlot(stoi(argv(1)) - 1);

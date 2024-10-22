@@ -186,6 +186,13 @@ enum {
 string MvdName(float include_ext);
 
 void ReportMatchResult(int report_type) {
+    static float last_state;
+
+    // Conditions on reporting the start so we don't need to externally filter.
+    if (report_type > kReportStart && last_state == 0)
+        return;
+    last_state = report_type;
+
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);
 

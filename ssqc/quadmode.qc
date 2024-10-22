@@ -94,6 +94,7 @@ void () PostFOQuadStarted = {
 
 void () PostFOQuadFinalRoundStarted = {
 	AnnounceEvent("round_end");
+	ReportMatchResult(kReportHalftime);
 
 	if (!fo_login_required)
 		return;
@@ -153,12 +154,11 @@ void () PostFOQuadFinalRoundStarted = {
 	dprint("POST to ", uri, "\n");
 	dprint(data);
 	uri_post(uri, FO_QUAD_STARTED_REQUEST, "application/json", data);
-
-	ReportMatchResult(kReportHalftime);
 };
 
 void (float winner) PostFOQuadFinished = {
 	AnnounceEvent("game_end");
+	ReportMatchResult(kReportEnd);
 
 	if (!fo_login_required)
 		return;
@@ -205,8 +205,6 @@ void (float winner) PostFOQuadFinished = {
 	dprint("POST to ", uri, "\n");
 	dprint(data);
 	uri_post(uri, FO_QUAD_FINISHED_REQUEST, "application/json", data);
-
-	ReportMatchResult(kReportEnd);
 };
 
 float () CheckWinningTeam = {

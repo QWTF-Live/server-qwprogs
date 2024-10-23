@@ -178,7 +178,7 @@ string FO_GetUserSettingString(entity ent, string ps_short, string ps_setting,
 float TeamFortress_TeamGetScore(float tno);
 
 enum {
-    kReportStart,
+    kReportStart = 1,
     kReportHalftime,
     kReportEnd,
 };

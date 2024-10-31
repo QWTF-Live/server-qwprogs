@@ -178,7 +178,7 @@ string FO_GetUserSettingString(entity ent, string ps_short, string ps_setting,
 float TeamFortress_TeamGetScore(float tno);
 
 enum {
-    kReportStart = 1,
+    kReportStart,
     kReportHalftime,
     kReportEnd,
 };
@@ -225,13 +225,20 @@ void ReportMatchResult(int report_type) {
         teams[i] = JSON_Wrap(tvs.length, tvs);
     }
 
+    string rtype_string = "unknown";
+    switch(report_type) {
+        case kReportStart: rtype_string = "start"; break;
+        case kReportHalftime: rtype_string = "round"; break;
+        case kReportEnd: rtype_string = "end"; break;
+    }
+
     KeyVal fvs[] = {
         {KV_S, "server_name", infokey(world, "hostname")},
         {KV_S, "server_address", cvar_string("sv_serverip")},
         {KV_S, "region", infokey(world, "tfl_region")},
         {KV_S, "shard", infokey(world, "shard")},
         {KV_S, "game_token", game_token},
-        {KV_I, "report_type", ftos(report_type)},
+        {KV_S, "report_type", rtype_string},
         {KV_S, "map", mapname},
         {KV_I, "teams", JSON_Array(2, teams)},
         {KV_S, "mvd", MvdName(TRUE)},

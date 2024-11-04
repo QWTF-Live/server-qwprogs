@@ -409,6 +409,11 @@ void () DecodeLevelParms = {
             te.cnt = stof(st);
         }
 
+        tfl_debug = CF_GetSetting("tfl_debug", "tfl_debug", "off");
+        tfl_endpoint = CF_GetSettingRaw("tfl_endpoint", "tfl_endpoint",
+                                        "http://logs.qwtf.live");
+        tfl_endpoint = strcat(tfl_endpoint, "/api/report");
+
         // automatically assign team [off]
         fl = CF_GetSetting("a", "autoteam", "off");
         if (fl > 1) {

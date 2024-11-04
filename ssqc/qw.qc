@@ -780,3 +780,5 @@ float min_ping_limit_ms;
 float flag_update, button_update;
 
 string mvd_name;
+string tfl_endpoint;
+float tfl_debug;

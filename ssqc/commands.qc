@@ -323,6 +323,16 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
 
     switch (arg1)
     {
+        case "debug_report":
+            if (tfl_debug) {
+                printf("Debug report\n");
+                ReportMatchResult(kReportStart);
+                sleep(0.1);
+                ReportMatchResult(kReportHalftime);
+                sleep(0.1);
+                ReportMatchResult(kReportEnd);
+            }
+            return TRUE;
         case "join":
             return FALSE;
         case "observe":

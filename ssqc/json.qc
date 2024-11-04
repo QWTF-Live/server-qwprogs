@@ -186,10 +186,10 @@ enum {
 string MvdName(float include_ext);
 
 void ReportMatchResult(int report_type) {
-    static float last_state;
+    static float last_state = -1;
 
     // Conditions on reporting the start so we don't need to externally filter.
-    if (report_type > kReportStart && last_state == 0)
+    if (report_type > kReportStart && last_state == -1)
         return;
     last_state = report_type;
 

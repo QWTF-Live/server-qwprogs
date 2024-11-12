@@ -242,6 +242,7 @@ void ReportMatchResult(int report_type) {
         {KV_S, "map", mapname},
         {KV_I, "teams", JSON_Array(2, teams)},
         {KV_S, "mvd", MvdName(TRUE)},
+        {KV_I, "round_length", ftos(time - round_start_time)},
     };
 
     string final = JSON_Wrap(fvs.length, fvs);

@@ -363,6 +363,8 @@ void () teleport_touch = {
         if (other.flags & FL_ONGROUND)
             other.flags = other.flags - FL_ONGROUND;
         other.velocity = v_forward * 300;
+
+        RewindBarrier(other);
     }
     other.flags = other.flags - (other.flags & FL_ONGROUND);
 };

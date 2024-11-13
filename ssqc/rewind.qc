@@ -37,6 +37,9 @@ struct RewindState {
     RewindStatus rewound;
     vector held_origin, held_velocity;
 
+    float barrier;
+    float save_solid, removed;
+
     RewindState* next;
     RewindState* prev;
 };
@@ -174,17 +177,15 @@ static void RewindSave(RewindState* rs) {
     rs->held_velocity = e.velocity;
 }
 
-.float rewind_filter;
-
 static void RewindRestore(RewindState* rs, float type) {
     ASSERTD_EQ(rs->rewound, kRewound);
 
     rs->rewound = type;
     entity e = rs->owner;
 
-    if (e.rewind_filter) {
-        /* e.solid = e.rewind_filter; */
-        /* e.rewind_filter = 0; */
+    if (rs->removed) {
+        e->solid = rs->save_solid;
+        rs->removed = FALSE;
     }
 
     if (e.health <= 0)
@@ -208,12 +209,15 @@ static void RewindTo(RewindState* rstate, float rtime) {
     ASSERTD_EQ(rstate->rewound, kRewound);
     entity e = rstate->owner;
 
-    if (e.health <= 0 || rtime < e->last_death) {
-        /* e.rewind_filter = e.solid; */
-        /* e.solid = SOLID_NOT; */
+    // Health redundant now?
+    if (e.health <= 0 || rtime <= rstate->barrier) {
+        if (rewind_remove) {
+            rstate->save_solid = e->solid;
+            rstate->removed = TRUE;
+            e->solid = SOLID_NOT;
+        }
         return;
     }
-    /* e.rewind_filter = 0; */
 
     vector pos;
 
@@ -286,6 +290,10 @@ class FOPlayer {
     };
 
     nonvirtual void() Respawn = {
+    };
+
+    nonvirtual void(float when) InsertRewindBarrier = {
+        rewind_.barrier = max(rewind_.barrier, when);
     };
 
     nonvirtual void() RewindUpdate = {
@@ -427,4 +435,9 @@ void Forward_OpenDoors(entity player) {
         trace_ent.touch();
         self = held_self;
     }
+}
+
+void RewindBarrier(entity player) {
+    FOPlayer fop = (FOPlayer)player;
+    fop.InsertRewindBarrier(time);
 }

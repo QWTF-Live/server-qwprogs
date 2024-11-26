@@ -784,3 +784,4 @@ string tfl_endpoint;
 float tfl_debug;
 
 float rewind_remove;
+float is_small_game; // quad or 1v1

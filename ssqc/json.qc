@@ -184,6 +184,7 @@ enum {
 };
 
 string MvdName(float include_ext);
+float (float tno) TeamFortress_TeamGetNoPlayersExcludingAllTime;
 
 void ReportMatchResult(int report_type) {
     static float last_state = -1;
@@ -192,6 +193,9 @@ void ReportMatchResult(int report_type) {
     if (report_type > kReportStart && last_state == -1)
         return;
     last_state = report_type;
+
+    if (report_type == kReportStart)
+        is_small_game = TeamFortress_TeamGetNoPlayersExcludingAllTime(1) == 2;
 
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);

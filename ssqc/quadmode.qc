@@ -18,6 +18,8 @@ void () PostFOQuadStarted = {
 
 	local float rated = CF_GetSetting("mra", "fo_matchrated", "2");
 	if (rated == 2) {
+		rated = is_small_game ? 1 : 0;
+		// Depends on ReportMatchResult
 		if(TeamFortress_TeamGetNoPlayersExcludingAllTime(1) > 2) {
 			rated = 1;
 		} else {
@@ -712,7 +714,7 @@ void () StartQuadRound =
 
 		if (rounds == 2 && legit_players > 1) {
 			AnnounceEvent("game_start");
-			ReportMatchResult(kReportStart);
+			ReportMatchResult(kReportStart);  // Must precede PostFO
 			PostFOQuadStarted();
 			if (legit_players == 4)
 				Activate2v2_Ruleset();

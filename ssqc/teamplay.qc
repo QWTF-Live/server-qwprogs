@@ -94,7 +94,7 @@ static int(entity p) FilOwnerTeamNEQ[] = {
 };
 
 void TeamPlay_Cap(vector origin, entity player) {
-  if (!org_game || !new_balance)
+  if (!org_game || !new_balance || is_small_game)
     return;
 
   ApplyRadius(origin, 1000,

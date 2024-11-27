@@ -38,7 +38,7 @@ void () PostFOQuadStarted = {
 	data = strcat(data, "    \"stats_uri\": \"", stats_uri, "\",\n");
 
 	data = strcat(data, "    \"server\": {\n");
-	data = strcat(data, "      \"name\": \"", infokey(world, "hostname"), "\",\n");
+	data = strcat(data, "      \"name\": \"Pugs at http://discord.qwtf.live\",\n");
 	data = strcat(data, "      \"address\": \"", cvar_string("sv_serverip"), "\"\n");
 	data = strcat(data, "    },\n");
 

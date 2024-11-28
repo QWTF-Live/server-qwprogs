@@ -84,6 +84,10 @@ void WorldSpawnPost()
 
     dremove(self);
 
+    // Force fix motd for now
+    localcmd("localinfo motd1 \"Join the discord: http://discord.qwtf.live\"\n");
+    localcmd("localinfo motd2 \"\"\n");
+
     InitAnnounce();
 }
 

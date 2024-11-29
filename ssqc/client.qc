@@ -2974,8 +2974,6 @@ void FO_HandleTFStateUpdate() {
     self.last_tfstate = self.tfstate;
 }
 
-void TeamFortress_MOTD();
-
 static void PlayerPostThinkAlive() {
     float fdmg;
 
@@ -3024,13 +3022,6 @@ static void PlayerPostThinkAlive() {
         FO_ReloadFrame();
         ButtonFrame();
         W_WeaponFrame();
-        if (self.motd >= 0) {
-            TeamFortress_MOTD();
-        } else {
-            if (self.cheat_check == 0) {
-                self.cheat_check = time + 5;
-            }
-        }
         if (self.cheat_check <= time) {
             TeamFortress_CheckTeamCheats();
             self.cheat_check = time + 3;
@@ -3064,9 +3055,6 @@ void () PlayerPostThink = {
     FoLoginIfRequired(self);
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
-
-    if (self.motd >= 0)
-        TeamFortress_MOTD();
 
     if (self.deadflag || self.playerclass == 0) {
         ImpulseCommands();

@@ -198,6 +198,7 @@ void UpdateClientMenu_Admin_Kick(entity pl) = {
     WriteFloat(MSG_MULTICAST, CLIENT_MENU_ADMIN_KICK);
     multicast('0 0 0', MULTICAST_ONE_NOSPECS); 
 }
+
 void UpdateClientMenu_Vote(entity pl, float timeleft) = {
     if(!infokeyf(pl, INFOKEY_P_CSQCACTIVE))
         return;
@@ -414,4 +415,11 @@ void UpdateClient_VoteMap_Delete_Broadcast(entity map_candidate) = {
         }
         pl = find(pl, classname, "player");
     }
+}
+
+void UpdateClientMenu_Close(entity pl) = {
+    msg_entity = pl;
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_MENU_CANCEL);
+    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
 }

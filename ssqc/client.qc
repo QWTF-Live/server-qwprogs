@@ -3094,6 +3094,7 @@ void CheckClientAdmin() {
 }
 
 void ClientsFlagUpdate(entity only);
+void TFL_LoginAutoTeam();
 
 void () ClientConnect = {
     if (!infokeyf(self,INFOKEY_P_CSQCACTIVE)) {
@@ -3146,6 +3147,8 @@ void () ClientConnect = {
 
     if (cb_prematch)
         sprint(self, PRINT_HIGH, "Currently in \sprematch\s time\n");
+
+    TFL_LoginAutoTeam();
 };
 
 float () RejoinWithTfId = {

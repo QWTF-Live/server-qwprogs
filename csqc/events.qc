@@ -427,6 +427,9 @@ void() CSQC_Parse_Event = {
 
             Predictable_Sound(stime, targ, samp, chan, org, vol);
             break;
+        case MSG_MENU_CANCEL:
+            Menu_Cancel();
+            break;
     }
 }
 

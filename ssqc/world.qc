@@ -88,6 +88,8 @@ void WorldSpawnPost()
     localcmd("localinfo motd1 \"Join the discord: http://discord.qwtf.live\"\n");
     localcmd("localinfo motd2 \"\"\n");
 
+    auto_pug_team = CF_GetSetting("apt", "auto_pug_team", "1");
+
     InitAnnounce();
 }
 

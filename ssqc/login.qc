@@ -9,6 +9,9 @@ static void MarkFoLogin(entity player, string login, int stored) {
             infokey(self, "name"), self.fo_login,
             stored ? " [using local credential]" : "");
     bprint(PRINT_HIGH, msg);
+
+    if (player == self)
+        TFL_LoginAutoTeam();
 }
 
 static string GenLoginNonce(entity player, string login) {

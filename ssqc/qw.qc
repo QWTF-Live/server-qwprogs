@@ -785,3 +785,5 @@ float tfl_debug;
 
 float rewind_remove;
 float is_small_game; // quad or 1v1
+
+float auto_pug_team;

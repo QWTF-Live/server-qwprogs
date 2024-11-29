@@ -154,6 +154,72 @@ float (float tno) CF_TeamIsValid = {
     return 1;
 }
 
+static struct {
+    string players[10];
+    float n;
+} auto_team[2];
+
+void TFL_ClearAutoTeam() {
+    localcmd("localinfo auto_team1 \"\"\n");
+    localcmd("localinfo auto_team2 \"\"\n");
+}
+
+static void InitAutoTeam(float team_no) {
+    string key = sprintf("auto_team%d", team_no + 1);
+    string li = infokey(world, key);
+
+    if (li == string_null)
+        return;
+
+    float tok = tokenizebyseparator(li, ",");
+    auto_team[team_no].n = min(tok, auto_team[team_no].players.length);
+    for (float i = 0; i < auto_team[team_no].n; i++) {
+        auto_team[team_no].players[i] = argv(i);
+    }
+}
+
+static float TFL_PugAutoTeam(entity p) {
+    if (!auto_pug_team || !fo_login_required || p.fo_login == string_null)
+        return -1;
+
+    tokenizebyseparator(p.fo_login, "#");
+    string match = strtolower(argv(0));
+
+    static float once;
+    if (!once) {
+        InitAutoTeam(0);
+        InitAutoTeam(1);
+        once = TRUE;
+    }
+
+    for (float i = 0; i < 2; i++)
+        for (float j = 0; j < auto_team[i].n; j++) {
+            if (auto_team[i].players[j] == match)
+                return i + 1;
+        }
+
+    return -1;
+}
+
+float TeamFortress_TeamSet_Options(entity pe, float tno, float skipclasscheck);
+
+void TFL_LoginAutoTeam() {
+    float autot = TFL_PugAutoTeam(self);
+    if (autot != -1 && TeamFortress_TeamSet_Options(self,autot, TRUE) == 1) {
+        self.playerclass = self.nextpc = PC_SOLDIER;
+        ResetAndRespawnPlayer(self);
+        UpdateClientMenu_Close(self);
+
+        tokenizebyseparator(self.fo_login, "#");
+        string name = strtolower(argv(0));
+        string msg = strcat(name, ": You're on the ",
+                autot == 1 ? "^4BLUE" : "^1RED", "^7 team.\n");
+        sprint(self, PRINT_HIGH, msg);
+        Status_Print(self, msg);
+        self.clear_status_message = time + 15;  // Hack
+    }
+}
+
 float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options = {
     local string st;
     local float tc;
@@ -162,9 +228,15 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
     if ((intermission_running != 0) || (intermission_exittime > time))
         return (0);
 
-    if (!CF_TeamIsValid) {
+    float autot = TFL_PugAutoTeam(pe);
+    if (autot >= 0)
+        tno = autot;
+
+#if 0
+    if (!CF_TeamIsValid(tno)) {
         return 0;
     }
+#endif
 
     if (tno == 1)
         team = "blue team";

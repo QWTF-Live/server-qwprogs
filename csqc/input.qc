@@ -1,5 +1,4 @@
 void Menu_Cancel();
-void FO_Menu_Game(float);
 
 // TRUE --> capture input
 // FALSE --> pass input on

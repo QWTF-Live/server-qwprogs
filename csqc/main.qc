@@ -143,10 +143,11 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     SetupAliases();
 
     player_menu_type = 0;
-    if (!is_demo)
-        FO_Menu_Game(TRUE);
-    else
+    if (!is_demo) {
+        FO_Menu_Game(TRUE, TRUE);
+    } else {
         setpause(TRUE);
+    }
 
     pengine.view_mask = MASK_VIEWMODEL;  // Start with engine models.
     print("CSQC initialization finished\n");

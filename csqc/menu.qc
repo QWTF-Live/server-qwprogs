@@ -893,7 +893,7 @@ static float IsSpectator() {
     return stof(getplayerkeyvalue(player_localnum, "*spectator"));
 }
 
-void FO_Menu_Game(float force) = {
+void FO_Menu_Game(float force, float first = FALSE) = {
     if(fo_hud_menu_active && (CurrentMenu == &FO_MENU_GAME || CurrentMenu == &FO_MENU_GAME_SPECTATOR)) {
         Menu_Cancel();
         return;
@@ -901,13 +901,14 @@ void FO_Menu_Game(float force) = {
     if(fo_hud_menu_active && !force)
         return;
 
-    if (IsSpectator()) {
+    if (IsSpectator() && !first) {
         //print(getplayerkeyvalue(player_localnum, "name"), " is a spectator!\n");
         //FO_MENU_GAME_SPECTATOR.num_opts = 3;
         FO_MENU_GAME_SPECTATOR.options[2].state = is_admin?FO_MENU_STATE_NORMAL:FO_MENU_STATE_DISABLED;
         //if(is_admin) FO_MENU_GAME_SPECTATOR.num_opts++;
        CurrentMenu = &FO_MENU_GAME_SPECTATOR;
     } else {
+        //print(getplayerkeyvalue(player_localnum, "name"), " is a spectator!\n");
         float userid = stof(getplayerkeyvalue(player_localnum, "userid"));
         
         //FO_MENU_GAME.num_opts = 7;

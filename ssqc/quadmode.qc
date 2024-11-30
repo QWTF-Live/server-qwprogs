@@ -37,8 +37,13 @@ void () PostFOQuadStarted = {
 	string stats_uri = strcat("https://logs.qwtf.live/view/", game_token);
 	data = strcat(data, "    \"stats_uri\": \"", stats_uri, "\",\n");
 
+	string ip = cvar_string("sv_serverip");
+	tokenizebyseparator(ip, ".");
+	string server = strtolower(argv(0));
+	server[0] += 'A' - 'a';
+
 	data = strcat(data, "    \"server\": {\n");
-	data = strcat(data, "      \"name\": \"Games now at http://discord.qwtf.live\",\n");
+	data = strcat(data, "      \"name\": \"", server, ": Games at http://discord.qwtf.live\",\n");
 	data = strcat(data, "      \"address\": \"", cvar_string("sv_serverip"), "\"\n");
 	data = strcat(data, "    },\n");
 

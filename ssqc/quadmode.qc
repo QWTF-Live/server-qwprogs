@@ -166,6 +166,7 @@ void () PostFOQuadFinalRoundStarted = {
 void (float winner) PostFOQuadFinished = {
 	AnnounceEvent("game_end");
 	ReportMatchResult(kReportEnd);
+	TFL_ClearAutoTeam();
 
 	if (!fo_login_required)
 		return;

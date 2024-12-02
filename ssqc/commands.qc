@@ -27,7 +27,7 @@ void () RestartMap = {
 }
 
 void () ForceStartMatch = {
-    if (fo_login_required) {
+    if (login_required) {
         bprint(PRINT_HIGH, "Can't forcestart while logins enabled.\n");
         return;
     }
@@ -300,7 +300,7 @@ void (entity pl) PrintWho = {
     msg = strzone(string_null);
     msg = strcat(msg, infokey(pl,"name"));
     msg = strcat(msg, " - ");
-    msg = strcat(msg, pl.fo_login != string_null ? pl.fo_login : "NOT LOGGED IN");
+    msg = strcat(msg, pl.tfl_username != string_null ? pl.tfl_username : "NOT LOGGED IN");
     if (pl.is_admin) {
         msg = strcat(msg, " (admin)");
     }
@@ -309,11 +309,11 @@ void (entity pl) PrintWho = {
     strunzone(msg);
 }
 
-float (string arg1, string arg2, string arg3) ParseCmds = {
-    local float arg_num = 0, processedCmd, inp;
-    local string tmp;
-    local float farg2, farg3;
-    local entity ent, pl;
+float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
+    float arg_num = 0, processedCmd, inp;
+    string tmp;
+    float farg2, farg3;
+    entity ent, pl;
     processedCmd = FALSE;
 
     if (arg1)
@@ -936,18 +936,31 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
             sprint(self, PRINT_HIGH, "cmd help || list (this command)\n");
             sprint(self, PRINT_HIGH, "\n");
             break;
+        case "login-bg":
         case "login":
             processedCmd = TRUE;
-            if (self.fo_login != string_null) {
-                sprint (self, PRINT_HIGH, "You are logged in\n");
+            string cmd = arg1, token = arg2;
+            string msg = "";
+
+            if (TFL_IsLoggedIn()) {
+                if (cmd == "login")
+                    msg = sprintf("You are already logged in as %s", self.tfl_username);
+            } else if (TFL_CheckLogin(token)) {
+                msg = sprintf("You are logged in as %s", self.tfl_username);
+                if (cmd == "login")
+                    UpdateClient_SetLoginToken(self, token);
             } else {
-                FoTryLogin(self);
+                msg = sprintf("Login failed.  Attempting migration instead.");
+                TFL_MigrateLoginStart();
             }
+
+            if (msg != "")
+                sprint(self, PRINT_HIGH, kQWTF, msg, "\n");
+
             break;
-        case "login-silent":
+        case "login-migrate":
             processedCmd = TRUE;
-            if (self.fo_login == string_null)
-                FoTryLogin(self);
+            TFL_MigrateLoginStart(arg2);
             break;
         case "who":
             processedCmd = TRUE;
@@ -1356,9 +1369,10 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
 
 void (string cmd) SV_ParseClientCommand = {
     float isProcessed;
-    tokenize(cmd);
+    /* tokenize(cmd); */
+    tokenizebyseparator(cmd, " ");
 
-    isProcessed = ParseCmds(argv(0), argv(1), argv(2));
+    isProcessed = ParseCmds(cmd, argv(0), argv(1), argv(2));
 
     if (!isProcessed)
         clientcommand(self, cmd);

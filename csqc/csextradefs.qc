@@ -324,7 +324,7 @@ typedef struct {
     float new_balance;
     float quad_rounds;
     float quad_round_time;
-    float fo_login_required;
+    float login_required;
     float fo_matchrated;
     float captainmode;
     float timelimit;
@@ -917,3 +917,7 @@ struct {
     float gen;
     float x_offset;
 } center_message;
+
+struct {
+    string login_token;
+} Config;

@@ -24,8 +24,6 @@ void () SpectatorConnect = {
     self.flags = 8;
     self.is_spectator = 1;
 
-    self.fo_login = infokey(self,"*tfl_login");
-    CheckClientAdmin();
 
     st = infokey(self, "em");
     if (st == string_null)
@@ -53,6 +51,9 @@ void () SpectatorConnect = {
     TeamFortress_SetSpeed(self);
 
     forceinfokey(self, "dupe", "0");
+
+    TFL_CheckLogin(string_null);  // Must be after is_spectator
+    CheckClientAdmin();
 };
 
 void () SpectatorDisconnect = {
@@ -133,8 +134,6 @@ void () SpectatorImpulseCommand = {
 };
 
 void () SpectatorThink = {
-    FoLoginIfRequired(self);
-
     self.playerclass = 0;
     self.afflicted = 0;
     self.teamafflicted = 0;

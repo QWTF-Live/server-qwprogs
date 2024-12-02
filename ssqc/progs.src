@@ -25,6 +25,7 @@ time.qc
 ../share/animate.qc
 ../share/mcp_precache.qc
 json.qc
+login.qc
 helpers.qc
 events.qc
 roles.qc
@@ -73,7 +74,6 @@ quadmode.qc
 tfort.qc
 tforthlp.qc
 tfortmap.qc
-login.qc
 commands.qc
 ctf.qc
 coop.qc

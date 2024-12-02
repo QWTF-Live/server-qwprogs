@@ -703,9 +703,7 @@ float captainmode;
 
 .float fo_num_login_tries;
 .float fo_next_login_try;
-float fo_login_required;
-// fortressone.org API
-.string fo_login;
+float login_required;
 .float credential_stored;
 float login_allow_nonce;
 string login_salt;
@@ -787,3 +785,13 @@ float rewind_remove;
 float is_small_game; // quad or 1v1
 
 float auto_pug_team;
+
+.float tfl_num_login_tries, tfl_next_login_try;
+.float tfl_need_login;
+
+.string tfl_raw_token;
+.string tfl_username;
+.string tfl_id;
+.string tfl_foid;
+
+.string old_fo_login, old_fo_token;

@@ -177,7 +177,7 @@ void Update_ServerAdminInfo(entity pl) = {
     WriteByte(MSG_MULTICAST, is_paused || cease_fire);
     WriteFloat(MSG_MULTICAST, infokeyf(world, "rounds"));
     WriteFloat(MSG_MULTICAST, infokeyf(world, "round_time"));
-    WriteFloat(MSG_MULTICAST, (fo_login_required?1:0) + (flr?2:0));
+    WriteFloat(MSG_MULTICAST, (login_required?1:0) + (flr?2:0));
     WriteFloat(MSG_MULTICAST, CF_GetSetting("mra", "fo_matchrated", "2"));
     WriteFloat(MSG_MULTICAST, infokeyf(world, "timelimit"));
     WriteFloat(MSG_MULTICAST, infokeyf(world, "fraglimit"));

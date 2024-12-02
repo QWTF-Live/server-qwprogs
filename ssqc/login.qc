@@ -1,162 +1,85 @@
-static void MarkFoLogin(entity player, string login, int stored) {
-    player.fo_login = login;
-    forceinfokey(self,"*tfl_login", login);
-    if (stored)
-        forceinfokey(player, "*tfl_credential", "1");
-
-    CenterPrint(player, sprintf("You have logged in as %s\n", player.fo_login));
-    string msg = sprintf("%s logged in as %s%s\n",
-            infokey(self, "name"), self.fo_login,
-            stored ? " [using local credential]" : "");
-    bprint(PRINT_HIGH, msg);
-
-    if (player == self)
-        TFL_LoginAutoTeam();
+float TFL_IsLoggedIn() {
+    return self.tfl_id != "";
 }
 
-static string GenLoginNonce(entity player, string login) {
-    string fo_token = infokey(player, kFoToken);
+void TFL_SendLogin() {
+    static const float kMaxTries = 3;
 
-    if (login == string_null || fo_token == string_null)
-        return "INVALID";
-
-    return digest_hex(kLoginHash, login_salt, login, fo_token);
-}
-
-static void StoreCred(entity player) {
-    if (!login_allow_nonce || player.fo_login == string_null || player.credential_stored)
+    if (!self.tfl_need_login)
         return;
 
-    // Back-off to allow csqc init time
-    if (time - player.connect_time < 2)
-        return;
-
-    if (infokey(player, "*tfl_credential") != string_null) {
-        player.credential_stored = 1;
+    if (self.tfl_num_login_tries >= kMaxTries) {
+        self.tfl_need_login = FALSE;
         return;
     }
 
-    msg_entity = player;
-    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
-    WriteByte(MSG_MULTICAST, MSG_CACHE_LOGIN);
-    WriteString(MSG_MULTICAST, player.fo_login);
-    WriteString(MSG_MULTICAST, GenLoginNonce(player, player.fo_login));
-    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
+    if (time < self.tfl_next_login_try)
+        return;
 
-    player.credential_stored = 1;
+    self.tfl_num_login_tries++;
+    self.tfl_next_login_try = time + 2;
+
+    WEB_MigrateLoginRequest(self);
 }
 
-static float LoadCred(entity player) {
-    if (!login_allow_nonce)
+static void TFL_StartTryMigrate(string fo_login, string fo_token) {
+    self.tfl_need_login = TRUE;
+    self.tfl_num_login_tries = 0;
+
+    self.old_fo_login = fo_login;
+    self.old_fo_token = fo_token;
+
+    TFL_SendLogin();
+}
+
+static string MakeLoginCookie(string username, string id, string foid) {
+    string dig = digest_hex("SHA1", LOGIN_SALT, username, id, foid);
+    return substring(dig, 0, 10);
+}
+
+static float TFL_ValidateLogin(string token) {
+    tokenizebyseparator(token, ":");
+    string username = argv(0);
+    string id = argv(1);
+    string foid = argv(2);
+    string dig = argv(3);
+
+    if (strlen(dig) != 10 || dig != MakeLoginCookie(username, id, foid))
         return FALSE;
 
-    string login = infokey(player, kLoginKey);
-    if (login == string_null)
-        return FALSE;
+    self.tfl_username = username;
+    self.tfl_id = id;
+    self.tfl_foid = foid;
+    self.tfl_raw_token = token;  // Checked on LOGIN_REQUEST response
 
-    string nonce = infokey(player, kLoginNonce);
-    string comp = GenLoginNonce(player, login);
+    forceinfokey(self,"*tfl_token", token);
+    return TRUE;
+}
 
-    if (nonce == comp && comp != "INVALID") {
-        MarkFoLogin(player, login, 1);
+void TFL_AutoTeam();
+
+float TFL_CheckLogin(string token, float is_web_check = FALSE) {
+    if (TFL_IsLoggedIn() && !is_web_check)
+        return TRUE;
+
+    if (token == string_null)
+        token = infokey(self, "*tfl_token");
+
+    if (token != string_null && TFL_ValidateLogin(token)) {
+        if (!is_web_check)
+            WEB_CheckLoginRequest(self, token);
+        TFL_AutoTeam();
         return TRUE;
     } else {
-        forceinfokey(player, kLoginKey, string_null);
+        forceinfokey(self, "*tfl_token", "");
         return FALSE;
     }
 }
 
-void FoLoginIfRequired(entity player) {
-    if (!fo_login_required || player.credential_stored) {
-        return;
-    } else if (player.fo_login != string_null) {
-        StoreCred(player);
-        return;
-    }
+void TFL_MigrateLoginStart(string fo_token = "") {
+    if (fo_token == string_null)
+        fo_token = infokey(self, "_fo_token");
 
-    static const float kMaxTries = 3;
-    if (player.fo_num_login_tries >= kMaxTries || time < player.fo_next_login_try)
-        return;
-
-    if (LoadCred(player))
-        return;
-
-    string token = infokey(player, "_fo_token");
-    if (token == string_null) {
-        player.fo_num_login_tries = kMaxTries;
-        return;
-    }
-
-    static float next_login;  // Rate limit
-    if (time < next_login)
-        return;
-
-    next_login = time + 0.25;
-    player.fo_num_login_tries++;
-    player.fo_next_login_try = time + 2;
-
-    string uri = sprintf("%s/results/api/v1/fo_login", backend_address);
-    uri_get(uri, FO_LOGIN_REQUEST, "application/json",
-            sprintf("{ \"auth_token\": \"%s\" }", token));
-    dprint(sprintf("%s [%s] logging in -> %s\n", infokey(player, "name"), infokey(player, "ip"),
-                uri));
-}
-
-void FoTryLogin(entity player) {
-    player.fo_num_login_tries = 0;
-}
-
-void(float reqid, float responsecode, string resourcebody, int resourcebytes) URI_Get_Callback = {
-    local float success = !responsecode;
-
-    switch(reqid) {
-        case TFL_ANNOUNCE:
-            InitAnnounceResult(responsecode);
-            break;
-        case TFL_RESULT:
-            break;
-
-        case FO_QUAD_STARTED_REQUEST:
-            local string msg;
-
-            if (success && resourcebody) {
-                match_id = resourcebody;
-                msg = sprintf("Quad start successfully logged. ID: %s\n", match_id);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            } else {
-                msg = sprintf("Quad start failed to log. Response code: %d\n", responsecode);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            }
-
-            break;
-        case FO_QUAD_FINISHED_REQUEST:
-            local string msg;
-
-            if (success && resourcebody == match_id) {
-                msg = sprintf("Quad result successfully logged. ID: %s\n", match_id);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            } else {
-                msg = sprintf("Quad result failed to log. Response code: %d\n", responsecode);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            }
-
-            break;
-        case FO_LOGIN_REQUEST:
-            local string msg;
-
-            if (!responsecode) {
-                MarkFoLogin(self, resourcebody, 0);
-                StoreCred(self);
-            } else {
-                CenterPrint(self, "Login failed\n");
-                msg = (sprintf("%s login failed. Response code: %d\n", infokey(self, "name"), responsecode));
-                sprint(self, PRINT_HIGH, msg);
-                dprint(msg);
-            }
-            break;
-    }
+    string fo_login = infokey(self, "_qwtfl_login");
+    TFL_StartTryMigrate(fo_login, fo_token);
 }

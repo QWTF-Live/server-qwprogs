@@ -713,5 +713,13 @@ void UpdateClient_SetNextEndTime(float next) {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_NEXT_END_TIME);
     WriteFloat(MSG_MULTICAST, next);
-    multicast('0 0 0', MULTICAST_ALL_R);  // Actual primer has reliable transport.
+    multicast('0 0 0', MULTICAST_ALL_R);
+}
+
+void UpdateClient_SetLoginToken(entity player, string token) {
+    msg_entity = player;
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_MIGRATE_LOGIN);
+    WriteString(MSG_MULTICAST, token);
+    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
 }

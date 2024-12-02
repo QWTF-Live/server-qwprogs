@@ -1098,8 +1098,8 @@ float () CheckAllPlayersReady = {
 }
 
 void () PlayerReady = {
-    if (fo_login_required && self.fo_login == string_null) {
-        sprint(self, PRINT_HIGH, "You need to sign in first. Get your login token at www.fortressone.org\n");
+    if (login_required && self.tfl_id == string_null) {
+        sprint(self, PRINT_HIGH, "You need to sign in first. Use '/token' at http://discord.qwtf.live\n");
         return;
     }
 

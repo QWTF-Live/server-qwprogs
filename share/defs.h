@@ -1375,6 +1375,8 @@ enum {
 #define FO_CONFIG_PATH	"fortressone_csqc.cfg"
 #define FO_TOKEN_PATH	"fortressone_token.cfg"
 
+#define TFL_CONFIG_PATH	"qwtflive.cfg"
+
 #define HUD_ICON_SIZE_X   24
 #define HUD_ICON_SIZE_Y   24
 #define FO_HUD_CLIPSIZE_PANEL_X 125
@@ -1500,7 +1502,7 @@ enum {
 // web request index
 #define FO_QUAD_STARTED_REQUEST		1
 #define FO_QUAD_FINISHED_REQUEST	2
-#define FO_LOGIN_REQUEST		3
+#define LOGIN_REQUEST			3
 #define TFL_ANNOUNCE 			4
 #define TFL_RESULT 			5
 

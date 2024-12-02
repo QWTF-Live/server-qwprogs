@@ -313,7 +313,7 @@ void() CSQC_Parse_Event = {
             SERVER_ADMIN.ceasefire = readbyte();
             SERVER_ADMIN.quad_rounds = readfloat();
             SERVER_ADMIN.quad_round_time = readfloat();
-            SERVER_ADMIN.fo_login_required = readfloat();
+            SERVER_ADMIN.login_required = readfloat();
             SERVER_ADMIN.fo_matchrated = readfloat();
             SERVER_ADMIN.timelimit = readfloat();
             SERVER_ADMIN.fraglimit = readfloat();
@@ -411,6 +411,12 @@ void() CSQC_Parse_Event = {
 
             printf("Local cache of login credentials complete\n");
             break;
+        case MSG_MIGRATE_LOGIN:
+            printf("%sLogin saved.\n", kQWTF);
+            Config.login_token = readstring();
+            TFL_SaveConfig();
+            break;
+
         case MSG_SOUND:
             float stime, vol, chan, targ;
             vector org;

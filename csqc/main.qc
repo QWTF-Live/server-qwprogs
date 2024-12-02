@@ -153,7 +153,67 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     print("CSQC initialization finished\n");
 };
 
+static string ConfigSep = "=";
+
+static void TFL_LoadConfig() {
+    float fd = fopen(TFL_CONFIG_PATH, FILE_READ);
+    if (fd < 0)
+        return;
+    while (TRUE) {
+        string ln = fgets(fd);
+        ln = strreplace("\n", "", ln);
+        if (ln == "")
+            break;
+
+        float v = tokenizebyseparator(ln, ConfigSep);
+        string key = argv(0);
+        string val = argv(1);
+        for (float i = 2; i < v; i++)
+            val = strcat(val, ConfigSep, argv(i));
+
+        switch (key) {
+            case "login_token": Config.login_token = val; break;
+        }
+    }
+    fclose(fd);
+}
+
+void TFL_SaveConfig() {
+    float fd = fopen(TFL_CONFIG_PATH, FILE_WRITE);
+    if (fd < 0)
+        return;
+    fputs(fd, "login_token", ConfigSep, Config.login_token, "\n");
+    fclose(fd);
+}
+
 void FoLogin_UpdateToken();
+
+static string FoLogin_GetToken() {
+    float filehandle = fopen(FO_TOKEN_PATH, FILE_READ);
+    if (filehandle == -1)
+        return "";
+
+    string token = fgets(filehandle);
+    fclose(filehandle);
+    return token;
+}
+
+static void SendLogin(string login_token = "USE_CONFIG") {
+    if (login_token != "USE_CONFIG") {
+        localcmd("cmd login ", Config.login_token, "\n");
+    } else if (Config.login_token != "") {
+        localcmd("cmd login-bg ", Config.login_token, "\n");
+        return;
+    }
+
+    string fo_token = FoLogin_GetToken();
+    if (fo_token != "") {
+        localcmd("cmd login-migrate ", fo_token, "\n");
+        return;
+    }
+
+    printf("WARNING: You are missing a login token.  Use '/token' on discord.qwtf.live to get one.\n");
+}
 
 noref void() CSQC_WorldLoaded = {
     localcmd("menu_restart\n");
@@ -163,7 +223,7 @@ noref void() CSQC_WorldLoaded = {
     localcmd("cl_smartjump 0\n");  // replaced by fo_smartjump
     Register_Particles();
 
-    FoLogin_UpdateToken();
+    TFL_LoadConfig();
 }
 
 void FO_CussView();
@@ -554,7 +614,8 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
 
         case "login":
-            FoLogin(argv(1), TRUE);
+            string token = argv(1);
+            SendLogin(token);
             break;
         case "fo_hud_editor":
             FO_Hud_Editor();
@@ -1034,6 +1095,12 @@ void _Sync_ServerCommandFrame() {
         return;
     last_servercommandframe = servercommandframe;
 
+    static float once;
+    if (!once) {
+        once = TRUE;
+        SendLogin();
+    }
+
     UpdateCachedCvars();
 
     prev_game_state = game_state;
@@ -1085,47 +1152,6 @@ void _Sync_ServerCommandFrame() {
 void Sync_GameState() {
     _Sync_ServerCommandFrame();
     PM_PredictJump_Engine();
-}
-
-static string FoLogin_GetToken() {
-    float filehandle = fopen(FO_TOKEN_PATH, FILE_READ);
-    if (filehandle == -1)
-        return "";
-
-    string token = fgets(filehandle);
-    fclose(filehandle);
-    return token;
-}
-
-static void FoLogin_SetToken(string token) {
-    localcmd("setinfo _fo_token ", token, "\n");
-}
-
-static void FoLogin_UpdateToken() {
-    string token = FoLogin_GetToken();
-    if (token != "")
-        FoLogin_SetToken(token);
-}
-
-// Doesn't actually return success, just whether it sent a token.
-float FoLogin(string token, float print_error) {
-    if (token != "") {
-        float filehandle = fopen(FO_TOKEN_PATH, FILE_WRITE);
-        fputs(filehandle, token);
-        fclose(filehandle);
-    } else {
-        token = FoLogin_GetToken();
-    }
-
-    if (token == "") {
-       if (print_error)
-            print("Token required: Please sign-up at fortressone.org and follow the instructions to generate your login token.\n");
-        return FALSE;
-    }
-
-    FoLogin_SetToken(token);
-    localcmd("cmd login-silent\n");
-    return TRUE;
 }
 
 static string to_precision(float f, float p) {

@@ -179,11 +179,8 @@ static void InitAutoTeam(float team_no) {
 }
 
 static float TFL_PugAutoTeam(entity p) {
-    if (!auto_pug_team || !fo_login_required || p.fo_login == string_null)
+    if (!auto_pug_team || !login_required || !TFL_IsLoggedIn())
         return -1;
-
-    tokenizebyseparator(p.fo_login, "#");
-    string match = strtolower(argv(0));
 
     static float once;
     if (!once) {
@@ -194,7 +191,7 @@ static float TFL_PugAutoTeam(entity p) {
 
     for (float i = 0; i < 2; i++)
         for (float j = 0; j < auto_team[i].n; j++) {
-            if (auto_team[i].players[j] == match)
+            if (auto_team[i].players[j] == p.tfl_username)
                 return i + 1;
         }
 
@@ -203,16 +200,18 @@ static float TFL_PugAutoTeam(entity p) {
 
 float TeamFortress_TeamSet_Options(entity pe, float tno, float skipclasscheck);
 
-void TFL_LoginAutoTeam() {
+void TFL_AutoTeam() {
+    if (self.is_spectator)
+        return;
+
     float autot = TFL_PugAutoTeam(self);
-    if (autot != -1 && TeamFortress_TeamSet_Options(self,autot, TRUE) == 1) {
+
+    if (autot != -1 && TeamFortress_TeamSet_Options(self, autot, TRUE) == 1) {
         self.playerclass = self.nextpc = PC_SOLDIER;
         ResetAndRespawnPlayer(self);
         UpdateClientMenu_Close(self);
 
-        tokenizebyseparator(self.fo_login, "#");
-        string name = strtolower(argv(0));
-        string msg = strcat(name, ": You're on the ",
+        string msg = strcat(self.tfl_username, ": You're on the ",
                 autot == 1 ? "^4BLUE" : "^1RED", "^7 team.\n");
         sprint(self, PRINT_HIGH, msg);
         Status_Print(self, msg);
@@ -335,9 +334,8 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
 };
 
 float (float tno) TeamFortress_TeamSet = {
-    if (quadmode && tno >= 1 && tno <= 4 && self.fo_login == string_null &&
-        fo_login_required) {
-        sprint(self, PRINT_HIGH, "You need to sign in first. Get your login token at www.fortressone.org\n");
+    if (org_game && login_required && !TFL_IsLoggedIn() && tno >= 1 && tno <= 4) {
+        sprint(self, PRINT_HIGH, "You need to sign in first. Get your login token at http://discord.qwtf.live\n");
         return 0;
     }
 

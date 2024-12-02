@@ -2,6 +2,10 @@ static string livebot_hook = "https://discord.com/api/webhooks/12215616438011207
 static var string announce_endpoint;
 static var float announce_ready;
 
+static string GetEndpoint(string type) {
+    return strcat(tfl_endpoint, "/api/", type);
+}
+
 float AnnounceActive() {
     if (!announce_ready)
         return FALSE;
@@ -83,8 +87,7 @@ static void AnnounceScoreboard() {
 
     result = strcat(result, "]");
 
-    uri_post(strcat(announce_endpoint, "scoreboard"), TFL_ANNOUNCE,
-            "application/json", result);
+    uri_post(GetEndpoint("scoreboard"), TFL_ANNOUNCE, "application/json", result);
 }
 
 void AnnounceEvent(string event, entity player = __NULL__) {
@@ -113,8 +116,7 @@ void AnnounceEvent(string event, entity player = __NULL__) {
     data = strcat(data, "}");
 
 
-    uri_post(strcat(announce_endpoint, "event"), TFL_ANNOUNCE,
-             "application/json", data);
+    uri_post(GetEndpoint("event"), TFL_ANNOUNCE, "application/json", data);
 }
 
 void AnnounceHeartbeat() {
@@ -132,7 +134,7 @@ void AnnounceHeartbeat() {
                    };
 
     string data = JSON_Wrap(kvs.length, kvs);
-    uri_post(strcat(announce_endpoint, "heartbeat"), TFL_ANNOUNCE, "application/json", data);
+    uri_post(GetEndpoint("heartbeat"), TFL_ANNOUNCE, "application/json", data);
 }
 
 void AnnounceUpdate() {
@@ -209,7 +211,7 @@ void ReportMatchResult(int report_type) {
             continue;
 
         KeyVal pvs[] = {
-            {KV_S, "username", p.fo_login},
+            {KV_S, "username", p.tfl_username},
             {KV_S, "fo_token", infokey(p, "_fo_token")},
             {KV_I, "pc", ftos(p.playerclass)},
         };
@@ -250,9 +252,85 @@ void ReportMatchResult(int report_type) {
         {KV_I, "round_end", ftos(time)},
     };
 
-    string final = JSON_Wrap(fvs.length, fvs);
-    dprint("Reporting to qwtf-live: ", final, "\n");
+    string req = JSON_Wrap(fvs.length, fvs);
+    dprint("Reporting to qwtf-live: ", req, "\n");
 
-    string endpoint = "http://logs.qwtf.live/api/report";
-    uri_post(tfl_endpoint, TFL_RESULT, "application/json", final);
+    string req = JSON_Wrap(fvs.length, fvs);
+    uri_post(GetEndpoint("report"), TFL_RESULT, "application/json", req);
+}
+
+void WEB_MigrateLoginRequest(entity player) {
+    KeyVal fvs[] = {
+        {KV_S, "type", "migrate"},
+        {KV_S, "fo_login", player.old_fo_login},
+        {KV_S, "fo_token", player.old_fo_token},
+    };
+
+    string req = JSON_Wrap(fvs.length, fvs);
+    uri_post(GetEndpoint("login"), LOGIN_REQUEST, "application/json", req);
+}
+
+void WEB_CheckLoginRequest(entity player, string token) {
+    KeyVal fvs[] = {
+        {KV_S, "type", "check"},
+        {KV_S, "token", token},
+    };
+
+    string req = JSON_Wrap(fvs.length, fvs);
+    uri_post(GetEndpoint("login"), LOGIN_REQUEST, "application/json", req);
+}
+
+float TFL_CheckLogin(string token, float force = FALSE);
+void UpdateClient_SetLoginToken(entity player, string token);
+
+void(float reqid, float responsecode, string resourcebody, int resourcebytes) URI_Get_Callback = {
+    local float success = !responsecode;
+
+    switch(reqid) {
+        case TFL_ANNOUNCE:
+            InitAnnounceResult(responsecode);
+            break;
+        case TFL_RESULT:
+            break;
+
+        case FO_QUAD_STARTED_REQUEST:
+            local string msg;
+
+            if (success && resourcebody) {
+                match_id = resourcebody;
+                msg = sprintf("Quad start successfully logged. ID: %s\n", match_id);
+                bprint(PRINT_HIGH, msg);
+                dprint(msg);
+            } else {
+                msg = sprintf("Quad start failed to log. Response code: %d\n", responsecode);
+                bprint(PRINT_HIGH, msg);
+                dprint(msg);
+            }
+
+            break;
+        case FO_QUAD_FINISHED_REQUEST:
+            local string msg;
+
+            if (success && resourcebody == match_id) {
+                msg = sprintf("Quad result successfully logged. ID: %s\n", match_id);
+                bprint(PRINT_HIGH, msg);
+                dprint(msg);
+            } else {
+                msg = sprintf("Quad result failed to log. Response code: %d\n", responsecode);
+                bprint(PRINT_HIGH, msg);
+                dprint(msg);
+            }
+
+            break;
+        case LOGIN_REQUEST:
+            self.tfl_need_login = FALSE;
+            if (responsecode)
+                return;
+
+            string token = resourcebody;
+            // Note: In the case of a migration, we have no original raw token.
+            if ((token != self.tfl_raw_token) && TFL_CheckLogin(token, TRUE))
+                UpdateClient_SetLoginToken(self, resourcebody);
+            break;
+    }
 }

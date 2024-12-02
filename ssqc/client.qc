@@ -412,7 +412,6 @@ void () DecodeLevelParms = {
         tfl_debug = CF_GetSetting("tfl_debug", "tfl_debug", "off");
         tfl_endpoint = CF_GetSettingRaw("tfl_endpoint", "tfl_endpoint",
                                         "http://logs.qwtf.live");
-        tfl_endpoint = strcat(tfl_endpoint, "/api/report");
 
         // automatically assign team [off]
         fl = CF_GetSetting("a", "autoteam", "off");
@@ -3034,8 +3033,6 @@ static void PlayerPostThinkAlive() {
         RefreshStatusBar(self);
 }
 
-void FoLoginIfRequired(entity player);
-
 .float sent_tf_config;
 void PlayerPeriodicThink(float is_player) {
     if (time < self.periodic_think_time)
@@ -3049,10 +3046,11 @@ void PlayerPeriodicThink(float is_player) {
         TFL_SendConfig(self);
         self.sent_tf_config = 1;
     }
+
+    TFL_SendLogin();
 }
 
 void () PlayerPostThink = {
-    FoLoginIfRequired(self);
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
 
@@ -3094,7 +3092,6 @@ void CheckClientAdmin() {
 }
 
 void ClientsFlagUpdate(entity only);
-void TFL_LoginAutoTeam();
 
 void () ClientConnect = {
     if (!infokeyf(self,INFOKEY_P_CSQCACTIVE)) {
@@ -3113,8 +3110,6 @@ void () ClientConnect = {
 
     if (self.netname == string_null)
         KickCheater(self);
-
-    self.fo_login = infokey(self, "*tfl_login");
 
     TeamFortress_ExecMapScript(self);
     self.has_disconnected = 0;
@@ -3145,10 +3140,10 @@ void () ClientConnect = {
 
     forceinfokey(self, "dupe", "1");
 
+    TFL_CheckLogin(string_null);
+
     if (cb_prematch)
         sprint(self, PRINT_HIGH, "Currently in \sprematch\s time\n");
-
-    TFL_LoginAutoTeam();
 };
 
 float () RejoinWithTfId = {

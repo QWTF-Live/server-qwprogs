@@ -7,8 +7,8 @@ ifndef REV
 endif
 
 all:
-	fteqcc64 -DVER=\"$(VER)\" -DREV=\"$(REV)\" ./ssqc/progs.src
-	fteqcc64 -DVER=\"$(VER)\" -DREV=\"$(REV)\" ./csqc/csprogs.src
+	fteqcc64 -DVER=\"$(VER)\" -DREV=\"$(REV)\" -DLOGIN_SALT=\"$(LOGIN_SALT)\" ./ssqc/progs.src
+	fteqcc64 -DVER=\"$(VER)\" -DREV=\"$(REV)\" -DLOGIN_SALT=\"$(LOGIN_SALT)\" ./csqc/csprogs.src
 	fteqcc64 -DVER=\"$(VER)\" -DREV=\"$(REV)\" ./menu/menu.src
 
 clean:

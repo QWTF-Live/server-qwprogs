@@ -3,12 +3,12 @@ void () info_player_teamspawn;
 void Activate2v2_Ruleset();
 
 void () PostFOQuadStarted = {
-	if (!fo_login_required)
+	if (!login_required)
 		return;
 	
 	if !(TeamFortress_TeamGetNoPlayersExcludingAllTime(1) == TeamFortress_TeamGetNoPlayersExcludingAllTime(2)) {
 		bprint(PRINT_HIGH, "Uneven teams, match can't be recorded\n");
-		fo_login_required = FALSE;
+		login_required = FALSE;
 		return;
 	}
 
@@ -70,8 +70,9 @@ void () PostFOQuadStarted = {
 				if (prefix_comma)
 					data = strcat(data, ",");
 
+				string login = strcat(p.tfl_username, "#", p.tfl_foid);
 				data = strcat(data, "          {\n");
-				data = strcat(data, "            \"id\": \"", p.fo_login, "\",\n");
+				data = strcat(data, "            \"id\": \"", login, "\",\n");
 				data = strcat(data, "            \"playerclass\": \"", ftos(p.playerclass), "\"\n");
 				data = strcat(data, "          }\n");
 				prefix_comma = TRUE;
@@ -103,7 +104,7 @@ void () PostFOQuadFinalRoundStarted = {
 	AnnounceEvent("round_end");
 	ReportMatchResult(kReportHalftime);
 
-	if (!fo_login_required)
+	if (!login_required)
 		return;
 
 	local string data = "";
@@ -134,8 +135,10 @@ void () PostFOQuadFinalRoundStarted = {
 				if (prefix_comma)
 					data = strcat(data, ",");
 
+				string login = strcat(p.tfl_username, "#", p.tfl_foid);
+
 				data = strcat(data, "          {\n");
-				data = strcat(data, "            \"id\": \"", p.fo_login, "\",\n");
+				data = strcat(data, "            \"id\": \"", login, "\",\n");
 				data = strcat(data, "            \"playerclass\": \"", ftos(p.playerclass), "\"\n");
 				data = strcat(data, "          }\n");
 				prefix_comma = TRUE;
@@ -168,7 +171,7 @@ void (float winner) PostFOQuadFinished = {
 	ReportMatchResult(kReportEnd);
 	TFL_ClearAutoTeam();
 
-	if (!fo_login_required)
+	if (!login_required)
 		return;
 
 	if (!match_id)

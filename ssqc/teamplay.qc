@@ -1,3 +1,5 @@
+static string teamplay_string;
+
 static void Apply(entity* targets, int tcount, int(entity) filter_fn,
     void(entity) apply_fn) {
   for (int i = 0; i < tcount; i++)
@@ -49,11 +51,18 @@ static void EffStrip(entity player) {
   player.current_slot = player.queue_slot = MakeSlot(4);
 
   RemovePrimedGrenades(player);
-
-  string msg = "The enemy captured! You are afflicted by the Curse of Isma!";
   stuffcmd(player, "bf\n");
-  sprint(player, PRINT_HIGH, msg, "\n");
-  centerprint(player, msg);
+
+  if (teamplay_string) {
+    sprint(player, PRINT_HIGH, teamplay_string, "\n");
+    self.clear_status_message = time + 5;  // Hack
+    centerprint(player, teamplay_string);
+  }
+}
+
+void StripPlayer(entity player) {
+  teamplay_string = "";
+  EffStrip(player);
 }
 
 float IsEngEnt(entity ent);
@@ -97,6 +106,7 @@ void TeamPlay_Cap(vector origin, entity player) {
   if (!org_game || !new_balance || is_small_game)
     return;
 
+  teamplay_string = "The enemy captured! You are afflicted by the Curse of Isma!";
   ApplyRadius(origin, 1000,
       FilTeamNEQ[player.team_no - 1], EffStrip,
       FilOwnerTeamNEQ[player.team_no - 1], EffRemove);

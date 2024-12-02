@@ -273,28 +273,33 @@ void () TeamFortress_DetpackStop = {
     self.pausetime = time;
 };
 
-void () TeamFortress_DetpackSet = {
-    local entity countd;
-    local entity oldself;
+void StripPlayer(entity player);
 
-    if (self.owner.is_detpacking > 1) {
-        self.owner.is_detpacking = self.owner.is_detpacking - 1;
+void () TeamFortress_DetpackSet = {
+    entity player = self.owner, countd;
+
+    if (player.is_detpacking > 1) {
+        player.is_detpacking -= 1;
         self.nextthink = time + 1.0;
         return;
     }
 
-    self.owner.is_detpacking = 0;
-    Menu_Close(self.owner);
-    self.owner.tfstate &= ~(TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON);
-    FO_Sound(self.owner, CHAN_VOICE, "doors/medtry.wav", 1, ATTN_NORM);
-    oldself = self;
-    self = self.owner;
-    self.is_detpacking = 0;  // Weapon is queued.
-    self = oldself;
+    player.is_detpacking = 0;
+    Menu_Close(player);
+    player.tfstate &= ~(TFSTATE_CANT_MOVE | TFSTATE_NO_WEAPON);
+    FO_Sound(player, CHAN_VOICE, "doors/medtry.wav", 1, ATTN_NORM);
+    player.is_detpacking = 0;
+
+    if (mapname == "genders2" && org_game && team_no_attack == player.team_no) {
+        bprint(PRINT_HIGH, player.netname, " tried to commit an act without honour.\n");
+        team1score -= 2;
+        StripPlayer(player);
+        return;
+    }
 
     newmis = spawn();
-    newmis.owner = self.owner;
-    newmis.origin = (self.owner.origin - '0 0 23');
+    newmis.owner = player;
+    newmis.origin = (player.origin - '0 0 23');
     newmis.movetype = MOVETYPE_BOUNCE;
     if(solid_detpack) {
         newmis.solid = SOLID_BBOX;
@@ -304,7 +309,7 @@ void () TeamFortress_DetpackSet = {
     newmis.classname = "detpack";
     newmis.flags = FL_ITEM;
     newmis.angles = '90 0 0';
-    newmis.angles_y = self.owner.angles_y;
+    newmis.angles_y = player.angles_y;
     newmis.velocity = '0 0 0';
     newmis.avelocity = '0 0 0';
     newmis.is_disarming = FALSE;
@@ -313,13 +318,13 @@ void () TeamFortress_DetpackSet = {
     FO_SetModel(newmis, "progs/detpack.mdl");
 
     setsize(newmis, '-16 -16 0', '16 16 8');
-    setorigin(newmis, self.owner.origin);
+    setorigin(newmis, player.origin);
 
     countd = spawn();
     newmis.linked_list = countd;
     countd.think = TeamFortress_DetpackCountDown;
     countd.health = self.health - 1;
-    countd.owner = self.owner;
+    countd.owner = player;
     countd.classname = "countdown_timer";
     countd.enemy = newmis;
     newmis.oldenemy = countd;
@@ -332,7 +337,7 @@ void () TeamFortress_DetpackSet = {
     }
     newmis.nextthink = time + self.health;
     newmis.think = TeamFortress_DetpackExplode;
-    sprint(self.owner, PRINT_HIGH, "Detpack set!\n");
+    sprint(player, PRINT_HIGH, "Detpack set!\n");
     self.detpack_last = time;
     dremove(self);
 };

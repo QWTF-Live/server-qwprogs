@@ -1166,6 +1166,11 @@ float (string arg1, string arg2, string arg3) ParseCmds = {
                     Admin_CeaseFire();
                 processedCmd = TRUE;
                 break;
+            case "pug_unlock":
+                auto_pug_team = FALSE;
+                bprint(PRINT_HIGH, self.netname, " disabled auto-teams\n");
+                processedCmd = TRUE;
+                break;
             case "updateserver":
                 Admin_UpdateServer();
                 processedCmd = TRUE;

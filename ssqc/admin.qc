@@ -193,21 +193,6 @@ void () Admin_UpdateServer = {
     fclose(filehandle);
 };
 
-void NotifyPauseUnpause(float is_pause) {
-    int count;
-    entity* p = find_list(classname, "player", EV_STRING, count);
-
-    for (float i = 0; i < count; i++) {
-        if (p[i].netname == "" || !infokeyf(p[i], INFOKEY_P_CSQCACTIVE))
-            continue;
-
-        msg_entity = p[i];
-        WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
-        WriteByte(MSG_MULTICAST, is_pause ? MSG_PAUSE : MSG_UNPAUSE);
-        multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
-    }
-}
-
 void () Admin_Pause = {
     if (!is_paused) {
         setpause(1);

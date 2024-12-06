@@ -936,6 +936,15 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             sprint(self, PRINT_HIGH, "cmd help || list (this command)\n");
             sprint(self, PRINT_HIGH, "\n");
             break;
+        case "login-status":
+            string msg = "";
+            if (TFL_IsLoggedIn())
+                msg = sprintf("You are logged in as %s\n", self.tfl_username);
+            else
+                msg = sprintf("You are not logged in.  Type '/token' on discord for instructions\n");
+            sprint(self, PRINT_HIGH, kQWTF, msg, "\n");
+            sprint(self, PRINT_HIGH, kQWTF, "SALT=[", LOGIN_SALT, "]\n");
+            break;
         case "login-bg":
         case "login":
             processedCmd = TRUE;

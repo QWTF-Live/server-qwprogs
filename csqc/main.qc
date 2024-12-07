@@ -1078,12 +1078,13 @@ static string class_names[] = {
 };
 
 static void PlayerRespawned() {
-    if (csqc_get_user_setting("ec", "exec_class", "off")) {
-        int i = pstate_server.playerclass - 1;
-        if (i >= 0 && i < class_names.length)
-            localcmd(sprintf("exec %s.cfg\n", class_names[i]));
+    int i = pstate_server.playerclass - 1;
+    if (i >= 0 && i < class_names.length) {
+        string class = class_names[i];
+        localcmd("set tf_class ", class, "\n");
+        if (csqc_get_user_setting("ec", "exec_class", "off"))
+            localcmd(sprintf("exec %s.cfg\n", class));
     }
-
     localcmd("f_respawn\n");
 }
 

@@ -37,15 +37,39 @@ static string MakeLoginCookie(string username, string id, string foid) {
     return substring(dig, 0, 10);
 }
 
-static float TFL_ValidateLogin(string token) {
+void TFL_TestLogin(string token) {
+    printf("VERIFY: %s\n", token);
+    tokenizebyseparator(token, ":");
+    string username = argv(0);
+    string id = argv(1);
+    string foid = argv(2);
+    string dig = argv(3);
+    printf("UN: %s ID: %s FOID: %s DIG: %s\n", username, id, foid, dig);
+
+    if (strlen(dig) != 10) {
+        printf("Digest wrong length\n");
+        return;
+    } else {
+        string cookie = MakeLoginCookie(username, id, foid);
+        printf("DIG: %s COOKIE: %s MATCH: %d\n", dig, cookie, (dig == cookie));
+        return;
+    }
+}
+
+static float TFL_ValidateLogin(string token, float flags = 0) {
     tokenizebyseparator(token, ":");
     string username = argv(0);
     string id = argv(1);
     string foid = argv(2);
     string dig = argv(3);
 
+    if (flags & kCheckLoginDbg) dprint(sprintf(" VAL: %s = %s/%s/%s [%s]\n",
+                token, id, foid, dig, MakeLoginCookie(username, id, foid)));
+
     if (strlen(dig) != 10 || dig != MakeLoginCookie(username, id, foid))
         return FALSE;
+
+    if (flags & kCheckLoginDbg) dprint(sprintf(" VAL SUCCESS: %s\n", token));
 
     self.tfl_username = username;
     self.tfl_id = id;
@@ -58,19 +82,25 @@ static float TFL_ValidateLogin(string token) {
 
 void TFL_AutoTeam();
 
-float TFL_CheckLogin(string token, float is_web_check = FALSE) {
+float TFL_CheckLogin(string token, float flags = 0) {
+    float is_web_check = flags & kCheckLoginFromWeb;
     if (TFL_IsLoggedIn() && !is_web_check)
         return TRUE;
 
+    if (flags & kCheckLoginDbg) dprint(sprintf("CHECKLOGIN 1: %s\n", token));
     if (token == string_null)
         token = infokey(self, "*tfl_token");
+    if (flags & kCheckLoginDbg) dprint(sprintf("CHECKLOGIN 2: %s\n", token));
 
-    if (token != string_null && TFL_ValidateLogin(token)) {
+    if (token != string_null && TFL_ValidateLogin(token, flags)) {
+        if (flags & kCheckLoginDbg) dprint(sprintf("CHECKLOGIN PASS: %s\n", token));
         if (!is_web_check)
             WEB_CheckLoginRequest(self, token);
         TFL_AutoTeam();
         return TRUE;
     } else {
+        if (flags & kCheckLoginDbg) dprint(sprintf("CHECKLOGIN FAIL: %s\n", token));
+        if (flags & kCheckLoginFromWeb == 0)
         forceinfokey(self, "*tfl_token", "");
         return FALSE;
     }
@@ -82,4 +112,12 @@ void TFL_MigrateLoginStart(string fo_token = "") {
 
     string fo_login = infokey(self, "_qwtfl_login");
     TFL_StartTryMigrate(fo_login, fo_token);
+}
+
+void TFL_ClearLogin(entity player) {
+    player.tfl_id = 0;
+    player.tfl_foid = 0;
+    player.tfl_username = 0;
+    player.tfl_raw_token = "";
+    forceinfokey(player,"*tfl_token", "");
 }

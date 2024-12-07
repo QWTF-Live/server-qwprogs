@@ -280,7 +280,12 @@ void WEB_CheckLoginRequest(entity player, string token) {
     uri_post(GetEndpoint("login"), LOGIN_REQUEST, "application/json", req);
 }
 
-float TFL_CheckLogin(string token, float force = FALSE);
+enumflags {
+    kCheckLoginFromWeb,
+    kCheckLoginDbg,
+};
+
+float TFL_CheckLogin(string token, float flags = 0);
 void UpdateClient_SetLoginToken(entity player, string token);
 
 void(float reqid, float responsecode, string resourcebody, int resourcebytes) URI_Get_Callback = {
@@ -329,7 +334,7 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
 
             string token = resourcebody;
             // Note: In the case of a migration, we have no original raw token.
-            if ((token != self.tfl_raw_token) && TFL_CheckLogin(token, TRUE))
+            if ((token != self.tfl_raw_token) && TFL_CheckLogin(token, kCheckLoginFromWeb))
                 UpdateClient_SetLoginToken(self, resourcebody);
             break;
     }

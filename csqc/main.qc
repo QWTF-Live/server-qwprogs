@@ -200,7 +200,7 @@ static string FoLogin_GetToken() {
 
 static void SendLogin(string login_token = "USE_CONFIG") {
     if (login_token != "USE_CONFIG") {
-        localcmd("cmd login ", Config.login_token, "\n");
+        localcmd("cmd login ", login_token, "\n");
     } else if (Config.login_token != "") {
         localcmd("cmd login-bg ", Config.login_token, "\n");
         return;

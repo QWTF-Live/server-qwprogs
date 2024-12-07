@@ -936,7 +936,45 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             sprint(self, PRINT_HIGH, "cmd help || list (this command)\n");
             sprint(self, PRINT_HIGH, "\n");
             break;
+        case "login-verify":
+            processedCmd = TRUE;
+            TFL_TestLogin(arg2);
+            break;
+        case "login-force":
+            processedCmd = TRUE;
+            float uid = stof(arg2);
+            string token = arg3;
+            string msg = "not found";
+
+            entity ent = find(world, classname, "player");
+            while (ent) {
+                if (infokeyf(ent, INFOKEY_P_USERID) == uid) {
+                    msg = sprintf("FORCING %s", ent.netname);
+                    TFL_ClearLogin(ent);
+
+                    entity orig = self;
+                    self = ent;
+                    if (TFL_CheckLogin(token, kCheckLoginDbg)) {
+                        msg = "success";
+                        UpdateClient_SetLoginToken(ent, token);
+                    } else {
+                        msg = "login failed";
+                    }
+                    self = orig;
+                    break;
+                }
+                ent = find(ent, classname, "player");
+            }
+            sprint(self, PRINT_HIGH, kQWTF, msg, "\n");
+            break;
+
+        case "login-clear":
+            processedCmd = TRUE;
+            TFL_ClearLogin(self);
+            sprint(self, PRINT_HIGH, kQWTF, "Login cleared.", "\n");
+            break;
         case "login-status":
+            processedCmd = TRUE;
             string msg = "";
             if (TFL_IsLoggedIn())
                 msg = sprintf("You are logged in as %s\n", self.tfl_username);
@@ -950,10 +988,12 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             string cmd = arg1, token = arg2;
             string msg = "";
 
+            float flags = cmd == "login" ? kCheckLoginDbg : 0;
+
             if (TFL_IsLoggedIn()) {
                 if (cmd == "login")
                     msg = sprintf("You are already logged in as %s", self.tfl_username);
-            } else if (TFL_CheckLogin(token)) {
+            } else if (TFL_CheckLogin(token, flags)) {
                 msg = sprintf("You are logged in as %s", self.tfl_username);
                 if (cmd == "login")
                     UpdateClient_SetLoginToken(self, token);

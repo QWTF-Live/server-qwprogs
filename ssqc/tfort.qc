@@ -840,7 +840,7 @@ void () FO_ThrowGrenade = {
     if (RewindFlagEnabled(REWIND_GRENADES))
         throwtime = bounded_remote_time(FO_RewindGrenDt(timer.fpp.gren_type));
 
-    if ((timer.nextthink < timer.heat || throwtime > timer.heat - grenade_lockout) &&
+    if ((timer.nextthink < timer.heat || throwtime > timer.heat - 0.1) &&
         !IsClownMode(CLOWN_SPAM_GRENADES)) {
         // We do not allow throwing within the 0.8s, or the last 0.1s.
         // The former is a priming time, the latter is so that client side

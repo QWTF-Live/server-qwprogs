@@ -98,9 +98,6 @@ static void axe_extra() {
     if ((*flag && !self.hit_in_current_animation) ||
         (!*flag && self.weaponframe == 3))
         self.hit_in_current_animation = w_attack();
-
-    if (weapon == WEAP_KNIFE && superknife && superknife_multihit)
-        self.hit_in_current_animation = FALSE;
 }
 
 void player_run() {

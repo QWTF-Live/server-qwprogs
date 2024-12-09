@@ -109,7 +109,6 @@ sound files are found in `fortress/sound/hitaudio/` and  `fortress/sound/announc
 * localinfo supermedikit on/off - causes the medikit to hit on all four attack frames (instead of only on 3rd frame)
 * localinfo superspanner on/off - causes the spanner to hit on all four attack frames (instead of only on 3rd frame)
 * localinfo superknife on/off - causes the knife to hit on all four attack frames (instead of only on 3rd frame)
-* localinfo superknife_multihit on/off - controls whether multiple hits are allowed in a single attack
 * scout has "new" flash grenades - localinfo fo_flash on (default on)
 * ability to set client side min and max flash amounts - localinfo minflash x/localinfo maxflash x (number as a percentage - 1.5 = 150%)
 * `cmd votemap`/`cmd showvotes`/`cmd listmaps` can now be used at any time and are part of the same system
@@ -202,7 +201,6 @@ sound files are found in `fortress/sound/hitaudio/` and  `fortress/sound/announc
 * localinfo server_sbflaginfo : 0 - disables sbar flaginfo, 1 enables it [default: 1]
 * localinfo reverse_cap : 0 - normal gameplay, 1: you have to take your flag and capture in the enemy base [default: 0]
 * localinfo engineer_move / em : 0 - normal gameplay, 1: engineers can move while building [default: 1]
-* localinfo grenade_lockout / gl : Time in seconds grenade throw is locked out [default: 0.1]
 * localinfo round_delay_time : interval time between rounds in quadmode - seconds [default: 30]
 * localinfo max_gren2_soldier : maximum number of active nail/shock grenades (TF 2.8 = 3, OzTF = 1) [default: 3]
 * localinfo distance_based_cuss_duration : on/off - enables cuss duration to be proportional to the distance from the explosion [default: off]

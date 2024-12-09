@@ -664,9 +664,6 @@ void () DecodeLevelParms = {
         // allow knife to hit on any frame of animation
         superknife = CF_GetSetting("sk", "superknife", "on");
 
-        // allow knife to hit on every frame of animation
-        superknife_multihit = CF_GetSetting("skmh", "superknife_multihit", "off");
-
         // whitelists detpack impulses on the list of commands that you're allowed to use while reloading [off]
         detpack_when_reloading = CF_GetSetting("detreload", "detpack_while_reloading", "off");
 
@@ -825,7 +822,6 @@ void () DecodeLevelParms = {
         }
 
         engineer_move = CF_GetSetting("em","engineer_move", "1");
-		grenade_lockout = CF_GetSetting("gl","grenade_lockout", "0.1");
 
         max_active_gren2_soldier = CF_GetSetting("mg2s","max_active_gren2_soldier", "3");
 
@@ -870,7 +866,6 @@ void () DecodeLevelParms = {
             supermedikit = TRUE;
             superspanner = FALSE;
             superknife = TRUE;
-            superknife_multihit = FALSE;
             Role_None.gren1_limits[1] = PC_SCOUT_GRENADE_MAX_1;
             Role_None.gren1_limits[2] = PC_SNIPER_GRENADE_MAX_1;
             Role_None.gren1_limits[3] = PC_SOLDIER_GRENADE_MAX_1;
@@ -935,7 +930,6 @@ void () DecodeLevelParms = {
             supermedikit = FALSE;
             superspanner = FALSE;
             superknife = FALSE;
-            superknife_multihit = FALSE;
             Role_None.gren1_limits[1] = 4;
             Role_None.gren1_limits[2] = 4;
             Role_None.gren1_limits[3] = 4;
@@ -971,7 +965,6 @@ void () DecodeLevelParms = {
             supermedikit = FALSE;
             superspanner = FALSE;
             superknife = FALSE;
-            superknife_multihit = FALSE;
             scoutdash = FALSE;
             fo_flash = FALSE;
             nailgren_type = NGR_TYPE_NAIL;

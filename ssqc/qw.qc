@@ -569,7 +569,6 @@ float superaxe;
 float supermedikit;
 float superspanner;
 float superknife;
-float superknife_multihit;
 float detpack_when_reloading;
 float flag_follow;
 float ceasefire_type;
@@ -604,7 +603,6 @@ float deathammo_cells;
 //float server_sbflaginfo;
 float reverse_cap;
 float engineer_move;
-float grenade_lockout;
 
 float fo_concuss;
 

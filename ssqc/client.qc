@@ -616,9 +616,6 @@ void () DecodeLevelParms = {
         // display sniper rifle power in status bar [on]
         sniperpower = CF_GetSetting("sp", "sniperpower", "on");
 
-        // display build status in status bar [on]
-        buildstatus = CF_GetSetting("bs", "buildstatus", "on");
-
         // use old init/max hp/armor [off]
         old_hp_armor = CF_GetSetting("oh", "old_hp_armor", "off");
 
@@ -868,7 +865,6 @@ void () DecodeLevelParms = {
             stock_on_cap = TRUE;
             stock_reload = TRUE;
             sniperpower = TRUE;
-            buildstatus = TRUE;
             old_hp_armor = FALSE;
             superaxe = TRUE;
             supermedikit = TRUE;
@@ -934,7 +930,6 @@ void () DecodeLevelParms = {
             stock_on_cap = FALSE;
             stock_reload = FALSE;
             sniperpower = FALSE;
-            buildstatus = FALSE;
             old_hp_armor = TRUE;
             superaxe = FALSE;
             supermedikit = FALSE;

@@ -550,7 +550,6 @@ float cussgrentime;
 float medicnocuss;
 float distance_based_cuss_duration;
 float sniperpower;
-float buildstatus;
 float server_default;
 float server_faithful;
 float server_huetf;

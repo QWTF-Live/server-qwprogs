@@ -52,8 +52,7 @@ float TeamFortress_DetonatePipebombs(float force) {
         if (!force && pipes[i].created_at > time - tf_config.pipe_cooldown)
             continue;
 
-        deathmsg = pipes[i].flags & FL_ONGROUND ? pipes[i].weapon :
-            DMSG_GREN_PIPE_AIR;
+        deathmsg = pipes[i].flags & FL_ONGROUND ? DMSG_GREN_PIPE : DMSG_GREN_PIPE_AIR;
 
         T_RadiusDamage(pipes[i], pipes[i].owner, 120, world);
 

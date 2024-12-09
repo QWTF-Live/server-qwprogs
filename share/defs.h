@@ -818,13 +818,6 @@ enum {
 #define NGR_BURST_DEFAULT_INTERVAL		0.7
 #define NGR_BURST_DEFAULT_RANGE			0.3
 
-// Defines for Medic type
-#define MEDIC_TYPE_DEFAULT	0
-#define MEDIC_TYPE_BLAST		1
-
-// Defines for BlastGren Settings
-#define BLASTGREN_DEFAULT_VELOCITY_MULTIPLIER	1
-
 // Defines for WeaponMode
 #define GL_NORMAL	0
 #define GL_PIPEBOMB	1
@@ -984,7 +977,6 @@ enum {
 #define PC_MEDIC_SKIN			3
 #define PC_MEDIC_MAXHEALTH		100
 #define PC_MEDIC_MAXSPEED		320
-#define PC_BLASTMEDIC_MAXSPEED		280
 #define PC_MEDIC_MAXARMOR		90
 #define PC_MEDIC_INITARMOR		40
 #define PC_MEDIC_MAXARMORTYPE		0.6
@@ -1428,7 +1420,6 @@ enum {
 #define ICON_GREN_GAS "textures/wad/gren_gas.png"
 #define ICON_GREN_FLARE "textures/wad/gren_flare.png"
 #define ICON_GREN_CALTROP "textures/wad/gren_caltrop.png"
-#define ICON_GREN_BLAST "textures/wad/gren_blast.png"
 #define ICON_GREN_SHOCK "textures/wad/gren_nail.png"
 #define ICON_GREN_BURST "textures/wad/gren_nail.png"
 #define ICON_SCOUT "textures/wad/scout.png"

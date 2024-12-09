@@ -512,9 +512,6 @@ float burstgren_count;
 float burstgren_interval;
 float burstgren_range;
 
-float medic_type;
-float blastgren_velocity_multiplier;
-
 float old_grens;
 float fo_flash;
 float invis_only;

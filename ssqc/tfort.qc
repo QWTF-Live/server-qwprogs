@@ -545,7 +545,7 @@ void () TeamFortress_ShowTF = {
     CF_PrintSetting("Sniper max grenades type 2 (flare)", Role_None.gren2_limits[2], "", PC_SNIPER_GRENADE_MAX_2);
     CF_PrintSetting("Soldier max grenades type 2 (nail/shock)", Role_None.gren2_limits[3], "", PC_SOLDIER_GRENADE_MAX_2);
     CF_PrintSetting("Demoman max grenades type 2 (mirv)", Role_None.gren2_limits[4], "", PC_DEMOMAN_GRENADE_MAX_2);
-    CF_PrintSetting("Medic max grenades type 2 (concussion/blast)", Role_None.gren2_limits[5], "", PC_MEDIC_GRENADE_MAX_2);
+    CF_PrintSetting("Medic max grenades type 2 (concussion)", Role_None.gren2_limits[5], "", PC_MEDIC_GRENADE_MAX_2);
     CF_PrintSetting("Heavy Weapons max grenades type 2 (mirv)", Role_None.gren2_limits[6], "", PC_HVYWEAP_GRENADE_MAX_2);
     CF_PrintSetting("Pyro max grenades type 2 (napalm)", Role_None.gren2_limits[7], "", PC_PYRO_GRENADE_MAX_2);
     CF_PrintSetting("Spy max grenades type 2 (gas)", Role_None.gren2_limits[8], "", PC_SPY_GRENADE_MAX_2);
@@ -646,7 +646,6 @@ static struct stg_table_entry {
 stg_table_entry stg_table[] = {
     { GREN_NORMAL,  NormalGrenadeTouch,     FO_T_GrenExplode},
     { GREN_CONC,    ConcussionGrenadeTouch, FO_T_GrenExplode},
-    { GREN_BLAST,   BlastGrenadeTouch,      BlastGrenadeExplode},
     { GREN_NAIL,    NailGrenadeTouch,       NailGrenadeExplode},
     { GREN_SHOCK,   ShockGrenadeTouch,      ShockGrenadeExplode, TRUE},
     { GREN_BURST,   BurstGrenadeTouch,      BurstGrenadeExplode},
@@ -2354,18 +2353,8 @@ void () TeamFortress_ExplodePerson = {
         bprint(PRINT_MEDIUM, "Ack! ", self.owner.netname,
                 "! The grenade is your friend for another reason!\n");
     else if (self.owner.playerclass == PC_MEDIC) {
-        if (self.weapon == GREN_BLAST) {
-            if (medic_type == MEDIC_TYPE_BLAST) {
-                bprint(PRINT_MEDIUM, "Nice one ", self.owner.netname,
-                        ", you forgot to throw your blast grenade!\n");
-            } else {
-                bprint(PRINT_MEDIUM, "Yes ", self.owner.netname,
-                        ", eating a concussion grenade is bad!\n");
-            }
-        } else {
-            bprint(PRINT_MEDIUM, "No ", self.owner.netname,
-                    "! Assist your own suicide some other time!\n");
-        }
+        bprint(PRINT_MEDIUM, "No ", self.owner.netname,
+                "! Assist your own suicide some other time!\n");
     }
     else if (self.owner.playerclass == PC_HVYWEAP)
         bprint(PRINT_MEDIUM, "Hey ", self.owner.netname,

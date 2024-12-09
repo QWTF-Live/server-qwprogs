@@ -203,7 +203,6 @@ FO_Hud_Icons HudIcons2[39] = {
     {ICON_GREN_FLARE},
     {ICON_GREN_NAPALM},
     {ICON_GREN_CALTROP},
-    {ICON_GREN_BLAST},
     {ICON_GREN_SHOCK},
     {ICON_GREN_BURST},
     {ICON_IDENTIFY},

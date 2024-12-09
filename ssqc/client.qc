@@ -517,9 +517,6 @@ void () DecodeLevelParms = {
         // maximum amount of pipebombs in game [unlimited]
         detpipe_limit_world = CF_GetSetting("dw", "detpipe_limit_world", "-1");
 
-        // cooldown applies to all pipes [on]
-        allpipes_cooldown = CF_GetSetting("apcd", "allpipes_cooldown", "on");
-
         // allow medic aura [on]
         medicaura = CF_GetSetting("ma", "medicaura", "on");
 

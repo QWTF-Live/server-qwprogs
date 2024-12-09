@@ -26,7 +26,7 @@ void TeamFortress_QueuedDetpipe() {
 }
 
 float TeamFortress_DetonatePipebombs(float force) {
-    if (!force && allpipes_cooldown && time < self.pipecooldown) {
+    if (!force && time < self.pipecooldown) {
         if (!FO_GetUserSetting(self, "ndq", "no_det_queue", "off"))
             self.detpipe_queued = TRUE;
         return FALSE;

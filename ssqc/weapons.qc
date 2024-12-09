@@ -2580,16 +2580,8 @@ void () W_WeaponFrame = {
 
     if (self.button0) {
         if (FO_CurrentWeapon() == WEAP_SNIPER_RIFLE) {
-            if (self.tfstate & TFSTATE_AIMING) {
-                if (self.heat < PC_SNIPER_MAXDAM) {
-                    self.heat = min(self.heat + 3, PC_SNIPER_MAXDAM);
-                    if ((sniperpower) && (self.power_time < (time - 0.3))) {
-                        self.power_time = time;
-                        Status_Refresh(self);
-                    }
-                }
-            } else {
-                local vector tv = self.velocity;
+            if (self.tfstate & TFSTATE_AIMING == 0) {
+                vector tv = self.velocity;
                 tv_z = 0;
                 if (vlen(tv) <= 50) {
                     SniperSight_Create();

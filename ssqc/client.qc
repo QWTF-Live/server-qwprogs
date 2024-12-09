@@ -610,9 +610,6 @@ void () DecodeLevelParms = {
         if (fo_concuss & FOC_AFF_MED)
             medicnocuss = FALSE;
 
-        // display sniper rifle power in status bar [on]
-        sniperpower = CF_GetSetting("sp", "sniperpower", "on");
-
         // use old init/max hp/armor [off]
         old_hp_armor = CF_GetSetting("oh", "old_hp_armor", "off");
 
@@ -857,7 +854,6 @@ void () DecodeLevelParms = {
             stockfull = TRUE;
             stock_on_cap = TRUE;
             stock_reload = TRUE;
-            sniperpower = TRUE;
             old_hp_armor = FALSE;
             superaxe = TRUE;
             supermedikit = TRUE;
@@ -921,7 +917,6 @@ void () DecodeLevelParms = {
             stockfull = FALSE;
             stock_on_cap = FALSE;
             stock_reload = FALSE;
-            sniperpower = FALSE;
             old_hp_armor = TRUE;
             superaxe = FALSE;
             supermedikit = FALSE;

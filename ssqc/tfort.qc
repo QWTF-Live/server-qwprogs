@@ -555,7 +555,6 @@ void () TeamFortress_ShowTF = {
 
     sprint(self, PRINT_HIGH, "\n== Sniper ==\n");
     CF_PrintSetting("Old sniper rifle range", old_sniperrange, "", 1);
-    CF_PrintSetting("Sniper Rifle power in status bar", sniperpower, "", 1);
 
     sprint(self, PRINT_HIGH, "\n== Medic ==\n");
     CF_PrintSetting("Medic immune to concussion grenade", medicnocuss, "", 1);

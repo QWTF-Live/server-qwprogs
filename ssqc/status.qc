@@ -5,7 +5,6 @@ string(float num) BlueScoreToString;
 string(float num) RedScoreToString;
 string(float num) YellowScoreToString;
 string(float num) GreenScoreToString;
-string(entity pl) SniperPowerToString;
 string(entity pl) DetpackToString;
 string(entity pl) AuraToString;
 string(entity pl) AssaultCannonToString;
@@ -312,11 +311,7 @@ void UpdateClientStatusBar(entity pl)
             }
             break;
         case PC_SNIPER:
-            float dam;
-            dam = 0;
-            if (sniperpower)
-                dam = pl.heat;
-
+            float dam = pl.heat;
             WriteFloat(MSG_MULTICAST, dam);
             break;
         case PC_DEMOMAN:
@@ -492,24 +487,6 @@ string(entity pl) DisguiseToString =
         st = Q"\sUndercover\s: ";
         st = strcat(st, team);
         st = strcat(st, skin);
-    }
-
-    return st;
-};
-
-string(entity pl) SniperPowerToString =
-{
-    local string st = "";
-
-    if (!sniperpower)
-        return st;
-
-    if (pl.heat) {
-        st = Q"\spower\s: ";
-        st = strcat(st, ftos(pl.heat));
-        st = strcat(st, " dmg");
-        if (pl.heat == PC_SNIPER_MAXDAM)
-            st = strcat(st, " (max)");
     }
 
     return st;

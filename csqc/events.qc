@@ -398,10 +398,6 @@ void() CSQC_Parse_Event = {
         case MSG_UNPAUSE:
             CsGrenTimer::SyncUnpause();
             break;
-        case MSG_RELOADSOUND:
-            local float weapon = readfloat();
-            FO_ReloadSound(weapon);
-            break;
         case MSG_CACHE_LOGIN:
             string login = readstring();
             string nonce = readstring();

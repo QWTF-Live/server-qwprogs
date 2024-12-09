@@ -221,7 +221,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define MSG_TFX_GRENTIMER   24
 #define MSG_QUAD_ROUND_BEGIN 25
 #define MSG_HITFLAG         26
-#define MSG_RELOADSOUND     27
+// unused 27
 #define MSG_CACHE_LOGIN     28
 #define MSG_TFL_CONFIG      29
 #define MSG_SOUND           30

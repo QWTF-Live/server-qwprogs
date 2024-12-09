@@ -129,7 +129,6 @@ enum {
     GREN_FIRST = 100,
     GREN_NORMAL = GREN_FIRST,
     GREN_CONC,
-    GREN_BLAST,
     GREN_NAIL,
     GREN_SHOCK,
     GREN_BURST,
@@ -189,7 +188,6 @@ string FO_GrenName(float gtype) {
       case GREN_EMP: return "EMP grenade";
       case GREN_FLASH: return "Flash grenade";
       case GREN_CALTROP: return "Caltrop canister";
-      case GREN_BLAST: return "Blast grenade";
       case GREN_SHOCK: return "Shock grenade";
       case GREN_BURST: return "Burst grenade";
       default: return "Grenade";
@@ -527,13 +525,6 @@ void (float att_delay) Attack_Finished;
 void W_UpdateCurrentWeapon(entity pl);
 void sprint_pred(entity client, float msglevel, string s);
 
-void (entity pl, float weapon) UpdateClientReloadSound;
-
-void FO_ReloadSound() {
-    if (!ClientPred_Enabled(self, CSQC_WEAP_PRED))
-        UpdateClientReloadSound(self, FO_CurrentWeapon());
-}
-
 void FO_ReloadFrame() {
     if (self.tfstate & TFSTATE_RELOADING == 0)
         return;
@@ -582,8 +573,6 @@ void FO_ReloadSlot(Slot slot, float force) {
            strcat("Reloading ", FO_GetWeapName(ws->weapon), "...\n"));
 
     Attack_Finished(wi->attack_time);  // Carried.. but not sure it's necessary.
-
-    FO_ReloadSound();
 
     self.tfstate |= TFSTATE_RELOADING;
 

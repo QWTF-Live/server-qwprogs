@@ -15,7 +15,6 @@ DEFCVAR_FLOAT(wpp_adv_otherp_ms, 0);
 
 DEFCVAR_FLOAT(r_drawviewmodel, 1);
 DEFCVAR_FLOAT(fo_reloadalpha, 0);
-DEFCVAR_FLOAT(fo_reloadvolume, 0);
 
 // Alpha of weapon when unable to attck (e.g. time < attack_finished).
 // Default: -1 means no change to alpha when in this state.
@@ -577,33 +576,6 @@ void WP_ProcessServerUpdate() {
     PM_ServerUpdate();
 }
 
-void FO_ReloadSound(float weapon) {
-    local float reloadvolume = CVARF(fo_reloadvolume);
-
-    if (reloadvolume ==  0)
-        return;
-
-    local float sample = 0;
-    switch (WP_CurrentWeapon()->weapon) {
-        case WEAP_ROCKET_LAUNCHER:
-            sample = SND_RELOAD_ROCKET;
-            break;
-        case WEAP_GRENADE_LAUNCHER:
-        case WEAP_PIPE_LAUNCHER:
-            sample = SND_RELOAD_GREN;
-            break;
-        case WEAP_SHOTGUN:
-            sample = SND_RELOAD_SHOTGUN;
-            break;
-        case WEAP_SUPER_SHOTGUN:
-            sample = SND_RELOAD_SUPER_SHOTGUN;
-            break;
-        case WEAP_ASSAULT_CANNON:
-            sample = SND_RELOAD_ASSAULT_CANNON;
-    }
-    RawPred_Sound(sample, CHAN_AUTO, reloadvolume);
-};
-
 inline float WP_IsReloading() {
     return pstate_pred.tfstate & TFSTATE_RELOADING;
 }
@@ -1111,13 +1083,6 @@ string WP_GetClip() {
     if (WP_IsReloading())
         still_loading = FO_NumClipStillLoading(wi, pstate_pred.client_time,
                                                pstate_pred.reload_finished);
-
-    if (last_still_loading != still_loading) {
-        last_still_loading = still_loading;
-
-        if (still_loading)
-            FO_ReloadSound(WP_CurrentWeapon()->weapon);
-    }
 
     float clip = capacity - fired - still_loading;
     float rem = WP_GetAmmo(wi->ammo_type);

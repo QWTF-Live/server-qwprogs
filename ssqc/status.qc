@@ -244,17 +244,6 @@ string (entity Player, entity Item, float teamno) GetItemStatus = {
     return st;
 }
 
-void UpdateClientReloadSound(entity pl, float weapon) {
-    if(!infokeyf(pl, INFOKEY_P_CSQCACTIVE))
-        return;
-
-    msg_entity = pl;
-    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
-    WriteByte(MSG_MULTICAST, MSG_RELOADSOUND);
-    WriteFloat(MSG_MULTICAST, weapon);
-    multicast('0 0 0', MULTICAST_ONE_NOSPECS);
-}
-
 void UpdateClientGrenadePrimed(entity pl, float grentype, float explodes_at) = {
 #if 0  // Not needed until we re-enable TFX.
     msg_entity = pl;

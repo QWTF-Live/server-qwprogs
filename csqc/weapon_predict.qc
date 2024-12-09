@@ -8,8 +8,6 @@ DEFCVAR_FLOAT(fopmd_force_pos, 0);
 
 DEFCVAR_FLOAT(fo_client_sniper_sight, 1);
 
-DEFCVAR_FLOAT(wpp_min_ping, -1);
-
 DEFCVAR_FLOAT(wpp_adv_selfp_ms, 0);
 DEFCVAR_FLOAT(wpp_adv_otherp_ms, 0);
 

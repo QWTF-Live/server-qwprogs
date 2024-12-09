@@ -19,7 +19,6 @@ New commands
 * `fo_adminrefresh 2` time in seconds for admin menu to refresh
 * `fo_predict_weapons 1` client-side weapon prediction
 * `fo_predict_projectiles 1` client-side projectile prediction
-* `wpp_min_ping -1` minimum ping before `fo_wpp_beta` is enabled.
 * `fo_client_sniper_sight 1` client side sniper dot
 * `cl_p2r` use rocket model for incendiary launcher
 * `cl_r2g` use grenade model for rockets

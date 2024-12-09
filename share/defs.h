@@ -1372,7 +1372,6 @@ enum {
 #define FO_HUD_GROW_RIGHT	4
 
 #define FO_HUD_CONFIG_PATH	"fortressone_hud.cfg"
-#define FO_CONFIG_PATH	"fortressone_csqc.cfg"
 #define FO_TOKEN_PATH	"fortressone_token.cfg"
 
 #define TFL_CONFIG_PATH	"qwtflive.cfg"

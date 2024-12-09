@@ -198,11 +198,18 @@ static string FoLogin_GetToken() {
     return token;
 }
 
+static void ClearOldLoginState() {
+    localcmd("setinfo _qwtfl_login \"\"\n");
+    localcmd("setinfo _qwtfl_nonce \"\"\n");
+    localcmd("setinfo _fo_token \"\"\n");
+}
+
 static void SendLogin(string login_token = "USE_CONFIG") {
     if (login_token != "USE_CONFIG") {
         localcmd("cmd login ", login_token, "\n");
     } else if (Config.login_token != "") {
         localcmd("cmd login-bg ", Config.login_token, "\n");
+        ClearOldLoginState();  // Only after we've saved valid new state.
         return;
     }
 

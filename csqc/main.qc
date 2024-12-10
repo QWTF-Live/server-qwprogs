@@ -1014,6 +1014,14 @@ void FO_ApplyCussInput() {
 }
 
 static void InputFrameDebounce() {
+    if (input_impulse == TF_SPECIAL_SKILL2 &&  // Poor man's +rj translation
+        (WP_PlayerClass() == PC_SOLDIER || WP_PlayerClass() == PC_PYRO)) {
+        ActivatePlusSlot(0);
+        DeactivatePlusSlot(0);
+        input_impulse = 0;  // Ensure +slot works below
+        input_buttons |= BUTTON_ATTACK | BUTTON_JUMP;
+    }
+
     // Button debounce
     if (debounced_buttons) {
         for (int i = 0; i < debounce_button.length; i++)

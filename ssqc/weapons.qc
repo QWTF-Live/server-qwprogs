@@ -2522,7 +2522,8 @@ void () W_WeaponFrame = {
         }
     }
 
-    // whitelist of commands that can be used even when reloading
+    // Whitelist of commands that can be used even when reloading
+    // Note: ImpulseCommands will clear impulse so we can continue processing
     switch (self.impulse)
     {
         case TF_SPECIAL_SKILL1:
@@ -2549,25 +2550,23 @@ void () W_WeaponFrame = {
         case TF_SPY_FEIGN_SILENT:
         case TF_PLAYER_READY:
         case TF_PLAYER_NOT_READY:
+        case TF_GRENADE_1:
+        case TF_GRENADE_2:
+        case TF_GRENADE_T:
+        case TF_GRENADE_PT_1:
+        case TF_GRENADE_PT_2:
             ImpulseCommands();
-            return;
-            // allows setting detpack while reloading on toggle, defaults to off
+            break;
         case TF_DEMOMAN_DETPACK:
         case TF_DETPACK:
         case TF_DETPACK_STOP:
         case TF_DETPACK_5:
         case TF_DETPACK_20:
         case TF_DETPACK_50:
-            if (detpack_when_reloading) {
+            // allows setting detpack while reloading on toggle, defaults to off
+            if (detpack_when_reloading)
                 ImpulseCommands();
-                return;
-            }
-    }
-
-    //  grenade impulses always possible
-    if ((self.impulse >= TF_GRENADE_1 && self.impulse <= TF_GRENADE_PT_2)) {
-        ImpulseCommands();
-        return;
+            break;
     }
 
     if (!WeaponReady())

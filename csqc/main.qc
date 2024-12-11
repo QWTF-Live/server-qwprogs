@@ -138,8 +138,6 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     PM_Init();
 
     is_demo = isdemo();
-    if (!is_demo)
-        ClientSettings_Check();
     SetupAliases();
 
     player_menu_type = 0;
@@ -1104,9 +1102,10 @@ void _Sync_ServerCommandFrame() {
     last_servercommandframe = servercommandframe;
 
     static float once;
-    if (!once) {
+    if (!once && !is_demo) {
         once = TRUE;
         SendLogin();
+        ClientSettings_Check();
     }
 
     UpdateCachedCvars();
@@ -1215,18 +1214,19 @@ void Perf_Status() {
 }
 
 void ClientSettings_Check() {
+    static string kError = "^1ERROR:^7 ";
+    static string kWarn = "^3WARNING:^7 ";
+    static string kRec = "^2RECOMMENDED:^7 ";
+
     localcmd("cl_movespeedkey 1\n");
     if (cvar("worker_count") == 0)
-        printf("ERROR: Please set `worker_count 4` to reduce stuttering!\n");
+        print(kError, "Please set `worker_count 4` to reduce stuttering!\n");
     if (cvar("r_temporalscenecache") == 0)
-        printf("RECOMMENDED: Please set `r_temporalscenecache 1` to reduce stuttering!\n");
+        print(kRec, "Please set `r_temporalscenecache 1` to reduce stuttering!\n");
     if (cvar("fo_grentimer") != 2)
-        printf("RECOMMEND: Setting `fo_grentimer 2` for ping correction.\n");
-    if (cvar("fo_hud_cache") != 1)
-        printf("ERROR: Please set `fo_hud_cache 1` to improve fps.\n");
+        print(kRec, "Set `fo_grentimer 2` for ping correction.\n");
     if (cvar("fo_predict_weapons") != 1)
-        printf("WARNING: client-side weapon prediction disabled [fo_predict_weapons 0]\n");
+        print(kWarn, "client-side weapon prediction disabled [fo_predict_weapons 0]\n");
     if (cvar("fo_predict_projectiles") != 1)
-        printf("WARNING: client-side projectile prediction disabled [fo_predict_projectiles 0]\n");
-    printf("Finished checking settings...\n");
+        print(kWarn, "client-side projectile prediction disabled [fo_predict_projectiles 0]\n");
 }

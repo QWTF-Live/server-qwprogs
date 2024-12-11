@@ -670,6 +670,7 @@ void () StartQuadRound =
 
 		// send result to server
 		PostFOQuadFinished(quad_winner);
+		localcmd("serverinfo status Finished\n");
 
 		while (p != world) {
 			if (p.netname != "" && p.team_no && p.playerclass) {

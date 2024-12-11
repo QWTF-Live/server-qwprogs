@@ -1116,11 +1116,6 @@ void _Sync_ServerCommandFrame() {
     team_no_attack = getstatf(STAT_TEAMNO_ATTACK);
     if (team_no_attack == 0)
         team_no_attack = 1;
-    all_time = getstatf(STAT_ALL_TIME);
-    SBAR.ReadyStatus = getstatf(STAT_FLAGS);
-
-    game_state.localentnum = player_localentnum;
-    game_state.pc = pstate_server.playerclass;
 
     if (team_no == 0 || stof(getplayerkeyvalue(player_localnum, "*spectator")) || isdemo()) {
         game_state.is_spectator = 1;
@@ -1135,7 +1130,6 @@ void _Sync_ServerCommandFrame() {
     game_state.spawn_gen = getstatf(STAT_SPAWN_GEN);
 
     game_state.is_ceasefire = serverkeyfloat("pausestate");
-    game_state.org_game = getstatf(STAT_ORG_GAME);
     WP_ServerFrame();
 
     // Use an undocumented ezquake compat feature to figure out whether we
@@ -1147,10 +1141,12 @@ void _Sync_ServerCommandFrame() {
     CsGrenTimer::UpdateSoundStack();
     UpdateTeamColorCrosshair();
 
+    static float last_playerclass;
     if ((prev_game_state.spawn_gen != game_state.spawn_gen ||
-         prev_game_state.pc != game_state.pc) &&
+         last_playerclass != pstate_server.playerclass) &&
         game_state.is_player && game_state.is_alive)
         PlayerRespawned();
+    last_playerclass = pstate_server.playerclass;
 }
 
 

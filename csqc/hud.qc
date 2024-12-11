@@ -597,12 +597,13 @@ void Hud_DrawFlagStatusBar()
     }
 
     float count = 0;
+    float org_game = getstatf(STAT_ORG_GAME);
     for (float i = 0; i < flagInfoCount; i++) {
         FlagInfoLine* fi = &FlagInfoLines[i];
         if (!fi->id)
             continue;
 
-        if (game_state.org_game && fi->team_no == team_no_attack)
+        if (org_game && fi->team_no == team_no_attack)
             continue;
 
         alpha = fi->state == FLAGINFO_HOME ? CVARF(fo_hud_idle_alpha) : 1;

@@ -190,7 +190,7 @@ void() CSQC_Parse_Event = {
                     }
 
                     if(SBAR.GameMode & GAMEMODE_QUAD) {
-                        switch (all_time) {
+                        switch (getstatf(STAT_ALL_TIME)) {
                             case ALL_TIME_ATTACK:
                                 FO_MENU_TEAM.options[6].state = FO_MENU_STATE_DISABLED;
                                 FO_MENU_TEAM.options[7].state = FO_MENU_STATE_NORMAL;

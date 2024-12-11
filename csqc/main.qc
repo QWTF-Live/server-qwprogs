@@ -347,7 +347,7 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
         setviewprop(VF_AFOV, CVARF(fov)/3);
 
     // Draw original sbar, viewsize honoured automatically.
-    if (!CVARF(fo_fte_hud) || CVARF(fo_legacy_sbar))
+    if (!CVARF(fo_fte_hud))
         setproperty(VF_DRAWENGINESBAR, 1);
 
     WP_PreviewSentry();

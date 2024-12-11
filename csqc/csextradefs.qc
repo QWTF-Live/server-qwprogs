@@ -839,7 +839,6 @@ struct {
 } FO_ScoreBoardAssets;
 
 DEFCVAR_FLOAT(fo_fte_hud, 0);
-DEFCVAR_FLOAT(fo_legacy_sbar, 0);
 DEFCVAR_FLOAT(fo_csjumpsounds, 1);
 
 struct GameState {

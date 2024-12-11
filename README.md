@@ -14,7 +14,6 @@ New commands
 * `fo_grentimer_ping_frac 1` fraction of ping to correct for
 * `fo_grentimer_nostack 0` when set, only play the oldest timer
 * `fo_fte_hud 0` completely replace Quake engine hud with FO hud
-* `fo_legacy_sbar 0` use oldschool Team Fortress status bar
 * `fo_oldscoreboard 0` use oldschool Quake scoreboard
 * `fo_adminrefresh 2` time in seconds for admin menu to refresh
 * `fo_predict_weapons 1` client-side weapon prediction

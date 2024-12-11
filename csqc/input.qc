@@ -112,7 +112,7 @@ float(float evtype, float scanx, float chary, float devid) CSQC_InputEvent = {
                 switch (scanx)
                 {
                     case K_ESCAPE:
-                        FO_Menu_Game(TRUE);
+                        TF_Menu_Game(TRUE);
                         return TRUE;
 
                     case K_MWHEELUP:

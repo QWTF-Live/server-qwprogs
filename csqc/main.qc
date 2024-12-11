@@ -85,17 +85,7 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     registercommand("fo_hud_save");
     registercommand("fo_hud_load");
 
-    registercommand("fo_menu_game");
-    registercommand("fo_main_menu");
-    registercommand("fo_menu_team");
-    registercommand("fo_menu_class");
-    registercommand("fo_menu_admin");
-    registercommand("fo_menu_vote");
-    registercommand("fo_menu_special");
-    registercommand("fo_menu_disguise");
-    registercommand("fo_menu_build");
-    registercommand("fo_menu_dropammo");
-    registercommand("fo_menu_cancel");
+    registercommand("tf_menu");
 
     registercommand("fo_min_ping");
 
@@ -144,7 +134,7 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     player_menu_type = 0;
     if (!is_demo) {
-        FO_Menu_Game(TRUE, TRUE);
+        TF_Menu_Game(TRUE, TRUE);
     } else {
         setpause(TRUE);
     }
@@ -586,9 +576,6 @@ static void DeactivatePlusSlot(int idx) {
 
 noref float(string cmd) CSQC_ConsoleCommand = {
     tokenize_console(cmd);
-    float val;
-    string key1, key2;
-    local float grentype;
 
     switch(argv(0)) {
         case "+button":
@@ -654,47 +641,37 @@ noref float(string cmd) CSQC_ConsoleCommand = {
                 FO_Hud_Editor_LoadSettings(argv(1));
             }
             break;
-        case "fo_menu_game":
-            FO_Menu_Game(TRUE);
-            break;
-        case "fo_menu_team":
-            FO_Menu_Team(TRUE);
-            break;
-        case "fo_menu_class":
-            FO_Menu_Class(TRUE);
-            break;
-        case "fo_main_menu":
-            if(checkcommand("m_main")) {
-                //Use menuqc main menu
-                localcmd("m_main\n");
-            } else {
-                //If menu.dat is missing, fall back to engine menus
-                localcmd("menu_main\n");
+        case "tf_menu":
+            switch (argv(1)) {
+                case "game": TF_Menu_Game(TRUE); break;
+                case "team": TF_Menu_Team(TRUE); break;
+                case "class": TF_Menu_Class(TRUE); break;
+                case "admin": TF_Menu_Admin_Main(TRUE); break;
+                case "special": TF_Menu_Special(TRUE); break;
+                case "dropammo": TF_Menu_DropAmmo(TRUE); break;
+                case "cancel": Menu_Cancel(); break;
+                case "disguise":
+                    if (WP_PlayerClass() == PC_SPY)
+                        TF_Menu_Spy_Skin(TRUE);
+                    break;
+                case "build":
+                    if (WP_PlayerClass() == PC_ENGINEER)
+                        TF_Menu_Build(TRUE);
+                    break;
+                case "vote": showVoteMenu(!getHudPanel(HUDP_MAP_MENU)->Display); break;
+                case "main":
+                  if(checkcommand("m_main")) {
+                      //Use menuqc main menu
+                      localcmd("m_main\n");
+                  } else {
+                      //If menu.dat is missing, fall back to engine menus
+                      localcmd("menu_main\n");
+                  }
+                  break;
+                default:
+                  printf("unrecognized menu: %s\n", argv(1));
+                  break;
             }
-            break;
-        case "fo_menu_admin":
-            FO_Menu_Admin_Main(TRUE);
-            break;
-        case "fo_menu_vote":
-            //FO_Menu_Vote(TRUE);
-            showVoteMenu(!getHudPanel(HUDP_MAP_MENU)->Display);
-            break;
-        case "fo_menu_special":
-            FO_Menu_Special(TRUE);
-            break;
-        case "fo_menu_disguise":
-            if (WP_PlayerClass() == PC_SPY)
-                FO_Menu_Spy_Skin(TRUE);
-            break;
-        case "fo_menu_build":
-            if (WP_PlayerClass() == PC_ENGINEER)
-                FO_Menu_Build(TRUE);
-            break;
-        case "fo_menu_dropammo":
-            FO_Menu_DropAmmo(TRUE);
-            break;
-        case "fo_menu_cancel":
-            Menu_Cancel();
             break;
         case "fo_min_ping":
             UpdateFoMinPing(argv(1));
@@ -707,8 +684,8 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             {
                 tokenize(findkeysforcommand(argv(0)));
 
-                key1 = argv(0);
-                key2 = argv(1);
+                string key1 = argv(0);
+                string key2 = argv(1);
                 if (key1 != "") key1 = (key1=="-1")?"":keynumtostring(stof(key1));
                 if (key2 != "") key2 = (key2=="-1")?"":keynumtostring(stof(key2));
 
@@ -736,8 +713,8 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             {
                 tokenize(findkeysforcommand(argv(0)));
 
-                key1 = argv(0);
-                key2 = argv(1);
+                string key1 = argv(0);
+                string key2 = argv(1);
                 if (key1 != "") key1 = (key1=="-1")?"":keynumtostring(stof(key1));
                 if (key2 != "") key2 = (key2=="-1")?"":keynumtostring(stof(key2));
 

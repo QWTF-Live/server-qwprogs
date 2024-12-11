@@ -207,52 +207,52 @@ void() CSQC_Parse_Event = {
                         FO_MENU_TEAM.options[6].state = FO_MENU_STATE_DISABLED;
                         FO_MENU_TEAM.options[7].state = FO_MENU_STATE_DISABLED;
                     }
-                    FO_Menu_Team(2);
+                    TF_Menu_Team(2);
                     break;
                 case CLIENT_MENU_CLASS:
-                    FO_Menu_Class(2);
+                    TF_Menu_Class(2);
                     break;
                 case CLIENT_MENU_DROPAMMO:
-                    FO_Menu_DropAmmo(FALSE);
+                    TF_Menu_DropAmmo(FALSE);
                     break;
                 case CLIENT_MENU_SCOUT:
                     float scanner_on = readbyte();
                     float scanner_flags = readfloat();
 
-                    FO_Menu_Scout(2, scanner_on, scanner_flags);
+                    TF_Menu_Scout(2, scanner_on, scanner_flags);
                     break;
                 case CLIENT_MENU_SPY:
                     last_selected_skin = readfloat();
                     last_team = readfloat();
-                    FO_Menu_Spy(2);
+                    TF_Menu_Spy(2);
                     break;
                 case CLIENT_MENU_SPY_SKIN:
-                    FO_Menu_Spy_Skin(2);
+                    TF_Menu_Spy_Skin(2);
                     break;
                 case CLIENT_MENU_SPY_TEAM:
-                    FO_Menu_Spy_Team(FALSE);
+                    TF_Menu_Spy_Team(FALSE);
                     break;
                 case CLIENT_MENU_DETPACK:
-                    FO_Menu_Detpack(2, readbyte());
+                    TF_Menu_Detpack(2, readbyte());
                     break;
                 case CLIENT_MENU_BUILD:
-                    FO_Menu_Build(2);
+                    TF_Menu_Build(2);
                     break;
                 case CLIENT_MENU_ROTATE_SENTRY:
-                    FO_Menu_Rotate_Sentry(FALSE);
+                    TF_Menu_Rotate_Sentry(FALSE);
                     break;
                 case CLIENT_MENU_FIX_DISPENSER:
-                    FO_Menu_Dispenser_Fix(FALSE, readbyte());
+                    TF_Menu_Dispenser_Fix(FALSE, readbyte());
                     break;
                 case CLIENT_MENU_USE_DISPENSER:
                     touched_dispenser_pos = [readfloat(),readfloat(),readfloat()];
-                    FO_Menu_Dispenser_Use(FALSE);
+                    TF_Menu_Dispenser_Use(FALSE);
                     break;
                 case CLIENT_MENU_ADMIN:
-                    FO_Menu_Admin_Main(TRUE);
+                    TF_Menu_Admin_Main(TRUE);
                     break;
                 case CLIENT_MENU_ADMIN_KICK:
-                    FO_Menu_Admin_Players(TRUE, CLIENT_MENU_ADMIN_KICK, 0);
+                    TF_Menu_Admin_Players(TRUE, CLIENT_MENU_ADMIN_KICK, 0);
                     break;
                 case CLIENT_MENU_VOTE:
                     mapvote_expiry = time + readfloat();
@@ -266,10 +266,10 @@ void() CSQC_Parse_Event = {
                     FO_MENU_VOTE.options[3].value = ftos(readfloat());
                     FO_MENU_VOTE.options[5].name = readstring();
                     FO_MENU_VOTE.options[5].value = ftos(readfloat());
-                    FO_Menu_Vote(FALSE);
+                    TF_Menu_Vote(FALSE);
                     break;
                 case CLIENT_MENU_CAPTAIN_PICK:
-                    FO_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_PICK, 0);
+                    TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_PICK, 0);
                     break;
                 case CLIENT_MENU_MAPS:
                     showVoteMenu(!getHudPanel(HUDP_MAP_MENU)->Display);

@@ -75,20 +75,28 @@ void UpdateCachedCvars() {
         return;
     next = time + kCvarUpdateInterval;
 
-    CVAR.r_rocketlight_colour = stov_def(CVARS(r_rocketlight_colour), '2.0 1.0 0.25');
-    CVAR.tf_color_enemy = stov_def(CVARS(tf_color_enemy), '0 2 0');
-    CVAR.tf_color_team = stov_def(CVARS(tf_color_team), '1 0 1');
-    CVAR.tf_color_attack = stov_def(CVARS(tf_color_attack), '0.5 0.5 2');
-    CVAR.tf_color_defense = stov_def(CVARS(tf_color_defense), '2 0.5 0.5');
-
-    CVAR.fo_hittext_reg = stov_def(CVARS(fo_hittext_colour), '1 1 1');
-    CVAR.fo_hittext_noarmor = stov_def(CVARS(fo_hittext_colour2), '1 0 1');
-    CVAR.fo_hittext_friendly = stov_def(CVARS(fo_hittext_colour3), '1 0 0');
-
-    CVAR.r_brightlight_colour = stov_def(CVARS(r_brightlight_colour), '2 1 0.5');
-    CVAR.r_dimlight_colour = stov_def(CVARS(r_dimlight_colour), '2 1 0.5');
-    CVAR.r_redlight_colour = stov_def(CVARS(r_redlight_colour), '3 0.5 0.5');
-    CVAR.r_bluelight_colour = stov_def(CVARS(r_bluelight_colour), '0.5 0.5 3');
+    static float batch;
+    batch = (batch + 1) % 3;
+    switch (batch) {
+    case 0:
+        CVAR.r_rocketlight_colour = stov_def(CVARS(r_rocketlight_colour), '2.0 1.0 0.25');
+        CVAR.tf_color_enemy = stov_def(CVARS(tf_color_enemy), '0 2 0');
+        CVAR.tf_color_team = stov_def(CVARS(tf_color_team), '1 0 1');
+        CVAR.tf_color_attack = stov_def(CVARS(tf_color_attack), '0.5 0.5 2');
+        CVAR.tf_color_defense = stov_def(CVARS(tf_color_defense), '2 0.5 0.5');
+        break;
+    case 1:
+        CVAR.fo_hittext_reg = stov_def(CVARS(fo_hittext_colour), '1 1 1');
+        CVAR.fo_hittext_noarmor = stov_def(CVARS(fo_hittext_colour2), '1 0 1');
+        CVAR.fo_hittext_friendly = stov_def(CVARS(fo_hittext_colour3), '1 0 0');
+        break;
+    case 2:
+        CVAR.r_brightlight_colour = stov_def(CVARS(r_brightlight_colour), '2 1 0.5');
+        CVAR.r_dimlight_colour = stov_def(CVARS(r_dimlight_colour), '2 1 0.5');
+        CVAR.r_redlight_colour = stov_def(CVARS(r_redlight_colour), '3 0.5 0.5');
+        CVAR.r_bluelight_colour = stov_def(CVARS(r_bluelight_colour), '0.5 0.5 3');
+        break;
+    }
 }
 
 void EffectToDynamicLight(vector org, float emask) {

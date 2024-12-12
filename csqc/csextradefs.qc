@@ -272,7 +272,6 @@ typedef struct {
     string Hint;
     //1 = Clanmode, 2 = Quadmode, 4 = Duelmode, 8 = Prematch
     float GameMode;
-    float ReadyStatus;
     float CountdownStarted;
     // scout
     float ScannerOn;
@@ -842,21 +841,17 @@ DEFCVAR_FLOAT(fo_fte_hud, 0);
 DEFCVAR_FLOAT(fo_csjumpsounds, 1);
 
 struct GameState {
-    float localentnum;
     float is_player;
     float is_alive;
     float is_spectator;
     float is_ceasefire;
-    float pc;
     float spawn_gen;
-    float org_game;
 };
 
 GameState game_state, prev_game_state;
 
 float team_no, team_no_attack;
 float crosshair_team_no;
-float all_time;
 float painfinished;
 float jump_counter;
 float attack_counter;

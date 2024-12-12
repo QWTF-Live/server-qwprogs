@@ -543,7 +543,8 @@ void(PanelID panelid, string text) drawReadyPanel = {
         }
         if (prematch && team_no && WP_PlayerClass() && !SBAR.CountdownStarted &&
               game_state.is_player) {
-            if(SBAR.ReadyStatus & PLAYER_READY) {
+            float ReadyStatus = getstatf(STAT_FLAGS);
+            if(ReadyStatus & PLAYER_READY) {
                 message = "Ready";
                 textcolour = MENU_TEXT_GREEN;
             } else if(round_over) {
@@ -553,7 +554,7 @@ void(PanelID panelid, string text) drawReadyPanel = {
                 tokenize(findkeysforcommand("ready"));
                 string keynum = argv(0);
 
-                if(SBAR.ReadyStatus & LAST_NOT_READY) {
+                if(ReadyStatus & LAST_NOT_READY) {
                     local vector alert_text_size = MENU_TEXT_LARGE * panel.Scale;
                     local vector alert_text_position;
                     alert_text_position.y = ScreenSize.y / 3;
@@ -582,7 +583,7 @@ void(PanelID panelid, string text) drawReadyPanel = {
                     } else {
                         message = "Type 'ready' in the console to start";
                     }
-                } else if (SBAR.ReadyStatus & ENEMY_TEAM_READY) {
+                } else if (ReadyStatus & ENEMY_TEAM_READY) {
                     local vector alert_text_size = MENU_TEXT_MEDIUM * panel.Scale;
                     local vector alert_text_position;
                     alert_text_position.y = ScreenSize.y / 3;

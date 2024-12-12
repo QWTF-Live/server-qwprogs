@@ -5,7 +5,7 @@ static string gas_p[] = {
 	count 75\
 	scale 30\
 	scalerand 10\
-	alpha 0\
+	alpha 0.4\
 	die 1.5\
 	diesubrand 1\
 	randomvel 10\
@@ -31,7 +31,7 @@ static string gas_p[] = {
 	count 55\
 	scale 60\
 	scalerand 60\
-	alpha 0.3\
+	alpha 0.8\
 	die 3\
 	randomvel 60\
 	rgb 20 255 20\
@@ -53,7 +53,7 @@ static string gas_p[] = {
 	count 2\
 	scale 90\
 	scalerand 40\
-	alpha 0\
+	alpha 0.1\
 	die 3\
 	randomvel 15\
 	veladd 0\
@@ -109,7 +109,9 @@ static string sentry_p[] = {
 };\n"};
 
 void Register_Particles() {
+#if 0
     localcmd("wait\nwait\nwait\n");  // Synchronizes some unknown race
+#endif
     localcmd(gas_p[0]);
     localcmd(gas_p[1]);
     localcmd(gas_p[2]);

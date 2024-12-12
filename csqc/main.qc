@@ -128,8 +128,6 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
     PM_Init();
 
     is_demo = isdemo();
-    if (!is_demo)
-        ClientSettings_Check();
     SetupAliases();
 
     player_menu_type = 0;
@@ -1080,6 +1078,12 @@ static void PlayerRespawned() {
     localcmd("f_respawn\n");
 }
 
+static void InitActive() {
+    SendLogin();
+    Register_Particles();
+    ClientSettings_Check();
+}
+
 float last_servercommandframe;
 void _Sync_ServerCommandFrame() {
     // Server command frames are monotonically unique, we can skip processing
@@ -1089,9 +1093,9 @@ void _Sync_ServerCommandFrame() {
     last_servercommandframe = servercommandframe;
 
     static float once;
-    if (!once) {
+    if (!once && !is_demo) {
         once = TRUE;
-        SendLogin();
+        InitActive();
     }
 
     UpdateCachedCvars();
@@ -1102,11 +1106,6 @@ void _Sync_ServerCommandFrame() {
     team_no_attack = getstatf(STAT_TEAMNO_ATTACK);
     if (team_no_attack == 0)
         team_no_attack = 1;
-    all_time = getstatf(STAT_ALL_TIME);
-    SBAR.ReadyStatus = getstatf(STAT_FLAGS);
-
-    game_state.localentnum = player_localentnum;
-    game_state.pc = pstate_server.playerclass;
 
     if (team_no == 0 || stof(getplayerkeyvalue(player_localnum, "*spectator")) || isdemo()) {
         game_state.is_spectator = 1;
@@ -1121,7 +1120,6 @@ void _Sync_ServerCommandFrame() {
     game_state.spawn_gen = getstatf(STAT_SPAWN_GEN);
 
     game_state.is_ceasefire = serverkeyfloat("pausestate");
-    game_state.org_game = getstatf(STAT_ORG_GAME);
     WP_ServerFrame();
 
     // Use an undocumented ezquake compat feature to figure out whether we
@@ -1133,10 +1131,12 @@ void _Sync_ServerCommandFrame() {
     CsGrenTimer::UpdateSoundStack();
     UpdateTeamColorCrosshair();
 
+    static float last_playerclass;
     if ((prev_game_state.spawn_gen != game_state.spawn_gen ||
-         prev_game_state.pc != game_state.pc) &&
+         last_playerclass != pstate_server.playerclass) &&
         game_state.is_player && game_state.is_alive)
         PlayerRespawned();
+    last_playerclass = pstate_server.playerclass;
 }
 
 
@@ -1200,18 +1200,19 @@ void Perf_Status() {
 }
 
 void ClientSettings_Check() {
+    static string kError = "^1ERROR:^7 ";
+    static string kWarn = "^3WARNING:^7 ";
+    static string kRec = "^2RECOMMENDED:^7 ";
+
     localcmd("cl_movespeedkey 1\n");
     if (cvar("worker_count") == 0)
-        printf("ERROR: Please set `worker_count 4` to reduce stuttering!\n");
+        print(kError, "Please set `worker_count 4` to reduce stuttering!\n");
     if (cvar("r_temporalscenecache") == 0)
-        printf("RECOMMENDED: Please set `r_temporalscenecache 1` to reduce stuttering!\n");
+        print(kRec, "Please set `r_temporalscenecache 1` to reduce stuttering!\n");
     if (cvar("fo_grentimer") != 2)
-        printf("RECOMMEND: Setting `fo_grentimer 2` for ping correction.\n");
-    if (cvar("fo_hud_cache") != 1)
-        printf("ERROR: Please set `fo_hud_cache 1` to improve fps.\n");
+        print(kRec, "Set `fo_grentimer 2` for ping correction.\n");
     if (cvar("fo_predict_weapons") != 1)
-        printf("WARNING: client-side weapon prediction disabled [fo_predict_weapons 0]\n");
+        print(kWarn, "client-side weapon prediction disabled [fo_predict_weapons 0]\n");
     if (cvar("fo_predict_projectiles") != 1)
-        printf("WARNING: client-side projectile prediction disabled [fo_predict_projectiles 0]\n");
-    printf("Finished checking settings...\n");
+        print(kWarn, "client-side projectile prediction disabled [fo_predict_projectiles 0]\n");
 }

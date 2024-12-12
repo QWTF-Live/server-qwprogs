@@ -1093,6 +1093,12 @@ static void PlayerRespawned() {
     localcmd("f_respawn\n");
 }
 
+static void InitActive() {
+    SendLogin();
+    Register_Particles();
+    ClientSettings_Check();
+}
+
 float last_servercommandframe;
 void _Sync_ServerCommandFrame() {
     // Server command frames are monotonically unique, we can skip processing
@@ -1104,8 +1110,7 @@ void _Sync_ServerCommandFrame() {
     static float once;
     if (!once && !is_demo) {
         once = TRUE;
-        SendLogin();
-        ClientSettings_Check();
+        InitActive();
     }
 
     UpdateCachedCvars();

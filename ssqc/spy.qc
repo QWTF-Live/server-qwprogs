@@ -878,13 +878,12 @@ void () GasGrenadeExplode2 = {
         return;
     }
     if (self.heat <= 20) {
-        self.weapon = self.weapon + 1;
-        if (self.weapon == 1) {
+        if (self.weapon == 0) {
             pointparticles(particleeffectnum("gas_smoke_base"),
                     [self.origin_x, self.origin_y, self.origin_z - 24],
-                    '0 0 0', 1);
-        } else if (self.weapon == 2)
-            self.weapon = 0;
+                    '0 0 1', 1);
+        }
+        self.weapon = (self.weapon + 1) % 2;
         return;
     }
     dremove(self);

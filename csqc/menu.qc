@@ -86,7 +86,7 @@ var fo_menu FO_MENU_GAME = {
         {"6","Captain's Menu", "","",FO_MENU_STATE_DISABLED,{TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_PICK, 0);},MENU_BUTTON},
         {"7","Map Menu", "","",FO_MENU_STATE_NORMAL,{showVoteMenu(TRUE);},MENU_BUTTON},
         MenuSpacer,
-        {"0","Main Menu","","",FO_MENU_STATE_NORMAL,{localcmd("fo_main_menu\n"); Menu_Cancel();},MENU_BUTTON},
+        {"0","Main Menu","","",FO_MENU_STATE_NORMAL,{localcmd("tf_menu main\n"); Menu_Cancel();},MENU_BUTTON},
     }, 10, TRUE
 };
 var fo_menu FO_MENU_GAME_SPECTATOR = {
@@ -96,7 +96,7 @@ var fo_menu FO_MENU_GAME_SPECTATOR = {
         {"3","Server Admin", "","",FO_MENU_STATE_DISABLED,{TF_Menu_Admin_Main(TRUE);},MENU_BUTTON},
         {"4","Map Menu", "","",FO_MENU_STATE_NORMAL,{showVoteMenu(TRUE);},MENU_BUTTON},
         MenuSpacer,
-        {"0","Main Menu","","",FO_MENU_STATE_NORMAL,{localcmd("fo_main_menu\n"); Menu_Cancel();},MENU_BUTTON},
+        {"0","Main Menu","","",FO_MENU_STATE_NORMAL,{localcmd("tf_menu main\n"); Menu_Cancel();},MENU_BUTTON},
     }, 6, TRUE
 };
 var fo_menu FO_MENU_SPECTATOR_TRACK = {

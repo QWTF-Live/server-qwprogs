@@ -95,9 +95,12 @@ static float ValidImpellerTarget(entity t) {
 
 static entity FindImpellerTarget(vector org, float min_a, float* direct) {
 
-    traceline(org, org + 1500 * v_forward, MOVE_NORMAL, world);
-    if (trace_fraction != 1 && ValidImpellerTarget(trace_ent))
+    traceline(org, org + kImpellerTargetRange * v_forward, MOVE_NORMAL, world);
+    if (trace_fraction != 1 && ValidImpellerTarget(trace_ent)) {
+        *direct = TRUE;
         return trace_ent;
+    }
+    *direct = FALSE;
 
     int count;
     entity* players;
@@ -115,14 +118,8 @@ static entity FindImpellerTarget(vector org, float min_a, float* direct) {
         float a = v_forward * dir;
 
         traceline(org, p.origin, MOVE_NORMAL, world);
-        if (trace_fraction < 1) {
-            if (trace_ent != p) {
-                continue; // Something in the way
-            } else {
-                *direct = TRUE;
-                return p;
-            }
-        }
+        if (trace_fraction < 1 && trace_ent != p)
+            continue; // Something in the way
 
         if (a < best_a)
             continue;  // Not in AA cone

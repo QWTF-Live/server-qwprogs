@@ -837,7 +837,7 @@ struct {
     string icon_afk;
 } FO_ScoreBoardAssets;
 
-DEFCVAR_FLOAT(fo_fte_hud, 0);
+DEFCVAR_FLOAT(tf_fte_hud, 1);
 DEFCVAR_FLOAT(fo_csjumpsounds, 1);
 
 struct GameState {

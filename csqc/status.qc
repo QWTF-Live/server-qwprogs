@@ -118,7 +118,7 @@ void(PanelID panelid, string text) drawGrenTimerPanel = {
 };
 
 void(PanelID panelid, string text) drawFacePanel = {
-    if (!CVARF(fo_fte_hud))
+    if (!CVARF(tf_fte_hud))
         return;
 
     local float playerclass = WP_PlayerClass(); //we could add different faces per class?
@@ -157,7 +157,7 @@ void(PanelID panelid, string text) drawFacePanel = {
 };
 
 void(PanelID panelid, string text) drawArmourPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     local float playerclass = WP_PlayerClass();
@@ -176,7 +176,7 @@ void(PanelID panelid, string text) drawArmourPanel = {
 };
 
 void(PanelID panelid, string text) drawAmmoPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     local string icon = fo_hud_editor?AmmoIcons[0].icon:"";
@@ -191,7 +191,7 @@ void(PanelID panelid, string text) drawAmmoPanel = {
 };
 
 void(PanelID panelid, string text) drawInvIconPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     if(text && text != "") {
@@ -201,25 +201,25 @@ void(PanelID panelid, string text) drawInvIconPanel = {
     }
 };
 void(PanelID panelid, string text) drawInvShellsPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawIconPanel(panelid, text, AmmoIcons[0].icon);
 };
 void(PanelID panelid, string text) drawInvNailsPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawIconPanel(panelid, text, AmmoIcons[1].icon);
 };
 void(PanelID panelid, string text) drawInvRocketsPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawIconPanel(panelid, text, AmmoIcons[2].icon);
 };
 void(PanelID panelid, string text) drawInvCellsPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawIconPanel(panelid, text, AmmoIcons[3].icon);
@@ -263,21 +263,21 @@ void(PanelID panelid, string text, float threshold) drawBigNumberPanel = {
 };
 
 void(PanelID panelid, string text) drawHealthArmourTextPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawBigNumberPanel(panelid, text, 26);
 };
 
 void(PanelID panelid, string text) drawAmmoTextPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawBigNumberPanel(HUDP_AMMO, text, 11);
 };
 
 void(PanelID panelid, string text) drawClockPanel = {
-    if(!CVARF(fo_fte_hud))
+    if(!CVARF(tf_fte_hud))
         return;
 
     drawBigNumberPanel(HUDP_GAMECLOCK, text, 0);
@@ -1169,7 +1169,7 @@ var FO_Hud_Panel Hud_Panels[] = {
     {HUDP_GUN6, "gun6", "Grenade Launcher",           '-4 -90',  '36 24',  0.8,1.4,1,0,0, drawInvIconPanel, {return getGunIcon(IT_GRENADE_LAUNCHER);}, 0, 36},
     {HUDP_GUN7, "gun7", "Rocket Launcher",            '-4 -70',  '36 24',  0.8,1.4,1,0,0, drawInvIconPanel, {return getGunIcon(IT_ROCKET_LAUNCHER);}, 0, 36},
     {HUDP_GUN8, "gun8", "Lighning Gun",               '-4 -50',  '36 24',  0.8,1.4,1,0,0, drawInvIconPanel, {return getGunIcon(IT_LIGHTNING);}, 0, 36},
-    {HUDP_SPEED, "speed", "Speed",                     '4 15',    '26 26',  1,1.4,0,0,0, drawTextPanel, {return CVARF(fo_fte_hud) ? ftos((int)PlanarSpeed()) : "";}, 0, 4},
+    {HUDP_SPEED, "speed", "Speed",                     '4 15',    '26 26',  1,1.4,0,0,0, drawTextPanel, {return CVARF(tf_fte_hud) ? ftos((int)PlanarSpeed()) : "";}, 0, 4},
     {HUDP_SPEEDBAR, "speedbar", "Speed Bar",           '4 30',    '150 10',  1,1.4,0,0,0, drawSpeedBar, {return "";}, 0, 4},
     {HUDP_PING, "ping", "Ping",           '4 15',    '120 12',  1,1.4,0,0,0, drawTextPanel, getPingPanelText, 0, HUD_SNAP_TOP_RIGHT},
     {HUDP_DISPCAM, "dispcam", "DispCam",    '10 50',   '150 84', 1,   0,1,0,1, drawSimplePanel, {return "";}, 1},

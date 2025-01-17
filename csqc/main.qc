@@ -335,7 +335,7 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
         setviewprop(VF_AFOV, CVARF(fov)/3);
 
     // Draw original sbar, viewsize honoured automatically.
-    if (!CVARF(fo_fte_hud))
+    if (!CVARF(tf_fte_hud))
         setproperty(VF_DRAWENGINESBAR, 1);
 
     WP_PreviewSentry();
@@ -728,14 +728,14 @@ noref float(string cmd) CSQC_ConsoleCommand = {
                     localcmd(sprintf("bind %s +fo_showscores\n", key2));
                 }
             }
-            if(CVARF(fo_fte_hud)) {
+            if(CVARF(tf_fte_hud)) {
                 FO_Show_Scores(TRUE);
             }
             break;
         case "-showscores":
         case "-showteamscores":
             showingscores = FALSE;
-            if(CVARF(fo_fte_hud)) {
+            if(CVARF(tf_fte_hud)) {
                 FO_Show_Scores(FALSE);
             }
             break;

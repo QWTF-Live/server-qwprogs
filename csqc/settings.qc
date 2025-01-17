@@ -5,7 +5,7 @@ DEFCVAR_FLOAT(fo_grentimervolume, 1);
 // When set (not -1) and spectating, supercedes fo_grentimervolume.
 DEFCVAR_FLOAT(fo_spec_grentimervolume, -1);
 
-DEFCVAR_FLOAT(fo_oldscoreboard, 0);
+DEFCVAR_FLOAT(tf_oldscoreboard, 0);
 DEFCVAR_FLOAT(fo_default_weapon, 0);
 DEFCVAR_FLOAT(fo_team_color_crosshair, 0);
 

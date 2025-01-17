@@ -680,7 +680,7 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             ClientSettings_Check();
             break;
         case "+fo_showscores":
-            if (CVARF(fo_oldscoreboard) == 1)
+            if (CVARF(tf_oldscoreboard) == 1)
             {
                 tokenize(findkeysforcommand(argv(0)));
 
@@ -709,7 +709,7 @@ noref float(string cmd) CSQC_ConsoleCommand = {
         case "+showscores":
         case "+showteamscores":
             showingscores = TRUE;
-            if (CVARF(fo_oldscoreboard) != 1)
+            if (CVARF(tf_oldscoreboard) != 1)
             {
                 tokenize(findkeysforcommand(argv(0)));
 

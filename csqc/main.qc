@@ -234,7 +234,8 @@ inline float TrackingPlayer() { return player_localentnum <= 32; }
 
 static inline float ShowDispCam() {
     return pstate_server.playerclass == PC_ENGINEER &&
-           SBAR.HasDispenser == BUILD_STATE_BUILT;
+           SBAR.HasDispenser == BUILD_STATE_BUILT &&
+           CVARF(tf_dispcam);
 }
 
 static void UpdateRenderSelf() {
@@ -291,15 +292,16 @@ static void UpdateRenderSelf() {
 static void CSQC_DispCam(float width, float height) {
     const float cam_w = 150;
 
-    vector cam_pos = getHudPanel(HUDP_DISPCAM)->Position;
 
     if (fo_hud_editor)
         return;
 
+    vector cam_pos = getHudPanel(HUDP_DISPCAM)->Position;
     if (vlen(PM_Org() - dispenser_pos) > DISP_CAM_RANGE) {
         drawstring(cam_pos, "DispCam out of range", '8 8', '1 0 0', 1, 0);
         return;
     }
+
     clearscene();
     setviewprop(VF_AFOV, 75);
 

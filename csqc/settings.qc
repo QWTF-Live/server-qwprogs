@@ -54,6 +54,8 @@ DEFCVAR_STRING(r_bluelight_colour, "");
 
 DEFCVAR_FLOAT(qwtf_web, 0);
 
+DEFCVAR_FLOAT(tf_dispcam, 1);
+
 struct {
     vector r_rocketlight_colour;
     vector tf_color_enemy, tf_color_team;

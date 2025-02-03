@@ -449,10 +449,12 @@ entity () FO_FindCurrentBuildingObject = {
         if (te.owner == self) {
             return te;
         } else if (engineer_move && te.real_owner == self) {
+#if 0
             if ((te.classname == "building_dispenser" &&
                  self.is_building == Eng_BuildingDisp) ||
                 (te.classname == "building_sentry" &&
                  self.is_building == Eng_BuildingSentry))
+#endif
                     return te;
         }
 

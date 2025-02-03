@@ -446,11 +446,17 @@ entity () FO_FindCurrentBuildingObject = {
     local entity te;
     te = find(world, netname, "build_timer");
     while (te) {
-        if (te.owner == self || (engineer_move && te.real_owner == self)) {
+        if (te.owner == self) {
             return te;
-        } else {
-            te = find(te, netname, "build_timer");
+        } else if (engineer_move && te.real_owner == self) {
+            if ((te.classname == "building_dispenser" &&
+                 self.is_building == Eng_BuildingDisp) ||
+                (te.classname == "building_sentry" &&
+                 self.is_building == Eng_BuildingSentry))
+                    return te;
         }
+
+        te = find(te, netname, "build_timer");
     }
     return world;
 }

@@ -651,6 +651,52 @@ string (float val) AbbreviateNumberToString = {
         return sprintf("%d%c", val, abbr[min(count - 1, 2)]);
 };
 
+static string StrInsert(string a, string b, float pos, float adj) {
+    string result = strcat(substring(a, 0, pos), b);
+    float rem = strlen(a) - pos - adj + 1;
+    if (rem > 0)
+        result = strcat(result, substring(a, pos + adj, rem));
+    return result;
+}
+
+struct Col {
+    string c[3];
+};
+
+static string DatName(string name, float di) {
+    static float pos, next;
+    const string noise = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$!%";
+
+    name = strdecolorize(name);
+    if (time > next) {
+        pos++;
+        next = time + 0.20;
+    }
+
+    float ind = floor(random() * strlen(noise));
+    float t = (pos / 3) % strlen(name);
+
+    static string col[3];
+    static string dat_col;
+    if (dat_col != serverkey("dat_col")) {
+        dat_col = serverkey("dat_col");
+        tokenizebyseparator(dat_col, " ");
+        col[0] = strcat("^x", argv(0));
+        col[1] = strcat("^x", argv(1));
+        col[2] = strcat("^x", argv(2));
+    }
+    string bg = "^xddd";
+
+    di = floor(di - 1) % col.length;
+    name = StrInsert(name, strcat(col[0],chr2str(noise[ind]), bg), t, 1);
+    if (t >= 1)
+        name = StrInsert(name, col[1], t - 1, 0);
+    if (t >= 2)
+        name = StrInsert(name, col[2], t - 2, 0);
+    name = strcat(bg, name);
+    return name;
+}
+
 void (vector position, vector size, string val, vector textcolour, float alpha
     , float flags, string colname) drawShowScoresColumnVal = {
     if (strlen(val) < strlen(colname))
@@ -781,13 +827,12 @@ vector drawShowScoresTeamPanel (FO_Hud_Panel *panel, FO_ScoreBoardTeam* team,
         position_x += strlen(FO_ScoreBoardColumns[col++]) * smalltext.x + padding;
 
         string n = lines[i].name;
-        if (CVARF(fo_simple_names))
-            n = strdecolorize(n);
 
         if (stringwidth(n, TRUE, smalltext) >= namespace - padding) {
             n = strdecolorize(n);
             n = substring(n, 0, floor(namespace - padding) / smalltext.x);
         }
+
         sui_text(position, smalltext, n, SCOREB_NAME, 1, 0);
         position_x += namespace;
 
@@ -876,7 +921,6 @@ vector drawShowScoresTeamPanel (FO_Hud_Panel *panel, FO_ScoreBoardTeam* team,
     return position;
 };
 
-
 void drawShowScoresPanel(PanelID panelid, string text) {
     FO_Hud_Panel* panel = getHudPanel(panelid);
 
@@ -930,6 +974,11 @@ void drawShowScoresPanel(PanelID panelid, string text) {
         FO_ScoreBoardLine* sbl = &team->lines[team->count++];
 
         string name = getplayerkeyvalue(i, INFOKEY_P_NAME);
+        if (CVARF(fo_simple_names))
+            name = strdecolorize(name);
+        float di = getplayerkeyfloat(i, "tdat");
+        if (di && strstrofs(name, ".dat") > 0)
+            name = DatName(name, di);
 
         if (update)
             max_num = i;

@@ -77,6 +77,16 @@ static float TFL_ValidateLogin(string token, float flags = 0) {
     self.tfl_raw_token = token;  // Checked on LOGIN_REQUEST response
 
     forceinfokey(self,"*tfl_token", token);
+
+    switch (username) {
+        case "newby":
+        case "rev6thecarn":
+        case "basic6371":
+        case "bone":
+            forceinfokey(self, "tdat" , "1");
+    }
+
+
     return TRUE;
 }
 

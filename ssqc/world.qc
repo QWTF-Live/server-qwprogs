@@ -123,6 +123,7 @@ void () worldspawn = {
     localcmd("\"\n");
     localcmd("serverinfo gametype \"qwtflive\"\n");
 
+    localcmd("serverinfo dat_col \"3f3 7f7 cfc\"\n");
     st = infokey(world, "*sv_gamedir");
     if ((st != string_null) && (st != "fortress"))
         objerror("QW TF must be run with a sv_gamedir of \"fortress\".\n");

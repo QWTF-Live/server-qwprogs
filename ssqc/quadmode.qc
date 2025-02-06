@@ -2,222 +2,6 @@ void () info_player_teamspawn;
 
 void Activate2v2_Ruleset();
 
-void () PostFOQuadStarted = {
-	if (!login_required)
-		return;
-	
-	if !(TeamFortress_TeamGetNoPlayersExcludingAllTime(1) == TeamFortress_TeamGetNoPlayersExcludingAllTime(2)) {
-		bprint(PRINT_HIGH, "Uneven teams, match can't be recorded\n");
-		login_required = FALSE;
-		return;
-	}
-
-	local string data = "";
-	data = strcat(data, "{\n");
-	data = strcat(data, "  \"match\": {\n");
-
-	local float rated = CF_GetSetting("mra", "fo_matchrated", "2");
-	if (rated == 2) {
-		rated = is_small_game ? 1 : 0;
-		// Depends on ReportMatchResult
-		if(TeamFortress_TeamGetNoPlayersExcludingAllTime(1) > 2) {
-			rated = 1;
-		} else {
-			rated = 0;
-		}
-	}
-	data = strcat(data, "    \"rated\": \"", ftos(rated), "\",\n");
-
-	data = strcat(data, "    \"round\": \"", ftos(rounds), "\",\n");
-	data = strcat(data, "    \"map\": \"", mapname, "\",\n");
-
-  string demo_uri = strcat("https://logs.qwtf.live/watch/", game_token);
-	data = strcat(data, "    \"demo_uri\": \"", demo_uri, "\",\n");
-
-	string stats_uri = strcat("https://logs.qwtf.live/view/", game_token);
-	data = strcat(data, "    \"stats_uri\": \"", stats_uri, "\",\n");
-
-	string ip = cvar_string("sv_serverip");
-	tokenizebyseparator(ip, ".");
-	string server = strtolower(argv(0));
-	server[0] += 'A' - 'a';
-
-	data = strcat(data, "    \"server\": {\n");
-	data = strcat(data, "      \"name\": \"", server, ": Games at http://discord.qwtf.live\",\n");
-	data = strcat(data, "      \"address\": \"", cvar_string("sv_serverip"), "\"\n");
-	data = strcat(data, "    },\n");
-
-	data = strcat(data, "    \"discord_channel\": {\n");
-	data = strcat(data, "      \"channel_id\": \"", discord_channel_id, "\"\n");
-	data = strcat(data, "    },\n");
-
-	data = strcat(data, "    \"teams\": {\n");
-
-	local float tn;
-	local float prefix_comma;
-	local entity p;
-	local string token;
-
-	for (tn = 1; tn <= number_of_teams; ++tn) {
-		data = strcat(data, "      \"", ftos(tn), "\": {\n");
-		data = strcat(data, "        \"players\": [\n");
-
-		prefix_comma = FALSE;
-
-		p = find(world, classname, "player");
-		while (p != world) {
-			if(p.team_no == tn && p.all_time == ALL_TIME_COLOUR) {
-				if (prefix_comma)
-					data = strcat(data, ",");
-
-				string login = strcat(p.tfl_username, "#", p.tfl_foid);
-				data = strcat(data, "          {\n");
-				data = strcat(data, "            \"id\": \"", login, "\",\n");
-				data = strcat(data, "            \"playerclass\": \"", ftos(p.playerclass), "\"\n");
-				data = strcat(data, "          }\n");
-				prefix_comma = TRUE;
-			}
-
-			p = find(p, classname, "player");
-		}
-
-		data = strcat(data, "        ]\n");
-		data = strcat(data, "      }");
-
-		if (tn < number_of_teams)
-			data = strcat(data, ",");
-
-		data = strcat(data, "      \n");
-	}
-
-	data = strcat(data, "    }\n");
-	data = strcat(data, "  }\n");
-	data = strcat(data, "}\n");
-
-	local string uri = sprintf("%s/results/api/v1/matches", backend_address);
-	dprint("POST to ", uri, "\n");
-	dprint(data);
-	uri_post(uri, FO_QUAD_STARTED_REQUEST, "application/json", data);
-};
-
-void () PostFOQuadFinalRoundStarted = {
-	AnnounceEvent("round_end");
-	ReportMatchResult(kReportHalftime);
-
-	if (!login_required)
-		return;
-
-	local string data = "";
-
-	data = strcat(data, "{\n");
-	data = strcat(data, "  \"match\": {\n");
-	data = strcat(data, "    \"id\": \"", match_id, "\",\n");
-	data = strcat(data, "    \"round\": \"", ftos(rounds), "\",\n");
-	data = strcat(data, "    \"teams\": {\n");
-
-	local float tn;
-	local float prefix_comma;
-	local entity p;
-	local string token;
-
-	for (tn = 1; tn <= number_of_teams; ++tn) {
-		local float score = TeamFortress_TeamGetScore(tn);
-
-		data = strcat(data, "      \"", ftos(tn), "\": {\n");
-		data = strcat(data, "        \"score\": \"", ftos(score), "\",");
-		data = strcat(data, "        \"players\": [\n");
-
-		prefix_comma = FALSE;
-
-		p = find(world, classname, "player");
-		while (p != world) {
-			if(p.team_no == tn && p.all_time == ALL_TIME_COLOUR) {
-				if (prefix_comma)
-					data = strcat(data, ",");
-
-				string login = strcat(p.tfl_username, "#", p.tfl_foid);
-
-				data = strcat(data, "          {\n");
-				data = strcat(data, "            \"id\": \"", login, "\",\n");
-				data = strcat(data, "            \"playerclass\": \"", ftos(p.playerclass), "\"\n");
-				data = strcat(data, "          }\n");
-				prefix_comma = TRUE;
-			}
-
-			p = find(p, classname, "player");
-		}
-
-		data = strcat(data, "        ]\n");
-		data = strcat(data, "      }");
-
-		if (tn < number_of_teams)
-			data = strcat(data, ",");
-
-		data = strcat(data, "      \n");
-	}
-
-	data = strcat(data, "    }\n");
-	data = strcat(data, "  }\n");
-	data = strcat(data, "}\n");
-
-	local string uri = sprintf("%s/results/api/v1/matches/%s", backend_address, match_id);
-	dprint("POST to ", uri, "\n");
-	dprint(data);
-	uri_post(uri, FO_QUAD_STARTED_REQUEST, "application/json", data);
-};
-
-void (float winner) PostFOQuadFinished = {
-	AnnounceEvent("game_end");
-	ReportMatchResult(kReportEnd);
-	TFL_ClearAutoTeam();
-
-	if (!login_required)
-		return;
-
-	if (!match_id)
-		return;
-
-	local string data = "";
-
-	local entity t = find(world, classname, "round");
-	local float timeleft = 0;
-	if (t != world) {
-		timeleft = t.cnt * 60 + t.cnt2;
-	}
-
-	data = strcat(data, "{\n");
-	data = strcat(data, "  \"match\": {\n");
-	data = strcat(data, "    \"id\": \"", match_id, "\",\n");
-	data = strcat(data, "    \"winner\": \"", ftos(winner), "\",\n");
-	data = strcat(data, "    \"timeleft\": \"", ftos(timeleft), "\",\n");
-	data = strcat(data, "    \"teams\": {\n");
-
-	local float tn;
-	local float prefix_comma;
-	local entity p;
-	local string token;
-
-	for (tn = 1; tn <= number_of_teams; ++tn) {
-		local float score = TeamFortress_TeamGetScore(tn);
-
-		data = strcat(data, "      \"", ftos(tn), "\": {\n");
-		data = strcat(data, "        \"score\": \"", ftos(score), "\"");
-		data = strcat(data, "      }");
-
-		if (tn < number_of_teams)
-			data = strcat(data, ",");
-	}
-
-	data = strcat(data, "    }\n");
-	data = strcat(data, "  }\n");
-	data = strcat(data, "}\n");
-
-	local string uri = sprintf("%s/results/api/v1/matches/%s", backend_address, match_id);
-	dprint("POST to ", uri, "\n");
-	dprint(data);
-	uri_post(uri, FO_QUAD_FINISHED_REQUEST, "application/json", data);
-};
-
 float () CheckWinningTeam = {
 	local float win_score = 0;
 	local float winning_team = 0;
@@ -525,8 +309,10 @@ void () QuadRoundBegin = {
 
 	bprint(2, "QUAD ROUND BEGINS NOW\n");
 
-	if (rounds == 1)
-		PostFOQuadFinalRoundStarted();
+	if (rounds == 1) {
+		AnnounceEvent("round_end");
+		ReportMatchResult(kReportHalftime);
+	}
 
 	round_start_time = time;
 	UpdateClientQuadRoundBegin(te, round_time);
@@ -669,7 +455,9 @@ void () StartQuadRound =
 		p = find (world, classname, "player");
 
 		// send result to server
-		PostFOQuadFinished(quad_winner);
+		AnnounceEvent("game_end");
+		ReportMatchResult(kReportEnd);
+		TFL_ClearAutoTeam();
 		localcmd("serverinfo status Finished\n");
 
 		while (p != world) {
@@ -724,8 +512,7 @@ void () StartQuadRound =
 
 		if (rounds == 2 && legit_players > 1) {
 			AnnounceEvent("game_start");
-			ReportMatchResult(kReportStart);  // Must precede PostFO
-			PostFOQuadStarted();
+			ReportMatchResult(kReportStart);
 			if (legit_players == 4)
 				Activate2v2_Ruleset();
 		}

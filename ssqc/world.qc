@@ -344,9 +344,7 @@ void () worldspawn = {
     globalstat(STAT_ORG_GAME, EV_FLOAT, "org_game");
 
     // login required cache
-    local float flr = CF_GetSetting("flr", "fologinrequired", "1");
-    backend_address = CF_GetSettingRaw("ba", "backend_address", "");
-    login_required = (flr && (backend_address != ""));
+    login_required = CF_GetSetting("flr", "loginrequired", "1");
     login_allow_nonce = CF_GetSetting("lgn", "login_nonce", "1");
     login_salt = CF_GetSettingRaw("lgs", "login_salt", "sodium");
 

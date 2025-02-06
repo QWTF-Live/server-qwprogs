@@ -298,35 +298,6 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
         case TFL_RESULT:
             break;
 
-        case FO_QUAD_STARTED_REQUEST:
-            local string msg;
-
-            if (success && resourcebody) {
-                match_id = resourcebody;
-                msg = sprintf("Quad start successfully logged. ID: %s\n", match_id);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            } else {
-                msg = sprintf("Quad start failed to log. Response code: %d\n", responsecode);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            }
-
-            break;
-        case FO_QUAD_FINISHED_REQUEST:
-            local string msg;
-
-            if (success && resourcebody == match_id) {
-                msg = sprintf("Quad result successfully logged. ID: %s\n", match_id);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            } else {
-                msg = sprintf("Quad result failed to log. Response code: %d\n", responsecode);
-                bprint(PRINT_HIGH, msg);
-                dprint(msg);
-            }
-
-            break;
         case LOGIN_REQUEST:
             self.tfl_need_login = FALSE;
             if (responsecode)

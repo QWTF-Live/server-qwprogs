@@ -322,7 +322,6 @@ typedef struct {
     float quad_rounds;
     float quad_round_time;
     float login_required;
-    float fo_matchrated;
     float captainmode;
     float timelimit;
     float fraglimit;

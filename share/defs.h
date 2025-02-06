@@ -1493,11 +1493,9 @@ enum {
 #define ALL_TIME_DEFENCE	2
 
 // web request index
-#define FO_QUAD_STARTED_REQUEST		1
-#define FO_QUAD_FINISHED_REQUEST	2
-#define LOGIN_REQUEST			3
-#define TFL_ANNOUNCE 			4
-#define TFL_RESULT 			5
+#define LOGIN_REQUEST			1
+#define TFL_ANNOUNCE 			2
+#define TFL_RESULT 			3
 
 #define SPEC_MAXSPEED 1000
 

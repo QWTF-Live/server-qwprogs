@@ -748,8 +748,6 @@ string goal_class_names[7] = {
 float disable_resup_gren;
 
 // backend
-string match_id;
-string backend_address;
 .entity filter_ent;
 
 var float PC_PYRO_AIRBLAST_COOLDOWN = 5;

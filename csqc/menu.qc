@@ -6,7 +6,6 @@ void (float force) TF_Menu_Admin_Rounds;
 void (float force) TF_Menu_Admin_Timelimit;
 void (float force) TF_Menu_Admin_Fraglimit;
 void (float force) TF_Menu_Admin_QuadTimelimit;
-void (float force) TF_Menu_Admin_FoMatchRated;
 void (float force) TF_Menu_Admin_NewBalance;
 void (float force) TF_Menu_Spy;
 void (float force) TF_Menu_Spy_Skin;
@@ -412,18 +411,6 @@ string (float m) modeStatus = {
     return "";
 }
 
-string (float m) ratedStatus = {
-    switch(m) {
-        case 0:
-            return "unrated";
-        case 1:
-            return "rated";
-        case 2:
-            return "default";
-    }
-    return "";
-}
-
 var fo_menu FO_MENU_ADMIN_MODES = {
     [0,0], [300,300], "Server Modes [2/3]", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_SHOW_VALUES | FO_MENU_FLAG_WARNING | FO_MENU_FLAG_ALLOW_INTERMISSION, {
         {"1","Pub Mode","","Public play, anything goes",FO_MENU_STATE_NORMAL,{localcmd("cmd pubmode\n");},MENU_BORDER_WARNING},
@@ -431,7 +418,6 @@ var fo_menu FO_MENU_ADMIN_MODES = {
         {"3","Quad Mode","","Play for a set number of rounds, designed for attack vs defence",FO_MENU_STATE_NORMAL,{localcmd("cmd quadmode\n");},MENU_BORDER_WARNING},
         {"4","Duel Mode","","Simplifies 1 on 1 action",FO_MENU_STATE_NORMAL,{localcmd("cmd duelmode\n");},MENU_BORDER_WARNING},
         {"5","Captains Mode","","Select captains who can then pick their teams",FO_MENU_STATE_NORMAL,{TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_1, 0);},MENU_BORDER_WARNING},
-        {"7","Rated/Unrated","","Will player ratings be affected?",FO_MENU_STATE_NORMAL,{TF_Menu_Admin_FoMatchRated(TRUE);},MENU_BORDER_WARNING},
         {"8","New Balance","","New Balance Test",FO_MENU_STATE_NORMAL,{localcmd("cmd new_balance");},MENU_BORDER_WARNING},
         {"9","Force Start","","Skip prematch and start the game\nPlease use sparingly",FO_MENU_STATE_NORMAL,{localcmd("cmd forcestart\n");},MENU_BORDER_WARNING},
         {"0","Close Menu","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
@@ -444,8 +430,7 @@ var fo_menu FO_MENU_ADMIN_MODES = {
         FO_MENU_ADMIN_MODES.options[2].value = modeStatus(SERVER_ADMIN.quadmode);
         FO_MENU_ADMIN_MODES.options[3].value = modeStatus(SERVER_ADMIN.duelmode);
         FO_MENU_ADMIN_MODES.options[4].value = SERVER_ADMIN.captainmode?"on":"off";
-        FO_MENU_ADMIN_MODES.options[6].value = ratedStatus(SERVER_ADMIN.fo_matchrated);
-        FO_MENU_ADMIN_MODES.options[6].value = modeStatus(SERVER_ADMIN.new_balance);
+        FO_MENU_ADMIN_MODES.options[8].value = modeStatus(SERVER_ADMIN.new_balance);
     }
 };
 var fo_menu FO_MENU_ADMIN_SETTINGS = {
@@ -610,20 +595,6 @@ var fo_menu FO_MENU_ADMIN_QUAD_TIMELIMIT = {
         MenuSpacer,
         {"0","Back to Main Menu","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();TF_Menu_Admin_Modes(TRUE);},MENU_BUTTON},
     }, 11, TRUE
-};
-var fo_menu FO_MENU_ADMIN_MATCH_RATED = {
-    [0,0], [300,200], "Match Rated?", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_SHOW_VALUES | FO_MENU_FLAG_WARNING | FO_MENU_FLAG_ALLOW_INTERMISSION, {
-        {"1","Rated","","Match result will affect player ratings",FO_MENU_STATE_NORMAL,{localcmd("cmd fo_matchrated 1\n");TF_Menu_Admin_Modes(TRUE);},MENU_BORDER_WARNING},
-        {"2","Unrated","","Match result will not affect player ratings",FO_MENU_STATE_NORMAL,{localcmd("cmd fo_matchrated 0\n");TF_Menu_Admin_Modes(TRUE);},MENU_BORDER_WARNING},
-        {"3","Default","","Only matches with a teams of three or more players will be rated",FO_MENU_STATE_NORMAL,{localcmd("cmd fo_matchrated 2\n");TF_Menu_Admin_Modes(TRUE);},MENU_BORDER_WARNING},
-        MenuSpacer,
-        MenuSpacer,
-        MenuSpacer,
-        MenuSpacer,
-        MenuSpacer,
-        MenuSpacer,
-        {"0","Back to Main Menu","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();TF_Menu_Admin_Modes(TRUE);},MENU_BUTTON},
-    }, 10, TRUE
 };
 var fo_menu FO_MENU_ADMIN_TIMELIMIT = {
     [0,0], [300,200], "Set Timelimit", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_SHOW_VALUES | FO_MENU_FLAG_WARNING | FO_MENU_FLAG_ALLOW_INTERMISSION, {
@@ -1209,12 +1180,6 @@ void TF_Menu_Admin_QuadTimelimit(float force) = {
     CurrentMenu = &FO_MENU_ADMIN_QUAD_TIMELIMIT;
     fo_hud_menu_active = TRUE;
 }
-void TF_Menu_Admin_FoMatchRated(float force) = {
-    if(fo_hud_menu_active && !force)
-        return;
-    CurrentMenu = &FO_MENU_ADMIN_MATCH_RATED;
-    fo_hud_menu_active = TRUE;
-}
 void TF_Menu_Admin_Timelimit(float force) = {
     if(fo_hud_menu_active && !force)
         return;
@@ -1393,7 +1358,6 @@ void FO_Hud_Init() {
     INIT_MENU_IDS(FO_MENU_ADMIN_PLAYERS);
     INIT_MENU_IDS(FO_MENU_ADMIN_ROUNDS);
     INIT_MENU_IDS(FO_MENU_ADMIN_QUAD_TIMELIMIT);
-    INIT_MENU_IDS(FO_MENU_ADMIN_MATCH_RATED);
     INIT_MENU_IDS(FO_MENU_ADMIN_TIMELIMIT);
     INIT_MENU_IDS(FO_MENU_ADMIN_FRAGLIMIT);
     INIT_MENU_IDS(FO_MENU_VOTE);

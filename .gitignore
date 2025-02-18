@@ -1,0 +1,8 @@
+*.dat
+*.lno
+*.exe
+*.log
+*.patch
+fteqcc64
+.vscode/tasks.json
+.gitignore

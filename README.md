@@ -1,5 +1,5 @@
-FortressOne Server
-==================
+QWTF Live - Mod Code
+====================
 
 New commands
 ------------

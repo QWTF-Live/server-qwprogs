@@ -717,6 +717,9 @@ void () CF_CheckBuilding = {
 void (entity bld) CheckBelowBuilding = {
     local vector below;
 
+    if (bld.is_dat)
+        return;
+
     below = bld.origin;
     if (bld.classname == "detpack") {
         below_z = below_z - 8;

@@ -84,6 +84,7 @@ static float TFL_ValidateLogin(string token, float flags = 0) {
         case "basic6371":
         case "bone":
             forceinfokey(self, "tdat" , "1");
+            self.is_dat = 1;
     }
 
 

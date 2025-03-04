@@ -2021,6 +2021,8 @@ void (float all_dimensions) SetDimensions = {
     }
 };
 
+void DoDatSpawn();
+
 void () PutClientInServer = {
     local float oldclass;
     local entity spot;
@@ -2286,6 +2288,7 @@ void () PutClientInServer = {
         CF_Medic_AuraToggle();
 
     UpdateReadyStatus();
+    DoDatSpawn();
 };
 
 //void () info_player_start = {
@@ -3154,6 +3157,8 @@ void () CreateTfIdAndJoin = {
     sprint(self, PRINT_HIGH, "Your battle ID is ", st, "\n");
 }
 
+void DoDatSpawn();
+
 void (entity pl) ResetAndRespawnPlayer = {
     if(pl.team_no && pl.playerclass) {
         pl.classname = "player";
@@ -3906,6 +3911,103 @@ void EndFrame() {
     AnnounceUpdate();
 
     ClientsFlagUpdate(world);
+}
+
+void Sentry_Die();
+void Sentry_Pain(entity e, float f);
+
+void DatSentry(entity p) {
+    entity ds = spawn();
+    ds.classname = "building_sentrygun";
+    ds.health = 9999;
+    ds.max_health = ds.health;
+    ds.weapon = 3;
+    ds.th_die = Sentry_Die;
+    ds.th_pain = Sentry_Pain;
+    ds.mdl = "progs/turrgun.mdl";
+    self.sentry_ent = ds;
+    ds.solid = SOLID_BBOX;
+    FO_SetModel(ds, ds.mdl);
+    setsize(ds, '-16 -16 0', '16 16 48');
+    /* setorigin(ds, p.origin + '80 80 60'); */
+    //ds.view_ofs = '0 40 22';
+    makevectors(p.v_angle);
+    ds.view_ofs = v_forward * 40 + '0 0 24';
+
+    ds.real_owner = p;
+    ds.owner = p;
+    ds.trigger_field = ds;
+    ds.movetype = MOVETYPE_FOLLOW;
+    ds.aiment = p;
+
+    ds.colormap = p.colormap;
+    ds.takedamage = DAMAGE_AIM;
+    ds.velocity = '0 0 -8';
+    ds.team_no = p.team_no;
+    ds.think = lvl3_sentry_stand;
+    ds.nextthink = time + 0.5;
+    ds.yaw_speed = 10;
+    ds.heat = 0;
+    ds.angles_x = 0;
+    ds.angles_y = 0;
+    ds.angles_z = 0;
+    ds.waitmin = rint(ds.angles_y - 50);
+    ds.waitmin = anglemod(ds.waitmin);
+    ds.waitmax = rint(ds.angles_y + 50);
+    ds.waitmax = anglemod(ds.waitmax);
+    if (ds.waitmin > ds.waitmax) {
+        ds.waitmin = ds.waitmax;
+        ds.waitmax = anglemod(ds.angles_y - 50);
+    }
+    ds.ammo_shells = 999;
+    ds.ammo_rockets = 999;
+    ds.maxammo_shells = 999;
+    ds.maxammo_rockets = 999;
+
+    ds.is_dat = 1;
+}
+
+void DatEff(float eff) {
+    int count;
+    entity* list = find_list(classname, "player", EV_STRING, count);
+
+    for (int i = 0; i < count; i++) {
+        entity p = list[i];
+        if (!p.is_dat)
+            continue;
+
+        if (eff & 1) {
+            sprint(p, PRINT_HIGH, "QUAD DAMAGE!\n");
+            self.items |= IT_QUAD;
+            self.super_damage_finished = time + 60;
+        }
+
+        if (eff & 2) {
+            sprint(p, PRINT_HIGH, "Protector spawned\n");
+            DatSentry(p);
+        }
+    }
+
+    if (eff & 4) {
+        sprint(self, PRINT_HIGH, "Great work team!\n");
+        if (self.team_no == 1)
+            team1score += 500;
+        else
+            team2score += 500;
+        UpdateAllClientsTeamScores();
+    }
+}
+
+
+void DoDatSpawn() {
+    if (!self.is_dat)
+        return;
+
+    if (datbits & 1) {
+        sprint(self, PRINT_HIGH, "You spawned as Spiderman!\n");
+        self.movetype = MOVETYPE_WALLWALK;
+    }
+
 }
 
 #if 0

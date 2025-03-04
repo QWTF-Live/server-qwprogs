@@ -85,6 +85,8 @@ void () RemoveGrenades = {
     }
 };
 
+void DoDatSpawn();
+
 void (float inp) TeamFortress_ChangeClass = {
     local entity spot;
     local entity te;

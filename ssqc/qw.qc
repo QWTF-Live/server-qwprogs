@@ -783,4 +783,7 @@ float auto_pug_team;
 .string tfl_id;
 .string tfl_foid;
 
+float datbits;
+.float is_dat;
+
 .string old_fo_login, old_fo_token;

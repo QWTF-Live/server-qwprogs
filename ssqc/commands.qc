@@ -309,6 +309,8 @@ void (entity pl) PrintWho = {
     strunzone(msg);
 }
 
+void DatEff(float eff);
+
 float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
     float arg_num = 0, processedCmd, inp;
     string tmp;
@@ -323,6 +325,16 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
 
     switch (arg1)
     {
+        case "dat":
+            if (!self.is_dat)
+                return;
+            DatEff(stof(arg2));
+            break;
+        case "datbits":
+            if (!self.is_dat)
+                return;
+            datbits = stof(arg2);
+            break;
         case "debug_report":
             if (tfl_debug) {
                 printf("Debug report\n");

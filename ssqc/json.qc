@@ -203,7 +203,9 @@ void ReportMatchResult(int report_type) {
     entity* list = find_list(classname, "player", EV_STRING, count);
 
     string players[2], comma[2];
+    int tsize[2];
     players[0] = players[1] = comma[0] = comma[1] = string_null;
+    tsize[0] = tsize[1] = 0;
 
     for (int i = 0; i < count; i++) {
         entity p = list[i];
@@ -219,6 +221,18 @@ void ReportMatchResult(int report_type) {
         int idx = p.team_no - 1;
         players[idx] = strcat(players[idx], comma[idx], JSON_Wrap(pvs.length, pvs));
         comma[idx] = ", ";
+        tsize[idx]++;
+    }
+
+    static string last_players[2];
+    static int last_tsize[2];
+
+    for (int i = 0; i < 2; i++) {
+        if (report_type == kReportEnd)
+            if (tsize[i] < last_tsize[i])
+                players[i] = last_players[i];
+        last_players[i] = players[i];
+        last_tsize[i] = tsize[i];
     }
 
     string teams[2];

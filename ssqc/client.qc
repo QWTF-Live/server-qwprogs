@@ -3863,20 +3863,22 @@ void () InitReverseCap = {
             }
         }
     }
-
 }
 
 void ClientsFlagUpdate(entity only) {
     float do_flag = 0, do_button = 0;
     if (only) {
         do_flag = do_button = 1;  // forced
-    } else if (flag_update || button_update) {
-        do_flag = flag_update;
-        flag_update = 0;
-        do_button = button_update;
-        button_update = 0;
     } else {
-        return;
+        if (button_update) {
+            do_button = 1;
+            button_update = 0;
+        }
+
+        if (flag_update && time >= flag_update) {
+            do_flag = 1;
+            flag_update = 0;
+        }
     }
 
     if (do_flag) {
@@ -3887,8 +3889,12 @@ void ClientsFlagUpdate(entity only) {
 
             for (float i = 0; i < item_status.length; i++) {
                 entity fe = Finditem(item_status[i]);
-                if (fe)
+                if (fe) {
                     UpdateClientsFlagStatus(fe, only);
+
+                    if (fe.owner == world && vlen(fe.velocity) > 0)
+                        flag_update = time + 0.5;
+                }
             }
         }
     }

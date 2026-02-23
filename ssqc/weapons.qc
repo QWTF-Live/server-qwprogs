@@ -1375,11 +1375,11 @@ entity (int fpp_type, vector offset) W_FireNail = {
 void (float ox) W_FireSpikes = {
     FO_WeapState ws;
     FO_FillCurrentWeapState(&ws);
-    FO_WeapInfo* wi = ws->wi;
+    FO_WeapInfo* wi = ws.wi;
 
     makevectors(self.v_angle);
 
-    if (self.ammo_nails < wi->ammo_per_shot) {
+    if (!ws->ammo_remaining || *ws->ammo_remaining < wi->ammo_per_shot) {
         W_ChangeToBestWeapon();
         return;
     }

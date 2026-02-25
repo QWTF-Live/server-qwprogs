@@ -3225,6 +3225,9 @@ void () ClientDisconnect = {
     if(votemode) {
         UnvoteForMap(self);
     }
+
+    FOPlayer fop = (FOPlayer)self;
+    fop.Destroy();
 };
 
 string (entity pe_target, entity pe_attacker, float pf_deathmsg) GetDeathMessage = {

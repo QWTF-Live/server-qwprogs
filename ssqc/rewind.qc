@@ -68,12 +68,13 @@ static void RL_Insert(RewindState** head, RewindState* node) {
 }
 
 static void RL_Remove(RewindState** head, RewindState* node) {
-    if (*head == node) {
-        *head = __NULL__;
-    } else {
-        (node->next)->prev = node->prev;
+    if (node->prev)
         (node->prev)->next = node->next;
-    }
+    else
+        *head = node->next;
+
+    if (node->next)
+        (node->next)->prev = node->prev;
 }
 
 #define RL_FOR_EACH(_head, _var) \

@@ -622,9 +622,6 @@ void () DecodeLevelParms = {
         // HwGuy Assault Cannon Range default as 0 to disable, and die time once range hit.
         asscanrange = CF_GetSetting("acr", "asscanrange", "0");
         asscanrangedie = CF_GetSetting("acrd", "asscanrangedie", "0");
-        
-        // discord announcer
-        use_announcer = CF_GetSetting("uda", "use_discord_announcer", "on");
 
         // delay respawning by this many seconds [0]
         Role_None.respawn_delay_time = CF_GetSetting("rd", "respawn_delay", "0");
@@ -3922,8 +3919,6 @@ void ClientsFlagUpdate(entity only) {
 }
 
 void EndFrame() {
-    AnnounceUpdate();
-
     ClientsFlagUpdate(world);
 }
 

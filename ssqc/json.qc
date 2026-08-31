@@ -1,17 +1,15 @@
-static string livebot_hook = "https://discord.com/api/webhooks/1221561643801120778/rQvCiclJ4gvi1UXi16EZCZooAZnhE8mfEhEYJvciNYGrQQ8rS8U1-TsV1sAZFX1F-nl5";
-static var string announce_endpoint;
-static var float announce_ready;
-
 static string GetEndpoint(string type) {
     return strcat(tfl_endpoint, "/api/", type);
 }
 
-float AnnounceActive() {
-    if (!announce_ready)
-        return FALSE;
+// Latched by the first scoreboard query.  Until something is actually polling
+// us there is no consumer for events, so there is no point building or
+// retaining them.  This replaces the old config-plus-init-handshake gate, which
+// could leave the endpoint silently empty on a server whose announcer had never
+// been configured.
+static float scoreboard_active;
 
-    return use_announcer;
-}
+inline float ScoreboardActive() { return scoreboard_active; }
 
 enum {
     KV_S,
@@ -52,15 +50,69 @@ static string JSON_Array(int n, string* arr) {
     return strcat(result, "]");
 }
 
-static inline string JSON_Name(entity player) {
-    return uri_escape(strdecolorize(player.netname));
+// Escapes a string for embedding in a JSON string literal.
+//
+// Player names are attacker-controlled, so a lone `"` or `\\` is not cosmetic --
+// it breaks the document and lets a player inject arbitrary JSON structure.
+// This escapes rather than deletes: clearString() strips these characters
+// outright, but that is a filename sanitiser (see its use for MVD names in
+// clan.qc) and mangles legitimate names.
+//
+// Output is pure printable ASCII, so it is always valid UTF-8 and therefore
+// always a valid JSON string; anything else becomes a \uXXXX escape.
+static string JSON_Escape(string s) {
+    float n = strlen(s);
+
+    // Fast path: most names need nothing, and the loop below costs a tempstring
+    // per character.
+    float needs = FALSE;
+    for (float i = 0; i < n; i++) {
+        float c = str2chr(s, i);
+        if (c == '"' || c == '\\' || c < 0x20 || c > 0x7E) {
+            needs = TRUE;
+            break;
+        }
+    }
+    if (!needs)
+        return s;
+
+    string result = "";
+    for (float i = 0; i < n; i++) {
+        float c = str2chr(s, i);
+
+        if (c == '"')
+            result = strcat(result, "\\\"");
+        else if (c == '\\')
+            result = strcat(result, "\\\\");
+        else if (c >= 0x20 && c <= 0x7E)
+            result = strcat(result, chr2str(c));
+        else if (c > 0 && c <= 0xFFFF)
+            result = strcat(result, sprintf("\\u%04x", c));
+        // else: unpaired surrogate or out of BMP -- drop it.
+    }
+
+    return result;
 }
 
-static void AnnounceScoreboard() {
+static inline string JSON_Name(entity player) {
+    // strdecolorize flattens markup; strconv maps the Quake red/brown charset
+    // back to plain characters (0 = leave case alone, unlike clearString).
+    return JSON_Escape(strconv(0, 1, 1, strdecolorize(player.netname)));
+}
+
+// Builds the scoreboard as a JSON array of the real (non-bot) players.  Pure --
+// no transport, no side effects -- so it can be called straight from the HTTP
+// handler below on whatever frame the request lands in.
+//
+// Note the separator is a *leading* comma tracked across the loop rather than
+// `i + 1 == count`: entries are skipped for non-real clients, so keying the
+// comma off the loop index emits a trailing one whenever the last entity in
+// the list is a bot, producing malformed JSON.
+static string JSON_Scoreboard() {
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);
 
-    string result = "[";
+    string result = "[", comma = "";
 
     for (int i = 0; i < count; i++) {
         entity p = list[i];
@@ -70,6 +122,10 @@ static void AnnounceScoreboard() {
 
         KeyVal kvs[] = {
                         {KV_S, "name", JSON_Name(p)},
+                        // Empty when not logged in (tfl_username is string_null
+                        // then, and strcat flattens that to "").  Escaped like
+                        // the name: it originates outside the server.
+                        {KV_S, "login", JSON_Escape(p.tfl_username)},
                         {KV_I, "team", ftos(p.team_no)},
                         {KV_I, "pc", ftos(p.playerclass)},
                         {KV_I, "kills", ftos(p.kills)},
@@ -80,18 +136,98 @@ static void AnnounceScoreboard() {
                         {KV_I, "touches", ftos(p.touches)}
                        };
 
-        result = strcat(result, JSON_Wrap(kvs.length, kvs),
-                        i + 1 == count ? "" : ",");
-
+        result = strcat(result, comma, JSON_Wrap(kvs.length, kvs));
+        comma = ",";
     }
 
-    result = strcat(result, "]");
-
-    uri_post(GetEndpoint("scoreboard"), TFL_ANNOUNCE, "application/json", result);
+    return strcat(result, "]");
 }
 
+// Events are produced at arbitrary points in a frame and drained by the HTTP
+// handler, potentially many frames later.  No strzone() needed: FTE keeps
+// tempstrings alive while they are still referenced
+// (FTE_QC_PERSISTENTTEMPSTRINGS), so holding one in a global array is enough.
+#define ANNOUNCE_EVENT_MAX 16
+
+static string announce_events[ANNOUNCE_EVENT_MAX];
+static int announce_event_next;   // slot to write next
+static int announce_event_count;  // live entries, saturating at the ring size
+
+static void AnnounceEventPush(string json) {
+    announce_events[announce_event_next] = json;
+    announce_event_next = (announce_event_next + 1) % ANNOUNCE_EVENT_MAX;
+
+    // Saturates rather than growing: once full, the assignment above has
+    // already overwritten the oldest entry.
+    if (announce_event_count < ANNOUNCE_EVENT_MAX)
+        announce_event_count++;
+}
+
+// Drains the ring into a JSON array, oldest first, and empties it.  Events are
+// delivered exactly once, so a second reader sees only what arrived since the
+// first one drained.
+static string AnnounceEventDrain() {
+    string result = "[", comma = "";
+
+    int start = (announce_event_next - announce_event_count + ANNOUNCE_EVENT_MAX)
+                % ANNOUNCE_EVENT_MAX;
+
+    for (int i = 0; i < announce_event_count; i++) {
+        int idx = (start + i) % ANNOUNCE_EVENT_MAX;
+
+        result = strcat(result, comma, announce_events[idx]);
+        comma = ",";
+        announce_events[idx] = string_null;  // release for GC
+    }
+
+    announce_event_count = 0;
+    announce_event_next = 0;
+
+    return strcat(result, "]");
+}
+
+// Scoreboard is pulled, not pushed: the engine calls this for requests on its
+// HTTP listener (operator needs sv_port_tcp set and net_enable_http on).
+//
+// Contract per fteextensions.qc: return __NULL__ to let the engine handle the
+// request normally, "" for a 404, any other string for a 200.  Anything that
+// isn't a GET for our path is passed through untouched so we don't shadow
+// whatever else the listener is serving.
+const string kScoreboardURI = "scoreboard";
+
+// The engine is inconsistent about the leading slash (its own file-server
+// fallback reports the path with it stripped), and may append a query string.
+// Normalise both away before matching.
+static string HTTP_Path(string uri) {
+    if (substring(uri, 0, 1) == "/")
+        uri = substring(uri, 1, -1);
+
+    float q = strstrofs(uri, "?");
+    if (q >= 0)
+        uri = substring(uri, 0, q);
+
+    return uri;
+}
+
+string (string uri, string method, string postdata,
+        __in string requestheaders,
+        __inout string responseheaders) HTTP_GeneratePage = {
+    if (method != "GET" || HTTP_Path(uri) != kScoreboardURI)
+        return __NULL__;
+
+    scoreboard_active = TRUE;
+    responseheaders = strcat(responseheaders, "Content-Type: application/json\n");
+
+    // Note this drains the event ring, so the response is not idempotent --
+    // each event is handed to exactly one reader.
+    return strcat("{ \"players\": ", JSON_Scoreboard(),
+                  ", \"events\": ", AnnounceEventDrain(), " }");
+};
+
+// Buffered for the scoreboard endpoint rather than posted, and only once
+// something has read that endpoint -- see ScoreboardActive().
 void AnnounceEvent(string event, entity player = __NULL__) {
-    if (!AnnounceActive())
+    if (!ScoreboardActive())
         return;
 
     KeyVal kvs[] = {
@@ -115,64 +251,12 @@ void AnnounceEvent(string event, entity player = __NULL__) {
 
     data = strcat(data, "}");
 
-
-    uri_post(GetEndpoint("event"), TFL_ANNOUNCE, "application/json", data);
-}
-
-void AnnounceHeartbeat() {
-    if (!AnnounceActive())
-        return;
-
-    KeyVal kvs[] = {
-                    {KV_S, "map", mapname},
-                    {KV_S, "servername", serverkey("hostname")},
-                    {KV_I, "time", ftos(time)},
-                    {KV_I, "round_start", ftos(round_start_time)},
-                    {KV_I, "org_game", ftos(org_game)},
-                    {KV_I, "team1score", ftos(team1score)},
-                    {KV_I, "team2score", ftos(team2score)},
-                   };
-
-    string data = JSON_Wrap(kvs.length, kvs);
-    uri_post(GetEndpoint("heartbeat"), TFL_ANNOUNCE, "application/json", data);
-}
-
-void AnnounceUpdate() {
-    if (!AnnounceActive())
-        return;
-
-    static float next_heartbeat;
-    if (time > next_heartbeat) {
-        next_heartbeat = time + 5;
-
-        AnnounceHeartbeat();
-        return;
-    }
-
-    static float next_scoreboard;
-    if (time > next_scoreboard) {
-        next_scoreboard = time + 10;
-
-        AnnounceScoreboard();
-        return;
-    }
+    AnnounceEventPush(data);
 }
 
 void InitAnnounce() {
-    /* if (!use_announcer) */
-    /*     return; */
-
-    string shard = infokey(world, "shard");
-    if (shard == string_null)
-        shard = "dev";
-
-    announce_endpoint = strcat("http://localhost:9292/", shard, "/");
-    uri_post(strcat(announce_endpoint, "init"), TFL_ANNOUNCE, "application/json", "hello");
-}
-
-void InitAnnounceResult(float response) {
-    if (!response)
-        announce_ready = TRUE;
+    localcmd("net_enable_http 1\n");
+    localcmd("serverinfo has_announce 1\n");
 }
 
 string FO_GetUserSettingString(entity ent, string ps_short, string ps_setting,
@@ -306,9 +390,6 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
     local float success = !responsecode;
 
     switch(reqid) {
-        case TFL_ANNOUNCE:
-            InitAnnounceResult(responsecode);
-            break;
         case TFL_RESULT:
             break;
 

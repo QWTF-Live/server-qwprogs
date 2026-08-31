@@ -218,6 +218,12 @@ float coop;
 .float reload_started;          // when the reload started
 .float reload_finished;         // when the reload will finish
 
+// qwtf_reloadcancel: tracks whether button0 was already held down the last
+// time we used it to cancel a reload, so a held (not freshly-pressed) fire
+// button can't repeatedly cancel/re-trigger a fresh reload every single
+// frame.
+.float reload_cancel_btn_down;
+
 // Only use below for map ent compatibility.
 .float reload_shotgun;
 .float reload_super_shotgun;

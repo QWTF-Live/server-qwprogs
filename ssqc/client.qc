@@ -996,6 +996,13 @@ void () DecodeLevelParms = {
         // Must be after we've set up conditional options (e.g. hwguy reload).
         FO_Weapons_Init();
         InitFppProjectiles();
+
+        // Optional test change: "localinfo qwtf_reloadcancel 1" lets
+        // firing or switching weapons cancel an in-progress reload,
+        // crediting back only the portion of the clip that had actually
+        // finished loading. Off by default. Synced to clients
+        // automatically via TFL_SendConfig.
+        tf_config.qwtf_reloadcancel = CF_GetSetting("qwtf_reloadcancel", "qwtf_reloadcancel", "0");
     }
 
     if (parm11)

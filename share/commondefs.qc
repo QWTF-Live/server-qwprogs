@@ -54,7 +54,8 @@ enumflags {
     _OP(6, Float, float, rj) \
     _OP(6, Float, float, pipe_cooldown) \
     _OP(7, Short, float, new_balance) \
-    _OP(7, Short, float, new_balance_flags)
+    _OP(7, Short, float, new_balance_flags) \
+    _OP(8, Byte,  float, qwtf_reloadcancel)
 
 
 var struct {

@@ -1613,9 +1613,17 @@ void () W_Attack = {
     if (self.has_disconnected == TRUE)
         return;
 
-    if (self.tfstate & TFSTATE_RELOADING ||
-        self.tfstate & TFSTATE_NO_WEAPON)
+    if (self.tfstate & TFSTATE_NO_WEAPON)
         return;
+
+    if (self.tfstate & TFSTATE_RELOADING) {
+        if (!tf_config.qwtf_reloadcancel)
+            return;
+
+        // Cancel the reload and try to fire; the checks below (ammo, clip
+        // full again, etc.) still apply normally afterward.
+        FO_CancelReload();
+    }
 
     if (no_fire_mode)
         return;
@@ -1850,6 +1858,11 @@ void W_ChangeWeaponSlot(Slot slot) {
         self.queue_slot = slot;
 
     // halt if weapon is not ready to be fired
+    if (tf_config.qwtf_reloadcancel && (self.tfstate & TFSTATE_RELOADING) &&
+        !IsSameSlot(slot, self.current_slot)) {
+        FO_CancelReload();
+    }
+
     if (!WeaponReady())
         return;
 
@@ -2569,7 +2582,33 @@ void () W_WeaponFrame = {
             break;
     }
 
-    if (!WeaponReady())
+    // Under qwtf_reloadcancel, firing while reloading should cancel the
+    // reload (handled inside W_Attack) - but WeaponReady() considers a
+    // reloading weapon "not ready" and would return here before ever
+    // reaching that logic. Let a fire attempt through in that specific case
+    // (still subject to the normal attack_finished cooldown and
+    // TFSTATE_NO_WEAPON check) so the cancel can actually happen
+    // server-side, instead of only ever being predicted (and then
+    // corrected away) client-side.
+    //
+    // Require a *fresh* button press (not a held button) to trigger this:
+    // if cancelling too early leaves the clip still empty, FO_CheckForReload
+    // immediately force-starts a new reload, and since attack_finished isn't
+    // touched by reload start/cancel, a held button could otherwise
+    // cancel/re-reload every single frame. Releasing and re-pressing forces
+    // one attempt per click, matching how the weapon-switch cancel already
+    // requires an actual new input.
+    float fresh_fire_press = self.button0 && !self.reload_cancel_btn_down;
+
+    float unblock_fire_to_cancel_reload =
+        tf_config.qwtf_reloadcancel && fresh_fire_press &&
+        (self.tfstate & TFSTATE_RELOADING) &&
+        !(self.tfstate & TFSTATE_NO_WEAPON) &&
+        self.client_time >= self.attack_finished;
+
+    self.reload_cancel_btn_down = self.button0;
+
+    if (!WeaponReady() && !unblock_fire_to_cancel_reload)
         return;
 
     if (self.impulse != 0 && self.has_disconnected == 0)

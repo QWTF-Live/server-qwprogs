@@ -788,6 +788,7 @@ static void HandleButtonThrowgren(float index, float button) {
 }
 
 float WP_ReloadSlot(Slot slot);
+void WP_CancelReload();
 void WP_ReloadNext();
 void WPP_Dump();
 
@@ -1023,6 +1024,14 @@ void WP_Impulse() {
     if (input_buttons & BUTTON_SPECIAL1)
         WP_Special();
 
+    // Cancel an in-progress reload if the player is actually switching to a
+    // different weapon (not just re-selecting the current one).
+    if (tf_config.qwtf_reloadcancel && (pstate_pred.tfstate & TFSTATE_RELOADING) &&
+        !IsSlotNull(pstate_pred.queue_slot) &&
+        !IsSameSlot(pstate_pred.queue_slot, pstate_pred.current_slot)) {
+        WP_CancelReload();
+    }
+
     // Impulses below this line depend on ready weapon.
     if (!WP_WeaponReady())
         return;
@@ -1078,11 +1087,30 @@ string WP_GetClip() {
     float still_loading = 0;
     float fired = *WP_ClipFired(slot);
 
-    if (WP_IsReloading())
+    float clip;
+    if (WP_IsReloading()) {
         still_loading = FO_NumClipStillLoading(wi, pstate_pred.client_time,
                                                pstate_pred.reload_finished);
 
-    float clip = capacity - fired - still_loading;
+        if (tf_config.qwtf_reloadcancel && wi->full_reload_time > 0) {
+            // Under qwtf_reloadcancel, clip_fired isn't credited until
+            // completion or cancellation (see FO_ReloadSlot/FO_CancelReload),
+            // so "fired" doesn't move during the reload. Show live progress
+            // toward however much would be credited back right now instead.
+            float total_amount = (pstate_pred.reload_finished - pstate_pred.reload_started)
+                                  * wi->clip_size / wi->full_reload_time;
+            if (still_loading > total_amount)
+                still_loading = total_amount;
+
+            float resolved = total_amount - still_loading;
+            clip = capacity - fired + resolved;
+        } else {
+            clip = capacity - fired - still_loading;
+        }
+    } else {
+        clip = capacity - fired;
+    }
+
     float rem = WP_GetAmmo(wi->ammo_type);
 
     // It's possible for the amount in clip to exceed remaining ammo (this
@@ -1120,13 +1148,48 @@ float WP_ReloadSlot(Slot slot) {
 
     pstate_pred.tfstate |= TFSTATE_RELOADING;
     float amt = min(*WP_ClipFired(slot), WP_GetAmmo(wi->ammo_type));
-    (*WP_ClipFired(slot)) -= amt;
+
+    if (!tf_config.qwtf_reloadcancel) {
+        (*WP_ClipFired(slot)) -= amt;
+    }
+    // Under qwtf_reloadcancel, credit is deferred to completion/cancellation
+    // so a cancelled reload only refunds the portion that actually finished.
 
     pstate_pred.reload_started = pstate_pred.client_time;
     pstate_pred.reload_finished = pstate_pred.client_time +
         (amt / wi->clip_size) * wi->full_reload_time;
 
     return TRUE;
+}
+
+// Client-prediction mirror of FO_CancelReload (share/weapons.qc). Keep the
+// two in sync.
+void WP_CancelReload() {
+    if (!(pstate_pred.tfstate & TFSTATE_RELOADING))
+        return;
+
+    if (!tf_config.qwtf_reloadcancel)
+        return;
+
+    Slot slot = CurrentSlot();
+    FO_WeapInfo* wi = SlotWI(slot);
+
+    pstate_pred.tfstate &= ~TFSTATE_RELOADING;
+
+    if (wi->full_reload_time > 0) {
+        float total_amount = (pstate_pred.reload_finished - pstate_pred.reload_started)
+                              * wi->clip_size / wi->full_reload_time;
+        float still_loading = FO_NumClipStillLoading(wi, pstate_pred.client_time,
+                                                      pstate_pred.reload_finished);
+        if (still_loading > total_amount)
+            still_loading = total_amount;
+
+        float resolved = total_amount - still_loading;
+        (*WP_ClipFired(slot)) = max(*WP_ClipFired(slot) - resolved, 0);
+    }
+
+    if (IsEffectFrame())
+        csqc_print("Reload cancelled\n");
 }
 
 void WP_CheckSpecialReady() {
@@ -1147,6 +1210,16 @@ void WP_CheckSpecialReady() {
 void WP_CheckReloadFinished() {
     if (WP_IsReloading() && pstate_pred.reload_finished && pstate_pred.client_time >= pstate_pred.reload_finished) {
         pstate_pred.tfstate &= ~TFSTATE_RELOADING;
+
+        if (tf_config.qwtf_reloadcancel) {
+            Slot slot = CurrentSlot();
+            FO_WeapInfo* wi = SlotWI(slot);
+            if (wi->full_reload_time > 0) {
+                float total_amount = (pstate_pred.reload_finished - pstate_pred.reload_started)
+                                      * wi->clip_size / wi->full_reload_time;
+                (*WP_ClipFired(slot)) = max(*WP_ClipFired(slot) - total_amount, 0);
+            }
+        }
 
         if (IsEffectFrame())
             csqc_print("Finished reloading\n");
@@ -1292,9 +1365,13 @@ void WP_Frame() {
 
     float is_attack = 0;
 
-    if (pstate_pred.playerclass != PC_SNIPER)
+    if (pstate_pred.playerclass != PC_SNIPER) {
+        if (tf_config.qwtf_reloadcancel && (pstate_pred.buttons_down & BUTTON_ATTACK) &&
+            (pstate_pred.tfstate & TFSTATE_RELOADING)) {
+            WP_CancelReload();
+        }
         is_attack = ((input_buttons & BUTTON_ATTACK) && WP_WeaponReady());
-    else
+    } else
         is_attack = WP_Sniper_IsAttack();
 
     if (is_attack)

@@ -290,9 +290,6 @@ static void RewindTo(RewindState* rstate, float rtime) {
 
 // TODO: Filter out observers, but no harm immediately.
 static void RL_RewindTo(RewindState* head, entity exclude, float rtime) {
-    float show_rewind_points =
-        CF_GetSetting("rds", "rewind_debug_show", DEBUG_REWIND ? "on" : "off");
-
     RL_FOR_EACH(head, rstate) {
         entity e = rstate->owner;
         if (e == exclude)
@@ -300,7 +297,7 @@ static void RL_RewindTo(RewindState* head, entity exclude, float rtime) {
 
         RewindTo(rstate, rtime);
 
-        if (show_rewind_points)
+        if (rewind_debug_show)
             pointparticles(particleeffectnum("fo_airblast"), e->origin);
     }
 }

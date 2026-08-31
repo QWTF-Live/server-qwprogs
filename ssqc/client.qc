@@ -793,6 +793,11 @@ void () DecodeLevelParms = {
         // temporary gating on god-moding players behind their rewind barrier
         rewind_barrier = CF_GetSetting("rwbar", "rewind_barrier", "0");
 
+        // draw rewound player positions [off].  Cached rather than read in
+        // RL_RewindTo(), which runs once per physics tic per projectile.
+        rewind_debug_show = CF_GetSetting("rds", "rewind_debug_show",
+                                          DEBUG_REWIND ? "on" : "off");
+
         // allow clients to place a personal practice spawn [off]
         allowpracspawns = CF_GetSetting("aps", "allowpracspawns", "0");
 
@@ -2177,6 +2182,11 @@ void () PutClientInServer = {
     self.origin = spot.origin + '0 0 1';
     self.angles = spot.angles;
     self.fixangle = 1;
+
+    // Spawning relocates the player, so the snapshots either side of this
+    // moment belong to different places (and different lives).  Mark the seam
+    // so a rewind can't resolve back into the previous one.
+    RewindBarrier(self);
 
     if (self.playerclass != 0)
         spawn_tdeath(self.origin, self);

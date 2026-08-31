@@ -267,6 +267,9 @@ void AnnounceEvent(string event, entity player = __NULL__) {
     if (player) {
         KeyVal pkvs[] = {
             {KV_S, "name", JSON_Name(player)},
+            // Same field and key as the scoreboard's player object; empty when
+            // not logged in.
+            {KV_S, "login", JSON_Escape(player.tfl_username)},
             {KV_I, "team", ftos(player.team_no)},
             {KV_I, "pc", ftos(player.playerclass)},
         };

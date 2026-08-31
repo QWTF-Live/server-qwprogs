@@ -535,6 +535,17 @@ void FO_ReloadFrame() {
 
     if (self.reload_finished && (self.client_time >= self.reload_finished)) {
         self.tfstate &= ~TFSTATE_RELOADING;
+
+        if (tf_config.qwtf_reloadcancel && wi->full_reload_time > 0) {
+            // Under qwtf_reloadcancel the credit is deferred (see
+            // FO_ReloadSlot) so that a cancelled reload can refund only the
+            // portion actually completed. Apply the full credit now that it
+            // finished normally.
+            float reload_count = (self.reload_finished - self.reload_started)
+                                  * wi->clip_size / wi->full_reload_time;
+            (*ws->clip_fired) = max(*ws->clip_fired - reload_count, 0);
+        }
+
         W_UpdateCurrentWeapon(self);
         sprint_pred(self, PRINT_HIGH, "Finished reloading\n");
 
@@ -582,10 +593,49 @@ void FO_ReloadSlot(Slot slot, float force) {
 
     // TODO: Make ammo in clip independent from ammo_remaining (so you can't
     // have shots in clip that are discarded and other weirdness.)
-    (*ws->clip_fired) -= reload_count;
+    if (!tf_config.qwtf_reloadcancel) {
+        (*ws->clip_fired) -= reload_count;
+    }
+    // Under qwtf_reloadcancel, clip_fired is left as-is here; the credit is
+    // applied incrementally on cancellation (FO_CancelReload) or in full on
+    // normal completion (FO_ReloadFrame), so cancelling partway through
+    // only refunds the ammo that had actually finished loading.
 
     self.reload_started = self.client_time;
     self.reload_finished = self.client_time + reload_duration;
+}
+
+// Cancels an in-progress reload, e.g. because the player fired or switched
+// weapons. Under qwtf_reloadcancel, credits back only the portion of the
+// clip that had actually finished loading by this point; the rest remains
+// "fired" and will need reloading again. When qwtf_reloadcancel is off,
+// this is a no-op (reload is uninterruptible, matching legacy behavior).
+void FO_CancelReload() {
+    if (self.tfstate & TFSTATE_RELOADING == 0)
+        return;
+
+    if (!tf_config.qwtf_reloadcancel)
+        return;
+
+    FO_WeapState ws;
+    FO_FillCurrentWeapState(&ws);
+    FO_WeapInfo* wi = ws->wi;
+
+    self.tfstate &= ~TFSTATE_RELOADING;
+
+    if (wi->full_reload_time > 0) {
+        float total_amount = (self.reload_finished - self.reload_started)
+                              * wi->clip_size / wi->full_reload_time;
+        float still_loading =
+            FO_NumClipStillLoading(wi, self.client_time, self.reload_finished);
+        if (still_loading > total_amount)
+            still_loading = total_amount;
+
+        float resolved = total_amount - still_loading;
+        (*ws->clip_fired) = max(*ws->clip_fired - resolved, 0);
+    }
+
+    sprint_pred(self, PRINT_HIGH, "Reload cancelled\n");
 }
 
 float FO_CheckForReload() {

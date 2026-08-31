@@ -315,6 +315,7 @@ void () QuadRoundBegin = {
 	}
 
 	round_start_time = time;
+	Stats_CaptureRoundBase();
 	UpdateClientQuadRoundBegin(te, round_time);
 	UpdateClient_SetNextEndTime(round_start_time + round_time * 60);
 

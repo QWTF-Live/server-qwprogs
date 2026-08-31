@@ -143,6 +143,17 @@ void () SpectatorThink = {
     self.deaths = 0;
     self.caps = 0;
     self.touches = 0;
+
+    // The round baselines have to go with them.  base_* is subtracted from the
+    // counters above to produce per-round figures, so leaving it behind would
+    // report negative stats for anyone who spectates part-way through a round
+    // and comes back.
+    self.base_damagegiven = 0;
+    self.base_damagetaken = 0;
+    self.base_kills = 0;
+    self.base_deaths = 0;
+    self.base_caps = 0;
+    self.base_touches = 0;
     self.team_no = 0;
     UpdateScoreboardInfo(self);
 

@@ -711,6 +711,16 @@ float canlog;
 .float damagegiven;
 .float damagetaken;
 
+// Snapshot of the counters above, taken at each round edge by
+// Stats_CaptureRoundBase().  The counters themselves run for the whole game, so
+// a per-round figure is (current - base).
+.float base_caps;
+.float base_touches;
+.float base_kills;
+.float base_deaths;
+.float base_damagegiven;
+.float base_damagetaken;
+
 // flash stuff
 float FO_FlashDimension;
 .float old_dimension_seen;

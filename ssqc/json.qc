@@ -108,6 +108,54 @@ static inline string JSON_Name(entity player) {
 // `i + 1 == count`: entries are skipped for non-real clients, so keying the
 // comma off the loop index emits a trailing one whenever the last entity in
 // the list is a bot, producing malformed JSON.
+// Which round is in progress.  `rounds` is a countdown: it starts at N+1 (see
+// SetQuadRounds -- the +1 is deliberate) and reaches 1 on the final round, so
+// for the two-round game it only ever distinguishes first from final.  Games
+// without rounds report 1.
+static float CurrentRound() {
+    if (!quadmode || rounds <= 0)
+        return 1;
+
+    return (rounds == 1) ? 2 : 1;
+}
+
+static string JSON_RoundStats(float kills, float deaths, float dmgg,
+                              float dmgt, float caps, float touches) {
+    KeyVal kvs[] = {
+        {KV_I, "kills", ftos(kills)},
+        {KV_I, "deaths", ftos(deaths)},
+        {KV_I, "dmgg", ftos(dmgg)},
+        {KV_I, "dmgt", ftos(dmgt)},
+        {KV_I, "caps", ftos(caps)},
+        {KV_I, "touches", ftos(touches)}
+    };
+
+    return JSON_Wrap(kvs.length, kvs);
+}
+
+// Per-round breakdown, oldest round first.  The counters run for the whole
+// game and base_* holds their value at the current round's start, so round one
+// is base and round two is the remainder.  During round one base is still zero,
+// so the totals *are* round one and only one entry is emitted.
+static string JSON_PlayerRounds(entity p) {
+    if (CurrentRound() < 2)
+        return strcat("[", JSON_RoundStats(p.kills, p.deaths, p.damagegiven,
+                                           p.damagetaken, p.caps, p.touches),
+                      "]");
+
+    string r1 = JSON_RoundStats(p.base_kills, p.base_deaths,
+                                p.base_damagegiven, p.base_damagetaken,
+                                p.base_caps, p.base_touches);
+    string r2 = JSON_RoundStats(p.kills       - p.base_kills,
+                                p.deaths      - p.base_deaths,
+                                p.damagegiven - p.base_damagegiven,
+                                p.damagetaken - p.base_damagetaken,
+                                p.caps        - p.base_caps,
+                                p.touches     - p.base_touches);
+
+    return strcat("[", r1, ",", r2, "]");
+}
+
 static string JSON_Scoreboard() {
     int count;
     entity* list = find_list(classname, "player", EV_STRING, count);
@@ -128,12 +176,8 @@ static string JSON_Scoreboard() {
                         {KV_S, "login", JSON_Escape(p.tfl_username)},
                         {KV_I, "team", ftos(p.team_no)},
                         {KV_I, "pc", ftos(p.playerclass)},
-                        {KV_I, "kills", ftos(p.kills)},
-                        {KV_I, "deaths", ftos(p.deaths)},
-                        {KV_I, "dmgg", ftos(p.damagegiven)},
-                        {KV_I, "dmgt", ftos(p.damagetaken)},
-                        {KV_I, "caps", ftos(p.caps)},
-                        {KV_I, "touches", ftos(p.touches)}
+                        // KV_I so the array is emitted verbatim, not quoted.
+                        {KV_I, "rounds", JSON_PlayerRounds(p)}
                        };
 
         result = strcat(result, comma, JSON_Wrap(kvs.length, kvs));
@@ -141,6 +185,28 @@ static string JSON_Scoreboard() {
     }
 
     return strcat(result, "]");
+}
+
+// Rebases every player's per-round counters.  Called at a round edge, so that
+// the scoreboard can report both game totals and this round's contribution
+// without the server having to keep two sets of counters in step.
+//
+// Applied to every "player" entity rather than only real clients: the cost is
+// trivial and it keeps base consistent if a slot's client type changes.
+void Stats_CaptureRoundBase() {
+    int count;
+    entity* list = find_list(classname, "player", EV_STRING, count);
+
+    for (int i = 0; i < count; i++) {
+        entity p = list[i];
+
+        p.base_caps        = p.caps;
+        p.base_touches     = p.touches;
+        p.base_kills       = p.kills;
+        p.base_deaths      = p.deaths;
+        p.base_damagegiven = p.damagegiven;
+        p.base_damagetaken = p.damagetaken;
+    }
 }
 
 // Events are produced at arbitrary points in a frame and drained by the HTTP
@@ -245,7 +311,9 @@ string (string uri, string method, string postdata,
     string players = JSON_Scoreboard();
     string events  = AnnounceEventDrain();
 
-    return strcat("{ \"players\": ", players, ", \"events\": ", events, " }");
+    return strcat("{ \"round\": ", ftos(CurrentRound()),
+                  ", \"players\": ", players,
+                  ", \"events\": ", events, " }");
 };
 
 // Buffered for the scoreboard endpoint rather than posted, and only once
@@ -259,7 +327,7 @@ void AnnounceEvent(string event, entity player = __NULL__) {
         {KV_I, "time", ftos(time)},
         {KV_I, "round_start", ftos(round_start_time)},
         {KV_S, "team1score", ftos(team1score)},
-        {KV_S, "team2score", ftos(team2score)},
+        {KV_S, "team2score", ftos(team2score)}
      };
 
     string data = strcat("{ \"event\": ", JSON_Wrap(kvs.length, kvs));

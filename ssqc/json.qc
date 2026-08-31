@@ -206,6 +206,10 @@ void Stats_CaptureRoundBase() {
         p.base_deaths      = p.deaths;
         p.base_damagegiven = p.damagegiven;
         p.base_damagetaken = p.damagetaken;
+
+        p.base_sbteamkills   = p.sbteamkills;
+        p.base_afflicted     = p.afflicted;
+        p.base_teamafflicted = p.teamafflicted;
     }
 }
 

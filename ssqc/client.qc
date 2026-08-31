@@ -1249,7 +1249,6 @@ void () execute_changelevel = {
         other.solid = SOLID_NOT;
         other.movetype = MOVETYPE_NONE;
         other.modelindex = 0;
-        other.caps = 0;
         other = find(other, classname, "player");
     }
     if (!clan_scores_dumped) {
@@ -1982,15 +1981,20 @@ void (entity player) UpdateScoreboardInfo = {
         return;
     player.next_scoreboard_update = time + 1;
 
-    CheckSetInfoKey(player, "afflicted", player.afflicted);
-    CheckSetInfoKey(player, "teamafflicted", player.teamafflicted);
-    CheckSetInfoKey(player, "damagegiven", player.damagegiven);
-    CheckSetInfoKey(player, "damagetaken", player.damagetaken);
-    CheckSetInfoKey(player, "kills", player.kills);
-    CheckSetInfoKey(player, "teamkills", player.sbteamkills);
-    CheckSetInfoKey(player, "deaths", player.deaths);
-    CheckSetInfoKey(player, "caps", player.caps);
-    CheckSetInfoKey(player, "touches", player.touches);
+    // Counters are published relative to the round baseline so the in-game
+    // scoreboard resets each round.  base_* is rebased by
+    // Stats_CaptureRoundBase() at each round edge and is zero during round one,
+    // so these are whole-game figures until the first edge.  The HTTP
+    // scoreboard reports each round separately and is unaffected by this.
+    CheckSetInfoKey(player, "afflicted", player.afflicted - player.base_afflicted);
+    CheckSetInfoKey(player, "teamafflicted", player.teamafflicted - player.base_teamafflicted);
+    CheckSetInfoKey(player, "damagegiven", player.damagegiven - player.base_damagegiven);
+    CheckSetInfoKey(player, "damagetaken", player.damagetaken - player.base_damagetaken);
+    CheckSetInfoKey(player, "kills", player.kills - player.base_kills);
+    CheckSetInfoKey(player, "teamkills", player.sbteamkills - player.base_sbteamkills);
+    CheckSetInfoKey(player, "deaths", player.deaths - player.base_deaths);
+    CheckSetInfoKey(player, "caps", player.caps - player.base_caps);
+    CheckSetInfoKey(player, "touches", player.touches - player.base_touches);
     CheckSetInfoKey(player, "team_no", player.team_no);
     CheckSetInfoKey(player, "playerclass", player.playerclass);
     CheckSetInfoKey(player, "ready", player.stat_flags & PLAYER_READY);

@@ -85,7 +85,6 @@ float remote_time();
 .float undercover_timer;        // Seconds left until disguised
 .float power_time;              // The time when sniper power in status bar was last updated
 .float fragstreak;              // Frag streak
-.float caps;                    // Caps during this game
 
 .entity nopickup;               // Don't pick up this backpack/ammobox because it doesn't contain any of your ammo types
 
@@ -701,7 +700,7 @@ float canlog;
 
 // csqc scoreboard fields
 .float next_scoreboard_update;
-.float caps;
+.float caps;                    // Caps during this game
 .float touches;
 .float kills;
 .float sbteamkills;
@@ -720,6 +719,9 @@ float canlog;
 .float base_deaths;
 .float base_damagegiven;
 .float base_damagetaken;
+.float base_sbteamkills;
+.float base_afflicted;
+.float base_teamafflicted;
 
 // flash stuff
 float FO_FlashDimension;

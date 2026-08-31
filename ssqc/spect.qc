@@ -154,6 +154,8 @@ void () SpectatorThink = {
     self.base_deaths = 0;
     self.base_caps = 0;
     self.base_touches = 0;
+    self.base_afflicted = 0;
+    self.base_teamafflicted = 0;
     self.team_no = 0;
     UpdateScoreboardInfo(self);
 

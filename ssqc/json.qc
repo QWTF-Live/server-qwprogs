@@ -154,6 +154,14 @@ static int announce_event_next;   // slot to write next
 static int announce_event_count;  // live entries, saturating at the ring size
 
 static void AnnounceEventPush(string json) {
+    // An empty entry would consume a slot -- and, on a full ring, evict a real
+    // event -- while contributing nothing to the drained array.  Nothing in
+    // AnnounceEvent() can construct one (the payload is anchored by literal
+    // text), so this guards against a caller added later, and against the
+    // string having been emptied before it reaches us.
+    if (json == string_null || json == "")
+        return;
+
     announce_events[announce_event_next] = json;
     announce_event_next = (announce_event_next + 1) % ANNOUNCE_EVENT_MAX;
 
@@ -175,9 +183,19 @@ static string AnnounceEventDrain() {
     for (int i = 0; i < announce_event_count; i++) {
         int idx = (start + i) % ANNOUNCE_EVENT_MAX;
 
-        result = strcat(result, comma, announce_events[idx]);
-        comma = ",";
+        string ev = announce_events[idx];
         announce_events[idx] = string_null;  // release for GC
+
+        // The separator is advanced only when something is actually appended.
+        // Keying it off the loop index instead would emit a comma for an empty
+        // slot, closing the array as ",]" -- malformed.  A slot should never be
+        // empty here, so this is belt and braces, but the failure mode is a
+        // broken document for every consumer rather than one missing event.
+        if (ev == string_null || ev == "")
+            continue;
+
+        result = strcat(result, comma, ev);
+        comma = ",";
     }
 
     announce_event_count = 0;
@@ -218,10 +236,16 @@ string (string uri, string method, string postdata,
     scoreboard_active = TRUE;
     responseheaders = strcat(responseheaders, "Content-Type: application/json\n");
 
-    // Note this drains the event ring, so the response is not idempotent --
-    // each event is handed to exactly one reader.
-    return strcat("{ \"players\": ", JSON_Scoreboard(),
-                  ", \"events\": ", AnnounceEventDrain(), " }");
+    // Built into locals rather than nested in the strcat() argument list so the
+    // order of evaluation is explicit and neither half is a pending argument
+    // while the other one allocates.
+    //
+    // Note the drain empties the event ring, so this response is not idempotent
+    // -- each event is handed to exactly one reader.
+    string players = JSON_Scoreboard();
+    string events  = AnnounceEventDrain();
+
+    return strcat("{ \"players\": ", players, ", \"events\": ", events, " }");
 };
 
 // Buffered for the scoreboard endpoint rather than posted, and only once

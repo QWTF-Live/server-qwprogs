@@ -1940,7 +1940,7 @@ void (entity p) SetVoteParams = {
     stuffcmd(p, strcat("color ", ftos(rint(random() * 12)), " ", ftos(rint(random() * 12)), "\n"));
 
     p.takedamage = DAMAGE_AIM; //DAMAGE_YES;
-    p.attack_finished = self.client_time + 0.3;
+    p.attack_finished = time + 0.3;
     p.th_pain = player_pain;
     p.th_die = PlayerDie;
     p.height = 0;
@@ -2167,7 +2167,7 @@ void () PutClientInServer = {
     stuffcmd(self, "v_cshift; wait; bf\n");
     SetTeamName(self);
 
-    self.attack_finished = self.client_time + 0.3;
+    self.attack_finished = time + 0.3;
     self.th_pain = player_pain;
     self.th_die = PlayerDie;
     self.height = 0;
@@ -2675,7 +2675,7 @@ static void ConcUpdate() {
 }
 
 void () PlayerPreThink = {
-    FO_UpdateClientTime();
+    FO_UpdateClientPing();
 
     if (self.impulse) {
         if (self.impulse == TF_VOTENEXT) {
@@ -2769,7 +2769,7 @@ void () PlayerPreThink = {
     // Catch all.
     FO_WeapState ws;
     FO_FillCurrentWeapState(&ws);
-    if ((self.client_time >= self.attack_finished) &&
+    if ((time >= self.attack_finished) &&
         (ws.weapon > WEAP_AXE) && ((ws->wi)->ammo_type != AMMO_NONE)) {
         if (*ws->ammo_remaining == 0)
             W_ChangeToBestWeapon();

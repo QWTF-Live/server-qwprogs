@@ -794,7 +794,7 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
 
     tGrenade.think = FO_GrenadeThink;
     self.grenade_timer = tGrenade;
-    self.last_prime = global_to_client_time(time_base);
+    self.last_prime = time_base;
 }
 
 void () FO_GrenadeThink = {

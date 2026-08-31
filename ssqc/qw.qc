@@ -10,12 +10,10 @@ enum {
 };
 
 .float last_death;
-.float last_death_ctime;
 .float last_attack_ctime;
 
-.float client_time;              // A stable/predictable client clock
 .float client_ping;              // ping used for prediction
-.float last_remote_client_time;  // For monoticity
+.float last_remote_time;         // For monoticity of remote_time()
 .float client_lastupdate;
 
 .void() client_think;            // client-time relative think
@@ -24,12 +22,7 @@ enum {
 
 .int prng_base[PRNG_NUM_STATES];
 
-// A monotonically non-decreasing, latency corrected notion of remote
-// client-time.  Monotonicity guarantees that for some offset `o`:
-//     at t1: remote_client_time() + o < at t2: lag_time() + o  FOR t2 > t1
-// E.g. That you never have to worry about the correction reordering events
-// that `time + o` would not.
-float remote_client_time();
+float remote_time();
 
 //===========================================================================
 // TEAMFORTRESS Defs

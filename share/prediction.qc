@@ -75,7 +75,7 @@ struct predict_tf_state {
     float conc_cap_time;
     float special_next;
 
-    float client_time, server_time;
+    float server_time;
     float client_ping;
     float weaponframe;
 
@@ -357,7 +357,6 @@ float* self_clip_fired(Slot slot) { return &pstate_pred.clip_fired[SlotIndex(slo
 static float Prediction_ChangedMask(entity player, entity src) {
     float mask = FOWP_CTIME;
     player.predict_state.server_time = time;
-    player.predict_state.client_time = src.client_time;
     player.predict_state.client_ping = src.client_ping;
 
     if (player.predict_flags & (PF_PMOVE | PF_POS))
@@ -518,7 +517,6 @@ void TFL_RecvPredictState() {
     }
 
     if (mask & FOWP_CTIME) {
-        COMM(Float, client_time);
         COMM(Float, server_time);
         COMM(Short, client_ping);
     }
@@ -840,18 +838,6 @@ void Config_Final() {
     config_update.think = TflCheckConfigUpdate;
 
     TflCheckConfigUpdate();  // Sets nextthink
-}
-
-void WeaponPred_DoServerClientThink() {
-    while (self.client_think && self.client_time > self.client_nextthink) {
-        float held_client_time = self.client_time;
-
-        self->client_time = self->client_nextthink;
-        self->client_nextthink = 0;
-        self->client_think();
-
-        self->client_time = held_client_time;
-    }
 }
 
 void ProjRewindForTravel(entity e, float target_time);

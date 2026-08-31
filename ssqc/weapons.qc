@@ -170,8 +170,8 @@ void (float att_delay) Attack_Finished = {
     if (self.tfstate & TFSTATE_TRANQUILISED)
         att_delay *= 2;
 
-    self.attack_finished = self.client_time + att_delay;
-    self.last_attack_ctime = self.client_time;
+    self.attack_finished = time + att_delay;
+    self.last_attack_ctime = time;
 };
 
 float* W_ammo_to_p(entity player, AmmoType ammo_type) {
@@ -1742,7 +1742,7 @@ void () W_Attack = {
 };
 
 float WeaponReady() {
-    if (self.client_time >= self.attack_finished &&
+    if (time >= self.attack_finished &&
         !(self.tfstate & (TFSTATE_RELOADING | TFSTATE_NO_WEAPON)))
         return TRUE;
 
@@ -2641,7 +2641,7 @@ void (int weap, float ctime, vector pos, vector angles) CSEv_Attack_ifvv = {
     // Only applies to attacks before the last death.   We can't use
     // attack_finished here as there's an 0.3s lockout on spawn that obscures.
     float lockout = 15*MSEC;  // Be a tiny bit conservative
-    if (ctime >= self.last_death_ctime - lockout ||
+    if (ctime >= self.last_death - lockout ||
         ctime < self.last_attack_ctime - lockout)
         return;
 

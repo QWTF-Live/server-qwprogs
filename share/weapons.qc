@@ -533,7 +533,7 @@ void FO_ReloadFrame() {
     FO_FillWeapState(self, self.current_slot, &ws);
     FO_WeapInfo* wi = ws.wi;
 
-    if (self.reload_finished && (self.client_time >= self.reload_finished)) {
+    if (self.reload_finished && (time >= self.reload_finished)) {
         self.tfstate &= ~TFSTATE_RELOADING;
         W_UpdateCurrentWeapon(self);
         sprint_pred(self, PRINT_HIGH, "Finished reloading\n");
@@ -584,8 +584,8 @@ void FO_ReloadSlot(Slot slot, float force) {
     // have shots in clip that are discarded and other weirdness.)
     (*ws->clip_fired) -= reload_count;
 
-    self.reload_started = self.client_time;
-    self.reload_finished = self.client_time + reload_duration;
+    self.reload_started = time;
+    self.reload_finished = time + reload_duration;
 }
 
 float FO_CheckForReload() {

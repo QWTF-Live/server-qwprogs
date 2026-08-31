@@ -268,7 +268,7 @@ static void UpdateRenderSelf() {
 
 
     float base, melee = IsSlotMelee(pstate_pred.current_slot);
-    if (pstate_pred.client_time < pstate_pred.attack_finished)
+    if (pstate_pred.server_time < pstate_pred.attack_finished)
         base = 113 + (melee ? 6 : 0);
     else if (vel)
         base = 0 + (melee ? 0 : 6);  // WHY

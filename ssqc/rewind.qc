@@ -371,7 +371,7 @@ float RewindPlayersExcept(entity except, float farthest_rewind_point) {
     farthest_rewind_point = max(farthest_rewind_point,
                                 time - rewind_max_offset);
 
-    // Det was pushed at remote_client_time(), let's see if we can get there.
+    // Det was pushed at remote_time(), let's see if we can get there.
     float rewind_to = max(farthest_rewind_point, remote_time());
 
     // Ignore for LAN pings.
@@ -400,7 +400,7 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
     if (use_ctime) {
         // These can be pretty late with sendevent latency on top so let's be
         // conservative.
-        ping = min((proj.owner.client_time - use_ctime) * 1000,
+        ping = min((time - use_ctime) * 1000,
                    tf_config.max_rewind_ms - 25);
     }
 

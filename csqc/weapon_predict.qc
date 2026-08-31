@@ -512,7 +512,7 @@ float IsEffectFrameMulti() {
 }
 
 void Attack_Finished(float attack_time) {
-    pstate_pred.attack_finished = pstate_pred.client_time + attack_time;
+    pstate_pred.attack_finished = pstate_pred.server_time + attack_time;
 }
 ////////////////////////////////////////////////////////////////////////////////
 /// Weapon models
@@ -552,7 +552,7 @@ void WP_ProcessServerUpdate() {
     pstate_server.seq = servercommandframe;
 
     // Force WF to zero, in case we missed a packet.
-    if (pstate_server.attack_finished < pstate_server.client_time)
+    if (pstate_server.attack_finished < pstate_server.server_time)
         pstate_server.weaponframe = 0;
 
     // Match up melee animations when they don't match.  The easiest way for
@@ -746,7 +746,7 @@ static float WP_Sniper_IsAttack() {
     float aiming = pstate_pred.tfstate & TFSTATE_AIMING;
 
     // Just box these out up front
-    if (pstate_pred.client_time < pstate_pred.attack_finished ||
+    if (pstate_pred.server_time < pstate_pred.attack_finished ||
         !WP_GetAmmo(AMMO_SHELLS))
         return FALSE;
 
@@ -793,7 +793,7 @@ void WPP_Dump();
 
 float WP_WeaponReady() {
     const float not_ready_mask = TFSTATE_RELOADING | TFSTATE_NO_WEAPON;
-    if (pstate_pred.client_time < pstate_pred.attack_finished)
+    if (pstate_pred.server_time < pstate_pred.attack_finished)
         return FALSE;
     if (pstate_pred.tfstate & not_ready_mask)
         return FALSE;
@@ -1063,7 +1063,7 @@ float WP_ReloadPercent() {
     if (!WP_IsReloading())
         return 1;
 
-    return min(1, (pstate_pred.client_time - pstate_pred.reload_started) /
+    return min(1, (pstate_pred.server_time - pstate_pred.reload_started) /
                   (pstate_pred.reload_finished - pstate_pred.reload_started));
 }
 
@@ -1079,7 +1079,7 @@ string WP_GetClip() {
     float fired = *WP_ClipFired(slot);
 
     if (WP_IsReloading())
-        still_loading = FO_NumClipStillLoading(wi, pstate_pred.client_time,
+        still_loading = FO_NumClipStillLoading(wi, pstate_pred.server_time,
                                                pstate_pred.reload_finished);
 
     float clip = capacity - fired - still_loading;
@@ -1122,8 +1122,8 @@ float WP_ReloadSlot(Slot slot) {
     float amt = min(*WP_ClipFired(slot), WP_GetAmmo(wi->ammo_type));
     (*WP_ClipFired(slot)) -= amt;
 
-    pstate_pred.reload_started = pstate_pred.client_time;
-    pstate_pred.reload_finished = pstate_pred.client_time +
+    pstate_pred.reload_started = pstate_pred.server_time;
+    pstate_pred.reload_finished = pstate_pred.server_time +
         (amt / wi->clip_size) * wi->full_reload_time;
 
     return TRUE;
@@ -1145,7 +1145,7 @@ void WP_CheckSpecialReady() {
 }
 
 void WP_CheckReloadFinished() {
-    if (WP_IsReloading() && pstate_pred.reload_finished && pstate_pred.client_time >= pstate_pred.reload_finished) {
+    if (WP_IsReloading() && pstate_pred.reload_finished && pstate_pred.server_time >= pstate_pred.reload_finished) {
         pstate_pred.tfstate &= ~TFSTATE_RELOADING;
 
         if (IsEffectFrame())
@@ -1251,7 +1251,7 @@ void WPP_Dump() {
             pstate_pred.client_thinkindex, pstate_server.client_thinkindex,
             pstate_pred.weaponframe, pstate_server.weaponframe);
     printf("t=%4.3f (%4.3f) af=%4.3f (%4.3f) rf=%4.3f (%4.3f)\n",
-            pstate_pred.client_time, pstate_server.client_time,
+            pstate_pred.server_time, pstate_server.server_time,
             pstate_pred.attack_finished, pstate_server.attack_finished,
             pstate_pred.reload_finished, pstate_server.reload_finished);
 
@@ -1276,13 +1276,13 @@ void WP_Frame() {
     }
 
     while (pstate_pred.client_nextthink &&
-            pstate_pred.client_time >= pstate_pred.client_nextthink) {
-        float held_client_time = pstate_pred.client_time;
+            pstate_pred.server_time >= pstate_pred.client_nextthink) {
+        float held_time = pstate_pred.server_time;
 
-        pstate_pred.client_time = pstate_pred.client_nextthink;
+        pstate_pred.server_time = pstate_pred.client_nextthink;
         pstate_pred.client_nextthink = 0;
         WP_AnimateModel();
-        pstate_pred.client_time = held_client_time;
+        pstate_pred.server_time = held_time;
     }
 
     WP_CheckReloadFinished();
@@ -1651,7 +1651,7 @@ void (float ox) W_FireSpikes = {
 };
 
 static float CanThrowGrenade(int gren_type) {
-    if (pstate_pred.client_time < pstate_pred.last_prime + 0.8)
+    if (pstate_pred.server_time < pstate_pred.last_prime + 0.8)
         return FALSE;  // Not time to throw yet, THROWING set if necessary.
 
     float last_possible_throw = pstate_pred.last_prime + 3.7;
@@ -1660,7 +1660,7 @@ static float CanThrowGrenade(int gren_type) {
     // We're conservative here, a missed predicted projectile throw into what's
     // actually a held grenade is frustrating.  Better to leave it up to the
     // server when it's really tight.
-    if (pstate_pred.client_time > last_possible_throw - 1.5 * SERVER_FRAME_DT)
+    if (pstate_pred.server_time > last_possible_throw - 1.5 * SERVER_FRAME_DT)
         return FALSE;  // Buckle up... probably.
 
     return TRUE;
@@ -1849,7 +1849,7 @@ void WP_Attack() {
             // but this includes the ping adjustment that would occur at pred.
             // Tested both ways and this seems to be more stable.
             sendevent("Attack", "ifvv",
-                      wi->weapon, pstate_server.client_time,
+                      wi->weapon, pstate_server.server_time,
                       PM_Org(), input_angles);
         }
     }
@@ -2170,7 +2170,6 @@ static void WP_UpdatePredict() {
         makevectors(input_angles);
 
         pstate_pred.seq = pframe;
-        pstate_pred.client_time += input_timelength;
         pstate_pred.server_time += input_timelength;
 
         pstate_pred.buttons_held = input_buttons;

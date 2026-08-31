@@ -42,7 +42,7 @@ void FO_SetClientThink(void() func, float offset, float override = TRUE) {
     self.nextthink = 0;
 
     self.client_think = func;
-    self.client_nextthink = self.client_time + offset;
+    self.client_nextthink = time + offset;
 }
 
 void client_anim_frames(void() parent_thunk, void() extra, anim_t* anim) {
@@ -173,7 +173,7 @@ void client_anim_frames(void() parent_thunk, void() extra, anim_t* anim) {
         player_run();
         return;
     } else {
-        pstate_pred.client_nextthink = pstate_pred.client_time + 0.1;
+        pstate_pred.client_nextthink = pstate_pred.server_time + 0.1;
     }
 
     float fi = tidx % anim->num_frames;

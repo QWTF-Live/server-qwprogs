@@ -770,7 +770,7 @@ string mvd_name;
 string tfl_endpoint;
 float tfl_debug;
 
-float rewind_remove;
+float rewind_barrier;
 float is_small_game; // quad or 1v1
 
 float auto_pug_team;

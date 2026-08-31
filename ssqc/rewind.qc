@@ -36,9 +36,18 @@ struct RewindState {
 
     RewindStatus rewound;
     vector held_origin, held_velocity;
+    // Whether held_origin/held_velocity were actually captured this window.
+    // Health can change mid-window -- Phys_Impact runs touch (and so damage)
+    // inline, so the very explosion we are stepping through can kill the
+    // player -- meaning this cannot be re-derived from health at restore time
+    // without stranding them at a rewound position.
+    float saved;
 
     float barrier;
-    float save_solid, removed;
+    // God mode the player held prior to any rewind adjustment.  Saved once per
+    // stash so that repeated RewindTo() calls within a window can't clobber the
+    // real value.
+    float save_god;
 
     RewindState* next;
     RewindState* prev;
@@ -172,10 +181,35 @@ static void RewindSave(RewindState* rs) {
     rs->rewound = kRewound;
     entity e = rs->owner;
 
-    if (e.health <= 0)
+    // Independent of health; a dead player can still be holding god mode.
+    rs->save_god = e.flags & FL_GODMODE;
+
+    // Dead players are SOLID_NOT and so can never be hit; skip them rather than
+    // relink a corpse for every step of every projectile.
+    rs->saved = (e.health > 0);
+    if (!rs->saved)
         return;
+
     rs->held_origin = e.origin;
     rs->held_velocity = e.velocity;
+}
+
+// Behind their own barrier we can't place the player where they really were,
+// so make them immune rather than let them be hit at a position we know to be
+// wrong.  Damage returns after knockback in T_Damage, so they still get pushed.
+//
+// Derived purely from save_god, never from prior calls, so this is idempotent:
+// repeated calls within one rewind window can't lose the player's real god mode
+// and clearing never strips one they legitimately owned.
+static void RewindSetGod(RewindState* rs, float immune) {
+    if (!rewind_barrier)
+        return;
+
+    entity e = rs->owner;
+    if (immune)
+        e.flags |= FL_GODMODE;
+    else
+        e.flags = (e.flags & ~FL_GODMODE) | rs->save_god;
 }
 
 static void RewindRestore(RewindState* rs, float type) {
@@ -184,12 +218,9 @@ static void RewindRestore(RewindState* rs, float type) {
     rs->rewound = type;
     entity e = rs->owner;
 
-    if (rs->removed) {
-        e->solid = rs->save_solid;
-        rs->removed = FALSE;
-    }
+    RewindSetGod(rs, FALSE);
 
-    if (e.health <= 0)
+    if (!rs->saved)
         return;
 
     setorigin(e, rs->held_origin);
@@ -210,15 +241,12 @@ static void RewindTo(RewindState* rstate, float rtime) {
     ASSERTD_EQ(rstate->rewound, kRewound);
     entity e = rstate->owner;
 
-    // Health redundant now?
-    if (e.health <= 0 || rtime <= rstate->barrier) {
-        if (rewind_remove) {
-            rstate->save_solid = e->solid;
-            rstate->removed = TRUE;
-            e->solid = SOLID_NOT;
-        }
+    // Successive steps within one rewind window walk rtime forward, so a player
+    // can cross out from behind their barrier mid-window and need clearing.
+    RewindSetGod(rstate, rtime <= rstate->barrier);
+
+    if (!rstate->saved || rtime <= rstate->barrier)
         return;
-    }
 
     vector pos;
 

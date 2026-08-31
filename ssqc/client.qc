@@ -790,8 +790,8 @@ void () DecodeLevelParms = {
         // disable setinfo keepcells [off]
         nokeepcells = CF_GetSetting("nkc", "nokeepcells", "0");
 
-        // temporary gating on removing collision across rewind
-        rewind_remove = CF_GetSetting("rwrem", "rewind_remove", "0");
+        // temporary gating on god-moding players behind their rewind barrier
+        rewind_barrier = CF_GetSetting("rwbar", "rewind_barrier", "0");
 
         // allow clients to place a personal practice spawn [off]
         allowpracspawns = CF_GetSetting("aps", "allowpracspawns", "0");

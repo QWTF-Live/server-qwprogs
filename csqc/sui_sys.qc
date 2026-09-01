@@ -752,16 +752,24 @@ void(vector pos, vector size, float skew, float thick, vector color, float alpha
 	R_EndPolygon();
 };
 
-void(vector pos, vector size, float skew, vector color, float alpha) sui_fill_quad =
+void(vector pos, vector size, float skew, vector ctop, vector cbot, float alpha) sui_fill_quad_grad =
 {
 	sui_transform_box(pos, size);
 
+	// R_PolygonVertex carries colour per vertex, so a vertical gradient costs
+	// nothing over a flat fill -- and a surface that varies across its height
+	// reads as lit geometry rather than a painted rectangle.
 	R_BeginPolygon("", 4);
-	R_PolygonVertex(pos + [skew, 0],               '0 0 0', color, alpha);
-	R_PolygonVertex(pos + [size_x, 0],             '0 0 0', color, alpha);
-	R_PolygonVertex(pos + [size_x - skew, size_y], '0 0 0', color, alpha);
-	R_PolygonVertex(pos + [0, size_y],             '0 0 0', color, alpha);
+	R_PolygonVertex(pos + [skew, 0],               '0 0 0', ctop, alpha);
+	R_PolygonVertex(pos + [size_x, 0],             '0 0 0', ctop, alpha);
+	R_PolygonVertex(pos + [size_x - skew, size_y], '0 0 0', cbot, alpha);
+	R_PolygonVertex(pos + [0, size_y],             '0 0 0', cbot, alpha);
 	R_EndPolygon();
+};
+
+void(vector pos, vector size, float skew, vector color, float alpha) sui_fill_quad =
+{
+	sui_fill_quad_grad(pos, size, skew, color, color, alpha);
 };
 
 void(vector pos, vector size, string pic, vector color, float alpha, float flags) sui_pic =
@@ -986,21 +994,36 @@ float(PanelID id, vector pos, vector size, string text, vector colour, vector te
 	if (colour == '0 0 0')
 		colour = MENU_BUTTON;
 
-	vector basecolor = hovered ? colour + MENU_HIGHLIGHT * 0.1 : colour;
-	basecolor = held ? colour - MENU_DARKEN * 0.1 : basecolor;
+	// Hover ramps in over kHoverRise rather than snapping.  Only the currently
+	// hovered element needs state, so one id/timestamp pair covers the menu --
+	// moving to a new row restarts the ramp.
+	static PanelID _hover_id;
+	static float _hover_t;
+	if (hovered && id != _hover_id) { _hover_id = id; _hover_t = cltime; }
+
+	const float kHoverRise = 0.12;
+	float hf = hovered ? min((cltime - _hover_t) / kHoverRise, 1) : 0;
+	hf = 1 - (1 - hf) * (1 - hf);   // ease out; linear reads mechanical
+
+	vector basecolor = colour + MENU_HIGHLIGHT * (0.12 * hf);
+	if (held)
+		basecolor = colour - MENU_DARKEN * 0.1;
 
 	// Angled ends rather than a plain rectangle.  Capped against both axes so
 	// short or narrow buttons degrade to a gentle slant instead of a wedge.
 	float skew = min(size_y * 0.4, size_x * 0.2);
 
-	// The outline carries the shape, the fill only tints what is behind it.
-	// Keeping the fill well under the outline's weight is what stops a column
-	// of these reading as a stack of solid slabs over the world.
-	sui_fill_quad([0, 0], size, skew, basecolor, alpha * (held ? 0.85 : 0.7));
+	// Lit from above: the top edge catches, the bottom falls away.  Subtle --
+	// enough to give the face some form without looking like a web button.
+	sui_fill_quad_grad([0, 0], size, skew,
+	                   basecolor + MENU_HIGHLIGHT * 0.06,
+	                   basecolor - MENU_DARKEN * 0.06,
+	                   alpha * (held ? 0.85 : 0.62 + 0.16 * hf));
 
 	if(!(flags & 1)) {
-		sui_quad_outline([0, 0], size, skew, held ? 2 : (hovered ? 1.5 : 1),
-		                 hovered || held ? MENU_EDGE_HI : MENU_EDGE, 1);
+		sui_quad_outline([0, 0], size, skew, held ? 2 : 1 + 0.5 * hf,
+		                 held ? MENU_EDGE_HI : MENU_EDGE + (MENU_EDGE_HI - MENU_EDGE) * hf,
+		                 1);
 	}
 
     if(!padding && alignment == SUI_ALIGN_START) {

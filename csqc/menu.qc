@@ -691,6 +691,18 @@ vector fo_menu_draw(fo_menu * menu) = {
         MenuPanel.Position = MenuPanel.Position + [Mouse.x, Mouse.y] - HudSettings.MousePos;
     }
     
+    // Entry animation.  Rows fade and slide in with a small per-row delay, so
+    // the menu assembles itself instead of appearing whole -- the stagger is
+    // what makes it read as deliberate rather than as a popup.  State lives in
+    // statics rather than the struct, which has a fixed initialiser layout.
+    static PanelID _anim_menu;
+    static float _anim_t;
+    if (menu.id != _anim_menu) { _anim_menu = menu.id; _anim_t = cltime; }
+
+    const float kRowStagger = 0.035;   // delay between successive rows
+    const float kRowRise = 0.20;       // how long one row takes to arrive
+    const float kRowSlide = 26;        // how far it travels, in pixels
+
     // Deliberately no panel surface: the menu reads better as text floating over
     // the world.  Definition comes from the option rows themselves (see
     // hud_colour_button) rather than from a frame around everything.
@@ -700,11 +712,14 @@ vector fo_menu_draw(fo_menu * menu) = {
     sui_action_element([0, 0], menusize, menu.id, sui_noop);
     sui_pop_frame();
 
+    float title_a = min((cltime - _anim_t) / kRowRise, 1);
+    title_a = 1 - (1 - title_a) * (1 - title_a);
+
     HRC_drawstring(
         position + [menusize.x / 2 - stringwidth(menu.title,1,mediumtext)/2, padding*2],
         menu.title, mediumtext,
         (menu.flags & FO_MENU_FLAG_WARNING) ? MENU_TEXT_WARNING : MENU_TEXT_1,
-        1,
+        title_a,
         0
     );
     float row = 0;
@@ -727,6 +742,12 @@ vector fo_menu_draw(fo_menu * menu) = {
             
             if(menu.options[i].name) {
                 buttonpos = position + [padding, titleoffset + row * (buttonsize.y + padding)];
+
+                // Ease-out: fast departure, soft arrival.  Linear looks
+                // mechanical at this duration.
+                float row_a = min(max((cltime - _anim_t - row * kRowStagger) / kRowRise, 0), 1);
+                row_a = 1 - (1 - row_a) * (1 - row_a);
+                buttonpos_x -= (1 - row_a) * kRowSlide;
                 buttonhover = (Mouse.x > buttonpos.x && Mouse.y > buttonpos.y && Mouse.x < (buttonpos.x + buttonsize.x) && Mouse.y < (buttonpos.y + buttonsize.y));
                 if(buttonhover) {
                     SBAR.Hint = menu.options[i].description;
@@ -734,7 +755,7 @@ vector fo_menu_draw(fo_menu * menu) = {
 
                 if(menu.options[i].state == FO_MENU_STATE_NORMAL) {
                     //if(hud_colour_button(strcat("fo_menu_",menu.title,"_",menu.options[i].name), position + [padding, titleoffset + row * (buttonsize.y + padding)] + shortcutoffset, buttonsize - shortcutoffset - valueoffset, menu.options[i].name, menu.options[i].colour, smalltext, SUI_ALIGN_START, padding * 3 + smalltext.x)) {
-                    if(hud_colour_button(menu.options[i].id, buttonpos, buttonsize, menu.options[i].name, menu.options[i].colour, smalltext, MENU_TEXT_1, alignment, shortcutoffset.x, FO_MENU_SURFACE_ALPHA, 1, 0)) {
+                    if(hud_colour_button(menu.options[i].id, buttonpos, buttonsize, menu.options[i].name, menu.options[i].colour, smalltext, MENU_TEXT_1, alignment, shortcutoffset.x, FO_MENU_SURFACE_ALPHA * row_a, row_a, 0)) {
                         menu.options[i].action();
                     }
                 } else if(menu.options[i].state == FO_MENU_STATE_DISABLED) {

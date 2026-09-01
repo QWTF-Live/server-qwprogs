@@ -323,6 +323,8 @@ static float next_grenlist_update;
 // lost.  It does not replace that message: a grenade also gets destroyed while
 // its owner is alive and upright (class change, team change, respawn), which
 // no amount of looking at the model can tell us about.
+const float kGrenTimerAlpha = 0.8;   // wedge only; the number stays opaque
+
 #define FRAME_DEATH_FIRST 41
 #define FRAME_DEATH_LAST  102
 
@@ -381,7 +383,12 @@ static float RenderGrenTimer(entity p, float test_only) {
     if (test_only)
         return TRUE;
 
-    vector colors[] = { '1 0 0', '0.8 0.8 0.4', '0.8 0.5 0.5', '1 1 1'};
+    // Indexed by floor(rem), so it reads bottom-up as the fuse burns down:
+    // green at full, through yellow, to red on the last second.
+    vector colors[] = { '1.00 0.25 0.20',    // 0s -- about to go off
+                        '1.00 0.55 0.15',
+                        '1.00 0.90 0.20',
+                        '0.30 0.90 0.35' };  // freshly primed
     vector c = project(po);
     vector size = '8 8 8' * (maxd - max(diff, mind)) / (maxd - mind);
     float ci = bound(0, floor(rem), colors.length - 1);
@@ -391,7 +398,8 @@ static float RenderGrenTimer(entity p, float test_only) {
     if (style != 0) {
         float radius = size.x * 1.2;
         DrawGrenPie(c, radius, 1, '0 0 0', 0.45);            // backing disc
-        DrawGrenPie(c, radius, rem / he->grentimer_span, rgb, 0.9);
+        DrawGrenPie(c, radius, rem / he->grentimer_span, rgb,
+                    kGrenTimerAlpha);
     }
 
     if (style != 1) {

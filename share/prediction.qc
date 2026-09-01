@@ -54,6 +54,11 @@ enumflags {
     PF_PMOVE,
     PF_POS,
     PF_PMOVE_ACTIVATING,
+    // Target's armour absorbs explosion damage.  Needed for knockback
+    // prediction and not derivable client-side: no class grants
+    // AT_SAVEEXPLOSION (every *_INITARMORCLASS is 0 bar pyro's AT_SAVEFIRE),
+    // so it only ever arrives via an armour pickup.
+    PF_SAVE_EXPLOSION,
 };
 
 static float MAX_FILTER_ENTS = 4;
@@ -356,6 +361,14 @@ float* self_clip_fired(Slot slot) { return &pstate_pred.clip_fired[SlotIndex(slo
 
 static float Prediction_ChangedMask(entity player, entity src) {
     float mask = FOWP_CTIME;
+
+    // Maintained on src, because that is what the delta below transmits.  Each
+    // player sets this in their own Predict_Update pass, so a spectator's pass
+    // simply recomputes the same value.
+    if (src.armorclass & AT_SAVEEXPLOSION)
+        src.predict_flags |= PF_SAVE_EXPLOSION;
+    else
+        src.predict_flags &= ~PF_SAVE_EXPLOSION;
     player.predict_state.server_time = time;
     player.predict_state.client_ping = src.client_ping;
 

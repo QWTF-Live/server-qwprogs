@@ -397,8 +397,22 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
        flg |= KF_SELF;
 
     dmg = CalcRadiusDamage(nudge->org, ent, flg, dmg);
-    if (flg & KF_SRC_PLAYER)
-        dmg *= 0.9;
+
+    // Same scaling chain the server runs in TF_T_Damage(), via shared code so
+    // the two can't drift.  Both inputs are our own state: TFSTATE_BURNING is
+    // predicted, and explosion armour arrives as a predict flag because it
+    // comes from pickups rather than playerclass.
+    //
+    // Still unmodelled: KF_QUAD.  That depends on the *attacker's*
+    // super_damage_finished, which we don't have for someone else's grenade --
+    // a quadded thrower still mispredicts by 4x.
+    float dsf = 0;
+    if (pstate_pred.tfstate & TFSTATE_BURNING)
+        dsf |= DSF_BURNING;
+    if (pstate_server.predict_flags & PF_SAVE_EXPLOSION)
+        dsf |= DSF_SAVE_EXPLOSION;
+
+    dmg = Damage_Scale(dmg, flg, dsf);
     dmg = Class_ScaleMoment(WP_PlayerClass(), dmg);
     vector knock = CalcKnock(nudge->org, ent, flg, dmg);
 

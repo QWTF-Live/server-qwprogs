@@ -504,15 +504,18 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 
     no_damage = 0;
 
-    if (targ.tfstate & TFSTATE_BURNING)
-        damage *= PC_PYRO_BURN_DAMAGE_AMP;
+    // Gated on KF_SRC_PLAYER to match where this used to sit -- inside the
+    // player-attacker block -- rather than widening it to any attacker.
+    if ((fl & KF_SRC_PLAYER) && attacker.super_damage_finished > time)
+        fl |= KF_QUAD;
+
+    // Burn amp, source scale and quad -- shared with the client's knockback
+    // nudge so the two agree.  The armour step is applied further down, once
+    // T_AttackType is known.
+    damage = Damage_Scale(damage, fl,
+                          (targ.tfstate & TFSTATE_BURNING) ? DSF_BURNING : 0);
 
     if (fl & KF_SRC_PLAYER) {
-        damage = damage * 0.9;
-
-        if (attacker.super_damage_finished > time)
-            damage = damage * 4;
-
         if ((fl & KF_TARG_PLAYER == 0)
             && (targ.classname != "bot")
             && (targ.classname != "building_sentrygun")
@@ -544,7 +547,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
         if ((targ.armorclass & AT_SAVENAIL) && (T_AttackType & TF_TD_NAIL))
             damage = floor(damage * 0.5);
         if ((targ.armorclass & AT_SAVEEXPLOSION) && (T_AttackType & TF_TD_EXPLOSION))
-            damage = floor(damage * 0.5);
+            damage = Damage_Scale(damage, 0, DSF_SAVE_EXPLOSION);
         if ((targ.armorclass & AT_SAVEELECTRICITY) && (T_AttackType & TF_TD_ELECTRICITY))
             damage = floor(damage * 0.5);
         if ((targ.armorclass & AT_SAVEFIRE) && (T_AttackType & TF_TD_FIRE))

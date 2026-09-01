@@ -812,6 +812,36 @@ float CalcRadiusDamage(vector src, entity targ, float flags, float damage) {
     return damage;
 }
 
+// Scaling applied to damage between the radius falloff and Class_ScaleMoment().
+// Shared because knockback derives from the *scaled* damage, so the client's
+// nudge prediction has to reproduce every step -- including the floor(), which
+// quantises to whole damage and would otherwise leave a sub-unit difference
+// even when everything else matches.
+//
+// Order matters and mirrors TF_T_Damage(): burn amp, source scale, quad, then
+// armour.  Not covered: TeamEqualiseDamage(), which depends on server-side team
+// balance state the client has no view of.
+enumflags {
+    DSF_BURNING,         // target is burning
+    DSF_SAVE_EXPLOSION,  // target's armour absorbs explosion damage
+};
+
+float Damage_Scale(float damage, float kflags, float dsflags) {
+    if (dsflags & DSF_BURNING)
+        damage *= PC_PYRO_BURN_DAMAGE_AMP;
+
+    if (kflags & KF_SRC_PLAYER)
+        damage *= 0.9;
+
+    if (kflags & KF_QUAD)
+        damage *= 4;
+
+    if (dsflags & DSF_SAVE_EXPLOSION)
+        damage = floor(damage * 0.5);
+
+    return damage;
+}
+
 vector CalcKnock(vector src, entity targ, float flags, float moment) {
     float mult = 8;
     if (moment < 60 && (flags & (KF_BOTH_PLAYER | KF_SELF) == KF_BOTH_PLAYER))

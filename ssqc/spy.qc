@@ -825,9 +825,15 @@ void () GasGrenadeExplode2 = {
     }
     if (self.heat <= 20) {
         if (self.weapon == 0) {
+            // Emit at the origin, not below it.  pointparticles multicasts
+            // to the PVS of the point it is given, and the grenade is a point
+            // entity resting on the floor, so a downward offset put that
+            // reference point inside solid and the cloud reached nobody --
+            // except when it happened to settle with air below it.  The
+            // effect's own "spawnorg 175 50" already spreads particles +-50
+            // vertically, so the offset bought little.
             pointparticles(particleeffectnum("gas_smoke_base"),
-                    [self.origin_x, self.origin_y, self.origin_z - 24],
-                    '0 0 1', 1);
+                    self.origin, '0 0 1', 1);
         }
         self.weapon = (self.weapon + 1) % 2;
         return;

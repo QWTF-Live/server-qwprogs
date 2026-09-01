@@ -1226,10 +1226,8 @@ void PM_SmoothProbe(vector eye) {
 }
 
 void PM_SmoothStatus() {
-    if (sm.n < 2) {
-        print("smooth: no samples (set fopm_smooth 1 and move)\n");
+    if (sm.n < 2)
         return;
-    }
 
     float mean_v = sm.sum_v / sm.n;
 

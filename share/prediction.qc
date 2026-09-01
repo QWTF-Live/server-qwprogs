@@ -26,17 +26,25 @@ enumflags {
     FOWP_RNG1,
     FOWP_RNG2,
     FOWP_PREDICT_FLAGS,
-
-    // Below this not force-refreshed for pl
-
     FOWP_CONCFINISH,
+
+    // Below this not force-refreshed.  Both are fine without it:
+    //   PMOVE is remasked every frame while PF_PMOVE is set, so it self-heals.
+    //   FILTER_ENTS carries its own redundancy (kFilterSends) and is an event
+    //   rather than a level -- re-sending an empty list would achieve nothing.
+
     FOWP_PMOVE,
     FOWP_FILTER_ENTS,
     FOWP_LAST,
 };
 const float FOWP_ALL = FOWP_LAST - 1;
 const float FOWP_FIRST_PERIODIC = FOWP_IMPULSE;
-const float FOWP_LAST_PERIODIC = FOWP_PREDICT_FLAGS;
+// Includes FOWP_CONCFINISH: conc_finished/conc_amp/conc_cap_time are levels,
+// not events, and the predict state is sent unreliably -- so without a refresh
+// a single dropped update left them stale indefinitely.  conc_finished drives
+// when PredictConc() clears TFSTATE_CONC, so the effect would end at the wrong
+// time on the client and never correct itself.  Costs 9 bytes once per cycle.
+const float FOWP_LAST_PERIODIC = FOWP_CONCFINISH;
 
 enumflags {
     FOPP_INIT,
@@ -62,6 +70,19 @@ enumflags {
 };
 
 static float MAX_FILTER_ENTS = 4;
+
+// How many consecutive updates each filter entry is repeated in.  The predict
+// state goes over an unreliable multicast (MULTICAST_ONE_NOSPECS), and this
+// list is the only thing stopping the client double-applying knockback it
+// already predicted locally -- so a single dropped packet used to mean one
+// explosion counted twice, with no refresh to recover it.
+//
+// Repeating for a few frames is redundancy rather than reliability: no
+// retransmit queue and no head-of-line blocking on every other prediction
+// field, and it degrades gracefully under sustained loss instead of stalling.
+// The client is naturally idempotent here -- it matches nudges by source and
+// clears its own copy, so a repeat it already handled finds nothing to remove.
+static float kFilterSends = 3;
 
 struct predict_tf_state {
     int playerclass;
@@ -98,6 +119,7 @@ struct predict_tf_state {
     float num_filter_ents;
 #ifdef SSQC
     entity filter_ents[MAX_FILTER_ENTS];
+    float filter_ttl[MAX_FILTER_ENTS];   // sends remaining, see FOWP_FILTER_ENTS
 #else
     float filter_ents[MAX_FILTER_ENTS];
 #endif
@@ -411,8 +433,19 @@ void Predict_AddFilterEnt(entity p, entity filter) {
         return;
 
     predict_tf_state* ps = &p.predict_state;
+
+    // Already listed?  Refresh its lifetime rather than consuming a second slot.
+    for (float i = 0; i < ps->num_filter_ents; i++) {
+        if (ps->filter_ents[i] == filter) {
+            ps->filter_ttl[i] = kFilterSends;
+            return;
+        }
+    }
+
     if (ps->num_filter_ents >= MAX_FILTER_ENTS)
             return;
+
+    ps->filter_ttl[ps->num_filter_ents] = kFilterSends;
     ps->filter_ents[ps->num_filter_ents++] = filter;
 }
 
@@ -548,7 +581,18 @@ void TFL_RecvPredictState() {
         for (float i = 0; i < GETF(num_filter_ents); i++)
             COMM(Entity, filter_ents[i]);
 #ifdef SSQC
-        GETF(num_filter_ents) = 0;  // Destructive transmission
+        // Age entries out instead of clearing on first send, so the list
+        // survives a lost packet.  Compacts in place, preserving order.
+        float keep = 0;
+        for (float i = 0; i < GETF(num_filter_ents); i++) {
+            if (GETF(filter_ttl[i]) <= 1)
+                continue;
+
+            GETF(filter_ents[keep]) = GETF(filter_ents[i]);
+            GETF(filter_ttl[keep]) = GETF(filter_ttl[i]) - 1;
+            keep++;
+        }
+        GETF(num_filter_ents) = keep;
 #endif
     }
 

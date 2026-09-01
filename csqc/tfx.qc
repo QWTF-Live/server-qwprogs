@@ -32,6 +32,7 @@ static float FlagCarried() {  // Just awful.
 struct EntHash {
     int entnum;
     float grentimer_expires;
+    float grentimer_span;    // fuse length at receipt, for the pie fraction
 };
 static EntHash ent_hash[43];
 
@@ -112,6 +113,7 @@ static void AddOutline(entity ent) {
     ent.removefunc = RemoveAttached;
 }
 
+#if 0
 static void UpdateOutline(entity player) {
     entity o = player.outline;
     if (!ShowPlayerOutline(player)) {
@@ -130,6 +132,7 @@ static void UpdateOutline(entity player) {
     setorigin(o, player.origin);
 
 }
+#endif
 
 float UpdatePlayer(float isnew) {
     if (isnew) {
@@ -143,7 +146,7 @@ float UpdatePlayer(float isnew) {
 
     self.teamno = TeamNo(self);
 
-    UpdateOutline(self);
+    /* UpdateOutline(self); */
     return TRUE;
 }
 
@@ -227,15 +230,24 @@ static void CSQC_UpdateSkin(entity src) {
 }
 
 .float next_skin_update;
+.float next_team_update;
 
 float CSQC_UpdatePlayer(float isnew) {
-    if (isnew)
-        AddCSQCPlayer(self);
-
     if (self.entnum == player_localentnum)
         self.renderflags |= RF_EXTERNALMODEL;
     else
         self.renderflags &= ~RF_EXTERNALMODEL;
+
+    // .teamno is what find_list() matches on in UpdateGrenList.  It used to be
+    // set only in UpdatePlayer(), which deltalisten never registers -- so it
+    // stayed TeamNone on every player and the grenade timer list came back
+    // empty no matter what.  Set it here, on the callback that actually runs,
+    // and throttle it the way the skin update below is: TeamNo() is an
+    // infokey+stof and this is a per-player per-frame path.
+    if (time > self.next_team_update) {
+        self.teamno = TeamNo(self);
+        self.next_team_update = time + 0.1;
+    }
 
     // Needs this for both cases since deltalisten() inadvertently blocks.
     if (self.effects & EF_DIMLIGHT)
@@ -244,8 +256,18 @@ float CSQC_UpdatePlayer(float isnew) {
     entity csqc = self.csqc_player;
     if (!CVARF(tf_forcecolors) || game_state.is_spectator) {
         self.drawmask = MASK_ENGINE;
-        csqc.drawmask = 0;
+        if (csqc != __NULL__)
+            csqc.drawmask = 0;
         return TRUE;
+    }
+
+    // Spawn the colour-forced duplicate lazily.  This callback now runs for
+    // every player regardless of tf_forcecolors -- it is what feeds the
+    // grenade timers -- so creating the copy up front would leave an unused
+    // entity per player on every client with the colour feature off.
+    if (csqc == __NULL__) {
+        AddCSQCPlayer(self);
+        csqc = self.csqc_player;
     }
 
     if (csqc.origin == self.origin && csqc.angles == self.angles &&
@@ -281,13 +303,8 @@ static float ShowTeamGrenTimer(float team, float my_team) {
     if (prematch && TFxEnabled(TFX_PREMATCH_EVERYTHING))
         return TRUE;
 
-    if (team == AttackingTeamNo()) {
-        if (TFxEnabled(TFX_OFFENSE_GRENTIMER) && team == my_team)
-            return TRUE;
-    } else {
-        if (TFxEnabled(TFX_DEFENSE_GRENTIMER) && team == my_team)
-            return TRUE;
-    }
+    if (TFxEnabled(TFX_GRENTIMER) && team == my_team)
+        return TRUE;
 
     return FALSE;
 }
@@ -296,12 +313,56 @@ static entity gren_list[20];
 static int num_gren_list;
 static float next_grenlist_update;
 
+// Death animations occupy frames 41..102 -- axdeth, then deatha through
+// deathe; see the anim_player_die* tables in ssqc/player.qc.  Living frames sit
+// below (stand/run/attack/pain/axstnd) and above (the weapon attacks from 103),
+// so the range is unambiguous, and player_die_extra() parks a corpse on its
+// final death frame so it keeps testing dead.
+//
+// This is a local check, so it holds even if the server's clear message is
+// lost.  It does not replace that message: a grenade also gets destroyed while
+// its owner is alive and upright (class change, team change, respawn), which
+// no amount of looking at the model can tell us about.
+#define FRAME_DEATH_FIRST 41
+#define FRAME_DEATH_LAST  102
+
+static float PlayerLooksDead(entity p) {
+    return p.frame >= FRAME_DEATH_FIRST && p.frame <= FRAME_DEATH_LAST;
+}
+
+// Filled disc sweeping away clockwise from twelve o'clock as the fuse burns
+// down.  R_BeginPolygon builds a triangle fan from the vertex list, so centre
+// first then the arc gives a pie slice directly; flags&4 draws it immediately
+// in 2D, matching how sui_sys.qc renders its quads.
+static void DrawGrenPie(vector centre, float radius, float frac, vector rgb,
+                        float alpha) {
+    const float kMaxSeg = 24;
+
+    frac = bound(0, frac, 1);
+    float segs = ceil(kMaxSeg * frac);
+    if (segs < 1)
+        return;
+
+    R_BeginPolygon("", 4);
+    R_PolygonVertex(centre, '0 0 0', rgb, alpha);
+    for (float i = 0; i <= segs; i++) {
+        // Screen y grows downward, so increasing angle sweeps clockwise.
+        float a = ((i / segs) * frac - 0.25) * 6.28318531;
+        R_PolygonVertex(centre + [cos(a), sin(a), 0] * radius,
+                        '0 0 0', rgb, alpha);
+    }
+    R_EndPolygon();
+}
+
 static float RenderGrenTimer(entity p, float test_only) {
     const float maxd = 1000, mind = 200;
     vector po = p.origin + '0 0 40';
     vector o = PM_Org();
 
     if (p.entnum == player_localentnum)
+        return FALSE;
+
+    if (PlayerLooksDead(p))
         return FALSE;
 
     float diff = vlen(po - o);
@@ -323,9 +384,23 @@ static float RenderGrenTimer(entity p, float test_only) {
     vector colors[] = { '1 0 0', '0.8 0.8 0.4', '0.8 0.5 0.5', '1 1 1'};
     vector c = project(po);
     vector size = '8 8 8' * (maxd - max(diff, mind)) / (maxd - mind);
-    string str = ftos(ceil(rem));
-    c.x -= stringwidth(str, FALSE, size) / 2;
-    drawstring(c, str, size, colors[floor(rem)], 1, 0);
+    float ci = bound(0, floor(rem), colors.length - 1);
+    vector rgb = colors[ci];
+    float style = CVARF(tfx_grentimer_style);
+
+    if (style != 0) {
+        float radius = size.x * 1.2;
+        DrawGrenPie(c, radius, 1, '0 0 0', 0.45);            // backing disc
+        DrawGrenPie(c, radius, rem / he->grentimer_span, rgb, 0.9);
+    }
+
+    if (style != 1) {
+        string str = ftos(ceil(rem));
+        vector tc = c;
+        tc.x -= stringwidth(str, FALSE, size) / 2;
+        tc.y -= size.y / 2;
+        drawstring(tc, str, size, rgb, 1, 0);
+    }
 
     return TRUE;
 }
@@ -342,12 +417,12 @@ static void UpdateGrenList() {
 
     for (int i = 0; i < teams.length; i++) {
         float team = teams[i];
-        if (!ShowTeamGrenTimer(team, local_player.teamno))
-                continue;
+        if (!ShowTeamGrenTimer(team, team_no))
+            continue;
 
         int count;
         entity* players = find_list(teamno, team, EV_FLOAT, count);
-        for (int j = 0; j < count; j++) {
+        for (int j = 0; j < count && num_gren_list < gren_list.length; j++) {
             entity p = players[j];
 
             if (RenderGrenTimer(p, TRUE))
@@ -357,7 +432,6 @@ static void UpdateGrenList() {
 }
 
 void TFxRenderGrenadeTimers() {
-    return; // TODO: filter properly
     UpdateGrenList();
 
     for (int i = 0; i < num_gren_list; i++) {
@@ -425,6 +499,10 @@ float UpdateFlag(float isnew) {
 void TFxGrenTimerUpdate(float ent_num, float expiry) {
     EntHash* he = EntGet(ent_num);
     he->grentimer_expires = expiry;
+
+    // Remember how long the fuse was when we heard about it, so the pie can
+    // show a fraction without hardcoding the duration from ssqc/tfort.qc.
+    he->grentimer_span = max(0.1, expiry - time);
 }
 
 static string OutlineShader(string texture) {
@@ -456,10 +534,16 @@ static string rnds(string prefix) {
 void RegisterPlayerListener() {
     STATIC_INIT_ONCE();
 
-    if (!CVARF(tf_forcecolors) || isdemo())
-        return;  // Must be set on connect currently
+    // deltalisten can only be established on connect, so this cannot wait on
+    // anything server-supplied.  It used to bail unless tf_forcecolors was set
+    // -- which defaults off -- so CSQC_UpdatePlayer never ran at all on a
+    // default client, and player entities were reachable from nowhere.
+    // Register unconditionally: the callback's !tf_forcecolors path restores
+    // drawmask = MASK_ENGINE, so players draw normally with the colour feature
+    // off, exactly as the flag listeners in TFX_Flag_Init() do.
+    if (isdemo())
+        return;
 
-    printf("PLAYER DELTALISTEN ACTIVE\n");
     deltalisten("progs/player.mdl", CSQC_UpdatePlayer, 0);
 }
 

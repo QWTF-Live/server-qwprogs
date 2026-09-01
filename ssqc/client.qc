@@ -2091,12 +2091,21 @@ void () PutClientInServer = {
     }
 
     // remove prime timers to avoid getting an old grenade in your face
+    float had_primetimer = FALSE;
     te = find(world, classname, "primetimer");
     while (te != world) {
-        if (te.owner == self)
+        if (te.owner == self) {
             dremove(te);
+            had_primetimer = TRUE;
+        }
         te = find(te, classname, "primetimer");
     }
+
+    // Removed without exploding, so retire the overhead timer teammates are
+    // showing; otherwise it counts down over the respawned player until the
+    // original fuse would have run out.
+    if (had_primetimer)
+        UpdateClientGrenadeThrown(self);
 
     DecodeLevelParms();
 

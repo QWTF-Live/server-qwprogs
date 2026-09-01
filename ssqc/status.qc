@@ -244,7 +244,9 @@ string (entity Player, entity Item, float teamno) GetItemStatus = {
 }
 
 void UpdateClientGrenadePrimed(entity pl, float grentype, float explodes_at) = {
-#if 0  // Not needed until we re-enable TFX.
+    if (!TFxEnabled(TFX_GRENTIMER_ANY))
+        return;
+
     msg_entity = pl;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_GRENPRIMED);
@@ -253,17 +255,21 @@ void UpdateClientGrenadePrimed(entity pl, float grentype, float explodes_at) = {
     WriteFloat(MSG_MULTICAST, explodes_at);
 
     multicast('0 0 0', MULTICAST_ALL);  // Actual primer has reliable transport.
-#endif
 }
 
 void UpdateClientGrenadeThrown(entity pl) = {
-#if 0  // Not needed until we re-enable TFX.
+    if (!TFxEnabled(TFX_GRENTIMER_ANY))
+        return;
+
     msg_entity = pl;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_GRENTHROWN);
     WriteEntity(MSG_MULTICAST, pl);
-    multicast('0 0 0', MULTICAST_ALL);
-#endif
+
+    // Reliable, unlike the prime: losing a prime just means no timer appears,
+    // but losing a clear leaves a phantom counting down on every teammate's
+    // screen for the rest of the fuse.  Low rate -- once per grenade.
+    multicast('0 0 0', MULTICAST_ALL_R);
 }
 
 void UpdateClientIDString(entity pl, string ident) {

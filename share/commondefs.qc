@@ -36,7 +36,7 @@ enumflags {
 
 #define TMPL_CONFIG_DATA(_OP) \
     _OP(1, Byte, float, min_ping_ms) \
-    _OP(2, Byte,  float, tfx_flags) \
+    _OP(2, Short, float, tfx_flags) \
     _OP(2, Short, float, predict_flags) \
     _OP(2, Short, float, rewind_flags) \
     _OP(3, Byte,  float, static_newmis_ms) \
@@ -96,29 +96,27 @@ float RewindFlagEnabled(float flag) {
 }
 
 enumflags {
+    TFX_GRENTIMER,
+    TFX_SPEC_GRENTIMER,
     TFX_PREMATCH_EVERYTHING,
     TFX_SCOUT_SEE_ENEMIES,
     TFX_SPEC_OUTLINE,
     TFX_SPEC_SEEFLAG,
-    TFX_SPEC_GRENTIMER,
     TFX_OFFENSE_SEEFLAG,
     TFX_DEFENSE_SEEFLAG,
     TFX_OFFENSE_OUTLINE,
     TFX_DEFENSE_OUTLINE,
-    TFX_OFFENSE_GRENTIMER,
-    TFX_DEFENSE_GRENTIMER,
 };
 
 string TFX_DESC[] = {
-    "Prematch see everything",
+    "Grenade timers",
+    "Spectators see grenade timers",
     "Scout sees enemies",
+    "Prematch see everything",
     "Spectators see outlines",
     "Spectators see flags",
-    "Spectators see grenade timers",
     "Offense sees flag (always)",
     "Defense sees flag, when not carried",
-    "Offense sees grentimers",
-    "Defense sees grentimers",
     "Offense sees outlines",
     "Defense sees outlines",
 };
@@ -127,7 +125,13 @@ float TFxEnabled(float flag) {
     return tf_config.tfx_flags & flag;
 }
 
-const float TFX_DEFAULT_FLAGS = 0;
+// Every route by which a grenade timer can reach someone's screen.  The server
+// tests this before sending the prime/throw messages at all -- with none of
+// these set nothing can render them, so the traffic is pure waste.
+#define TFX_GRENTIMER_ANY \
+    (TFX_GRENTIMER | TFX_SPEC_GRENTIMER | TFX_PREMATCH_EVERYTHING)
+
+const float TFX_DEFAULT_FLAGS = TFX_GRENTIMER | TFX_SPEC_GRENTIMER;
 
 enumflags {
     FOC_ON_DEF,  // apply foc_defaults

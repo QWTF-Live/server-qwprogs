@@ -51,13 +51,23 @@ void () RemoveAutoIdTimer = {
 void RemovePrimedGrenades(entity player) {
     entity* ents;
     int count;
+    float removed = FALSE;
 
     ents = find_list(classname, "primetimer", EV_STRING, count);
     for (int i = 0; i < count; i++)
-        if (ents[i].owner == player)
+        if (ents[i].owner == player) {
             dremove(ents[i]);
+            removed = TRUE;
+        }
 
     player.tfstate &= ~(TFSTATE_GREN1_PRIMED | TFSTATE_GREN2_PRIMED);
+
+    // Destroyed without detonating, so retire the overhead timer teammates
+    // are showing.  This is the death path (PlayerDie -> RemovePrimeTimers),
+    // and without it the count runs on over the corpse to an explosion that
+    // never comes.
+    if (removed)
+        UpdateClientGrenadeThrown(player);
 }
 
 void () RemovePrimeTimers = {
@@ -803,6 +813,9 @@ void () FO_GrenadeThink = {
     // Claim: These cases do not exist for FO; to be removed once proven true.
     if (user.deadflag || user.has_disconnected) {
         dprint("BUG: saw deadflag / disconnected in PreciseGrenadePrimed\n");
+        // Dropped without exploding, so retire the overhead timer -- teammates
+        // would otherwise keep counting down to an explosion that never comes.
+        UpdateClientGrenadeThrown(user);
         dremove(self);
         return;
     }

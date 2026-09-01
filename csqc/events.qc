@@ -156,9 +156,13 @@ void() CSQC_Parse_Event = {
             float entno = readentitynum();
             float grentype = readbyte();
             float explodes_at = readfloat();
+            TFxGrenTimerUpdate(entno, explodes_at);
             break;
         case MSG_GRENTHROWN:
             float entno = readentitynum();
+            // Thrown early, so retire the timer rather than letting it run
+            // down to the expiry it was primed with.
+            TFxGrenTimerUpdate(entno, 0);
             break;
         case MSG_TFX_GRENTIMER:
             float entnum = readentitynum();

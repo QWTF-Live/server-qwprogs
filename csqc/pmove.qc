@@ -1,6 +1,8 @@
 DEFCVAR_FLOAT(fo_jumpvolume, 1);
 
-#define STEPTIME 0.125
+// Quake's V_CalcRefdef step-smoothing constants.
+#define STEP_RAMP    80   // units/sec the view catches up
+#define STEP_MAX_LAG 12   // units the view may trail the true z
 
 // `seq` is the start of the first frame after which all input_*s are handled.
 // Running to `seq` will result in being on frame `seq + 1` in the resultant
@@ -749,6 +751,7 @@ static void PM_UpdateError() {
     else
         err -= ent.origin;
 
+
     float nerr = vlen(err);
     if (nerr > 64) {  // teleport
         pm.error = '0 0 0';
@@ -779,19 +782,32 @@ static void PM_UpdateLocalMovement() {
 
     vector org = pm.ent.origin;
 
-    // Smooth stair stepping
-    if (org_z > pm.step_oldz + 8 && org_z < pm.step_oldz + 24 &&
-        ent.velocity_z == 0) { // Evaluate out the remaining old step
-        if (pm.steptime - time > 0)
-            pm.step = (pm.steptime - time) * (1 / STEPTIME) * pm.step;
-        else
-            pm.step = 0;
+    // Smooth stair stepping.  Modelled on Quake's V_CalcRefdef: step_oldz lags
+    // the true z, ramping up at STEP_RAMP units/sec and never trailing by more
+    // than STEP_MAX_LAG, for *any* upward movement while on ground.
+    //
+    // The previous form only fired for a discrete 8..24 unit jump with
+    // velocity_z exactly zero, and did nothing at all outside that window --
+    // so an 8-unit stair (the bound was strict, and 8 is a common map step),
+    // two steps taken between render frames, or any residual vertical velocity
+    // failing the exact compare all stepped hard.  pm.steptime is now simply
+    // the last frame's time.
+    float step_dt = min(max(time - pm.steptime, 0), 0.25);
+    pm.steptime = time;
 
-        // Work out the new step
-        pm.step += (pm.step_oldz - org_z);
-        pm.steptime = time + STEPTIME;
+    if (PM_onground() && org_z > pm.step_oldz) {
+        pm.step_oldz += step_dt * STEP_RAMP;
+
+        if (pm.step_oldz > org_z)
+            pm.step_oldz = org_z;
+        if (org_z - pm.step_oldz > STEP_MAX_LAG)
+            pm.step_oldz = org_z - STEP_MAX_LAG;
+
+        pm.step = pm.step_oldz - org_z;  // <= 0: pulls the view down
+    } else {
+        pm.step_oldz = org_z;
+        pm.step = 0;
     }
-    pm.step_oldz = org_z;
 
     float viewheight = CVARF(v_viewheight);
     if (viewheight < -7)
@@ -810,8 +826,7 @@ static void PM_UpdateLocalMovement() {
         pm.vieworg += (pm.errortime - time) * (1 / ErrorTime()) * pm.error;
 
     if (!CVARF(fopm_nostep))
-        if (pm.steptime - time > 0)
-            pm.vieworg.z += (pm.steptime - time) * (1 / STEPTIME) * pm.step;
+        pm.vieworg.z += pm.step;
 }
 
 void PMD_UpdateImpulse(int seq);

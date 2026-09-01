@@ -697,6 +697,8 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
 
 }
 
+static void PM_LerpReset();
+
 static void PM_SetEnabled(float enabled) {
     pengine.pm_enabled = enabled;
 
@@ -707,6 +709,7 @@ static void PM_SetEnabled(float enabled) {
 
     pm.errortime = pm.steptime  = 0;
     pm.step_oldz = pm.ent.origin_z;
+    PM_LerpReset();
 }
 
 static float ErrorTime() {
@@ -771,8 +774,116 @@ static void PM_UpdateError() {
 
 DEFCVAR_FLOAT(v_deathtilt, 1);
 
+// ezQuake-style adaptive lerp of the eye (cl_pred.c:CL_LerpMove).
+//
+// Keeps three (time, origin) samples taken at *complete* input frames and
+// interpolates between them using a self-tuning latency offset.  The offset is
+// servoed every frame -- clamped up if we run past the newest sample, clamped
+// down if we fall behind the oldest, otherwise allowed to drift down slowly --
+// so the lerp fraction essentially never saturates and the camera translates at
+// a constant rate regardless of how input frames land relative to video frames.
+//
+// Samples come from the last COMPLETE frame, never the pending one: the engine
+// recomputes the pending frame's msec from realtime on every getinputstate(),
+// so a sample taken through it would be timestamped against a value that keeps
+// moving.
+//
+// View only.  pm.ent.origin stays replayed through the pending frame so weapon
+// prediction, tracelines and spawn positions are unaffected.
+// On by default: measured ~10x lower roughness (0.1 -> 0.01) with catch-up
+// falling from 3-5 to 1.0, i.e. the stall-and-spike pairs disappear entirely.
+// Costs the eye a few ms of latency -- see "lerp lat" in fopm_smooth_status.
+// Set 0 for the old direct-replay view.
+DEFCVAR_FLOAT(fopm_lerpmove, 1);
+
+
+
+// The servo settles around one input-frame interval (~12.5ms at 77Hz), which
+// is the minimum that guarantees two samples bracketing simtime.  Two attempts
+// to get below it were measured and both failed the same way -- by trading a
+// steady offset for occasional large ones:
+//
+//   Bleeding latency off faster (x50+): bought ~1ms, took roughness 10x worse
+//   and climbed catch-up.  The servo just clamps more, and a clamp is a stall.
+//
+//   Extrapolating past the newest sample along its velocity (5ms): bought 5.5ms
+//   and held mean roughness at 0.05, but catch-up went 1.0 -> 3-8.  Overshoot
+//   corrects when the real sample lands, and that correction is a large
+//   single-frame displacement.
+//
+// catch-up is the constraint to protect: perception is dominated by the worst
+// frame, not the average one, so a rare 8x spike reads worse than a uniform
+// 12.5ms of latency.  The floor is honest -- lower it by raising cl_netfps
+// (which shrinks the sample interval itself), not by predicting past it.
+static const float kLerpMaxLat = 0.05;
+static const float kLerpTeleport = 100;  // inter-sample jump treated as discontinuity
+
+static struct {
+    float t[3];
+    vector o[3];
+    float last_seq, lat, newframe, valid;
+} lm;
+
+static void PM_LerpReset() {
+    lm.valid = lm.lat = lm.newframe = 0;
+    lm.last_seq = -1;
+}
+
+static void PM_LerpSample() {
+    float seq = clientcommandframe - 1;
+    if (seq == lm.last_seq || seq <= servercommandframe)
+        return;
+
+    PM_RunMovement(SimPMSD(), seq);
+    vector o = pm.ent.origin;
+
+    // Teleport/respawn: lerping across it would slide the camera through the
+    // world, so drop the history and restart.
+    if (lm.valid && vlen(o - lm.o[0]) > kLerpTeleport)
+        PM_LerpReset();
+
+    lm.t[2] = lm.t[1]; lm.t[1] = lm.t[0]; lm.t[0] = cltime;
+    lm.o[2] = lm.o[1]; lm.o[1] = lm.o[0]; lm.o[0] = o;
+
+    lm.last_seq = seq;
+    lm.newframe = TRUE;
+    if (lm.valid < 3)
+        lm.valid++;
+}
+
+static vector PM_LerpEye(vector fallback) {
+    if (lm.valid < 3)
+        return fallback;
+
+    float simtime = cltime - lm.lat;
+
+    if (simtime > lm.t[0])
+        lm.lat = cltime - lm.t[0];              // ran past newest: hold back more
+    else if (simtime < lm.t[2])
+        lm.lat = cltime - lm.t[2];              // fell behind oldest: catch up
+    else if (lm.newframe)
+        lm.lat -= min(frametime * 0.005, 0.001);  // healthy: bleed latency off
+
+    lm.newframe = FALSE;
+    lm.lat = min(max(lm.lat, 0), kLerpMaxLat);
+
+    simtime = cltime - lm.lat;
+
+    float from = 2, to = 1;
+    if (simtime > lm.t[1]) { from = 1; to = 0; }
+
+    if (lm.t[to] == lm.t[from])
+        return lm.o[to];
+
+    float frac = min(max((simtime - lm.t[from]) / (lm.t[to] - lm.t[from]), 0), 1);
+    return lm.o[from] + (lm.o[to] - lm.o[from]) * frac;
+}
+
 static void PM_UpdateLocalMovement() {
     entity ent = pm.ent;
+
+    if (CVARF(fopm_lerpmove))
+        PM_LerpSample();
 
     if (game_state.is_ceasefire || clientcommandframe > servercommandframe + 63) {
         PM_ActivatePMS(&pm_s);
@@ -781,6 +892,8 @@ static void PM_UpdateLocalMovement() {
     }
 
     vector org = pm.ent.origin;
+    if (CVARF(fopm_lerpmove))
+        org = PM_LerpEye(org);
 
     // Smooth stair stepping.  Modelled on Quake's V_CalcRefdef: step_oldz lags
     // the true z, ramping up at STEP_RAMP units/sec and never trailing by more
@@ -972,6 +1085,12 @@ void PM_InputFrame() {
 // View/Render
 ////////////////////////////////////////////////////////////////////////////////
 
+// The eye actually being rendered from: ours when fo_pmove owns the view, the
+// engine's otherwise.  Lets the smoothness metric measure either path.
+vector PM_ViewOrigin() {
+    return PM_Enabled() ? pm.vieworg : pmove_org;
+}
+
 void PM_UpdateView() {
     PM_UpdateLocalMovement();
     setviewprop(VF_ORIGIN, pm.vieworg);
@@ -981,6 +1100,165 @@ void PM_UpdateView() {
     SetListener(pm.vieworg, v_forward, v_right, v_up);
 
     EffectToDynamicLight(pm.vieworg, pstate_server.effects);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Smoothness metric
+////////////////////////////////////////////////////////////////////////////////
+//
+// Quantifies how evenly the eye actually translates, to replace "feels
+// smoother" with a number when comparing configs or engines.
+//
+// Sampled from the camera trajectory rather than pixels: CSQC has no
+// framebuffer readback, and pixels would fold in GPU queueing, animation lerp
+// and texture detail -- none of which is the thing being chased.
+//
+// CRITICAL: dt comes from cltime, never frametime.  frametime is the limiter's
+// *output* and is pinned to exactly 1/cl_maxfps while jitter stays under
+// cl_maxfps_slop, so dividing by it would normalise away the very irregularity
+// we are trying to detect and every config would score identically.  cltime is
+// built from raw realtime and is honest.  Their difference is a free bonus
+// metric: the pacing error the limiter is concealing.
+
+DEFCVAR_FLOAT(fopm_smooth, 0);
+
+// Sampling window: long enough to average out mouse input, short enough to
+// read as a rolling series while you move.
+static const float kSmoothPeriod = 3;
+
+void PM_SmoothStatus();
+
+static struct {
+    float have_prev, last_t, start_t;
+    vector last_eye, last_vel;
+
+    float n;                  // frames contributing to roughness
+    float sum_v, sum_dv;      // apparent speed, and its frame-to-frame change
+    float peak_v;
+
+    // Horizontal *speed* roughness.  The vector form above counts direction
+    // change as roughness, so a figure-8 scores badly however smooth it is;
+    // and Z is dominated by jumping.  Bunnyhopping holds horizontal speed
+    // roughly constant, so variation in |v_xy| is mostly artifact.
+    float sum_hv, sum_dhv;
+
+    float moving, stalls;     // stall = camera held still while genuinely moving
+    float sum_pace, peak_pace;      // frametime - dt
+    float sum_lat, peak_lat;        // servo latency, i.e. what smoothness costs
+} sm;
+
+static void PM_SmoothReset() {
+    sm.have_prev = sm.start_t = 0;
+    sm.n = sm.sum_v = sm.sum_dv = sm.peak_v = 0;
+    sm.sum_hv = sm.sum_dhv = 0;
+    sm.moving = sm.stalls = 0;
+    sm.sum_pace = sm.peak_pace = 0;
+    sm.sum_lat = sm.peak_lat = 0;
+}
+
+// Call once per rendered frame with whatever eye position is authoritative.
+void PM_SmoothProbe(vector eye) {
+    if (!CVARF(fopm_smooth)) {
+        if (sm.have_prev)
+            PM_SmoothReset();
+        return;
+    }
+
+    float t = cltime;
+    if (!sm.have_prev) {
+        sm.have_prev = TRUE;
+        sm.start_t = t;
+        sm.last_t = t;
+        sm.last_eye = eye;
+        return;
+    }
+
+    float dt = t - sm.last_t;
+    if (dt <= 0)
+        return;
+
+    // Raw |dp| would just track how fast you are running; per-frame apparent
+    // velocity is the primitive.  A correctly smoothed camera holds this
+    // near-constant even while dt jitters -- that is the property being tested.
+    vector v = (eye - sm.last_eye) * (1 / dt);
+    float speed = vlen(v);
+
+    vector hv = v;  hv_z = 0;
+    float hspeed = vlen(hv);
+    vector last_hv = sm.last_vel;  last_hv_z = 0;
+
+    // Only meaningful while the servo is actually running -- lm.lat is not
+    // cleared when the cvar is turned off, so reading it unconditionally
+    // reports a stale value from the last time lerpmove was enabled.
+    float lat = CVARF(fopm_lerpmove) ? lm.lat : 0;
+    sm.sum_lat += lat;
+    sm.peak_lat = max(sm.peak_lat, lat);
+
+    float pace = fabs(frametime - dt);
+    sm.sum_pace += pace;
+    sm.peak_pace = max(sm.peak_pace, pace);
+
+    if (sm.n > 0 || sm.last_vel != '0 0 0') {
+        sm.sum_dv += vlen(v - sm.last_vel);
+        sm.sum_v += speed;
+
+        sm.sum_dhv += fabs(hspeed - vlen(last_hv));
+        sm.sum_hv += hspeed;
+        sm.peak_v = max(sm.peak_v, speed);
+        sm.n++;
+
+        // Targets the clamp signature specifically: the camera holding still
+        // for a frame despite real elapsed time and real velocity.  A generic
+        // roughness number moves for many reasons; this moves for ~one.
+        if (speed > 50) {
+            sm.moving++;
+            if (vlen(eye - sm.last_eye) < 0.1 * speed * dt)
+                sm.stalls++;
+        }
+    }
+
+    sm.last_t = t;
+    sm.last_eye = eye;
+    sm.last_vel = v;
+
+    if (t - sm.start_t >= kSmoothPeriod)
+        PM_SmoothStatus();
+}
+
+void PM_SmoothStatus() {
+    if (sm.n < 2) {
+        print("smooth: no samples (set fopm_smooth 1 and move)\n");
+        return;
+    }
+
+    float mean_v = sm.sum_v / sm.n;
+
+    printf("smooth over %d frames / %0.1fs\n", sm.n, sm.last_t - sm.start_t);
+    // Dimensionless, so comparable across runs and movement speeds.  Lower is
+    // smoother; this is the headline figure.
+    printf("  roughness   %0.4f   (mean |dv| / mean |v|)\n",
+           mean_v > 0 ? sm.sum_dv / sm.sum_v : 0);
+    // The figure to trust while bunnyhopping: direction change and jump Z are
+    // excluded, so this is much closer to pure artifact.
+    printf("  h-roughness %0.4f   (mean |d|v_xy|| / mean |v_xy|)\n",
+           sm.sum_hv > 0 ? sm.sum_dhv / sm.sum_hv : 0);
+    printf("  stalls      %0.2f%%  (%d of %d moving frames)\n",
+           sm.moving > 0 ? sm.stalls * 100 / sm.moving : 0,
+           sm.stalls, sm.moving);
+    // Stalls should pair with spikes: a held frame is followed by a
+    // double-length step.  Stalls without a raised peak means something other
+    // than a clamp is at work.
+    printf("  catch-up    %0.2f    (peak |v| / mean |v|)\n",
+           mean_v > 0 ? sm.peak_v / mean_v : 0);
+    printf("  pacing err  %0.2fms avg, %0.2fms peak  (|frametime - dt|)\n",
+           sm.sum_pace / sm.n * 1000, sm.peak_pace * 1000);
+    // What the servo costs: the eye is held this far behind the newest sample.
+    // Should settle just above the worst inter-frame gap and stay there; if it
+    // pumps, the servo is hunting rather than converging.
+    printf("  lerp lat    %0.2fms avg, %0.2fms peak  (fopm_lerpmove)\n",
+           sm.sum_lat / sm.n * 1000, sm.peak_lat * 1000);
+
+    PM_SmoothReset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

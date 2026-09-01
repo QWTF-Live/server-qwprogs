@@ -107,6 +107,7 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     registercommand("wpp_status");
     registercommand("perf_status");
+    registercommand("fopm_smooth_status");
     for(float i = 0; i < MENU_OPTION.length - 1; i++) {
         registercvar(strcat("fo_menu_option_",MENU_OPTION[i]), MENU_OPTION[i]);
     }
@@ -226,6 +227,9 @@ void FO_CussCrosshair(float width, float height);
 void Hud_UpdateView(float width, float height, float menushown);
 void UpdateTeamColorCrosshair();
 void PMD_DrawGraphs(float width);
+void PM_SmoothProbe(vector eye);
+void PM_SmoothStatus();
+vector PM_ViewOrigin();
 void WP_PreviewSentry();
 
 DEFCVAR_FLOAT(fov, 90);
@@ -349,6 +353,8 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
 
     if (PM_Enabled())
         PM_UpdateView();
+
+    PM_SmoothProbe(PM_ViewOrigin());
 
     renderscene();
 
@@ -797,6 +803,9 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
         case "perf_status":
             Perf_Status();
+            break;
+        case "fopm_smooth_status":
+            PM_SmoothStatus();
             break;
         case "vote_addmap":
             AddVoteMap(argv(1),argv(2),argv(3),stof(argv(4)),stof(argv(5)),stof(argv(6)),TRUE);

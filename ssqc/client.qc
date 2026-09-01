@@ -3044,8 +3044,7 @@ void () PlayerPostThink = {
         PlayerPostThinkAlive();
     }
 
-    FOPlayer fop = (FOPlayer)self;
-    fop.RewindUpdate();
+    RW_LogPlayer(self);
     Predict_Update(TRUE);
     PlayerPeriodicThink(TRUE);
 };
@@ -3086,7 +3085,7 @@ void () ClientConnect = {
 
     bprint(PRINT_HIGH, self.netname, " entered the game\n");
 
-    spawnfunc_FOPlayer();
+    RW_InitPlayer(self);
 
     self.connect_time = time;
     self.motd = 0;
@@ -3246,14 +3245,7 @@ void () ClientDisconnect = {
         UnvoteForMap(self);
     }
 
-    // (FOPlayer)self is a cast, not a construction: the class is only built by
-    // spawnfunc_FOPlayer() in ClientConnect, which returns early -- before
-    // that call -- for a client without CSQC, having just dropclient()'d them.
-    // Their disconnect then dispatches a virtual through a null field and
-    // takes the server with it.  Only destroy what was actually constructed.
-    FOPlayer fop = (FOPlayer)self;
-    if (fop.Destroy)
-        fop.Destroy();
+    RW_DestroyPlayer(self);
 };
 
 string (entity pe_target, entity pe_attacker, float pf_deathmsg) GetDeathMessage = {

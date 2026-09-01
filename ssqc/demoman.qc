@@ -64,7 +64,7 @@ float TeamFortress_DetonatePipebombs(float force) {
 
     // NOTE: nested death-dets would not trigger double unwind due to `force==1`
     if (rewound)
-        FOPlayer::RestoreAll();
+        RW_RestoreAll();
 
     self.detpipe_nesting--;
     return TRUE;

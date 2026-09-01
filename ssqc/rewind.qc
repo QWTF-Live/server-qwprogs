@@ -302,57 +302,30 @@ static void RL_RewindTo(RewindState* head, entity exclude, float rtime) {
     }
 }
 
-class FOPlayer {
-    RewindState* rewind_;
+// Per-player rewind state hangs off the entity.  The allocation stays dynamic
+// and lives on the rewind_players list; only the ownership handle is a field.
+.RewindState* rewind_state;
 
-    void() FOPlayer = {
-        rewind_ = AllocRewind(this);
-        RL_Insert(&rewind_players, rewind_);
-    };
+void RW_InitPlayer(entity p) {
+    p.rewind_state = AllocRewind(p);
+    RL_Insert(&rewind_players, p.rewind_state);
+}
 
-    virtual void() Destroy = {
-        RL_Remove(&rewind_players, rewind_);
-        FreeRewind(rewind_);
-    };
+void RW_DestroyPlayer(entity p) {
+    // A client dropped before RW_InitPlayer ran -- no CSQC, say -- reaches
+    // here with nothing attached, which is the normal case rather than an
+    // error.  Worth an explicit check: RL_Remove dereferences node->prev.
+    if (!p.rewind_state)
+        return;
 
-    nonvirtual void() Respawn = {
-    };
+    RL_Remove(&rewind_players, p.rewind_state);
+    FreeRewind(p.rewind_state);
+    p.rewind_state = __NULL__;
+}
 
-    nonvirtual void(float when) InsertRewindBarrier = {
-        rewind_.barrier = max(rewind_.barrier, when);
-    };
-
-    nonvirtual void() RewindUpdate = {
-        if (rewind_)
-            RewindLog(rewind_);
-    };
-
-    nonvirtual void(float when) RewindExcept = {
-        RL_StashPositions(rewind_players);
-        RL_RewindTo(rewind_players, this, when);
-    };
-
-    nonvirtual vector() UnrewoundOrigin = {
-        if (rewind_->rewound == kRewound) {
-            return rewind_->held_origin;
-        } else {
-            return this->origin;
-        }
-    };
-
-    static void (float when) RewindAll = {
-        RL_StashPositions(rewind_players);
-        RL_RewindTo(rewind_players, world, when);
-    };
-
-    static void() RestoreAll {
-        RL_RestorePositions(rewind_players);
-    };
-};
-
-// TODO: untangle and decide whether the class stuff is adding any value
-void RW_RewindAll(float when) {
-    FOPlayer::RewindAll(when);
+void RW_LogPlayer(entity p) {
+    if (p.rewind_state)
+        RewindLog(p.rewind_state);
 }
 
 void RW_StashAll() {
@@ -360,8 +333,7 @@ void RW_StashAll() {
 }
 
 void RW_RestoreAll() {
-    FOPlayer::RestoreAll();
-
+    RL_RestorePositions(rewind_players);
 }
 
 float (string ps_short, string ps_setting, string ps_default) CF_GetSetting;
@@ -378,8 +350,8 @@ float RewindPlayersExcept(entity except, float farthest_rewind_point) {
     if (time - rewind_to < SERVER_FRAME_DT)
         return FALSE;
 
-    FOPlayer fop = (FOPlayer)except;
-    fop.RewindExcept(rewind_to);
+    RL_StashPositions(rewind_players);
+    RL_RewindTo(rewind_players, except, rewind_to);
     return TRUE;
 }
 
@@ -464,6 +436,7 @@ void Forward_OpenDoors(entity player) {
 }
 
 void RewindBarrier(entity player) {
-    FOPlayer fop = (FOPlayer)player;
-    fop.InsertRewindBarrier(time);
+    RewindState* rs = player.rewind_state;
+    if (rs)
+        rs->barrier = max(rs->barrier, time);
 }

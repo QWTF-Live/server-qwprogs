@@ -3246,8 +3246,14 @@ void () ClientDisconnect = {
         UnvoteForMap(self);
     }
 
+    // (FOPlayer)self is a cast, not a construction: the class is only built by
+    // spawnfunc_FOPlayer() in ClientConnect, which returns early -- before
+    // that call -- for a client without CSQC, having just dropclient()'d them.
+    // Their disconnect then dispatches a virtual through a null field and
+    // takes the server with it.  Only destroy what was actually constructed.
     FOPlayer fop = (FOPlayer)self;
-    fop.Destroy();
+    if (fop.Destroy)
+        fop.Destroy();
 };
 
 string (entity pe_target, entity pe_attacker, float pf_deathmsg) GetDeathMessage = {

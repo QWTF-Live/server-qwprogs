@@ -690,6 +690,80 @@ void(vector pos, vector size, vector color, float alpha, float flags) sui_fill =
 	HRC_drawfill(pos, size, color, alpha, flags);
 };
 
+// Parallelogram fill.  drawfill only does axis-aligned rectangles, so this goes
+// through the polygon builtin -- flags&4 means "draw immediately" rather than
+// queueing for renderscene, which is what makes it usable for 2D.
+//
+// Both vertical edges slant by the same amount, so it stays a parallelogram and
+// a column of them keeps its left and right margins visually parallel.
+//
+// Note this bypasses the HUD render cache; only use it on uncached surfaces
+// (menus and the map list are uncached, see HRC_NewFrame).
+// Stroked parallelogram outline.  A larger quad drawn *behind* a fill only
+// works while the fill is opaque -- once the fill is translucent the backing
+// shows through and muddies it -- so the outline is four edge quads mitred
+// toward the centroid, leaving the interior genuinely untouched.
+void(vector pos, vector size, float skew, float thick, vector color, float alpha) sui_quad_outline =
+{
+	sui_transform_box(pos, size);
+
+	vector o0 = pos + [skew, 0];
+	vector o1 = pos + [size_x, 0];
+	vector o2 = pos + [size_x - skew, size_y];
+	vector o3 = pos + [0, size_y];
+
+	// Inner ring is the same parallelogram inset by `thick` on all sides.
+	// Deriving it by pushing each corner toward the centroid instead makes the
+	// band width depend on aspect ratio: on a wide, short button that direction
+	// is nearly horizontal, so the top and bottom edges collapse to nothing
+	// while the diagonals get the full thickness.
+	vector ip = pos + [thick, thick];
+	vector isz = size - [thick * 2, thick * 2];
+
+	vector i0 = ip + [skew, 0];
+	vector i1 = ip + [isz_x, 0];
+	vector i2 = ip + [isz_x - skew, isz_y];
+	vector i3 = ip + [0, isz_y];
+
+	R_BeginPolygon("", 4);
+
+	R_PolygonVertex(o0, '0 0 0', color, alpha);
+	R_PolygonVertex(o1, '0 0 0', color, alpha);
+	R_PolygonVertex(i1, '0 0 0', color, alpha);
+	R_PolygonVertex(i0, '0 0 0', color, alpha);
+	R_EndPolygon();
+
+	R_PolygonVertex(o1, '0 0 0', color, alpha);
+	R_PolygonVertex(o2, '0 0 0', color, alpha);
+	R_PolygonVertex(i2, '0 0 0', color, alpha);
+	R_PolygonVertex(i1, '0 0 0', color, alpha);
+	R_EndPolygon();
+
+	R_PolygonVertex(o2, '0 0 0', color, alpha);
+	R_PolygonVertex(o3, '0 0 0', color, alpha);
+	R_PolygonVertex(i3, '0 0 0', color, alpha);
+	R_PolygonVertex(i2, '0 0 0', color, alpha);
+	R_EndPolygon();
+
+	R_PolygonVertex(o3, '0 0 0', color, alpha);
+	R_PolygonVertex(o0, '0 0 0', color, alpha);
+	R_PolygonVertex(i0, '0 0 0', color, alpha);
+	R_PolygonVertex(i3, '0 0 0', color, alpha);
+	R_EndPolygon();
+};
+
+void(vector pos, vector size, float skew, vector color, float alpha) sui_fill_quad =
+{
+	sui_transform_box(pos, size);
+
+	R_BeginPolygon("", 4);
+	R_PolygonVertex(pos + [skew, 0],               '0 0 0', color, alpha);
+	R_PolygonVertex(pos + [size_x, 0],             '0 0 0', color, alpha);
+	R_PolygonVertex(pos + [size_x - skew, size_y], '0 0 0', color, alpha);
+	R_PolygonVertex(pos + [0, size_y],             '0 0 0', color, alpha);
+	R_EndPolygon();
+};
+
 void(vector pos, vector size, string pic, vector color, float alpha, float flags) sui_pic =
 {
 	sui_transform_box(pos, size);
@@ -904,18 +978,47 @@ void() sui_draw_bind_overlay =
 float(PanelID id, vector pos, vector size, string text, vector colour, vector textsize, vector textcolour, float alignment, float padding, float alpha, float textalpha, float flags) hud_colour_button =
 {
 	sui_push_frame(pos, size);
-	vector basecolor = sui_is_hovered(id) ? colour + MENU_HIGHLIGHT * 0.1 : colour;
-	vector bordercolour = colour + '0.05 0.05 0.05';
-	basecolor = sui_is_held(id) ? colour - MENU_DARKEN * 0.1 : basecolor;
-	sui_fill([0, 0], size, basecolor, alpha, 0);
+
+	float hovered = sui_is_hovered(id), held = sui_is_held(id);
+
+	// Most menu options never set a colour, so it arrives as '0 0 0' and fills
+	// near-black.  Fall back to the standard raised-surface tone.
+	if (colour == '0 0 0')
+		colour = MENU_BUTTON;
+
+	vector basecolor = hovered ? colour + MENU_HIGHLIGHT * 0.1 : colour;
+	basecolor = held ? colour - MENU_DARKEN * 0.1 : basecolor;
+
+	// Angled ends rather than a plain rectangle.  Capped against both axes so
+	// short or narrow buttons degrade to a gentle slant instead of a wedge.
+	float skew = min(size_y * 0.4, size_x * 0.2);
+
+	// The outline carries the shape, the fill only tints what is behind it.
+	// Keeping the fill well under the outline's weight is what stops a column
+	// of these reading as a stack of solid slabs over the world.
+	sui_fill_quad([0, 0], size, skew, basecolor, alpha * (held ? 0.85 : 0.7));
+
 	if(!(flags & 1)) {
-        sui_border_box([0, 0], size, 1, bordercolour, 0.4, 0);
+		sui_quad_outline([0, 0], size, skew, held ? 2 : (hovered ? 1.5 : 1),
+		                 hovered || held ? MENU_EDGE_HI : MENU_EDGE, 1);
 	}
-	sui_set_align([alignment, SUI_ALIGN_CENTER]);
+
     if(!padding && alignment == SUI_ALIGN_START) {
         padding = 4;
     }
-	sui_text([padding, 0], textsize, text, textcolour, textalpha, 0);	
+
+	// Text lives in a frame inset past both slanted edges plus a margin.  Each
+	// edge travels `skew` horizontally between top and bottom, so insetting by
+	// the full amount clears the angle at whichever corner it leans in -- and
+	// doing it with a frame rather than by nudging padding means it works for
+	// centred and end-aligned text too, not just START.
+	float inset = skew + 28;
+
+	sui_push_frame([inset, 0], [size_x - inset * 2, size_y]);
+	sui_set_align([alignment, SUI_ALIGN_CENTER]);
+	sui_text([padding, 0], textsize, text, textcolour, textalpha, 0);
+	sui_pop_frame();
+
 	sui_action_element([0, 0], size, id, sui_noop);
 	sui_pop_frame();
 	

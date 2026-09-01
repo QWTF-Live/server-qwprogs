@@ -691,21 +691,20 @@ vector fo_menu_draw(fo_menu * menu) = {
         MenuPanel.Position = MenuPanel.Position + [Mouse.x, Mouse.y] - HudSettings.MousePos;
     }
     
-    /* sui_border_box(position, menusize, 1, bordercolour, FO_MENU_TRANSPARENCY, 0); */
+    // Deliberately no panel surface: the menu reads better as text floating over
+    // the world.  Definition comes from the option rows themselves (see
+    // hud_colour_button) rather than from a frame around everything.
     sui_push_frame(position, menusize);
-
-    /* sui_fill([0, 0], menusize, bgcolour, FO_MENU_TRANSPARENCY, 0); */
 
     sui_set_align([SUI_ALIGN_CENTER, SUI_ALIGN_CENTER]);
     sui_action_element([0, 0], menusize, menu.id, sui_noop);
     sui_pop_frame();
-    
+
     HRC_drawstring(
-        position + [menusize.x / 2 - stringwidth(menu.title,1,mediumtext)/2,padding*2], 
+        position + [menusize.x / 2 - stringwidth(menu.title,1,mediumtext)/2, padding*2],
         menu.title, mediumtext,
-        /* (menu.flags & FO_MENU_FLAG_WARNING)?MENU_TEXT_WARNING:MENU_TEXT_2,  */
-        '1 1 1',
-        1, 
+        (menu.flags & FO_MENU_FLAG_WARNING) ? MENU_TEXT_WARNING : MENU_TEXT_1,
+        1,
         0
     );
     float row = 0;
@@ -735,33 +734,48 @@ vector fo_menu_draw(fo_menu * menu) = {
 
                 if(menu.options[i].state == FO_MENU_STATE_NORMAL) {
                     //if(hud_colour_button(strcat("fo_menu_",menu.title,"_",menu.options[i].name), position + [padding, titleoffset + row * (buttonsize.y + padding)] + shortcutoffset, buttonsize - shortcutoffset - valueoffset, menu.options[i].name, menu.options[i].colour, smalltext, SUI_ALIGN_START, padding * 3 + smalltext.x)) {
-                    if(hud_colour_button(menu.options[i].id, buttonpos, buttonsize, menu.options[i].name, menu.options[i].colour, smalltext, MENU_TEXT_1, alignment, shortcutoffset.x, 0.6, 1, 0)) {
+                    if(hud_colour_button(menu.options[i].id, buttonpos, buttonsize, menu.options[i].name, menu.options[i].colour, smalltext, MENU_TEXT_1, alignment, shortcutoffset.x, FO_MENU_SURFACE_ALPHA, 1, 0)) {
                         menu.options[i].action();
                     }
                 } else if(menu.options[i].state == FO_MENU_STATE_DISABLED) {
                     if(menu.options[i].name) {
-                        //sui_border_box(position + [padding, titleoffset + row * (buttonsize.y + padding)] + shortcutoffset, buttonsize - shortcutoffset - valueoffset, 1, bgcolour, 0.4, 0);
-                        sui_border_box(buttonpos, buttonsize, 1, bgcolour, 0.4, 0);
-                        float disabledtextoffset = 0;
-                        if(alignment == SUI_ALIGN_START) {
-                            disabledtextoffset = padding + shortcutoffset.x;
-                        } else {
-                            padding + (buttonsize.x / 2) - stringwidth(menu.options[i].name,1,smalltext) / 2; //Centered
+                        // Same parallelogram as an active row, just dimmed.
+                        // This was still drawing sui_border_box -- a plain
+                        // rectangle -- so disabled options kept the old look.
+                        float d_skew = min(buttonsize.y * 0.4, buttonsize.x * 0.2);
+
+                        sui_fill_quad(buttonpos, buttonsize, d_skew, bgcolour, 0.25);
+                        sui_quad_outline(buttonpos, buttonsize, d_skew, 1,
+                                         MENU_EDGE * 0.6, 0.7);
+
+                        // Match the active row's text inset so enabled and
+                        // disabled labels line up in a mixed list.
+                        float disabledtextoffset = d_skew + 28 + shortcutoffset.x;
+                        if(alignment != SUI_ALIGN_START) {
+                            // Was a bare expression with no assignment, so
+                            // centred disabled text sat hard against the edge.
+                            disabledtextoffset = (buttonsize.x -
+                                stringwidth(menu.options[i].name, 1, smalltext)) / 2;
                         }
+
                         HRC_drawstring(
-                            position + [disabledtextoffset, titleoffset + row * (buttonsize.y + padding) + (buttonsize.y / 2) - (MENU_TEXT_SMALL.y / 2)], 
-                            menu.options[i].name, 
-                            smalltext, 
-                            MENU_TEXT_2, 
-                            1, 
+                            buttonpos + [disabledtextoffset,
+                                         (buttonsize.y - smalltext.y) / 2],
+                            menu.options[i].name,
+                            smalltext,
+                            MENU_TEXT_2,
+                            1,
                             0
                         );
                     }
                     
                 }
                 if(menu.options[i].shortcut) {
+                    // Same slant the button uses, so the number clears the
+                    // angled left edge instead of sitting on it.
+                    float sc_skew = min(buttonsize.y * 0.4, buttonsize.x * 0.2);
                     HRC_drawstring(
-                        position + [padding*3, titleoffset + row * (buttonsize.y + padding) + (buttonsize.y / 2) - (smalltext.y / 2)], 
+                        position + [padding * 5 + sc_skew * 0.5, titleoffset + row * (buttonsize.y + padding) + (buttonsize.y / 2) - (smalltext.y / 2)], 
                         menu.options[i].shortcut, 
                         smalltext, 
                         MENU_TEXT_3, 

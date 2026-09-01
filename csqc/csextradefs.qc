@@ -5,17 +5,32 @@
 #define CVARF(n) autocvar_##n
 #define CVARS(n) autocvar_##n
 
-vector MENU_BG = '0.2 0.3 0.4';
-vector MENU_BG_DARK = '0.1 0.15 0.2';
-vector MENU_BORDER = '0.3 0.4 0.5';
-vector MENU_BG_WARNING = '0.4 0.3 0.2';
-vector MENU_BORDER_WARNING = '0.5 0.4 0.3';
-vector MENU_SELECTED = '0 1 0';
-vector MENU_UNSELECTED = '1 0 0';
-vector MENU_BUTTON = '0.5 0.5 0.5';
+// Surfaces: near-black and close together in value, so depth reads from the
+// small steps between them rather than from saturation.  The old palette was a
+// mid-tone saturated blue, which competes with the world behind the menu and
+// leaves little contrast headroom for text.
+vector MENU_BG = '0.20 0.30 0.40';        // panel surface
+vector MENU_BG_DARK = '0.10 0.15 0.20';   // recessed (list rows, wells)
+vector MENU_BUTTON = '0.38 0.43 0.54';    // raised (buttons)
+vector MENU_BORDER = '0.24 0.26 0.31';    // subtle, reads as an edge not a frame
+
+// Edge highlights are neutral rather than tinted off the element's own colour:
+// a grey stroke reads as lighting on a surface, while a tinted one reads as
+// part of the fill and muddies team/warning colours.
+vector MENU_EDGE = '0.52 0.52 0.54';
+vector MENU_EDGE_HI = '0.74 0.74 0.76';
+
+// Amber rather than brown for warnings, same value range as the surfaces.
+vector MENU_BG_WARNING = '0.20 0.14 0.07';
+vector MENU_BORDER_WARNING = '0.45 0.32 0.14';
+
+// Accents desaturated off the primaries: pure '0 1 0' / '1 0 0' read as debug
+// colours and vibrate against dark backgrounds.
+vector MENU_SELECTED = '0.30 0.78 0.45';
+vector MENU_UNSELECTED = '0.85 0.32 0.32';
 //vector MENU_BUTTON_BORDER = '0.35 0.45 0.55';
-vector MENU_TEXT_1 = '1 1 1';
-vector MENU_TEXT_2 = '0.7 0.75 0.75';
+vector MENU_TEXT_1 = '0.94 0.95 0.96';   // primary; pure white glares on dark
+vector MENU_TEXT_2 = '0.55 0.58 0.63';   // secondary / disabled
 vector MENU_TEXT_3 = '1 1 0.2';
 vector MENU_TEXT_4 = '0.8 0.5 0';
 vector MENU_HIGHLIGHT = '1 1 1';
@@ -66,6 +81,11 @@ const vector PLAYER_MAXS = [16, 16, 32];
 
 #define FO_MENU_MAX_OPTIONS 20
 #define FO_MENU_TRANSPARENCY 0.2
+// The menu surface itself is near-opaque: it is a foreground element you are
+// reading, not an overlay.  Kept separate from FO_MENU_TRANSPARENCY, which is
+// still used for lighter chrome elsewhere.
+#define FO_MENU_SURFACE_ALPHA 0.88
+#define FO_MENU_BORDER_ALPHA  0.9
 
 #define MOTD_TIME 30
 

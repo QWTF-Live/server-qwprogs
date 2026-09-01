@@ -342,8 +342,7 @@ void BroadcastHitFlag(entity targ, entity inflictor, entity attacker,
     WriteShort(MSG_MULTICAST, original_damage);
     WriteShort(MSG_MULTICAST, hitflag);
 
-    // TODO: Supporting spectators (requires no ezquake)
-    multicast('0 0 0', MULTICAST_ONE_R_NOSPECS);
+    multicast('0 0 0', MULTICAST_ONE_R);
 };
 
 void (entity targ, entity inflictor, entity attacker, float damage) T_Damage = {

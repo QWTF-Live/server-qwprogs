@@ -109,10 +109,10 @@ enumflags {
 };
 
 string TFX_DESC[] = {
-    "Grenade timers",
+    "Grenade timers (spies also see enemies)",
     "Spectators see grenade timers",
-    "Scout sees enemies",
     "Prematch see everything",
+    "Scout sees enemies",
     "Spectators see outlines",
     "Spectators see flags",
     "Offense sees flag (always)",

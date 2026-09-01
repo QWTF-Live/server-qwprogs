@@ -303,7 +303,9 @@ static float ShowTeamGrenTimer(float team, float my_team) {
     if (prematch && TFxEnabled(TFX_PREMATCH_EVERYTHING))
         return TRUE;
 
-    if (TFxEnabled(TFX_GRENTIMER) && team == my_team)
+    // Own team, and for a spy the other team as well -- no disguise required.
+    if (TFxEnabled(TFX_GRENTIMER) &&
+        (team == my_team || WP_PlayerClass() == PC_SPY))
         return TRUE;
 
     return FALSE;

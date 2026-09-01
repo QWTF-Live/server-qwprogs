@@ -605,7 +605,20 @@ static void RunDeadMovement(float endframe) {
 //   pmsd.seq --> endframe + 1
 static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     entity ent = pm.ent;
-    float saved_prng_conc = pstate_pred.prng_base[PRNG_CONC];
+
+    // This runs several times per frame (rendering, error measurement, debug
+    // graphs), so it must be idempotent.  The conc paths below now advance
+    // bookkeeping -- the stumble schedule, its PRNG stream, and the conc
+    // tfstate bits -- so snapshot all of it and put it back.  The velocity a
+    // stumble imparts is the output and deliberately survives.
+    //
+    // Prediction still works because pstate_pred is reset wholesale from
+    // pstate_server each cycle, so every replay re-derives forward from the
+    // last authoritative state instead of accumulating on top of itself.
+    ConcState saved_conc      = pstate_pred.conc_state;
+    float saved_prng_conc     = pstate_pred.prng_base[PRNG_CONC];
+    float saved_tfstate       = pstate_pred.tfstate;
+    float saved_conc_cap_time = pstate_pred.conc_cap_time;
 
     if (pm.active_pmsd != pmsd || pm.seq > endframe) {
         ASSERTF_GT(endframe, pm.server_seq);
@@ -660,7 +673,11 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
 
     // Add in anything that was applied after (for low packet rate protocols)
     input_angles = view_angles;
-    pstate_pred.prng_base[PRNG_CONC] = saved_prng_conc;
+
+    pstate_pred.conc_state            = saved_conc;
+    pstate_pred.prng_base[PRNG_CONC]  = saved_prng_conc;
+    pstate_pred.tfstate               = saved_tfstate;
+    pstate_pred.conc_cap_time         = saved_conc_cap_time;
 
 }
 

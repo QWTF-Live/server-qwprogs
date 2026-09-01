@@ -144,12 +144,21 @@ float Conc_Update(ConcState *cs, entity ent, float ctime, float pre_time = 0) {
 
     Conc_Stumble(ent, cs->mag * cs->next_push, cs->next_flip);
 
-#ifdef SSQC
-    // Could use PRNG again now that pmove is fixed.. oh well
-    cs->next_push = random() * 10;
-    cs->next_flip = random() < 0.5 ? 0 : 1;
+    // Advanced on BOTH sides, from the shared PRNG rather than random().
+    //
+    // Previously this block was server-only, so the client never moved cs->next
+    // and could not derive the next push/flip: every stumble waited on a
+    // conc_state update and therefore landed a round-trip late.  Deriving it
+    // here lets the client apply each stumble on time, and with the same values
+    // the server will use.  Two draws per stumble, matching what random() did,
+    // so the stream stays in step.
+    //
+    // Callers replaying input must treat this state as scratch -- see the
+    // snapshot in PM_RunMovement().
+    cs->next_push = shared_prng(PRNG_CONC) * 10;
+    cs->next_flip = shared_prng(PRNG_CONC) < 0.5 ? 0 : 1;
     cs->next += CONC_P;
-#endif
+
     return TRUE;
 }
 

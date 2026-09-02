@@ -96,7 +96,8 @@ float RewindFlagEnabled(float flag) {
 }
 
 enumflags {
-    TFX_GRENTIMER,
+    TFX_DEFENSE_GRENTIMER,
+    TFX_OFFENSE_GRENTIMER,
     TFX_SPEC_GRENTIMER,
     TFX_PREMATCH_EVERYTHING,
     TFX_SCOUT_SEE_ENEMIES,
@@ -109,7 +110,8 @@ enumflags {
 };
 
 string TFX_DESC[] = {
-    "Grenade timers (spies also see enemies)",
+    "Defense sees grenade timers (spies see enemies too)",
+    "Offense sees grenade timers (spies see enemies too)",
     "Spectators see grenade timers",
     "Prematch see everything",
     "Scout sees enemies",
@@ -129,9 +131,10 @@ float TFxEnabled(float flag) {
 // tests this before sending the prime/throw messages at all -- with none of
 // these set nothing can render them, so the traffic is pure waste.
 #define TFX_GRENTIMER_ANY \
-    (TFX_GRENTIMER | TFX_SPEC_GRENTIMER | TFX_PREMATCH_EVERYTHING)
+    (TFX_OFFENSE_GRENTIMER | TFX_DEFENSE_GRENTIMER | TFX_SPEC_GRENTIMER | \
+     TFX_PREMATCH_EVERYTHING)
 
-const float TFX_DEFAULT_FLAGS = TFX_GRENTIMER | TFX_SPEC_GRENTIMER;
+const float TFX_DEFAULT_FLAGS = TFX_OFFENSE_GRENTIMER | TFX_SPEC_GRENTIMER;
 
 enumflags {
     FOC_ON_DEF,  // apply foc_defaults

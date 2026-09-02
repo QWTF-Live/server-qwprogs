@@ -19,10 +19,10 @@ static void RenderHitText(entity p) {
 
     float rem = p.hittext_expires - time;
     po.z += (CVARF(fo_hittext_duration) - rem) * CVARF(fo_hittext_speed);
-    vector direc = normalize(po - PM_Org());
     makevectors(getviewprop(VF_ANGLES));
 
-    float d = v_forward * direc;
+    // Sign only, so no normalize: a positive scale cannot flip it.
+    float d = v_forward * (po - o);
 
     if(d <= 0 || rem <= 0)
         return;

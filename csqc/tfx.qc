@@ -303,8 +303,13 @@ static float ShowTeamGrenTimer(float team, float my_team) {
     if (prematch && TFxEnabled(TFX_PREMATCH_EVERYTHING))
         return TRUE;
 
-    // Own team, and for a spy the other team as well -- no disguise required.
-    if (TFxEnabled(TFX_GRENTIMER) &&
+    // Gated on the viewer's role rather than whose timer it is, so a defence
+    // that may not see them does not start seeing them by looking at an
+    // attacker.  Own team, and for a spy the other team too -- no disguise
+    // required.
+    float role = (my_team == AttackingTeamNo()) ? TFX_OFFENSE_GRENTIMER
+                                                : TFX_DEFENSE_GRENTIMER;
+    if (TFxEnabled(role) &&
         (team == my_team || WP_PlayerClass() == PC_SPY))
         return TRUE;
 
@@ -373,6 +378,13 @@ static float RenderGrenTimer(entity p, float test_only) {
     if (diff > maxd)
         return FALSE;
 
+    // project() has no notion of behind the camera -- a point at your back
+    // lands on screen just the same, so the timer would draw over empty space
+    // in front of you.  Same guard RenderHitText uses.
+    makevectors(getviewprop(VF_ANGLES));
+    if (v_forward * (po - o) <= 0)
+        return FALSE;
+
     traceline(o, po, 3, p);
     if (trace_fraction < 1)
         return FALSE;
@@ -392,7 +404,7 @@ static float RenderGrenTimer(entity p, float test_only) {
                         '1.00 0.90 0.20',
                         '0.30 0.90 0.35' };  // freshly primed
     vector c = project(po);
-    vector size = '8 8 8' * (maxd - max(diff, mind)) / (maxd - mind);
+    vector size = '7 7 7' * (maxd - max(diff, mind)) / (maxd - mind);
     float ci = bound(0, floor(rem), colors.length - 1);
     vector rgb = colors[ci];
     float style = CVARF(tfx_grentimer_style);
@@ -442,6 +454,11 @@ static void UpdateGrenList() {
 }
 
 void TFxRenderGrenadeTimers() {
+    // Checked before UpdateGrenList so turning it off also skips the scan and
+    // its per-player traces, not just the drawing.
+    if (!CVARF(cg_draw_grentimer))
+        return;
+
     UpdateGrenList();
 
     for (int i = 0; i < num_gren_list; i++) {
@@ -562,15 +579,15 @@ void TFX_Init() {
 
     printf("TFX active.\n");
 
-    /* RegisterPlayerListener(); */
+#if 0
+    RegisterPlayerListener();
 
     shader_team[0] = shaderforname(rnds("blue_team_outline"), OutlineShader("textures/sfx/quad.tga"));
     shader_team[1] = shaderforname(rnds("red_team_outline"), OutlineShader("textures/sfx/pent.tga"));
     shader_flag = shaderforname(rnds("flag_outline"), OutlineShader("textures/sfx/specular.tga"));
 
     shader_over_outline = shaderforname(rnds("over_outline"), "{ sort 7 }");
-    /* pengine.viewmodel.shader = shader_over_outline; */
-    pengine.viewmodel.effects |= EF_NODEPTHTEST;
+#endif
 }
 
 void TFX_Flag_Init() {

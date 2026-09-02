@@ -5,7 +5,7 @@ DEFCVAR_FLOAT(fo_grentimervolume, 1);
 // When set (not -1) and spectating, supercedes fo_grentimervolume.
 DEFCVAR_FLOAT(fo_spec_grentimervolume, -1);
 
-// Overhead teammate grenade timer: 0 = number, 1 = pie, 2 = both.
+DEFCVAR_FLOAT(cg_draw_grentimer, 1);
 DEFCVAR_FLOAT(tfx_grentimer_style, 2);
 
 DEFCVAR_FLOAT(tf_oldscoreboard, 0);

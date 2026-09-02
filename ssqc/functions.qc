@@ -139,6 +139,8 @@ void () EndGameThink = {
 	dremove(self);
 }
 
+void TFL_ClearAutoTeam();
+
 void () MapEndSequence = {
 	local entity player;
 	local entity maprestarttimer;
@@ -154,6 +156,11 @@ void () MapEndSequence = {
 	}	
 	LogEventTeamScores();
 	LogEventGameEnd();
+
+	// Retire the pug roster here rather than leaning on the map change:
+	// localinfo survives a restart, so a re-run of the same map would come
+	// back with the old teams still locked in.
+	TFL_ClearAutoTeam();
 	if (logfilehandle > 0)
 		fclose(logfilehandle);
 	canlog = 0;

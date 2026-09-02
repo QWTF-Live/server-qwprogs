@@ -159,9 +159,19 @@ static struct {
     float n;
 } auto_team[2];
 
+static float auto_team_loaded;
+
 void TFL_ClearAutoTeam() {
     localcmd("localinfo auto_team1 \"\"\n");
     localcmd("localinfo auto_team2 \"\"\n");
+
+    // Drop the parsed copy too.  localinfo is only read once per map, so
+    // clearing it alone would leave the roster live for the rest of this one
+    // -- and the whole point of clearing at game end rather than relying on a
+    // map change is that a restart keeps localinfo.
+    auto_team[0].n = 0;
+    auto_team[1].n = 0;
+    auto_team_loaded = FALSE;
 }
 
 static void InitAutoTeam(float team_no) {
@@ -178,16 +188,44 @@ static void InitAutoTeam(float team_no) {
     }
 }
 
+static void EnsureAutoTeam() {
+    if (auto_team_loaded)
+        return;
+
+    InitAutoTeam(0);
+    InitAutoTeam(1);
+    auto_team_loaded = TRUE;
+}
+
+float (float tno) TeamFortress_TeamGetNoPlayersExcludingAllTime;
+
+// Once a pug is under way a team only has room if it is short of its roster --
+// someone dropped.  All-time attack and defence players sit outside the roster
+// count, so they neither fill a slot nor open one.
+//
+// Before the game starts, or once the teams have been unlocked from the menu
+// (cmd pug_unlock clears auto_pug_team), there is no restriction at all.
+float TFL_PugTeamHasRoom(float tno) {
+    if (!auto_pug_team || cb_prematch)
+        return TRUE;
+
+    if (tno < 1 || tno > 2)
+        return TRUE;
+
+    EnsureAutoTeam();
+
+    float roster = auto_team[tno - 1].n;
+    if (!roster)
+        return TRUE;   // no pug roster for this team, so nothing to enforce
+
+    return TeamFortress_TeamGetNoPlayersExcludingAllTime(tno) < roster;
+}
+
 static float TFL_PugAutoTeam(entity p) {
     if (!auto_pug_team || !login_required || !TFL_IsLoggedIn())
         return -1;
 
-    static float once;
-    if (!once) {
-        InitAutoTeam(0);
-        InitAutoTeam(1);
-        once = TRUE;
-    }
+    EnsureAutoTeam();
 
     for (float i = 0; i < 2; i++)
         for (float j = 0; j < auto_team[i].n; j++) {
@@ -227,9 +265,17 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
     if ((intermission_running != 0) || (intermission_exittime > time))
         return (0);
 
-    float autot = TFL_PugAutoTeam(pe);
-    if (autot >= 0)
-        tno = autot;
+    // Deliberately no longer forcing the roster team here.  The roster decides
+    // where you land when you first connect (TFL_AutoTeam, off the back of
+    // login); after that, switching sides is yours to do.  What the lock still
+    // enforces is that a team already under way has a free slot -- except for
+    // its own roster members, who can always reclaim their place.
+    if (pe.team_no != tno && TFL_PugAutoTeam(pe) != tno &&
+        !TFL_PugTeamHasRoom(tno)) {
+        sprint(pe, PRINT_HIGH,
+               "That team is full -- teams are locked once the game starts.\n");
+        return (0);
+    }
 
 #if 0
     if (!CF_TeamIsValid(tno)) {
@@ -334,7 +380,11 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
 };
 
 float (float tno) TeamFortress_TeamSet = {
-    if (org_game && login_required && !TFL_IsLoggedIn() && tno >= 1 && tno <= 4) {
+    // Quad mode always requires a login, regardless of the loginrequired
+    // setting -- org_game already covers it, but only while that setting is
+    // on.  Other org games stay gated on it.
+    if ((quadmode || (org_game && login_required)) &&
+        !TFL_IsLoggedIn() && tno >= 1 && tno <= 4) {
         sprint(self, PRINT_HIGH, "You need to sign in first. Get your login token at http://discord.qwtf.live\n");
         return 0;
     }

@@ -2040,6 +2040,20 @@ void () PutClientInServer = {
     self.solid = SOLID_SLIDEBOX;
     self.movetype = MOVETYPE_WALK;
 
+    // Fresh spawns briefly pass through other players, so a spawn wave does
+    // not jam itself in its own doorway.  Offense only once the game is live,
+    // both teams during prematch when everyone is milling around their own
+    // spawn.  SOLID_CORPSE is non-solid to SOLID_SLIDEBOX by design, and
+    // unlike the dimension masks it reaches the client, so movement stays
+    // predicted.  Note it is not per-team: enemies pass through too, and
+    // hitscan misses until it expires.
+    self.spawn_protect_until = 0;
+    float spawn_prot = CF_GetSetting("spd", "spawn_protect_dur", "5");
+    if (spawn_prot > 0 && (cb_prematch || self.team_no == team_no_attack)) {
+        self.solid = SOLID_CORPSE;
+        self.spawn_protect_until = time + spawn_prot;
+    }
+
     self.show_hostile = 0;
     self.FlashTime = 0;
     self.max_health = 100;
@@ -2684,8 +2698,43 @@ static void ConcUpdate() {
     }
 }
 
+// Would turning solid right now leave us wedged inside another player?
+// SOLID_CORPSE entities are absent from this trace, so anyone still protected
+// does not count -- they are passable and cannot wedge us.
+float SpawnProtectWouldStick(entity p) {
+    tracebox(p.origin, p.mins, p.maxs, p.origin, MOVE_NORMAL, p);
+    return trace_startsolid;
+}
+
 void () PlayerPreThink = {
     FO_UpdateClientPing();
+
+    // Guarded on SOLID_CORPSE so dying mid-window does not resurrect the
+    // corpse's solidity -- PlayerDie has already set SOLID_NOT by then.
+    if (self.spawn_protect_until && time > self.spawn_protect_until) {
+        self.spawn_protect_until = 0;
+
+        if (self.solid == SOLID_CORPSE) {
+            float wedged = SpawnProtectWouldStick(self);
+
+            self.solid = SOLID_SLIDEBOX;
+            setorigin(self, self.origin);   // relink
+
+            // Anyone still standing inside us is telefragged.  They held
+            // control of the collision throughout -- we were passable and they
+            // chose to occupy us -- and the alternative is two players wedged
+            // solid with neither able to move out.  spawn_tdeath skips its own
+            // owner, so this cannot kill us.
+            if (wedged)
+                spawn_tdeath(self.origin, self);
+        }
+
+        // Leave them alone if a real quad is running: it wants the same two
+        // bits.  A goal item does too, but a player this fresh cannot be
+        // carrying one.
+        if (self.super_damage_finished <= time)
+            self.effects &= ~(EF_DIMLIGHT | EF_BLUE);
+    }
 
     if (self.impulse) {
         if (self.impulse == TF_VOTENEXT) {
@@ -2916,6 +2965,12 @@ void () CheckPowerups = {
             }
         }
     }
+    // Spawn protection borrows the quad glow so the passable window reads at a
+    // glance.  Set here rather than inside the block above, which only runs
+    // while super_damage_finished is held and so never fires for a plain spawn.
+    if (SpawnProtectActive(self))
+        self.effects |= EF_DIMLIGHT | EF_BLUE;
+
     if (self.radsuit_finished) {
         self.air_finished = time + 12;
         if (self.pstate & PSTATE_RADSUIT) {

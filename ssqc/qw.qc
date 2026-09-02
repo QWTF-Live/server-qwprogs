@@ -168,6 +168,7 @@ entity round_winner;
 float round_winner_print_health;
 
 float team_no_attack;
+.float spawn_protect_until;   // offense pass-through window after spawning
 .float team_no;                 // The team you belong to
 .float all_time;                // Automatically join attacking/defending team during quads
 .float lives;                   // The number of lives you have left

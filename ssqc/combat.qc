@@ -734,6 +734,22 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
     self = oldself;
 };
 
+// A player still inside their spawn pass-through window ignores explosions
+// from their own team, so the window covers knockback and concussion as well
+// as the collision it was built for.  Self is deliberately excluded: rocket
+// jumping out of your own spawn still works.
+float SpawnProtectActive(entity p) {
+    return p.spawn_protect_until && time <= p.spawn_protect_until;
+}
+
+float SpawnProtectedFrom(entity targ, entity attacker) {
+    if (!SpawnProtectActive(targ))
+        return FALSE;
+    if (targ == attacker || attacker.classname != "player")
+        return FALSE;
+    return targ.team_no == attacker.team_no;
+}
+
 void (entity inflictor, entity attacker, float damage,
       entity ignore1, entity ignore2 = __NULL__, entity only = __NULL__)
         T_RadiusDamage = {
@@ -750,6 +766,9 @@ void (entity inflictor, entity attacker, float damage,
             continue;
 
         if (!e.takedamage)
+            continue;
+
+        if (SpawnProtectedFrom(e, attacker))
             continue;
 
         float fl = e == attacker ? KF_SELF : 0;

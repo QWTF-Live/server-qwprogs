@@ -270,6 +270,12 @@ float CSQC_UpdatePlayer(float isnew) {
         csqc = self.csqc_player;
     }
 
+    // Ahead of the early-out below, which only compares position and frames:
+    // spawn protection changes alpha and nothing else, so an alpha-only change
+    // would otherwise never reach the copy.  The networked entity is hidden
+    // while the copy is drawn, so if the copy does not carry it, it is lost.
+    csqc.alpha = self.alpha;
+
     if (csqc.origin == self.origin && csqc.angles == self.angles &&
         csqc.frame == self.frame && fabs(csqc.lerpfrac - self.lerpfrac) < 0.01 &&
         csqc.frame2 == self.frame2)
@@ -296,8 +302,18 @@ float CSQC_UpdatePlayer(float isnew) {
 }
 
 
+// game_state.is_player is false whenever team_no reads 0, which includes a
+// real player mid class change, mid respawn, or before the stat first lands --
+// not just an actual spectator.  Keying the spectator allowance off !is_player
+// therefore handed those players both teams' timers for a moment.  Ask whether
+// we are genuinely spectating instead, and fail closed.
+static float ViewerIsSpectator() {
+    return isdemo() ||
+           stof(getplayerkeyvalue(player_localnum, "*spectator")) != 0;
+}
+
 static float ShowTeamGrenTimer(float team, float my_team) {
-    if (!game_state.is_player && TFxEnabled(TFX_SPEC_GRENTIMER))
+    if (ViewerIsSpectator() && TFxEnabled(TFX_SPEC_GRENTIMER))
         return TRUE;
 
     if (prematch && TFxEnabled(TFX_PREMATCH_EVERYTHING))

@@ -13,6 +13,30 @@ DEFCVAR_FLOAT(tfx_grentimer_style, 2);
 // be set before connecting, since deltalisten can only be established then.
 DEFCVAR_FLOAT(cg_player_listener, 1);
 
+// Team-coloured silhouette around other players.  Occluded by geometry, unlike
+// the TFX_*_OUTLINE x-ray highlight, which is a separate thing.
+//
+//   0  off
+//   1  inline GLSL -- constant thickness on screen at any range
+//   2  fallback, plain shader script -- thickness is world-space, so distant
+//      players get a thinner outline
+// Off by default for now, while this is being tested.
+DEFCVAR_FLOAT(cg_player_outline, 0);
+// Outline thickness.  Clamped to 2 -- the default is the maximum, so raising
+// it has no effect.
+DEFCVAR_FLOAT(cg_player_outline_width, 2);
+// Exponent on view depth, 0..1, controlling how the outline scales with
+// range.  1 holds it a constant size on screen; below that it shrinks with
+// distance, gently, so a far-off player is not overwhelmed by their own
+// outline.  0 is a full world-space offset, shrinking as fast as the model.
+DEFCVAR_FLOAT(cg_player_outline_dist, 0.9);
+
+// Outline colours as "r g b".  Empty (the default) means follow the team
+// colour, so blue players get a blue outline and red players a red one.
+DEFCVAR_STRING(cg_player_outline_friendly, "");
+DEFCVAR_STRING(cg_player_outline_enemy, "");
+
+
 DEFCVAR_FLOAT(tf_oldscoreboard, 0);
 DEFCVAR_FLOAT(fo_default_weapon, 0);
 DEFCVAR_FLOAT(fo_team_color_crosshair, 0);
@@ -70,6 +94,7 @@ struct {
     vector tf_color_attack, tf_color_defense;
 
     vector fo_hittext_reg, fo_hittext_noarmor, fo_hittext_friendly;
+    vector outline_friendly, outline_enemy;
     vector r_dimlight_colour, r_brightlight_colour;
     vector r_redlight_colour, r_bluelight_colour;
 } CVAR;
@@ -99,6 +124,13 @@ void UpdateCachedCvars() {
         CVAR.fo_hittext_reg = stov_def(CVARS(fo_hittext_colour), '1 1 1');
         CVAR.fo_hittext_noarmor = stov_def(CVARS(fo_hittext_colour2), '1 0 1');
         CVAR.fo_hittext_friendly = stov_def(CVARS(fo_hittext_colour3), '1 0 0');
+
+        // '0 0 0' is the "unset" marker -- an all-black outline would be
+        // invisible anyway, so it is free to use as a sentinel.
+        CVAR.outline_friendly =
+            stov_def(CVARS(cg_player_outline_friendly), '0 0 0');
+        CVAR.outline_enemy =
+            stov_def(CVARS(cg_player_outline_enemy), '0 0 0');
         break;
     case 2:
         CVAR.r_brightlight_colour = stov_def(CVARS(r_brightlight_colour), '2 1 0.5');

@@ -137,6 +137,189 @@ static void UpdateOutline(entity player) {
 }
 #endif
 
+// Team-coloured silhouette: an inverted hull.  A copy of the player scaled up
+// a few percent rendering only its back faces, so what draws is the inside of
+// the far side of the shell -- which sits behind the real player and is hidden
+// by the depth test everywhere except the rim.  Depth testing is left normal,
+// so world geometry occludes it exactly as it occludes the player, with no
+// extra tracing needed.
+//
+// Note "cull back" is what renders the inside: Q3 shader "cull front" is the
+// default and means cull *back* faces, i.e. draw normally -- which paints the
+// enlarged hull straight over the player and z-fights with it.
+//
+// Deliberately not the TFX_*_OUTLINE shader, which uses nodepthtest +
+// depthfunc greater to draw only where the model FAILS the depth test.  That
+// one is an x-ray for seeing players through walls; this is the opposite.
+static float shader_silhouette;
+static float shader_sil_push;
+static float shader_sil_ready;
+
+// Inverted hull: the player drawn again with only back faces kept, expanded
+// slightly along vertex normals.  The far side of that shell sits behind the
+// real player, so the depth test hides it everywhere except the rim -- and
+// because depth testing is left normal, world geometry occludes the outline
+// exactly as it occludes the player, with no tracing needed.
+//
+// "cull back" is what keeps the inside: Q3 "cull front" is the default and
+// means cull *back* faces, i.e. draw normally.
+//
+// The expansion is baked into the shader rather than being per-entity, so the
+// shader is rebuilt when the width changes.
+// shaderforname caches by name on the client, and that cache survives a
+// csprogs reload -- so a name reused across builds keeps returning the first
+// version compiled, broken or not.  Same reason rnds() exists further down.
+//
+// FO_NAME_SUFFIX is a hash of the client sources, which serves both needs at
+// once: editing a shader body changes the hash and so the name, escaping the
+// stale cache, while an unchanged build keeps the same name and the cache
+// still hits.  It also keeps a fixed name from being a standing override
+// target -- "nodepthtest" on a player outline is a wallhack.
+static string SilSuffix() {
+    return FO_NAME_SUFFIX;
+}
+
+static float SilhouetteShader(float push) {
+    // Rounded: every distinct value mints a shader that is never freed, so
+    // sweeping the cvar should not be able to exhaust them.
+    float dist = rint(bound(0, CVARF(cg_player_outline_dist), 1) * 20) / 20;
+
+    float key = push + CVARF(cg_player_outline) * 1000 +
+                dist * 10000000;
+    if (shader_sil_ready && shader_sil_push == key)
+        return shader_silhouette;
+
+    // cg_player_outline 2: the same hull, expanded in an inline GLSL vertex
+    // stage instead of by deformVertexes.  Ships inside csprogs.dat -- no
+    // client package.  Kept around because the program block is a foothold for
+    // effects that plain shader script cannot express.
+    //
+    // v_position is a vec4, hence the .xyz: adding a vec3 to it directly is
+    // what produced "could not implicitly convert operands".
+    if (CVARF(cg_player_outline) == 1) {
+        // Expansion is done in clip space rather than world space, so the
+        // rim is a constant thickness on screen instead of shrinking with
+        // distance -- which is the thing plain shader script cannot express
+        // and the main reason to be in GLSL at all.
+        //
+        // Offsetting by c.w cancels the perspective divide that follows.
+        // "%f" not "%g": %g prints a whole number as "1", which GLSL reads as
+        // an int and refuses to multiply against a float.  %f gives
+        // "1.000000" and always parses as a float.
+        // blendfunc is ignored while a program block is present, so appearance
+        // has to come out of the fragment stage rather than blend state.
+        //
+        // Clamped to match the fallback: that path goes through fixed-function
+        // rgbGen entity, which treats colormod above 1 differently to writing
+        // it straight out here, so the two modes drifted apart in colour.
+        string frag = "min(e_colourident, vec4(1.0))";
+
+        shader_silhouette = shaderforname(
+            sprintf("fo_silhouette_glsl_%g_%g_%s", push,
+                    dist, SilSuffix()),
+            sprintf(
+"{\
+  cull back\
+  program\
+  {\
+     !!permu FRAMEBLEND\
+     #include \"sys/defs.h\"\
+     #ifdef VERTEX_SHADER\
+     void main()\
+     {\
+        /* ftetransform() applies the engine frame blend; transforming\
+           v_position by hand does not, which detaches the outline from an\
+           animating model.  The raw attributes are still fine for deriving a\
+           direction, where being a frame behind is not visible. */\
+        vec4 c = ftetransform();\
+        vec4 b = m_modelviewprojection * vec4(v_position.xyz, 1.0);\
+        vec4 o = m_modelviewprojection * vec4(v_position.xyz + v_normal, 1.0);\
+        vec2 d = o.xy / o.w - b.xy / b.w;\
+        float dl = length(d);\
+        if (dl > 0.0 && b.w > 1.0 && o.w > 1.0 && c.w > 1.0)\
+           c.xy += (d / dl) * %f * mix(dl, 0.004, %f) * c.w;\
+        gl_Position = c;\
+     }\
+     #endif\
+     #ifdef FRAGMENT_SHADER\
+     void main()\
+     {\
+        gl_FragColor = %s;\
+     }\
+     #endif\
+  }\
+}", push, dist, frag));
+
+        shader_sil_push = key;
+        shader_sil_ready = TRUE;
+        return shader_silhouette;
+    }
+
+    shader_silhouette = shaderforname(
+        sprintf("fo_silhouette_%g_%s", push, SilSuffix()),
+        sprintf("{ cull back deformVertexes wave 100 sin %g 0 0 0 "
+                "{ map $whiteimage rgbGen entity "
+                "blendfunc GL_ONE GL_ZERO depthwrite } }", push));
+
+    shader_sil_push = key;
+    shader_sil_ready = TRUE;
+    return shader_silhouette;
+}
+
+static float ShowPlayerSilhouette(entity player) {
+    if (!CVARF(cg_player_outline) || player.entnum == player_localentnum)
+        return FALSE;
+
+    return player.teamno != TeamNone;
+}
+
+static void UpdateSilhouette(entity player) {
+    entity o = player.outline;
+
+    if (!ShowPlayerSilhouette(player)) {
+        if (o != __NULL__)
+            o.drawmask = 0;
+        return;
+    }
+
+    if (o == __NULL__) {
+        AddOutline(player);
+        o = player.outline;
+    }
+
+    // Capped: past this the hull stops reading as a border and starts
+    // swallowing the player, and in the fallback mode limbs displace far
+    // enough to emerge through the torso.
+    o.forceshader =
+        SilhouetteShader(bound(0, CVARF(cg_player_outline_width), 2));
+    // Explicit override if one is set, otherwise follow the team colour.
+    vector col;
+    if (player.teamno == team_no)
+        col = CVAR.outline_friendly;
+    else
+        col = CVAR.outline_enemy;
+
+    if (col == '0 0 0') {
+        if (player.teamno == TeamRed)
+            col = '1.0 0.45 0.40';
+        else
+            col = '0.45 0.75 1.0';
+    }
+
+    o.colormod = col;
+
+    o.scale = 1;   // expansion is in the shader now, not geometric
+    o.drawmask = MASK_ENGINE;
+
+    o.frame = player.frame;
+    o.frame2 = player.frame2;
+    o.lerpfrac = player.lerpfrac;
+    o.angles = player.angles;
+    o.renderflags = player.renderflags;
+    setorigin(o, player.origin);
+}
+
+
 float UpdatePlayer(float isnew) {
     if (isnew) {
         AddOutline(self);
@@ -240,6 +423,8 @@ float CSQC_UpdatePlayer(float isnew) {
         self.renderflags |= RF_EXTERNALMODEL;
     else
         self.renderflags &= ~RF_EXTERNALMODEL;
+
+    UpdateSilhouette(self);
 
     // .teamno is what find_list() matches on in UpdateGrenList.  It used to be
     // set only in UpdatePlayer(), which deltalisten never registers -- so it
@@ -568,13 +753,11 @@ static string OutlineShader(string texture) {
 }
 
 static string rnds(string prefix) {
-#if 0
-    // Debugging convenience, concatenates a random string when enabled so that
-    // shaders don't get cached on-client between builds.
-    for (int i = 0; i < 5; i++)
-            prefix = strcat(prefix, chr2str('a' + floor(random() * 26)));
-#endif
-    return prefix;
+    // Was a debugging convenience for defeating the on-client shader cache
+    // between builds.  Now always on and build-stable rather than random:
+    // these names are the same override target as the silhouette shader --
+    // see SilSuffix() above.
+    return strcat(prefix, FO_NAME_SUFFIX);
 }
 
 void RegisterPlayerListener() {

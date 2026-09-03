@@ -1,5 +1,5 @@
 static string gas_p[] = {
-"r_part gas_smoke_base\
+"r_part gas_smoke_base%s\
 {\
 	texture \"particles/smoke.tga\"\
 	count 75\
@@ -15,7 +15,7 @@ static string gas_p[] = {
 	blend add\
 	spawnorg 175 50\
 	spawnvel 0 0\
-	assoc gas_smoke\
+	assoc gas_smoke%s\
 	scalefactor 1\
 	scaledelta 20\
 	up 40\
@@ -25,7 +25,7 @@ static string gas_p[] = {
 	ramp 0 0 0 0.6\
 	ramp 0 0 0 0.6\
 }\n",
-"r_part gas_smoke\
+"r_part gas_smoke%s\
 {\
 	texture \"particles/bloodsplat2.tga\"\
 	count 55\
@@ -41,13 +41,13 @@ static string gas_p[] = {
 	spawnorg 100 0\
 	spawnvel 60 60\
 	blend modulate\
-	emit gas_smoke_e\
+	emit gas_smoke_e%s\
 	emitinterval 1\
 	emitintervalrand 1\
 	scalefactor 1\
 	up 40\
 }\n",
-"r_part gas_smoke_e\
+"r_part gas_smoke_e%s\
 {\
 	texture \"particles/round.tga\"\
 	count 2\
@@ -112,9 +112,15 @@ void Register_Particles() {
 #if 0
     localcmd("wait\nwait\nwait\n");  // Synchronizes some unknown race
 #endif
-    localcmd(gas_p[0]);
-    localcmd(gas_p[1]);
-    localcmd(gas_p[2]);
+    // Gas names carry the build suffix so they cannot be redefined by a client
+    // that wants to see through the cloud; the server derives the same name.
+    // The sentry rings are client-only decoration, so they stay fixed.
+    localcmd(sprintf(gas_p[0], FO_NAME_SUFFIX, FO_NAME_SUFFIX));
+    localcmd(sprintf(gas_p[1], FO_NAME_SUFFIX, FO_NAME_SUFFIX));
+    // Suffix twice on purpose: fteqcc cannot tell which array element the
+    // format string is, so it checks every call against the widest one and
+    // warns that arg 3 is missing here.  sprintf ignores the surplus argument.
+    localcmd(sprintf(gas_p[2], FO_NAME_SUFFIX, FO_NAME_SUFFIX));
     localcmd(sentry_p[0]);
     localcmd(sentry_p[1]);
 }

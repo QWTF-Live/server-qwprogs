@@ -832,7 +832,9 @@ void () GasGrenadeExplode2 = {
             // except when it happened to settle with air below it.  The
             // effect's own "spawnorg 175 50" already spreads particles +-50
             // vertically, so the offset bought little.
-            pointparticles(particleeffectnum("gas_smoke_base"),
+            pointparticles(
+                    particleeffectnum(strcat("gas_smoke_base",
+                                             FO_NAME_SUFFIX)),
                     self.origin, '0 0 1', 1);
         }
         self.weapon = (self.weapon + 1) % 2;

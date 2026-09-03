@@ -57,6 +57,16 @@ enumflags {
     _OP(7, Short, float, new_balance_flags)
 
 
+// Suffix appended to the shader and particle effect names a client could
+// otherwise redefine by name.  PHASH is a hash of the client sources, set in
+// the Makefile and passed to both progs by the same make invocation, so the
+// server derives the same particle names the client defines -- and the client
+// downloads csprogs.dat from the server, so a mismatched pair never meets.
+//
+// Not a secret: any name is readable from the local progs.  The point is that
+// it moves whenever the client code does, so an override has to be redone.
+#define FO_NAME_SUFFIX PHASH
+
 var struct {
 #define DECLOP(_ig1, _ig2, _type, _field) \
     _type _field;

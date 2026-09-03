@@ -738,6 +738,11 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 // from their own team, so the window covers knockback and concussion as well
 // as the collision it was built for.  Self is deliberately excluded: rocket
 // jumping out of your own spawn still works.
+// Transparency rather than a glow.  The quad glow showed through a disguise
+// and gave a spy away; alpha rides the existing model, so a disguised spy
+// stays whoever they are pretending to be, just faded.
+const float kSpawnProtectAlpha = 0.6;
+
 float SpawnProtectActive(entity p) {
     return p.spawn_protect_until && time <= p.spawn_protect_until;
 }

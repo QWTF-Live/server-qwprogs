@@ -2048,9 +2048,11 @@ void () PutClientInServer = {
     // predicted.  Note it is not per-team: enemies pass through too, and
     // hitscan misses until it expires.
     self.spawn_protect_until = 0;
+    self.alpha = 0;   // 0 is remapped to opaque
     float spawn_prot = CF_GetSetting("spd", "spawn_protect_dur", "5");
     if (spawn_prot > 0 && (cb_prematch || self.team_no == team_no_attack)) {
         self.solid = SOLID_CORPSE;
+        self.alpha = kSpawnProtectAlpha;
         self.spawn_protect_until = time + spawn_prot;
     }
 
@@ -2729,11 +2731,7 @@ void () PlayerPreThink = {
                 spawn_tdeath(self.origin, self);
         }
 
-        // Leave them alone if a real quad is running: it wants the same two
-        // bits.  A goal item does too, but a player this fresh cannot be
-        // carrying one.
-        if (self.super_damage_finished <= time)
-            self.effects &= ~(EF_DIMLIGHT | EF_BLUE);
+        self.alpha = 0;   // opaque again
     }
 
     if (self.impulse) {
@@ -2965,12 +2963,6 @@ void () CheckPowerups = {
             }
         }
     }
-    // Spawn protection borrows the quad glow so the passable window reads at a
-    // glance.  Set here rather than inside the block above, which only runs
-    // while super_damage_finished is held and so never fires for a plain spawn.
-    if (SpawnProtectActive(self))
-        self.effects |= EF_DIMLIGHT | EF_BLUE;
-
     if (self.radsuit_finished) {
         self.air_finished = time + 12;
         if (self.pstate & PSTATE_RADSUIT) {

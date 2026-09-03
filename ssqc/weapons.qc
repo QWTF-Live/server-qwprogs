@@ -752,7 +752,9 @@ void (float shotcount, vector dir, vector spread) FireBullets = {
 
     ClearMultiDamage();
 
+    HitscanBegin(self);
     traceline(src, src + dir * 2048, MOVE_LAGGED, self);
+    HitscanEnd(self);
     puff_org = trace_endpos - dir * 4;
 
     while (shotcount > 0) {
@@ -761,7 +763,9 @@ void (float shotcount, vector dir, vector spread) FireBullets = {
             dir + crandom() * spread_x * v_right +
             crandom() * spread_y * v_up;
 
+        HitscanBegin(self);
         traceline(src, (src + (direction * 2048)), MOVE_LAGGED, self);
+        HitscanEnd(self);
         if (trace_fraction != 1) {
             if (FO_CurrentWeapon() != WEAP_ASSAULT_CANNON)
                 TraceAttack(4, direction);
@@ -818,7 +822,9 @@ void (vector direction, float damage) FireSniperBullet = {
 
     KickPlayer(-3, self);
 
+    HitscanBegin(self);
     traceline(src, src + direction * 4096, MOVE_LAGGED, self);
+    HitscanEnd(self);
     if (trace_fraction != 1)
         TraceAttack(damage, direction);
 
@@ -851,7 +857,9 @@ void () W_FireSniperRifle = {
 
     dir = aim(self, 10000);
     float range = old_sniperrange ? 3072 : 9192;  // Super arbitrary but ok.
+    HitscanBegin(self);
     traceline(src, src + dir * range, MOVE_LAGGED, self);
+    HitscanEnd(self);
 
     deathmsg = DMSG_SNIPERRIFLE;
     dam_mult = 1;

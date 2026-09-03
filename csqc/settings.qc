@@ -8,6 +8,11 @@ DEFCVAR_FLOAT(fo_spec_grentimervolume, -1);
 DEFCVAR_FLOAT(cg_draw_grentimer, 1);
 DEFCVAR_FLOAT(tfx_grentimer_style, 2);
 
+// Registers deltalisten on the player model, which everything player-related
+// in tfx.qc depends on (grenade timers, team colours).  Bisect switch: it must
+// be set before connecting, since deltalisten can only be established then.
+DEFCVAR_FLOAT(cg_player_listener, 1);
+
 DEFCVAR_FLOAT(tf_oldscoreboard, 0);
 DEFCVAR_FLOAT(fo_default_weapon, 0);
 DEFCVAR_FLOAT(fo_team_color_crosshair, 0);

@@ -2050,7 +2050,12 @@ void () PutClientInServer = {
     self.spawn_protect_until = 0;
     self.alpha = 0;   // 0 is remapped to opaque
     float spawn_prot = CF_GetSetting("spd", "spawn_protect_dur", "5");
-    if (spawn_prot > 0 && (cb_prematch || self.team_no == team_no_attack)) {
+    // All-time attackers always get it: they are offense every round by
+    // definition, so gating them on which team currently attacks would leave
+    // them without it for half the game.
+    if (spawn_prot > 0 && (cb_prematch ||
+                           self.all_time == ALL_TIME_ATTACK ||
+                           self.team_no == team_no_attack)) {
         self.solid = SOLID_CORPSE;
         self.alpha = kSpawnProtectAlpha;
         self.spawn_protect_until = time + spawn_prot;
@@ -2703,6 +2708,23 @@ static void ConcUpdate() {
 // Would turning solid right now leave us wedged inside another player?
 // SOLID_CORPSE entities are absent from this trace, so anyone still protected
 // does not count -- they are passable and cannot wedge us.
+// Ends the window early.  The point of it is to stop a spawn wave jamming
+// itself in its own doorway; once the enemy is already on top of the spawn it
+// would be cover instead, letting people walk out through a fight untouchable
+// by anything but a shotgun.
+const float kSpawnProtectEnemyDist = 750;
+
+float SpawnProtectEnemyNear(entity p) {
+    entity te = findradius(p.origin, kSpawnProtectEnemyDist);
+    while (te) {
+        if (te != p && te.classname == "player" && te.health > 0 &&
+            te.team_no && te.team_no != p.team_no)
+            return TRUE;
+        te = te.chain;
+    }
+    return FALSE;
+}
+
 float SpawnProtectWouldStick(entity p) {
     tracebox(p.origin, p.mins, p.maxs, p.origin, MOVE_NORMAL, p);
     return trace_startsolid;
@@ -2713,25 +2735,31 @@ void () PlayerPreThink = {
 
     // Guarded on SOLID_CORPSE so dying mid-window does not resurrect the
     // corpse's solidity -- PlayerDie has already set SOLID_NOT by then.
-    if (self.spawn_protect_until && time > self.spawn_protect_until) {
+    if (self.spawn_protect_until &&
+        (time > self.spawn_protect_until || SpawnProtectEnemyNear(self))) {
         self.spawn_protect_until = 0;
 
-        if (self.solid == SOLID_CORPSE) {
-            float wedged = SpawnProtectWouldStick(self);
+        // All-time attackers keep the pass-through and the transparency for
+        // good; for them only the explosion exemption ends here, since that is
+        // all SpawnProtectActive gates on.  Everyone else goes back to normal.
+        if (self.all_time != ALL_TIME_ATTACK) {
+            if (self.solid == SOLID_CORPSE) {
+                float wedged = SpawnProtectWouldStick(self);
 
-            self.solid = SOLID_SLIDEBOX;
-            setorigin(self, self.origin);   // relink
+                self.solid = SOLID_SLIDEBOX;
+                setorigin(self, self.origin);   // relink
 
-            // Anyone still standing inside us is telefragged.  They held
-            // control of the collision throughout -- we were passable and they
-            // chose to occupy us -- and the alternative is two players wedged
-            // solid with neither able to move out.  spawn_tdeath skips its own
-            // owner, so this cannot kill us.
-            if (wedged)
-                spawn_tdeath(self.origin, self);
+                // Anyone still standing inside us is telefragged.  They held
+                // control of the collision throughout -- we were passable and they
+                // chose to occupy us -- and the alternative is two players wedged
+                // solid with neither able to move out.  spawn_tdeath skips its own
+                // owner, so this cannot kill us.
+                if (wedged)
+                    spawn_tdeath(self.origin, self);
+            }
+
+            self.alpha = 0;   // opaque again
         }
-
-        self.alpha = 0;   // opaque again
     }
 
     if (self.impulse) {

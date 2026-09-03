@@ -584,7 +584,7 @@ void RegisterPlayerListener() {
     // Register unconditionally: the callback's !tf_forcecolors path restores
     // drawmask = MASK_ENGINE, so players draw normally with the colour feature
     // off, exactly as the flag listeners in TFX_Flag_Init() do.
-    if (isdemo())
+    if (isdemo() || !CVARF(cg_player_listener))
         return;
 
     deltalisten("progs/player.mdl", CSQC_UpdatePlayer, 0);

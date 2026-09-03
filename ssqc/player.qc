@@ -468,6 +468,13 @@ void () PlayerDie = {
     if (deathmatch || coop)
         DropBackpack();
 
+    // End the spawn window here rather than leaving it to PlayerPreThink.
+    // We have already set SOLID_NOT below, so the expiry block declines to
+    // touch solidity and the window would otherwise linger on a corpse --
+    // and respawning re-arms it regardless.
+    self.spawn_protect_until = 0;
+    self.alpha = 0;
+
     self.tfstate |= TFSTATE_NO_WEAPON;
     self.view_ofs = '0 0 -8';
     self.deadflag = DEAD_DYING;

@@ -743,6 +743,23 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 // stays whoever they are pretending to be, just faded.
 const float kSpawnProtectAlpha = 0.6;
 
+// Spawn-protected players are SOLID_CORPSE, which a default trace passes
+// straight through -- so without this the other team could not shoot them.
+// Widen the shooter's mask around the trace itself; nothing runs in between,
+// so it cannot leak into their own movement traces.
+//
+// Applied for every shooter, since a trace cannot ask whose side the target is
+// on.  Harmless: a teammate's shot registers but TF_T_Damage discards same
+// team damage.  Nothing else in the mod uses SOLID_CORPSE -- dead players are
+// SOLID_NOT -- so this can only ever match a spawn-protected player.
+void HitscanBegin(entity e) {
+    e.hitcontentsmaski = CONTENTBITS_BOXSOLID | CONTENTBIT_CORPSE;
+}
+
+void HitscanEnd(entity e) {
+    e.hitcontentsmaski = 0;
+}
+
 float SpawnProtectActive(entity p) {
     return p.spawn_protect_until && time <= p.spawn_protect_until;
 }

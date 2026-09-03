@@ -822,11 +822,13 @@ static struct {
     float t[3];
     vector o[3];
     float last_seq, lat, newframe, valid;
+    float maxlat;   // latency ceiling
 } lm;
 
 static void PM_LerpReset() {
     lm.valid = lm.lat = lm.newframe = 0;
     lm.last_seq = -1;
+    lm.maxlat = kLerpMaxLat;
 }
 
 static void PM_LerpSample() {
@@ -846,56 +848,172 @@ static void PM_LerpSample() {
     lm.o[2] = lm.o[1]; lm.o[1] = lm.o[0]; lm.o[0] = o;
 
     lm.last_seq = seq;
+    lm.maxlat = kLerpMaxLat;
     lm.newframe = TRUE;
     if (lm.valid < 3)
         lm.valid++;
 }
 
-// Spectating gets the same ezQuake servo, fed from a different source.
-// PM_LerpEye only needs a timestamped position buffer, and pmove is disabled
-// while spectating, so lm is free to reuse -- only the sampler differs:
-// tracked position on each new server frame, rather than a replayed prediction.
-DEFCVAR_FLOAT(fopm_spec_lerp, 0);
-
-static float slm_seq;
-
-static void PM_SpecSample() {
-    if (servercommandframe == slm_seq)
-        return;
-    slm_seq = servercommandframe;
-
-    vector o = pmove_org;
-    if (lm.valid && vlen(o - lm.o[0]) > kLerpTeleport)
-        PM_LerpReset();
-
-    lm.t[2] = lm.t[1]; lm.t[1] = lm.t[0]; lm.t[0] = cltime;
-    lm.o[2] = lm.o[1]; lm.o[1] = lm.o[0]; lm.o[0] = o;
-
-    lm.newframe = TRUE;
-    if (lm.valid < 3)
-        lm.valid++;
+// Spectating needs a different tool than the pmove path.  That servo is a
+// jitter buffer: it reconstructs motion from a *stepped* signal by holding
+// back and interpolating between discrete updates.  The spectator position is
+// already dense -- the engine interpolates it -- but noisy, so there are no
+// steps to bridge and delaying it just adds lag without removing the shake.
+// Widening the buffer measurably did not help.
+//
+// A noisy continuous signal wants a low-pass instead: follow the target with
+// a fixed time constant, so high-frequency shake is attenuated while real
+// motion still comes through a beat later.
+// Shortest way round, so yaw crossing 180 does not spin the camera.  Loops
+// rather than a single test: one subtraction only normalises a delta already
+// inside +-540, and spec_ang can be arbitrarily stale after a switch.
+static float AngleDelta(float cur, float target) {
+    float d = target - cur;
+    while (d > 180)  d -= 360;
+    while (d < -180) d += 360;
+    return d;
 }
 
-static vector PM_LerpEye(vector fallback);
+// Beyond this in a single frame it is a spectate switch or a teleport, not
+// someone turning -- interpolating across it swings the camera the long way.
+const float kSpecAngSnap = 60;
+
+float spec_have;
+vector spec_eye;
+vector spec_ang;
+float spec_outlier;   // consecutive frames the incoming sample looked wrong
+
+// The spectator view, smoothed.
+//
+// The engine's own camera is already interpolated per frame, so there is
+// nothing to reconstruct: delaying it cannot reduce roughness (shifting a
+// sequence leaves every frame-to-frame delta unchanged) and interpolating it
+// only recovers detail a stepped source would have lost.  A low-pass is the
+// one mechanism that actually smooths, and it pays for it in lag.
+//
+// Earlier versions here inferred timing they did not need -- an adaptive
+// jitter buffer, a time-based delay, a whole-frame ring -- and each measured
+// identical to doing nothing, because none of them filtered.
+DEFCVAR_FLOAT(fopm_spec_lerp, 1);     // master switch
+DEFCVAR_FLOAT(fopm_spec_filter, 0.05);  // low-pass time constant, seconds
+
+// Turn rate, deg/sec, at which the filter runs twice as fast.
+//
+// A flick is a deliberate fast turn, not a discontinuity, so it never trips
+// the teleport snap -- the filter simply rounds it off and the camera
+// undershoots where the player actually looked.  Rather than lower tau
+// globally and lose the smoothing everywhere, scale it by how fast the aim is
+// moving:
+//
+//     tau_eff = tau / (1 + (turn/flick)^2)
+//
+// Continuous and monotonic, with no threshold to cross -- an earlier version
+// ramped between two cutoffs and the knees at each end made the response step,
+// which is the chop.  Here the filter simply gets progressively quicker the
+// faster the player turns, and never fully stops filtering.
+DEFCVAR_FLOAT(fopm_spec_flick, 1500);
+
+vector spec_raw_eye, spec_raw_ang;    // last accepted sample, for outlier tests
+float spec_last_t;
+
+// Flick detection runs at server rate, not render rate.  A render frame is a
+// few ms with jittery timing, so dividing a small angular delta by it
+// amplifies that jitter -- which is how a steady 700 deg/sec turn read as
+// 5000.  Server frames are ~13ms and regularly spaced, so the same absolute
+// timing error matters far less and the larger delta carries more signal.
+vector spec_sv_ang;
+float spec_sv_t, spec_sv_seq, spec_turn;
 
 // TRUE if it took over the view.
 float PM_SpecView() {
+    // Must actually be spectating.  !PM_Enabled() alone is not enough: it is
+    // also true for a live player with pmove off, and for a dead one -- and
+    // taking their view over freezes it in place.
+    //
     // player_localentnum <= 32 means we are viewing from a real player, the
     // same test TrackingPlayer() makes in main.qc (which compiles later).
-    if (!CVARF(fopm_spec_lerp) || PM_Enabled() || player_localentnum > 32) {
-        PM_LerpReset();
-        slm_seq = 0;
+    if (!CVARF(fopm_spec_lerp) || !game_state.is_spectator || PM_Enabled() ||
+        player_localentnum > 32) {
+        spec_have = FALSE;
         return FALSE;
     }
 
-    PM_SpecSample();
+    // Read before we write: the engine establishes the view each frame before
+    // calling CSQC_UpdateView, so this is its value and not our last one.  It
+    // is the eye already, so no STAT_VIEWHEIGHT is wanted.
+    vector target = getviewprop(VF_ORIGIN);
+    vector aim = getviewprop(VF_ANGLES);
 
-    vector eye = PM_LerpEye(pmove_org);
-    eye.z += getstatf(STAT_VIEWHEIGHT);
+    float first = !spec_have;
 
-    setviewprop(VF_ORIGIN, eye);
-    makevectors(view_angles);
-    SetListener(eye, v_forward, v_right, v_up);
+    if (servercommandframe != spec_sv_seq) {
+        float sdt = cltime - spec_sv_t;
+        if (spec_sv_seq && sdt > 0)
+            spec_turn = (fabs(AngleDelta(spec_sv_ang.y, aim.y)) +
+                         fabs(AngleDelta(spec_sv_ang.x, aim.x))) / sdt;
+
+        spec_sv_seq = servercommandframe;
+        spec_sv_ang = aim;
+        spec_sv_t = cltime;
+    }
+
+    // cltime, not frametime.  frametime is the limiter's idealised output and
+    // can arrive as ~0, which the old max(frametime, 0.0001) floor turned into
+    // a 5000 deg/sec reading from a half-degree step -- a phantom flick that
+    // opened the filter and juddered.
+    float dt = cltime - spec_last_t;
+    spec_last_t = cltime;
+    if (dt <= 0)
+        dt = frametime;
+    dt = bound(0.001, dt, 0.25);
+
+    // Against the last raw sample, not the rendered one: the rendered one
+    // legitimately trails, and calling that a discontinuity would snap
+    // constantly.
+    float big = !first &&
+                (vlen(target - spec_raw_eye) > kLerpTeleport ||
+                 fabs(AngleDelta(spec_raw_ang.y, aim.y)) > kSpecAngSnap ||
+                 fabs(AngleDelta(spec_raw_ang.x, aim.x)) > kSpecAngSnap);
+
+    spec_outlier = big ? spec_outlier + 1 : 0;
+
+    // A spectate switch persists; a single bad sample does not.  Believing the
+    // first one flashed to the garbage and back, so hold instead and only
+    // accept the jump once it repeats.
+    if (first || spec_outlier >= 2) {
+        spec_raw_eye = spec_eye = target;
+        spec_raw_ang = spec_ang = aim;
+        spec_have = TRUE;
+        spec_outlier = 0;
+    } else if (!big) {
+        spec_raw_eye = target;
+        spec_raw_ang = aim;
+
+        float tau = CVARF(fopm_spec_filter);
+        if (tau > 0) {
+            float lo = CVARF(fopm_spec_flick);
+            if (lo > 0) {
+                float r = spec_turn / lo;
+                tau = tau / (1 + r * r);
+            }
+
+            float k = bound(0, dt / tau, 1);
+
+            spec_eye += (target - spec_eye) * k;
+            spec_ang.x += AngleDelta(spec_ang.x, aim.x) * k;
+            spec_ang.y += AngleDelta(spec_ang.y, aim.y) * k;
+            spec_ang.z += AngleDelta(spec_ang.z, aim.z) * k;
+        } else {
+            spec_eye = target;
+            spec_ang = aim;
+        }
+    }
+    // else: outlier, hold the previous eye and aim for this frame
+
+    setviewprop(VF_ORIGIN, spec_eye);
+    setviewprop(VF_ANGLES, spec_ang);
+    makevectors(spec_ang);
+    SetListener(spec_eye, v_forward, v_right, v_up);
     return TRUE;
 }
 
@@ -913,7 +1031,7 @@ static vector PM_LerpEye(vector fallback) {
         lm.lat -= min(frametime * 0.005, 0.001);  // healthy: bleed latency off
 
     lm.newframe = FALSE;
-    lm.lat = min(max(lm.lat, 0), kLerpMaxLat);
+    lm.lat = min(max(lm.lat, 0), lm.maxlat > 0 ? lm.maxlat : kLerpMaxLat);
 
     simtime = cltime - lm.lat;
 
@@ -1135,8 +1253,22 @@ void PM_InputFrame() {
 
 // The eye actually being rendered from: ours when fo_pmove owns the view, the
 // engine's otherwise.  Lets the smoothness metric measure either path.
+// The eye actually being rendered from.
+//
+// Not pmove_org when spectating: that is a raw stat stepping at server rate,
+// while the engine's camera is interpolated per frame.  Measuring pmove_org
+// reported roughness ~1.9 for a camera that is in fact smooth, which is what
+// sent the spectator smoothing work chasing a problem that was not there.
 vector PM_ViewOrigin() {
-    return PM_Enabled() ? pm.vieworg : pmove_org;
+    if (PM_Enabled())
+        return pm.vieworg;
+    if (spec_have)
+        return spec_eye;
+    if (!game_state.is_spectator)
+        return pmove_org;
+
+    vector v = getviewprop(VF_ORIGIN);
+    return v;
 }
 
 void PM_UpdateView() {
@@ -1181,6 +1313,8 @@ static struct {
     vector last_eye, last_vel;
 
     float n;                  // frames contributing to roughness
+    vector last_ang;
+    float last_turn, sum_dturn, sum_turn, peak_turn;
     float sum_v, sum_dv;      // apparent speed, and its frame-to-frame change
     float peak_v;
 
@@ -1202,6 +1336,7 @@ static void PM_SmoothReset() {
     sm.moving = sm.stalls = 0;
     sm.sum_pace = sm.peak_pace = 0;
     sm.sum_lat = sm.peak_lat = 0;
+    sm.sum_dturn = sm.sum_turn = sm.last_turn = sm.peak_turn = 0;
 }
 
 // Call once per rendered frame with whatever eye position is authoritative.
@@ -1241,6 +1376,21 @@ void PM_SmoothProbe(vector eye) {
     float lat = CVARF(fopm_lerpmove) ? lm.lat : 0;
     sm.sum_lat += lat;
     sm.peak_lat = max(sm.peak_lat, lat);
+
+    // Angular roughness, measured the same way: frame-to-frame turn rate, and
+    // how much that rate changes.  A positional probe cannot see angle judder
+    // at all, yet angle noise rotates every pixel -- which is why the eye has
+    // measured smooth while spectating still looked wrong.
+    vector a = getviewprop(VF_ANGLES);
+    float turn = (fabs(AngleDelta(sm.last_ang.x, a.x)) +
+                  fabs(AngleDelta(sm.last_ang.y, a.y))) / dt;
+    if (sm.n > 0) {
+        sm.sum_dturn += fabs(turn - sm.last_turn);
+        sm.sum_turn += turn;
+        sm.peak_turn = max(sm.peak_turn, turn);
+    }
+    sm.last_ang = a;
+    sm.last_turn = turn;
 
     float pace = fabs(frametime - dt);
     sm.sum_pace += pace;
@@ -1286,6 +1436,10 @@ void PM_SmoothStatus() {
            mean_v > 0 ? sm.sum_dv / sm.sum_v : 0);
     // The figure to trust while bunnyhopping: direction change and jump Z are
     // excluded, so this is much closer to pure artifact.
+    printf("  a-roughness %0.4f   (mean |d turnrate| / mean turnrate)\n",
+           sm.sum_turn > 0 ? sm.sum_dturn / sm.sum_turn : 0);
+    printf("  turnrate    %0.0f / %0.0f deg/s  (mean / peak)\n",
+           sm.n > 0 ? sm.sum_turn / sm.n : 0, sm.peak_turn);
     printf("  h-roughness %0.4f   (mean |d|v_xy|| / mean |v_xy|)\n",
            sm.sum_hv > 0 ? sm.sum_dhv / sm.sum_hv : 0);
     printf("  stalls      %0.2f%%  (%d of %d moving frames)\n",

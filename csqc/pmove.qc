@@ -851,6 +851,54 @@ static void PM_LerpSample() {
         lm.valid++;
 }
 
+// Spectating gets the same ezQuake servo, fed from a different source.
+// PM_LerpEye only needs a timestamped position buffer, and pmove is disabled
+// while spectating, so lm is free to reuse -- only the sampler differs:
+// tracked position on each new server frame, rather than a replayed prediction.
+DEFCVAR_FLOAT(fopm_spec_lerp, 0);
+
+static float slm_seq;
+
+static void PM_SpecSample() {
+    if (servercommandframe == slm_seq)
+        return;
+    slm_seq = servercommandframe;
+
+    vector o = pmove_org;
+    if (lm.valid && vlen(o - lm.o[0]) > kLerpTeleport)
+        PM_LerpReset();
+
+    lm.t[2] = lm.t[1]; lm.t[1] = lm.t[0]; lm.t[0] = cltime;
+    lm.o[2] = lm.o[1]; lm.o[1] = lm.o[0]; lm.o[0] = o;
+
+    lm.newframe = TRUE;
+    if (lm.valid < 3)
+        lm.valid++;
+}
+
+static vector PM_LerpEye(vector fallback);
+
+// TRUE if it took over the view.
+float PM_SpecView() {
+    // player_localentnum <= 32 means we are viewing from a real player, the
+    // same test TrackingPlayer() makes in main.qc (which compiles later).
+    if (!CVARF(fopm_spec_lerp) || PM_Enabled() || player_localentnum > 32) {
+        PM_LerpReset();
+        slm_seq = 0;
+        return FALSE;
+    }
+
+    PM_SpecSample();
+
+    vector eye = PM_LerpEye(pmove_org);
+    eye.z += getstatf(STAT_VIEWHEIGHT);
+
+    setviewprop(VF_ORIGIN, eye);
+    makevectors(view_angles);
+    SetListener(eye, v_forward, v_right, v_up);
+    return TRUE;
+}
+
 static vector PM_LerpEye(vector fallback) {
     if (lm.valid < 3)
         return fallback;

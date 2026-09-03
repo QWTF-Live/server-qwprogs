@@ -230,6 +230,7 @@ void PMD_DrawGraphs(float width);
 void PM_SmoothProbe(vector eye);
 void PM_SmoothStatus();
 vector PM_ViewOrigin();
+float PM_SpecView();
 void WP_PreviewSentry();
 
 DEFCVAR_FLOAT(fov, 90);
@@ -353,6 +354,8 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
 
     if (PM_Enabled())
         PM_UpdateView();
+    else
+        PM_SpecView();
 
     PM_SmoothProbe(PM_ViewOrigin());
 

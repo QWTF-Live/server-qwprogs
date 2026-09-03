@@ -54,7 +54,10 @@ static EntHash* EntGet(int ent_num) {
 static float TeamNo(entity player) {
     // This is horrific, but the most immediately accessible thing we seem to
     // have.  getentity() is just unreliable.
-    float pc = stof(infokey(player, INFOKEY_P_BOTTOMCOLOR));
+    //
+    // getplayerkeyvalue, not infokey: infokey is an SSQC builtin and does not
+    // exist in CSQC.  Player indices are 0-based, entity numbers 1-based.
+    float pc = stof(getplayerkeyvalue(player.entnum - 1, "bottomcolor"));
     switch (pc) {
         case 13: return TeamBlue;
         case 4: return TeamRed;

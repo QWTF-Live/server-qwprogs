@@ -245,6 +245,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define MSG_NEXT_END_TIME   31
 #define MSG_MENU_CANCEL     32
 #define MSG_MIGRATE_LOGIN   33
+#define MSG_SPAWN_DEBUG     34
 
 #define FLAGINFO_HOME       1
 #define FLAGINFO_CARRIED    2

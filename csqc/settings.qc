@@ -125,8 +125,11 @@ void UpdateCachedCvars() {
     switch (batch) {
     case 0:
         CVAR.r_rocketlight_colour = stov_def(CVARS(r_rocketlight_colour), '2.0 1.0 0.25');
+        // Bright and saturated, and at matching intensity: colormod above 1
+        // overbrightens, and team was at 1x against the enemy's 2x, so team
+        // players read as washed out beside them.
         CVAR.tf_color_enemy = stov_def(CVARS(tf_color_enemy), '0 2 0');
-        CVAR.tf_color_team = stov_def(CVARS(tf_color_team), '1 0 1');
+        CVAR.tf_color_team = stov_def(CVARS(tf_color_team), '2 0 2');
         CVAR.tf_color_attack = stov_def(CVARS(tf_color_attack), '0.5 0.5 2');
         CVAR.tf_color_defense = stov_def(CVARS(tf_color_defense), '2 0.5 0.5');
         break;

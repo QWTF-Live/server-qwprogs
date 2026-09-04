@@ -106,7 +106,6 @@ float (float tno) TeamFortress_TeamGetNoPlayersExcludingAllTime;
 void UpdateClientMenu_Close(entity pl);
 void (entity pl, string...count) Status_Print;
 void () ActivateOrgGame;
-string CF_GetSettingRaw(string s, string l, string d);
 
 #define kPugRosterMax 10
 #define kPugNumClasses 12
@@ -381,10 +380,6 @@ void Pug_CaptureRoster() {
         pug.roster[(t - 1) * kPugRosterMax + n] = p.tfl_username;
         pug.roster_n[t - 1] = n + 1;
     }
-
-    printf("Pug: roster locked, blue %g red %g, all-time att %g def %g\n",
-           pug.roster_n[0], pug.roster_n[1],
-           pug.alltime_n[0], pug.alltime_n[1]);
 }
 
 // Was this login all-time in that role when the pug started?
@@ -1603,13 +1598,7 @@ float Pug_SetScore(float blue, float red) {
 // Called from worldspawn init.  Does nothing at all unless `localinfo pug` is
 // set, so quadmode and clan mode are untouched by its presence.
 void Pug_Init() {
-    string raw = CF_GetSettingRaw("pug", "pug", "off");
     pugmode = CF_GetSetting("pug", "pug", "off");
-
-    // Says what it read and what it decided, once per map: "nothing happened"
-    // is otherwise indistinguishable between the setting not being seen, the
-    // init not running, and another mode having taken the round entity.
-    printf("Pug: localinfo pug = \"%s\" -> %g\n", raw, pugmode);
 
     if (!pugmode)
         return;
@@ -1630,8 +1619,6 @@ void Pug_Init() {
     if (quadmode || clanbattle) {
         bprint(PRINT_HIGH, "Pug mode NOT started: turn off "
                            "localinfo quadmode and localinfo c first.\n");
-        printf("Pug: refused, quadmode=%g clanbattle=%g\n",
-               quadmode, clanbattle);
         pugmode = FALSE;
         return;
     }

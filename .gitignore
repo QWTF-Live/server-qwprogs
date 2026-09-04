@@ -6,3 +6,7 @@
 fteqcc64
 .vscode/tasks.json
 .gitignore
+
+# vim swap files
+*.sw[a-p]
+*.swo

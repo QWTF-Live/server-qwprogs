@@ -249,8 +249,17 @@ void (vector org) spawn_tfog = {
     multicast(org, MULTICAST_PHS);
 };
 
+float SpawnProtectActive(entity p);
+
 void () tdeath_touch = {
     if (other == self.owner)
+        return;
+
+    // Spawn protection makes a player pass-through, so someone spawning on
+    // top of one is not actually stuck and has nothing to telefrag their way
+    // out of -- killing them would punish the protection rather than the
+    // collision it prevents.
+    if (SpawnProtectActive(other))
         return;
 
     if (other.classname == "player") {

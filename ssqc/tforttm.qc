@@ -380,11 +380,9 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
 };
 
 float (float tno) TeamFortress_TeamSet = {
-    // Quad mode always requires a login, regardless of the loginrequired
-    // setting -- org_game already covers it, but only while that setting is
-    // on.  Other org games stay gated on it.
-    if ((quadmode || (org_game && login_required)) &&
-        !TFL_IsLoggedIn() && tno >= 1 && tno <= 4) {
+    // login_required is now exactly "quad or pug mode", so it is the whole
+    // rule rather than one term of it.
+    if (login_required && !TFL_IsLoggedIn() && tno >= 1 && tno <= 4) {
         sprint(self, PRINT_HIGH, "You need to sign in first. Get your login token at http://discord.qwtf.live\n");
         return 0;
     }

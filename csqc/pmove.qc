@@ -595,6 +595,19 @@ static void RunPlayerPhysics() {
     runstandardplayerphysics(ent);
 }
 
+// Server has us at MOVETYPE_NONE -- between pug rounds, and anywhere else it
+// takes a player out of the simulation.  Consume the input frames so the
+// sequence still advances (reconciliation expects pm.seq to reach endframe)
+// but run no physics, so the predicted origin stays put instead of walking off
+// and being yanked back by error correction.
+static void RunFrozenMovement(float endframe) {
+    entity ent = pm.ent;
+
+    ent.velocity = '0 0 0';
+    while (pm.seq <= endframe)
+        pm.seq++;
+}
+
 static void RunDeadMovement(float endframe) {
     entity ent = pm.ent;
     float held_movetype = ent.movetype;
@@ -639,6 +652,12 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     if (pm.active_pmsd != pmsd || pm.seq > endframe) {
         ASSERTF_GT(endframe, pm.server_seq);
         PM_ActivatePMS(pmsd);
+    }
+
+    if (!game_state.is_spectator &&
+        pstate_server.movetype == MOVETYPE_NONE) {
+        RunFrozenMovement(endframe);
+        return;
     }
 
     if (!game_state.is_spectator && !game_state.is_alive) {

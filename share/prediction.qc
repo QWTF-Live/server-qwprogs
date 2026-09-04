@@ -20,6 +20,7 @@ enumflags {
     FOWP_WF,
     FOWP_AF,
     FOWP_CLASS,
+    FOWP_MOVETYPE,
     FOWP_RELOAD,
     FOWP_SPECIAL,
     FOWP_RNG0,
@@ -93,6 +94,7 @@ struct predict_tf_state {
     ConcState conc_state;
 
     float tfstate;
+    float movetype;
     float last_prime;
     float csqc_maxspeed;
 
@@ -391,6 +393,7 @@ static float Prediction_ChangedMask(entity player, entity src) {
         src.predict_flags |= PF_SAVE_EXPLOSION;
     else
         src.predict_flags &= ~PF_SAVE_EXPLOSION;
+
     player.predict_state.server_time = time;
     player.predict_state.client_ping = src.client_ping;
 
@@ -407,6 +410,7 @@ static float Prediction_ChangedMask(entity player, entity src) {
     M4(FOWP_CLASSIC_CONC, conc_state.next, conc_state.mag,
                           conc_state.next_push, conc_state.next_flip);
     M3(FOWP_CONCFINISH, conc_finished, conc_amp, conc_cap_time);
+    M1(FOWP_MOVETYPE, movetype);
     M1(FOWP_WF, weaponframe);
     M1(FOWP_AF, attack_finished);
     M2(FOWP_THINK, client_nextthink, client_thinkindex);
@@ -598,6 +602,10 @@ void TFL_RecvPredictState() {
 
     if (mask & FOWP_CLASS) {
         COMM(Byte, playerclass);
+    }
+
+    if (mask & FOWP_MOVETYPE) {
+        COMM(Byte, movetype);
     }
 
     if (mask & FOWP_IMPULSE) {

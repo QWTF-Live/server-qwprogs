@@ -272,9 +272,6 @@ void() CSQC_Parse_Event = {
                     FO_MENU_VOTE.options[5].value = ftos(readfloat());
                     TF_Menu_Vote(FALSE);
                     break;
-                case CLIENT_MENU_CAPTAIN_PICK:
-                    TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_PICK, 0);
-                    break;
                 case CLIENT_MENU_MAPS:
                     showVoteMenu(!getHudPanel(HUDP_MAP_MENU)->Display);
                     break;

@@ -114,8 +114,6 @@ float player_menu_type;
 float admin_menu_next_update;
 float captain1;
 float captain2;
-float captain1_temp;
-float captain2_temp;
 float is_admin;
 float motd_expiry;
 float quad_round;

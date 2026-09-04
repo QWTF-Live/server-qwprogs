@@ -14,6 +14,12 @@ void (float force) TF_Menu_Class;
 void (float force) showVoteMenu;
 void TF_Menu_Admin_Players(float force, float type, float page);
 void FO_Hud_SetDisplay(PanelID id, float display);
+void (float force) TF_Menu_Options;
+
+// Which row is being activated, set immediately before each action() call.
+// action() takes no arguments, so a handler shared by several generated rows
+// -- the options menu -- has no other way to tell which one fired.
+float MenuActionIndex;
 
 typedef struct {
     string shortcut;    //key to press. if omitted - mouse only
@@ -82,7 +88,7 @@ var fo_menu FO_MENU_GAME = {
         MenuSpacer,
         {"4","Spectate", "","Do not participate in the game, but observe as a ghost",FO_MENU_STATE_NORMAL,{localcmd("observe\n"); Menu_Cancel();},MENU_BUTTON},
         {"5","Server Admin", "","Admin options for the server",FO_MENU_STATE_DISABLED,{TF_Menu_Admin_Main(TRUE);},MENU_BUTTON},
-        {"6","Captain's Menu", "","",FO_MENU_STATE_DISABLED,{TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_PICK, 0);},MENU_BUTTON},
+        {"6","Options", "","Client settings",FO_MENU_STATE_NORMAL,{TF_Menu_Options(TRUE);},MENU_BUTTON},
         {"7","Map Menu", "","",FO_MENU_STATE_NORMAL,{showVoteMenu(TRUE);},MENU_BUTTON},
         MenuSpacer,
         {"0","Main Menu","","",FO_MENU_STATE_NORMAL,{localcmd("tf_menu main\n"); Menu_Cancel();},MENU_BUTTON},
@@ -417,7 +423,6 @@ var fo_menu FO_MENU_ADMIN_MODES = {
         {"2","Clan Mode","","Game has a prematch",FO_MENU_STATE_NORMAL,{localcmd("cmd clanmode\n");},MENU_BORDER_WARNING},
         {"3","Quad Mode","","Play for a set number of rounds, designed for attack vs defence",FO_MENU_STATE_NORMAL,{localcmd("cmd quadmode\n");},MENU_BORDER_WARNING},
         {"4","Duel Mode","","Simplifies 1 on 1 action",FO_MENU_STATE_NORMAL,{localcmd("cmd duelmode\n");},MENU_BORDER_WARNING},
-        {"5","Captains Mode","","Select captains who can then pick their teams",FO_MENU_STATE_NORMAL,{TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_1, 0);},MENU_BORDER_WARNING},
         {"8","New Balance","","New Balance Test",FO_MENU_STATE_NORMAL,{localcmd("cmd new_balance");},MENU_BORDER_WARNING},
         {"9","Force Start","","Skip prematch and start the game\nPlease use sparingly",FO_MENU_STATE_NORMAL,{localcmd("cmd forcestart\n");},MENU_BORDER_WARNING},
         {"0","Close Menu","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
@@ -429,8 +434,10 @@ var fo_menu FO_MENU_ADMIN_MODES = {
         FO_MENU_ADMIN_MODES.options[1].value = modeStatus(SERVER_ADMIN.clanmode);
         FO_MENU_ADMIN_MODES.options[2].value = modeStatus(SERVER_ADMIN.quadmode);
         FO_MENU_ADMIN_MODES.options[3].value = modeStatus(SERVER_ADMIN.duelmode);
-        FO_MENU_ADMIN_MODES.options[4].value = SERVER_ADMIN.captainmode?"on":"off";
-        FO_MENU_ADMIN_MODES.options[8].value = modeStatus(SERVER_ADMIN.new_balance);
+        // New Balance is row 4 now that Captains Mode is gone.  This was
+        // writing to options[8], the "Next - Settings" row, so New Balance
+        // never showed its value and Next showed one it had no business with.
+        FO_MENU_ADMIN_MODES.options[4].value = modeStatus(SERVER_ADMIN.new_balance);
     }
 };
 var fo_menu FO_MENU_ADMIN_SETTINGS = {
@@ -481,23 +488,6 @@ void execute_admin_players_force_spec(float choice, float page) {
     Menu_Cancel();
     TF_Menu_Admin_Main(TRUE);
 }
-void execute_admin_players_captain1(float choice, float page) {
-    string userid = getplayerkeyvalue(choice + (page * 9), "userid");
-    captain1_temp = stof(userid);
-    TF_Menu_Admin_Players(TRUE, CLIENT_MENU_CAPTAIN_2, 0);
-}
-void execute_admin_players_captain2(float choice, float page) {
-    string userid = getplayerkeyvalue(choice + (page * 9), "userid");
-    captain2_temp = stof(userid);
-    //Send server cmd setting captains; reset everyone to observer; spam out captains set message
-    localcmd("cmd captainmode ", ftos(captain1_temp), " ", userid, "\n");
-    TF_Menu_Admin_Main(TRUE);
-}
-void execute_admin_players_captain_pick(float choice, float page) {
-    string userid = getplayerkeyvalue(choice + (page * 9), "userid");
-    localcmd("cmd captainpick ", userid, "\n");
-}
-
 var fo_menu FO_MENU_ADMIN_PLAYERS = {
     [0,0], [300,300], "Players", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_SHOW_VALUES | FO_MENU_FLAG_WARNING | FO_MENU_FLAG_ALLOW_INTERMISSION, {
         {"1","","","",FO_MENU_STATE_NORMAL,{execute_admin_players(0, FO_MENU_ADMIN_PLAYERS.page);},MENU_BG_DARK},
@@ -530,25 +520,6 @@ void action_admin_players(float type) = {
         if(type == CLIENT_MENU_ADMIN_FORCE_SPEC && spec){
             enable = FALSE;
         }
-        if(type == CLIENT_MENU_CAPTAIN_PICK) {
-            if(spec) {
-                enable = FALSE;
-            }
-            if(team) {
-                enable = FALSE;
-            }
-            if(i + (page * 9) == player_localnum) {
-                enable = FALSE;
-            }
-        }
-        if(type == CLIENT_MENU_CAPTAIN_1 || type == CLIENT_MENU_CAPTAIN_2) {
-            if(spec) {
-                enable = FALSE;
-            }
-            if(userid == captain1_temp) {
-                enable = FALSE;
-            }
-        }
         if(enable) {
             FO_MENU_ADMIN_PLAYERS.options[i].state = FO_MENU_STATE_NORMAL;
             FO_MENU_ADMIN_PLAYERS.options[i].name = n;
@@ -562,9 +533,6 @@ void action_admin_players(float type) = {
             FO_MENU_ADMIN_PLAYERS.options[i].colour = MENU_BG_DARK;
         }
     }
-}
-void action_admin_players_captain_pick() = {
-    action_admin_players(CLIENT_MENU_CAPTAIN_PICK);
 }
 var fo_menu FO_MENU_ADMIN_ROUNDS = {
     [0,0], [300,300], "Quad Rounds", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_SHOW_VALUES | FO_MENU_FLAG_WARNING | FO_MENU_FLAG_ALLOW_INTERMISSION, {
@@ -756,6 +724,7 @@ vector fo_menu_draw(fo_menu * menu) = {
                 if(menu.options[i].state == FO_MENU_STATE_NORMAL) {
                     //if(hud_colour_button(strcat("fo_menu_",menu.title,"_",menu.options[i].name), position + [padding, titleoffset + row * (buttonsize.y + padding)] + shortcutoffset, buttonsize - shortcutoffset - valueoffset, menu.options[i].name, menu.options[i].colour, smalltext, SUI_ALIGN_START, padding * 3 + smalltext.x)) {
                     if(hud_colour_button(menu.options[i].id, buttonpos, buttonsize, menu.options[i].name, menu.options[i].colour, smalltext, MENU_TEXT_1, alignment, shortcutoffset.x, FO_MENU_SURFACE_ALPHA * row_a, row_a, 0)) {
+                        MenuActionIndex = i;
                         menu.options[i].action();
                     }
                 } else if(menu.options[i].state == FO_MENU_STATE_DISABLED) {
@@ -850,6 +819,7 @@ float fo_menu_process_input(fo_menu * menu, float scan) = {
         for(float i = 0; i < menu.num_opts; i++) {
             if(menu.options[i].shortcut == button) {
                 if(menu.options[i].state == FO_MENU_STATE_NORMAL) {
+                    MenuActionIndex = i;
                     menu.options[i].action();
                 }
                 //If a shortcut matches, always absorb it, even if disabled
@@ -913,8 +883,6 @@ void TF_Menu_Game(float force, float first = FALSE) = {
         
         //FO_MENU_GAME.num_opts = 7;
         FO_MENU_GAME.options[5].state = is_admin?FO_MENU_STATE_NORMAL:FO_MENU_STATE_DISABLED;
-        //if(is_admin) FO_MENU_GAME.num_opts++;
-        FO_MENU_GAME.options[6].state = (userid == captain1 || userid == captain2)?FO_MENU_STATE_NORMAL:FO_MENU_STATE_DISABLED;
         //if(is_admin) FO_MENU_GAME.num_opts++;
         CurrentMenu = &FO_MENU_GAME;
     }
@@ -1255,18 +1223,6 @@ void TF_Menu_Admin_Players(float force, float type, float page) = {
     } else if(type == CLIENT_MENU_ADMIN_FORCE_SPEC) {
         FO_MENU_ADMIN_PLAYERS.title = strcat("Force Spec ", ftos(page + 1), "/5");
         execute_admin_players = execute_admin_players_force_spec;
-    } else if(type == CLIENT_MENU_CAPTAIN_1) {
-        captain1_temp = 0;
-        captain2_temp = 0;
-        FO_MENU_ADMIN_PLAYERS.title = strcat("Captain 1 ", ftos(page + 1), "/5");
-        execute_admin_players = execute_admin_players_captain1;
-    } else if(type == CLIENT_MENU_CAPTAIN_2) {
-        FO_MENU_ADMIN_PLAYERS.title = strcat("Captain 2 ", ftos(page + 1), "/5");
-        execute_admin_players = execute_admin_players_captain2;
-    } else if(type == CLIENT_MENU_CAPTAIN_PICK) {
-        FO_MENU_ADMIN_PLAYERS.title = strcat("Pick teammate ", ftos(page + 1), "/5");
-        execute_admin_players = execute_admin_players_captain_pick;
-        FO_MENU_ADMIN_PLAYERS.update = action_admin_players_captain_pick;
     } else {
         FO_MENU_ADMIN_PLAYERS.title = strcat("Page ", ftos(page + 1), "/5");
         execute_admin_players = execute_admin_players_unknown;
@@ -1345,6 +1301,146 @@ void (float show) showVoteMenu = {
     }
 };
 
+// ---------------------------------------------------------------------------
+// Client options menu
+//
+// Table driven rather than hand-written rows, so adding a setting is one line
+// in FO_OPTIONS and nothing else.  Each entry names a cvar and labels its
+// values positionally: "off;glsl;engine" means 0 is off, 1 is glsl and 2 is
+// engine, and the row cycles through them in that order.
+//
+// Values live in a ";"-separated string rather than a nested array because
+// fteqcc struct initialiser tables do not take an inner array cleanly.
+// ---------------------------------------------------------------------------
+
+#define FO_OPT_MAX_VALUES 6
+
+typedef struct {
+    string cvar;
+    string name;
+    string values;       // ";"-separated, indexed by the cvar's value
+    string description;
+} fo_cvar_option;
+
+fo_cvar_option FO_OPTIONS[] = {
+    {"fo_pmove", "Movement Prediction", "off;on",
+     "Predict your own movement locally instead of waiting for the server"},
+    {"cg_player_outline", "Player Outlines", "off;glsl;engine",
+     "Team-coloured outline around players you can see"},
+    {"cg_draw_grentimer", "Player Grenade Timers", "off;on",
+     "Countdown over teammates who have primed a grenade"},
+    {"fopm_spec_lerp", "Spectator Smoothing", "off;on",
+     "Smooth the camera when spectating another player"},
+};
+
+// Labels are split out once and zoned: the argv() strings tokenizebyseparator
+// returns are only valid until the next tokenize, and .value is held across
+// frames.  Sized by the menu's own row limit so adding an option stays a
+// one-line change.
+static string fo_opt_labels[FO_MENU_MAX_OPTIONS * FO_OPT_MAX_VALUES];
+static float fo_opt_nvalues[FO_MENU_MAX_OPTIONS];
+
+void Options_Refresh();
+
+static string Options_Label(float opt) {
+    float v = floor(cvar(FO_OPTIONS[opt].cvar));
+    if (v >= 0 && v < fo_opt_nvalues[opt])
+        return fo_opt_labels[opt * FO_OPT_MAX_VALUES + v];
+    // Set to something the table does not name.  Say so rather than handing
+    // back a temporary from ftos, which can be recycled while .value holds it.
+    return "custom";
+}
+
+static void Options_Cycle() {
+    float opt = MenuActionIndex;
+    if (opt < 0 || opt >= FO_OPTIONS.length)
+        return;
+    float n = fo_opt_nvalues[opt];
+    if (n < 1)
+        return;
+
+    // An out-of-range value lands past the end and so wraps back to 0, which
+    // is also how a player digs themselves out of a hand-set odd value.
+    float v = floor(cvar(FO_OPTIONS[opt].cvar)) + 1;
+    if (v < 0 || v >= n)
+        v = 0;
+    cvar_set(FO_OPTIONS[opt].cvar, ftos(v));
+    Options_Refresh();
+}
+
+static void Options_Back() {
+    Menu_Cancel();
+    TF_Menu_Game(TRUE);
+}
+
+var fo_menu FO_MENU_OPTIONS = {
+    [0,0], [300,300], "Options",
+    FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS |
+    FO_MENU_FLAG_SHOW_VALUES | FO_MENU_FLAG_ALLOW_INTERMISSION,
+    {
+        MenuSpacer,  // rows are generated in FO_Options_Init
+    }, 0, TRUE, {
+        Options_Refresh();
+    }
+};
+
+void Options_Refresh() {
+    for (float i = 0; i < FO_OPTIONS.length; i++)
+        FO_MENU_OPTIONS.options[i].value = Options_Label(i);
+}
+
+// Runs before INIT_MENU_IDS assigns the rows their PanelIDs, so writing whole
+// rows here cannot clobber an id.
+void FO_Options_Init() {
+    float row = 0;
+
+    ASSERTD_GE(FO_MENU_MAX_OPTIONS, FO_OPTIONS.length + 2);
+
+    for (float i = 0; i < FO_OPTIONS.length; i++) {
+        float n = tokenizebyseparator(FO_OPTIONS[i].values, ";");
+        if (n > FO_OPT_MAX_VALUES)
+            n = FO_OPT_MAX_VALUES;
+        fo_opt_nvalues[i] = n;
+        for (float j = 0; j < n; j++)
+            fo_opt_labels[i * FO_OPT_MAX_VALUES + j] = strzone(argv(j));
+
+        FO_MENU_OPTIONS.options[row].shortcut = strzone(ftos(i + 1));
+        FO_MENU_OPTIONS.options[row].name = FO_OPTIONS[i].name;
+        FO_MENU_OPTIONS.options[row].value = "";
+        FO_MENU_OPTIONS.options[row].description = FO_OPTIONS[i].description;
+        FO_MENU_OPTIONS.options[row].state = FO_MENU_STATE_NORMAL;
+        FO_MENU_OPTIONS.options[row].action = Options_Cycle;
+        FO_MENU_OPTIONS.options[row].colour = MENU_BUTTON;
+        row++;
+    }
+
+    FO_MENU_OPTIONS.options[row].shortcut = "";
+    FO_MENU_OPTIONS.options[row].name = "";
+    FO_MENU_OPTIONS.options[row].value = "";
+    FO_MENU_OPTIONS.options[row].description = "";
+    FO_MENU_OPTIONS.options[row].state = FO_MENU_STATE_SPACER;
+    row++;
+
+    FO_MENU_OPTIONS.options[row].shortcut = "0";
+    FO_MENU_OPTIONS.options[row].name = "Back";
+    FO_MENU_OPTIONS.options[row].value = "";
+    FO_MENU_OPTIONS.options[row].description = "";
+    FO_MENU_OPTIONS.options[row].state = FO_MENU_STATE_NORMAL;
+    FO_MENU_OPTIONS.options[row].action = Options_Back;
+    FO_MENU_OPTIONS.options[row].colour = MENU_BUTTON;
+    row++;
+
+    FO_MENU_OPTIONS.num_opts = row;
+    Options_Refresh();
+}
+
+void TF_Menu_Options(float force) = {
+    if(fo_hud_menu_active && !force)
+        return;
+    CurrentMenu = &FO_MENU_OPTIONS;
+    fo_hud_menu_active = TRUE;
+}
+
 #define INIT_MENU_IDS(_target) \
     do { \
         _target.id = ++next_id; \
@@ -1396,6 +1492,8 @@ void FO_Hud_Init() {
     INIT_MENU_IDS(FO_MENU_ADMIN_TIMELIMIT);
     INIT_MENU_IDS(FO_MENU_ADMIN_FRAGLIMIT);
     INIT_MENU_IDS(FO_MENU_VOTE);
+    FO_Options_Init();
+    INIT_MENU_IDS(FO_MENU_OPTIONS);
 
     FO_ScoreBoardAssets.icon_ready = InitIfFileExists("textures/wad/icon_ready.png");
     FO_ScoreBoardAssets.icon_chat = InitIfFileExists("textures/wad/icon_chat.png");

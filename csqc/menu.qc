@@ -1321,7 +1321,7 @@ typedef struct {
 fo_cvar_option FO_OPTIONS[] = {
     {"fo_pmove", "Movement Prediction", "off;on",
      "Predict your own movement locally instead of waiting for the server"},
-    {"cg_player_outline", "Player Outlines", "off;glsl;engine",
+    {"cg_player_outline", "Player Outlines", "off;auto;shader;glsl",
      "Team-coloured outline around players you can see"},
     {"cg_draw_grentimer", "Player Grenade Timers", "off;on",
      "Countdown over teammates who have primed a grenade"},
@@ -1329,10 +1329,9 @@ fo_cvar_option FO_OPTIONS[] = {
      "Smooth the camera when spectating another player"},
 };
 
-// Labels are split out once and zoned: the argv() strings tokenizebyseparator
-// returns are only valid until the next tokenize, and .value is held across
-// frames.  Sized by the menu's own row limit so adding an option stays a
-// one-line change.
+// Labels are split out of the table once rather than re-tokenized per frame.
+// Sized by the menu's own row limit so adding an option stays a one-line
+// change.
 static string fo_opt_labels[FO_MENU_MAX_OPTIONS * FO_OPT_MAX_VALUES];
 static float fo_opt_nvalues[FO_MENU_MAX_OPTIONS];
 
@@ -1398,9 +1397,9 @@ void FO_Options_Init() {
             n = FO_OPT_MAX_VALUES;
         fo_opt_nvalues[i] = n;
         for (float j = 0; j < n; j++)
-            fo_opt_labels[i * FO_OPT_MAX_VALUES + j] = strzone(argv(j));
+            fo_opt_labels[i * FO_OPT_MAX_VALUES + j] = argv(j);
 
-        FO_MENU_OPTIONS.options[row].shortcut = strzone(ftos(i + 1));
+        FO_MENU_OPTIONS.options[row].shortcut = ftos(i + 1);
         FO_MENU_OPTIONS.options[row].name = FO_OPTIONS[i].name;
         FO_MENU_OPTIONS.options[row].value = "";
         FO_MENU_OPTIONS.options[row].description = FO_OPTIONS[i].description;

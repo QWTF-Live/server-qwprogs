@@ -763,6 +763,9 @@ void () DecodeLevelParms = {
         // keep teams on map change [off]
         cb_keepteams = CF_GetSetting("kt", "keep_teams", "0");
 
+        // how a team spawn is chosen: 0 classical, 1 random [classical]
+        spawn_location = CF_GetSetting("sl", "spawn_location", "0");
+
         // use att/def roles in quad mode [off]
         quad_roles = CF_GetSetting("qr", "quad_roles", "0");
 
@@ -1717,10 +1720,6 @@ void () ClientKill = {
     }
 };
 
-entity lastspawn_team1;
-entity lastspawn_team2;
-entity lastspawn_team3;
-entity lastspawn_team4;
 
 float (vector orig) CheckSpawnPoint =
 {
@@ -1740,88 +1739,86 @@ float (vector orig) CheckSpawnPoint =
     return 1;
 };
 
-entity(float team_num) FindTeamSpawnPoint =
-{
-    local entity spot;
-    local float spot_found;
-    local float attempts;
+// Spawn keys as the map sets them, indexed by team - 1.
+static const string kTeamSpawnKey[4] = {"ts1", "ts2", "ts3", "ts4"};
 
-    if (team_num == 1) {
-        spot = lastspawn_team1;
-        attempts = 0;
-        while (1) {
-            attempts = attempts + 1;
+// Classical: a per-team cursor walked forward through the map's spawn order
+// until it found a free one, giving up after 30 tries and taking whatever it
+// had landed on.  Predictable, and it clumps when several players die
+// together, but it is what every previous release did.
+entity lastspawn_team[4];
 
-            spot = find(spot, team_str_home, "ts1");
-            if (spot == world)
-                spot = find(world, team_str_home, "ts1");
-            if (spot == world)
-                return (world);
+static entity FindTeamSpawnClassic(float team_num, string key) {
+    entity spot = lastspawn_team[team_num - 1];
+    float attempts = 0;
 
-            spot_found = CheckSpawnPoint(spot.origin);
-            if (!Activated(spot, self))
-                spot_found = 0;
-            if (spot_found || (attempts >= 30)) {
-                lastspawn_team1 = spot;
-                return (spot);
-            }
-        }
-    } else if (team_num == 2) {
-        spot = lastspawn_team2;
-        attempts = 0;
-        while (1) {
-            attempts = attempts + 1;
-            spot = find(spot, team_str_home, "ts2");
-            if (spot == world)
-                spot = find(world, team_str_home, "ts2");
-            if (spot == world)
-                return (world);
-            spot_found = CheckSpawnPoint(spot.origin);
-            if (!Activated(spot, self))
-                spot_found = 0;
-            if (spot_found || (attempts >= 30)) {
-                lastspawn_team2 = spot;
-                return (spot);
-            }
-        }
-    } else if (team_num == 3) {
-        spot = lastspawn_team3;
-        attempts = 0;
-        while (1) {
-            attempts = attempts + 1;
-            spot = find(spot, team_str_home, "ts3");
-            if (spot == world)
-                spot = find(world, team_str_home, "ts3");
-            if (spot == world)
-                return (world);
-            spot_found = CheckSpawnPoint(spot.origin);
-            if (!Activated(spot, self))
-                spot_found = 0;
-            if (spot_found || (attempts >= 30)) {
-                lastspawn_team3 = spot;
-                return (spot);
-            }
-        }
-    } else if (team_num == 4) {
-        spot = lastspawn_team4;
-        attempts = 0;
-        while (1) {
-            attempts = attempts + 1;
-            spot = find(spot, team_str_home, "ts4");
-            if (spot == world)
-                spot = find(world, team_str_home, "ts4");
-            if (spot == world)
-                return (world);
-            spot_found = CheckSpawnPoint(spot.origin);
-            if (!Activated(spot, self))
-                spot_found = 0;
-            if (spot_found || (attempts >= 30)) {
-                lastspawn_team4 = spot;
-                return (spot);
-            }
+    while (1) {
+        attempts++;
+
+        spot = find(spot, team_str_home, key);
+        if (spot == world)
+            spot = find(world, team_str_home, key);
+        if (spot == world)
+            return world;
+
+        float ok = CheckSpawnPoint(spot.origin);
+        if (!Activated(spot, self))
+            ok = 0;
+
+        if (ok || attempts >= 30) {
+            lastspawn_team[team_num - 1] = spot;
+            return spot;
         }
     }
-    return (world);
+}
+
+// Random: pick evenly among the spots that are actually usable.
+//
+// Two passes instead of building a shortlist: fteqcc arrays are fixed size and
+// a map can carry more spawns than any sensible bound.
+static entity FindTeamSpawnRandom(float team_num, string key) {
+    int count, i;
+    entity* spots = find_list(team_str_home, key, EV_STRING, count);
+    if (!count)
+        return world;
+
+    float usable = 0;
+    for (i = 0; i < count; i++)
+        if (Activated(spots[i], self) && CheckSpawnPoint(spots[i].origin))
+            usable++;
+
+    if (usable) {
+        float pick = floor(random() * usable);
+        for (i = 0; i < count; i++) {
+            if (!Activated(spots[i], self) || !CheckSpawnPoint(spots[i].origin))
+                continue;
+            if (pick <= 0)
+                return spots[i];
+            pick--;
+        }
+    }
+
+    // Every spot is occupied.  The old code gave up after 30 tries and
+    // returned whatever it had landed on, so a crowded spawn still spawns you
+    // -- prefer one the map has activated, else anything.
+    for (i = 0; i < count; i++)
+        if (Activated(spots[i], self))
+            return spots[i];
+
+    return spots[floor(random() * count)];
+}
+
+entity(float team_num) FindTeamSpawnPoint =
+{
+    if (team_num < 1 || team_num > 4)
+        return world;
+
+    string key = kTeamSpawnKey[team_num - 1];
+
+    if (spawn_location == 1)
+        return FindTeamSpawnRandom(team_num, key);
+
+    return FindTeamSpawnClassic(team_num, key);
 };
 
 void (entity e) ValidateUser = {

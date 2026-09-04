@@ -781,6 +781,7 @@ float rewind_debug_show;
 float is_small_game; // quad or 1v1
 
 float auto_pug_team;
+float spawn_location;   // localinfo sl: 0 classical, 1 random
 
 .float tfl_num_login_tries, tfl_next_login_try;
 .float tfl_need_login;

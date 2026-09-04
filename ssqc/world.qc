@@ -343,8 +343,15 @@ void () worldspawn = {
     globalstat(STAT_TEAMNO_ATTACK, EV_FLOAT, "team_no_attack");
     globalstat(STAT_ORG_GAME, EV_FLOAT, "org_game");
 
-    // login required cache
-    login_required = CF_GetSetting("flr", "loginrequired", "1");
+    // Logins are required exactly in the modes whose stats have to be
+    // attributable, and nowhere else -- there is no longer an "flr" setting to
+    // turn it off.  Quad and pug refuse team joins without one
+    // (TeamFortress_TeamSet), so anyone playing them is signed in.
+    //
+    // Read from localinfo rather than the quadmode/pugmode globals: those are
+    // not set until the first client connects, and this runs at worldspawn.
+    login_required = CF_GetSetting("quadmode", "quadmode", "off") ||
+                     CF_GetSetting("pug", "pug", "off");
     login_allow_nonce = CF_GetSetting("lgn", "login_nonce", "1");
     login_salt = CF_GetSettingRaw("lgs", "login_salt", "sodium");
 

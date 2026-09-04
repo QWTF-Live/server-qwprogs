@@ -27,11 +27,9 @@ void () RestartMap = {
 }
 
 void () ForceStartMatch = {
-    if (login_required) {
-        bprint(PRINT_HIGH, "Can't forcestart while logins enabled.\n");
-        return;
-    }
-
+    // No login check here any more: quad and pug refuse to let anyone join a
+    // team unlogged in the first place (TeamFortress_TeamSet), so a match that
+    // can be force started is already made of signed-in players.
     if (clanbattle == 1 && cb_prematch == 1) {
         bprint(PRINT_HIGH, self.netname);
         bprint(PRINT_HIGH, " has forced the match start.\n");
@@ -1305,19 +1303,6 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                         localcmd ("localinfo round_time ",arg2,"\n");
                         UpdateAllAdmins();
                     }
-                }
-                break;
-            case "fologinrequired":
-                processedCmd = TRUE;
-                if(arg2) {
-                    localcmd ("localinfo fologinrequired ",arg2,"\n");
-                    if (stof(arg2)) {
-                        bprint(PRINT_HIGH, "Logins will be required. Matches can be reported\n");
-                    } else {
-                        bprint(PRINT_HIGH, "Allow unregistered players. Matches won't be reported\n");
-                    }
-                    bprint(PRINT_HIGH, "Map Restart needed to take effect!\n");
-                    UpdateAllAdmins();
                 }
                 break;
             case "captainmode":

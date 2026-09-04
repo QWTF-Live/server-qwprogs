@@ -17,14 +17,14 @@ DEFCVAR_FLOAT(cg_player_listener, 1);
 // the TFX_*_OUTLINE x-ray highlight, which is a separate thing.
 //
 //   0  off
-//   1  inline GLSL -- constant thickness on screen at any range
-//   2  fallback, plain shader script -- thickness is world-space, so distant
-//      players get a thinner outline
+//   1  auto -- picks an implementation; currently the shader script one
+//   2  force the shader script: thickness is world-space, so distant players
+//      get a thinner outline
+//   3  force inline GLSL: constant thickness on screen at any range
 // Off by default for now, while this is being tested.
 DEFCVAR_FLOAT(cg_player_outline, 0);
-// Outline thickness.  Clamped to 2 -- the default is the maximum, so raising
-// it has no effect.
-DEFCVAR_FLOAT(cg_player_outline_width, 2);
+// Outline thickness.  Clamped to 2, so raising it past that has no effect.
+DEFCVAR_FLOAT(cg_player_outline_width, 1.5);
 // Exponent on view depth, 0..1, controlling how the outline scales with
 // range.  1 holds it a constant size on screen; below that it shrinks with
 // distance, gently, so a far-off player is not overwhelmed by their own

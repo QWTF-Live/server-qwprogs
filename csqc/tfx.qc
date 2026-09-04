@@ -179,24 +179,31 @@ static string SilSuffix() {
     return FO_NAME_SUFFIX;
 }
 
+// cg_player_outline: 0 off, 1 auto, 2 force shader script, 3 force GLSL.
+// Auto resolves to the shader script -- the GLSL path holds a constant
+// on-screen thickness but is the one that can fail to compile on an unknown
+// client, so it is opt-in until it has more mileage.
+static float SilUseGLSL() {
+    return CVARF(cg_player_outline) == 3;
+}
+
 static float SilhouetteShader(float push) {
     // Rounded: every distinct value mints a shader that is never freed, so
     // sweeping the cvar should not be able to exhaust them.
     float dist = rint(bound(0, CVARF(cg_player_outline_dist), 1) * 20) / 20;
 
-    float key = push + CVARF(cg_player_outline) * 1000 +
-                dist * 10000000;
+    float key = push + SilUseGLSL() * 1000 + dist * 10000000;
     if (shader_sil_ready && shader_sil_push == key)
         return shader_silhouette;
 
-    // cg_player_outline 2: the same hull, expanded in an inline GLSL vertex
-    // stage instead of by deformVertexes.  Ships inside csprogs.dat -- no
-    // client package.  Kept around because the program block is a foothold for
-    // effects that plain shader script cannot express.
+    // Backend 2: the same hull, expanded in an inline GLSL vertex stage
+    // instead of by deformVertexes.  Ships inside csprogs.dat -- no client
+    // package.  Kept because the program block is a foothold for effects that
+    // plain shader script cannot express.
     //
     // v_position is a vec4, hence the .xyz: adding a vec3 to it directly is
     // what produced "could not implicitly convert operands".
-    if (CVARF(cg_player_outline) == 1) {
+    if (SilUseGLSL()) {
         // Expansion is done in clip space rather than world space, so the
         // rim is a constant thickness on screen instead of shrinking with
         // distance -- which is the thing plain shader script cannot express

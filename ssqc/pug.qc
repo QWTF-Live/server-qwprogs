@@ -1038,13 +1038,20 @@ void Pug_EndMatch() {
 // LAST_NOT_READY are what CSQC draws the ready UI from.
 
 // Players who could actually take part: on a team, with a class, still here.
+// Taking part: on a team, with a class, present and not spectating.  The
+// ready count and the not-ready list are both measured against this, or the
+// list names people who cannot block the start anyway.
+static float Pug_IsActive(entity p) {
+    return p.netname != "" && p.team_no && p.playerclass &&
+           !p.has_disconnected && !p.is_spectator;
+}
+
 static float Pug_ActivePlayers() {
     int count, active = 0;
     entity* players = find_list(classname, "player", EV_STRING, count);
 
     for (int i = 0; i < count; i++)
-        if (players[i].netname != "" && players[i].team_no &&
-            players[i].playerclass && !players[i].has_disconnected)
+        if (Pug_IsActive(players[i]))
             active++;
 
     return active;
@@ -1099,7 +1106,7 @@ static void Pug_ShowNotReady() {
 
     for (int i = 0; i < count; i++) {
         entity p = players[i];
-        if ((p.stat_flags & PLAYER_READY) || p.has_disconnected)
+        if (!Pug_IsActive(p) || (p.stat_flags & PLAYER_READY))
             continue;
 
         shown++;

@@ -1327,6 +1327,8 @@ fo_cvar_option FO_OPTIONS[] = {
      "Countdown over teammates who have primed a grenade"},
     {"fopm_spec_lerp", "Spectator Smoothing", "off;on",
      "Smooth the camera when spectating another player"},
+    {"tf_forcecolors", "Force Player Colours", "off;blue/red;att/def;enemy/team",
+     "Recolour players; set the colours with tf_color_enemy and friends"},
 };
 
 // Labels are split out of the table once rather than re-tokenized per frame.

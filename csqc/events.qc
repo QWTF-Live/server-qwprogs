@@ -407,6 +407,9 @@ void() CSQC_Parse_Event = {
 
             printf("Local cache of login credentials complete\n");
             break;
+        case MSG_SPAWN_DEBUG:
+            SpawnDebug_Receive();
+            break;
         case MSG_MIGRATE_LOGIN:
             printf("%sLogin saved.\n", kQWTF);
             Config.login_token = readstring();

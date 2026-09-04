@@ -364,6 +364,7 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
     //FO_CussCrosshair(width, height);
 
     TFxRenderGrenadeTimers();
+    SpawnDebug_Render();
     RenderHitTexts();
     Hud_UpdateView(width, height, menushown);
     PMD_DrawGraphs(width);

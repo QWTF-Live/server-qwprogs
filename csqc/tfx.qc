@@ -665,6 +665,72 @@ static void UpdateGrenList() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Spawn point debug ("cmd spawn_debug")
+// ---------------------------------------------------------------------------
+//
+// The server sends the spawn points, nearest first; this draws a line out to
+// each and labels it with the distance.  Running the command again turns it
+// off.
+
+#define kSpawnDebugMax 32
+
+static vector spawn_dbg_org[kSpawnDebugMax];
+static float spawn_dbg_team[kSpawnDebugMax];
+static float spawn_dbg_n;
+
+void SpawnDebug_Receive() {
+    float n = min(readbyte(), kSpawnDebugMax);
+
+    // Read the payload whatever we do with it: bailing early would leave the
+    // rest of the packet unparsed and desync everything after it.
+    for (float i = 0; i < n; i++) {
+        spawn_dbg_org[i] = [ReadCoord(), ReadCoord(), ReadCoord()];
+        spawn_dbg_team[i] = readbyte();
+    }
+
+    // Running the command again turns it off, so it is a toggle without the
+    // server having to track who has it open.
+    if (spawn_dbg_n) {
+        spawn_dbg_n = 0;
+        return;
+    }
+
+    spawn_dbg_n = n;
+}
+
+void SpawnDebug_Render() {
+    if (!spawn_dbg_n)
+        return;
+
+    vector eye = getviewprop(VF_ORIGIN);
+    vector centre = ScreenSize * 0.5;
+    vector textsize = '8 8 0';
+
+    // project() maps a point behind you onto the screen just the same, so
+    // without this the lines fan out over whatever is in front.
+    makevectors(getviewprop(VF_ANGLES));
+
+    for (float i = 0; i < spawn_dbg_n; i++) {
+        vector po = spawn_dbg_org[i];
+        if (v_forward * (po - eye) <= 0)
+            continue;
+
+        vector rgb = '1 1 1';
+        if (spawn_dbg_team[i] == 1)
+            rgb = '0.35 0.55 1';
+        else if (spawn_dbg_team[i] == 2)
+            rgb = '1 0.35 0.35';
+
+        vector c = project(po);
+        drawline(3, centre, c, rgb, 0.6, 0);
+
+        string d = ftos(rint(vlen(po - eye)));
+        drawstring(c - [strlen(d) * textsize.x * 0.5, textsize.y, 0],
+                   d, textsize, rgb, 1, 0);
+    }
+}
+
 void TFxRenderGrenadeTimers() {
     // Checked before UpdateGrenList so turning it off also skips the scan and
     // its per-player traces, not just the drawing.

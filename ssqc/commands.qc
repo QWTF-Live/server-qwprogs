@@ -22,6 +22,7 @@ float Pug_NextRound();
 float Pug_SetScore(float blue, float red);
 float Pug_SetTime(string spec);
 float Pug_Status();
+void SpawnDebug_Send(entity pl);
 void Pug_UnlockTeams();
 float Pug_AllTimeAllowed(entity pe, float want);
 
@@ -360,6 +361,14 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                 sleep(0.1);
                 ReportMatchResult(kReportEnd);
             }
+            return TRUE;
+        case "spawn_debug":
+            if (!qwtf_debug) {
+                sprint(self, PRINT_HIGH,
+                       "Debug commands are off. Set localinfo qwtf_debug 1.\n");
+                return TRUE;
+            }
+            SpawnDebug_Send(self);
             return TRUE;
         case "join":
             return FALSE;

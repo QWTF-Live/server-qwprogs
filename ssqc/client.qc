@@ -766,6 +766,9 @@ void () DecodeLevelParms = {
         // how a team spawn is chosen: 0 classical, 1 random [classical]
         spawn_location = CF_GetSetting("sl", "spawn_location", "0");
 
+        // opens the debug commands to everyone, not just admins [off]
+        qwtf_debug = CF_GetSetting("qwtf_debug", "qwtf_debug", "0");
+
         // use att/def roles in quad mode [off]
         quad_roles = CF_GetSetting("qr", "quad_roles", "0");
 
@@ -1806,6 +1809,61 @@ static entity FindTeamSpawnRandom(float team_num, string key) {
             return spots[i];
 
     return spots[floor(random() * count)];
+}
+
+// "cmd spawn_debug": send every spawn point so CSQC can draw them.  A test aid
+// for the spawn_location work -- which spots are candidates, and how far, is
+// otherwise guesswork.
+//
+// More than the cap and only the nearest are sent, so what you get is always
+// the set you would care about first.
+const float kSpawnDebugMax = 32;
+
+void SpawnDebug_Send(entity pl) {
+    int count, i, j;
+    entity* spots = find_list(classname, "info_player_teamspawn",
+                              EV_STRING, count);
+
+    float n = min(count, kSpawnDebugMax);
+
+    msg_entity = pl;
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_SPAWN_DEBUG);
+    WriteByte(MSG_MULTICAST, n);
+
+    // Selection sort, emitting as it goes: n is at most 32 and a map's spawn
+    // count is small, so this is cheaper than building and sorting a list --
+    // and fteqcc has no array big enough to hold an arbitrary map's worth.
+    // Ties break on index so a repeated distance cannot be picked twice.
+    float last_d = -1, last_i = -1;
+
+    for (j = 0; j < n; j++) {
+        float best = -1, best_d = 0;
+
+        for (i = 0; i < count; i++) {
+            float d = vlen(spots[i].origin - pl.origin);
+
+            if (d < last_d || (d == last_d && i <= last_i))
+                continue;
+            if (best < 0 || d < best_d) {
+                best = i;
+                best_d = d;
+            }
+        }
+
+        if (best < 0)
+            break;
+
+        WriteCoord(MSG_MULTICAST, spots[best].origin_x);
+        WriteCoord(MSG_MULTICAST, spots[best].origin_y);
+        WriteCoord(MSG_MULTICAST, spots[best].origin_z);
+        WriteByte(MSG_MULTICAST, spots[best].team_no);
+
+        last_d = best_d;
+        last_i = best;
+    }
+
+    multicast('0 0 0', MULTICAST_ONE_R);
 }
 
 entity(float team_num) FindTeamSpawnPoint =

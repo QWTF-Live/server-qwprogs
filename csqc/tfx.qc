@@ -438,7 +438,8 @@ float CSQC_UpdatePlayer(float isnew) {
     }
 
     // Needs this for both cases since deltalisten() inadvertently blocks.
-    if (self.effects & EF_DIMLIGHT)
+    if (PowerupGlowVisible(self.entnum == player_localentnum) &&
+        (self.effects & EF_DIMLIGHT))
         dynamiclight_add(self.origin, 200, CVAR.r_dimlight_colour);
 
     entity csqc = self.csqc_player;

@@ -77,6 +77,16 @@ DEFCVAR_STRING(tf_color_defense, "");
 
 DEFCVAR_FLOAT(r_rocketlight, 1);
 DEFCVAR_FLOAT(r_rocketlight, 1);
+
+// Glow attached to player models.  CSQC has to add these lights itself --
+// deltalisten takes the player entity away from the engine, which would
+// otherwise apply them -- so the engine cvar had no say and the glow stayed on
+// however it was set.  Items keep their glow either way; this is players only.
+//
+//   0  off for everyone
+//   1  on for everyone
+//   2  on for everyone except yourself
+DEFCVAR_FLOAT(r_powerupglow, 1);
 DEFCVAR_STRING(r_rocketlight_colour, "");  // Radius ignored.
 
 DEFCVAR_STRING(r_dimlight_colour, "");
@@ -139,6 +149,17 @@ void UpdateCachedCvars() {
         CVAR.r_bluelight_colour = stov_def(CVARS(r_bluelight_colour), '0.5 0.5 3');
         break;
     }
+}
+
+// Anything unrecognised reads as 1, so a bad value leaves the glow on rather
+// than silently hiding it.
+float PowerupGlowVisible(float is_local) {
+    float mode = CVARF(r_powerupglow);
+    if (mode == 0)
+        return FALSE;
+    if (mode == 2 && is_local)
+        return FALSE;
+    return TRUE;
 }
 
 void EffectToDynamicLight(vector org, float emask) {

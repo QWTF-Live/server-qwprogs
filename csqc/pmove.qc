@@ -1279,7 +1279,9 @@ void PM_UpdateView() {
     makevectors(view_angles);
     SetListener(pm.vieworg, v_forward, v_right, v_up);
 
-    EffectToDynamicLight(pm.vieworg, pstate_server.effects);
+    // Always the local player, so mode 2 suppresses it here.
+    if (PowerupGlowVisible(TRUE))
+        EffectToDynamicLight(pm.vieworg, pstate_server.effects);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

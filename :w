@@ -1,0 +1,72 @@
+inline float PM_Enabled() {
+    return pstate_server.predict_flags & PF_CSQC_PMOVE;
+}
+
+vector render_origin;
+vector render_angles;
+
+void PM_SetupRender() {
+    if (!PM_Enabled())
+        return;
+    printf("SR\n");
+
+    setproperty(VF_ORIGIN, '0 0 0' + [ 0, 0, getstatf( STAT_VIEWHEIGHT ) ]);
+    setproperty(VF_ANGLES, view_angles);
+}
+
+float held_pm_flags;
+vector held_origin, held_velocity;
+
+void PM_StartUpdate() {
+    if (!PM_Enabled()) return;
+
+    self.movetype = MOVETYPE_WALK;
+    held_origin = self.origin;
+    held_velocity = self.velocity;
+    held_pm_flags = self.pmove_flags;
+
+    Phys_Expire(time - SERVER_FRAME_MS);
+}
+
+void PM_EndUpdate() {
+    if (!PM_Enabled()) return;
+
+#if 0
+    // Smooth stair stepping, this has to be done manually!
+    vPlayerOriginOld = vPlayerOrigin;
+    if ((self.flags & FL_ONGROUND) && (self.origin_z - held_origin_zvPlayerOriginOld_z > 0)) {
+        vPlayerOriginOld_z += frametime * 150;
+
+        if ( vPlayerOriginOld_z > self.origin_z ) {
+            vPlayerOriginOld_z = self.origin_z;
+        }
+        if ( self.origin_z - vPlayerOriginOld_z > 18 ) {
+            vPlayerOriginOld_z = self.origin_z - 18;
+        }
+        vPlayerOrigin_z += vPlayerOriginOld_z - self.origin_z;
+    } else {
+        vPlayerOriginOld_z = self.origin_z;
+    }
+    vPlayerOrigin = [ self.origin_x, self.origin_y, vPlayerOriginOld_z ];
+#endif
+
+    self.pmove_flags = held_pm_flags;
+    self.origin = held_origin;
+    self.velocity = held_velocity;
+    self.movetype = MOVETYPE_NONE;
+
+    render_origin = pmove_org;
+}
+
+void PM_Frame() {
+    if (!PM_Enabled()) return;
+
+    entity player = edict_num(player_localentnum);
+    player.movetype = MOVETYPE_NONE;
+    float etime = time + pstate_pred.client_time - pstate_server.client_time;
+    /* printf("PM_Frame\n"); */
+    /* self.velocity += Phys_GetAdj(0, edict_num(player_localentnum), self.origin, */
+    /*         etime, input_timelength); */
+    /* runstandardplayerphysics(self); */
+    render_origin = pmove_org  - '0 0 50';
+}

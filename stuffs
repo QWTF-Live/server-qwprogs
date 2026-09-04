@@ -1,0 +1,18 @@
+delete parms
+
+        case 50:
+            stime = readfloat();
+            ctime = readfloat();
+            float offset = (clientcommandframe - servercommandframe) * 1/77.0;
+            PRINT_EVERY(5, "off=%0.3f st=%0.3f t=%0.3f pt=%0.3f ct=%0.3f pct=%0.3f\n", 
+                    offset, stime,
+                    time, time + offset, ctime, ctime + offset);
+            break;
+
+    if (keydowns & BUTTON0) {
+        float offset = (clientcommandframe - servercommandframe) * 1/77.0;
+        printf("CLIENT PEW st=%0.3f t=%0.3f pt=%0.3f ct=%0.3f pct=%0.3f\n", 
+                    stime,
+                    time, time + offset, ctime, ctime + offset);
+    }
+

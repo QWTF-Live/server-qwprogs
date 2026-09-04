@@ -1,0 +1,12 @@
+buttons:
+
+
+AP == Activating player(?)
+
+touched via
+Button
+  AttemptToActivate->DoResults->DoGoalWork->AttemptToActivate(Laser) . . . ->DoR
+
+reset via DoResults . . . TFGS_DELAYED . . -> DelayedResult->DoResults
+    TFGS_DELAYED ON laser ent?
+

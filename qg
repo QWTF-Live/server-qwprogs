@@ -1,0 +1,28 @@
+[35mcsqc/csdefs.qc[m[36m:[mvoid(entity ent, float bonenum, vector org, optional vector angorfwd, optional vector right, optional vector up) skel_set_bone_world = #2[1;31m83[m; /*
+[35mcsqc/csdefs.qc[m[36m:[mvoid(vector origin, string sample, float volume, float attenuation) pointsound = #4[1;31m83[m; /* Part of DP_SV_POINTSOUND*/
+[35mmenusys/mitem_checkbox.qc[m[36m:[m				ui.drawstring(pos + '4 0', chr2str(0xe0[1;31m83[m), '1 1 0' * this.item_scale, rgb, this.item_alpha, 0);
+[35mmenusys/mitem_checkbox.qc[m[36m:[m				ui.drawstring(pos + '4 0', "^{e0[1;31m83[m}", '1 1 0' * this.item_scale, rgb, this.item_alpha, 0);
+[35mmenusys/mitem_colours.qc[m[36m:[m		case 11:	return [0x6f, 0x[1;31m83[m, 0x7b]/255;
+[35mmenusys/mitem_slider.qc[m[36m:[m		ui.drawstring(pos + [4 + curval*10*8, 0], chr2str(0xe0[1;31m83[m), '1 1 0' * self.item_scale, rgb, self.item_alpha, 0);
+[35mmenusys/mitem_slider.qc[m[36m:[m		ui.drawstring(pos + [4 + curval*10*8, 0], "^{e0[1;31m83[m}", '1 1 0' * self.item_scale, rgb, self.item_alpha, 0);
+[35mshare/defs.h[m[36m:[m#define IT_HOOK			[1;31m83[m88608
+[35mshare/defs.h[m[36m:[m#define TF_ENGINEER_DETSENTRY       [1;31m83[m  // Engineer: Detonate sentry gun for Engineer
+[35mshare/defs.h[m[36m:[m// unused                           1[1;31m83[m
+[35mshare/fteextensions.qc[m[36m:[mconst float SVC_CGAMEPACKET = [1;31m83[m;	/* Direct ssqc->csqc message. Must only be multicast. The data triggers a CSQC_Parse_Event call in the csqc for the csqc to read the contents. The server *may* insert length information for clients connected via proxies which are not able to cope with custom csqc payloads. This should only ever be used in conjunction with the MSG_MULTICAST destination. */
+[35mshare/fteextensions.qc[m[36m:[mconst float EF_NOMODELFLAGS = [1;31m83[m88608;	/* Surpresses the normal flags specified in the model. */
+[35mshare/fteextensions.qc[m[36m:[mDEP string(string str) altstr_prepare = #[1;31m83[m; /*
+[35mshare/fteextensions.qc[m[36m:[mvoid(entity ent, float bonenum, vector org, optional vector angorfwd, optional vector right, optional vector up) skel_set_bone_world = #2[1;31m83[m; /* Part of FTE_QC_RAGDOLL_WIP
+[35mshare/fteextensions.qc[m[36m:[mvoid(vector origin, string sample, float volume, float attenuation) pointsound = #4[1;31m83[m; /* Part of DP_SV_POINTSOUND*/
+[35mshare/fteextensions.qc[m[36m:[mconst float K_JOY16 = 7[1;31m83[m;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_LTRIGGER = [1;31m83[m0;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_RTRIGGER = [1;31m83[m1;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_LTHUMB_UP = [1;31m83[m2;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_LTHUMB_DOWN = [1;31m83[m3;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_LTHUMB_LEFT = [1;31m83[m4;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_LTHUMB_RIGHT = [1;31m83[m5;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_RTHUMB_UP = [1;31m83[m6;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_RTHUMB_DOWN = [1;31m83[m7;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_RTHUMB_LEFT = [1;31m83[m8;
+[35mshare/fteextensions.qc[m[36m:[mconst float K_GP_RTHUMB_RIGHT = [1;31m83[m9;
+[35mssqc/boss.qc[m[36m:[mvoid () boss_shocka4 =[[1;31m83[m, boss_shocka5] {
+[35mssqc/spy.qc[m[36m:[m    { 15, 1, {84,[1;31m83[m,82,81,80,79,78,77,76,75,74,73,72,71,70}, {0}, FALSE, FALSE };

@@ -1,0 +1,51 @@
+
+#if 0
+void Pred_PlayerUpdated(entity ent) {
+    float noerror = CVARF(fopm_noerror);
+    vector o, v;
+    float pmf;
+
+    o = ent.origin;
+    v = ent.velocity;
+    pmf = ent.pmove_flags;
+
+    //reset the prediction to last-known-good state
+    Pred_ResetPlayerPrediction(ent);
+    Pred_RunMovement(ent, servercommandframe + 1);
+    pm_s.pmove_flags = ent.pmove_flags;
+
+    pm_s.step = pm.step;         // unused
+    pm_s.steptime = pm.steptime; // unused
+
+    //pull out the new values
+    pm_s.org = o;
+    pm_s.vel = v;
+    pm_s.sequence = servercommandframe;
+
+    if (noerror) {
+        pm.error = '0 0 0';
+        pm.errortime = time;
+        Pred_ResetPlayerPrediction(ent);
+    } else {
+        Pred_RunMovement(ent, clientcommandframe); //make sure we're up to date
+        o = ent.origin;	//save off the old for the teleport check below.
+
+        //reset it, then update to now to guage how much our previous prediction was incorrect by
+        Pred_ResetPlayerPrediction(ent);
+        Pred_RunMovement(ent, clientcommandframe);
+
+        if (vlen(o - ent.origin) > 64) {  //teleport
+            pm.error = '0 0 0';
+            pm.errortime = time;
+            printf("TELEPORT\n");
+        } else { // figure out the error amount, and lerp back to it, without forgetting about any current inaccuracies.
+            pm.error = (pm.errortime - time)*ERRORTIME * pm.error + (o - ent.origin);
+            if (vlen(pm.error) < 1)
+                pm.error = '0 0 0';
+            else
+                printf("E: %0.2f %0.2f\n", vlen(pm.error), pm.errortime - time);
+            pm.errortime = time + 1/ERRORTIME;
+        }
+    }
+}
+#else

@@ -1,0 +1,41 @@
+[33mcommit 4e1859f1e9dce49d2353aeabfc4230ddaaec0da2[m
+Author: newby <newby@rakis.net>
+Date:   Wed Aug 27 02:05:36 2025 -0700
+
+    quad: quick fix for elo scammaz
+    
+    there are better ways to fix this but, good enough.
+
+[1mdiff --git a/ssqc/json.qc b/ssqc/json.qc[m
+[1mindex 98e039118..291f2383e 100644[m
+[1m--- a/ssqc/json.qc[m
+[1m+++ b/ssqc/json.qc[m
+[36m@@ -203,7 +203,9 @@[m [mvoid ReportMatchResult(int report_type) {[m
+     entity* list = find_list(classname, "player", EV_STRING, count);[m
+ [m
+     string players[2], comma[2];[m
+[32m+[m[32m    int tsize[2];[m
+     players[0] = players[1] = comma[0] = comma[1] = string_null;[m
+[32m+[m[32m    tsize[0] = tsize[1] = 0;[m
+ [m
+     for (int i = 0; i < count; i++) {[m
+         entity p = list[i];[m
+[36m@@ -219,6 +221,18 @@[m [mvoid ReportMatchResult(int report_type) {[m
+         int idx = p.team_no - 1;[m
+         players[idx] = strcat(players[idx], comma[idx], JSON_Wrap(pvs.length, pvs));[m
+         comma[idx] = ", ";[m
+[32m+[m[32m        tsize[idx]++;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    static string last_players[2];[m
+[32m+[m[32m    static int last_tsize[2];[m
+[32m+[m
+[32m+[m[32m    for (int i = 0; i < 2; i++) {[m
+[32m+[m[32m        if (report_type == kReportEnd)[m
+[32m+[m[32m            if (tsize[i] < last_tsize[i])[m
+[32m+[m[32m                players[i] = last_players[i];[m
+[32m+[m[32m        last_players[i] = players[i];[m
+[32m+[m[32m        last_tsize[i] = tsize[i];[m
+     }[m
+ [m
+     string teams[2];[m

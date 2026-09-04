@@ -1,0 +1,1445 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ADMIN_MENU_TYPE_BAN	share/defs.h	394;"	d
+ADMIN_MENU_TYPE_CAPTAINSELECT	share/defs.h	397;"	d
+ADMIN_MENU_TYPE_CAPTAINTEAMONE	share/defs.h	395;"	d
+ADMIN_MENU_TYPE_CAPTAINTEAMTWO	share/defs.h	396;"	d
+ADMIN_MENU_TYPE_CLASSES	share/defs.h	401;"	d
+ADMIN_MENU_TYPE_FORCESPEC	share/defs.h	402;"	d
+ADMIN_MENU_TYPE_KICK	share/defs.h	393;"	d
+ADMIN_MENU_TYPE_MAIN	share/defs.h	392;"	d
+ADMIN_MENU_TYPE_QUADMODE	share/defs.h	398;"	d
+ADMIN_MENU_TYPE_QUAD_ROUNDNUM	share/defs.h	399;"	d
+ADMIN_MENU_TYPE_QUAD_ROUNDTL	share/defs.h	400;"	d
+ALL_TIME_ATTACK	share/defs.h	1492;"	d
+ALL_TIME_COLOUR	share/defs.h	1491;"	d
+ALL_TIME_DEFENCE	share/defs.h	1493;"	d
+AMMO_COST_CELLS	share/defs.h	690;"	d
+AMMO_COST_NAILS	share/defs.h	688;"	d
+AMMO_COST_ROCKETS	share/defs.h	689;"	d
+AMMO_COST_SHELLS	share/defs.h	687;"	d
+AS_MELEE	share/defs.h	230;"	d
+AS_MISSILE	share/defs.h	231;"	d
+AS_SLIDING	share/defs.h	229;"	d
+AS_STRAIGHT	share/defs.h	228;"	d
+ATTN_IDLE	share/defs.h	185;"	d
+ATTN_NONE	share/defs.h	183;"	d
+ATTN_NORM	share/defs.h	184;"	d
+ATTN_STATIC	share/defs.h	186;"	d
+AT_SAVEELECTRICITY	share/defs.h	866;"	d
+AT_SAVEEXPLOSION	share/defs.h	865;"	d
+AT_SAVEFIRE	share/defs.h	867;"	d
+AT_SAVENAIL	share/defs.h	864;"	d
+AT_SAVESHOT	share/defs.h	863;"	d
+ActivateOrgGame	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void ActivateOrgGame() {$/;"	f	language:C++
+AddCSQCPlayer	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void AddCSQCPlayer(entity src) {$/;"	f	language:C++	file:
+AddOutline	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void AddOutline(entity ent) {$/;"	f	language:C++	file:
+Admin_Check	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (string cl_pwd) Admin_Check;$/;"	v	language:C++
+AllocRewind	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static RewindState* AllocRewind(entity ent) {$/;"	f	language:C++	file:
+AmmoToStat	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float AmmoToStat(float ammo_type) {$/;"	f	language:C++	file:
+AntilagKnock	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float AntilagKnock(entity e, float dmg) {$/;"	f	language:C++
+Antilag_Knock	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^static void Antilag_Knock(entity e) {$/;"	f	language:C++	file:
+AssCanTryBeginFire	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float AssCanTryBeginFire();$/;"	p	language:C++	file:
+Attack_Finished	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void Attack_Finished(float attack_time) {$/;"	f	language:C++
+AttackingTeamNo	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static inline float AttackingTeamNo() { return getstatf(STAT_TEAMNO_ATTACK); }$/;"	f	language:C++	file:
+BLUE	share/defs.h	670;"	d
+BROWN	share/defs.h	669;"	d
+BUILD_COST_DISPENSER	share/defs.h	697;"	d
+BUILD_COST_SENTRYGUN	share/defs.h	698;"	d
+BUILD_DISPENSER	share/defs.h	693;"	d
+BUILD_DISPENSER_MAX_ARMOR	share/defs.h	715;"	d
+BUILD_DISPENSER_MAX_CELLS	share/defs.h	714;"	d
+BUILD_DISPENSER_MAX_NAILS	share/defs.h	712;"	d
+BUILD_DISPENSER_MAX_ROCKETS	share/defs.h	713;"	d
+BUILD_DISPENSER_MAX_SHELLS	share/defs.h	711;"	d
+BUILD_HEALTH_DISPENSER	share/defs.h	705;"	d
+BUILD_HEALTH_SENTRYGUN	share/defs.h	706;"	d
+BUILD_SENTRYGUN	share/defs.h	694;"	d
+BUILD_SENTRYGUN_MAX_DISTANCE	share/defs.h	717;"	d
+BUILD_SENTRYGUN_MAX_DISTANCE_ENGMOVE	share/defs.h	718;"	d
+BUILD_STATE_BUILDING	share/defs.h	/^    BUILD_STATE_BUILDING,$/;"	e	enum:__anon4
+BUILD_STATE_BUILT	share/defs.h	/^    BUILD_STATE_BUILT,$/;"	e	enum:__anon4
+BUILD_STATE_NONE	share/defs.h	/^    BUILD_STATE_NONE = 0,$/;"	e	enum:__anon4
+BUILD_TIME_DISPENSER	share/defs.h	701;"	d
+BUILD_TIME_SENTRYGUN	share/defs.h	702;"	d
+CEASEFIRE	share/defs.h	237;"	d
+CF_ExtinguishFlame	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity pe_flame) CF_ExtinguishFlame = {$/;"	v	language:C++
+CF_GetSetting	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float CF_GetSetting(string ps_short, string ps_setting, string ps_default) {$/;"	f	language:C++
+CF_GetSettingRaw	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^string CF_GetSettingRaw(string ps_short, string ps_setting,$/;"	f	language:C++
+CF_MAPVOTE_DURATION	share/defs.h	313;"	d
+CF_MAPVOTE_DURATION_DECIDER	share/defs.h	314;"	d
+CF_MAPVOTE_FINISH	share/defs.h	312;"	d
+CF_MAPVOTE_FORCESHOW	share/defs.h	311;"	d
+CHAN_AUTO	share/defs.h	170;"	d
+CHAN_BODY	share/defs.h	174;"	d
+CHAN_GREN_END	share/defs.h	180;"	d
+CHAN_GREN_START	share/defs.h	179;"	d
+CHAN_ITEM	share/defs.h	173;"	d
+CHAN_NO_PHS_ADD	share/defs.h	175;"	d
+CHAN_VOICE	share/defs.h	172;"	d
+CHAN_WEAPON	share/defs.h	171;"	d
+CONC_AIM	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^    CONC_AIM,$/;"	e	language:C++	enum:ConcMode	file:
+CONC_CLASSIC	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^    CONC_CLASSIC,$/;"	e	language:C++	enum:ConcMode	file:
+CONC_IDLESCALE	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^    CONC_IDLESCALE,$/;"	e	language:C++	enum:ConcMode	file:
+CONTENT_EMPTY	share/defs.h	104;"	d
+CONTENT_LAVA	share/defs.h	108;"	d
+CONTENT_SKY	share/defs.h	109;"	d
+CONTENT_SLIME	share/defs.h	107;"	d
+CONTENT_SOLID	share/defs.h	105;"	d
+CONTENT_WATER	share/defs.h	106;"	d
+CSQC_UpdatePlayer	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^float CSQC_UpdatePlayer(float isnew) {$/;"	f	language:C++
+CSQC_UpdateSkin	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void CSQC_UpdateSkin(entity src) {$/;"	f	language:C++	file:
+CTF_DROPOFF1	share/defs.h	1257;"	d
+CTF_DROPOFF2	share/defs.h	1258;"	d
+CTF_FLAG1	share/defs.h	1255;"	d
+CTF_FLAG2	share/defs.h	1256;"	d
+CTF_SCORE1	share/defs.h	1259;"	d
+CTF_SCORE2	share/defs.h	1260;"	d
+CalcPredEnabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float CalcPredEnabled(float current_enable, float cvar,$/;"	f	language:C++	file:
+CanThrowGrenade	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float CanThrowGrenade(int gren_type) {$/;"	f	language:C++	file:
+CheckAutoKick	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity p) CheckAutoKick;$/;"	v	language:C++
+CheckSpawnPoint	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float (vector orig) CheckSpawnPoint =$/;"	v	language:C++
+ClownConcPeriod	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float ClownConcPeriod();$/;"	p	language:C++	file:
+ConcMode	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^enum ConcMode {$/;"	g	language:C++	file:
+ConcUpdate	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^static void ConcUpdate() {$/;"	f	language:C++	file:
+ConvertClassic	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static string ConvertClassic(string suffix) {$/;"	f	language:C++	file:
+ConvertToSpurs	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity e) ConvertToSpurs =$/;"	v	language:C++
+CurrentSlot	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static inline Slot CurrentSlot() { return pstate_pred.current_slot; }$/;"	f	language:C++	file:
+DAMAGE_AIM	share/defs.h	71;"	d
+DAMAGE_NO	share/defs.h	69;"	d
+DAMAGE_YES	share/defs.h	70;"	d
+DARKBLUE	share/defs.h	681;"	d
+DARKGREEN	share/defs.h	679;"	d
+DARKPURPLE	share/defs.h	677;"	d
+DEAD_DEAD	share/defs.h	65;"	d
+DEAD_DYING	share/defs.h	64;"	d
+DEAD_NO	share/defs.h	63;"	d
+DEAD_RESPAWNABLE	share/defs.h	66;"	d
+DEBUG_REWIND	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	1;"	d	language:C++	file:
+DISP_CAM_RANGE	share/defs.h	1702;"	d
+DMN_FLASH	share/defs.h	1462;"	d
+DMN_INVISIBLE	share/defs.h	1469;"	d
+DMN_NOFLASH	share/defs.h	1464;"	d
+DMN_TEAMBLUE	share/defs.h	1465;"	d
+DMN_TEAMGREN	share/defs.h	1468;"	d
+DMN_TEAMRED	share/defs.h	1466;"	d
+DMN_TEAMYELL	share/defs.h	1467;"	d
+DMSG_ASSAULTCANNON	share/defs.h	1285;"	d
+DMSG_AUTORIFLE	share/defs.h	1284;"	d
+DMSG_AXE	share/defs.h	1282;"	d
+DMSG_BACKSTAB	share/defs.h	1287;"	d
+DMSG_BIOWEAPON	share/defs.h	1278;"	d
+DMSG_BIOWEAPON_ATT	share/defs.h	1279;"	d
+DMSG_DETPACK	share/defs.h	1277;"	d
+DMSG_DETPACK_DIS	share/defs.h	1281;"	d
+DMSG_DISPENSER_EXPLODE	share/defs.h	1304;"	d
+DMSG_FLAME	share/defs.h	1280;"	d
+DMSG_GRENADEL	share/defs.h	1270;"	d
+DMSG_GREN_BURST	share/defs.h	1308;"	d
+DMSG_GREN_CALTROP	share/defs.h	1306;"	d
+DMSG_GREN_EMP	share/defs.h	1295;"	d
+DMSG_GREN_EMP_AMMO	share/defs.h	1296;"	d
+DMSG_GREN_FLASH	share/defs.h	1300;"	d
+DMSG_GREN_GAS	share/defs.h	1289;"	d
+DMSG_GREN_HAND	share/defs.h	1273;"	d
+DMSG_GREN_MIRV	share/defs.h	1275;"	d
+DMSG_GREN_NAIL	share/defs.h	1274;"	d
+DMSG_GREN_PIPE	share/defs.h	1276;"	d
+DMSG_GREN_PIPE_AIR	share/defs.h	1305;"	d
+DMSG_GREN_SHOCK	share/defs.h	1307;"	d
+DMSG_HOOK	share/defs.h	1286;"	d
+DMSG_IMPELLER	share/defs.h	1310;"	d
+DMSG_INCENDIARY	share/defs.h	1298;"	d
+DMSG_KNIFE	share/defs.h	1309;"	d
+DMSG_LASERBOLT	share/defs.h	1291;"	d
+DMSG_LIGHTNING	share/defs.h	1272;"	d
+DMSG_MEDIKIT	share/defs.h	1288;"	d
+DMSG_NAILGUN	share/defs.h	1268;"	d
+DMSG_ROCKETL	share/defs.h	1271;"	d
+DMSG_SENTRYGUN_BULLET	share/defs.h	1292;"	d
+DMSG_SENTRYGUN_EXPLODE	share/defs.h	1303;"	d
+DMSG_SENTRYGUN_ROCKET	share/defs.h	1299;"	d
+DMSG_SHOTGUN	share/defs.h	1266;"	d
+DMSG_SNAILGUN	share/defs.h	1269;"	d
+DMSG_SNIPERHEADSHOT	share/defs.h	1294;"	d
+DMSG_SNIPERLEGSHOT	share/defs.h	1293;"	d
+DMSG_SNIPERRIFLE	share/defs.h	1283;"	d
+DMSG_SPANNER	share/defs.h	1297;"	d
+DMSG_SSHOTGUN	share/defs.h	1267;"	d
+DMSG_TEAMKILL	share/defs.h	1302;"	d
+DMSG_TRANQ	share/defs.h	1290;"	d
+DMSG_TRIGGER	share/defs.h	1301;"	d
+DROP_ARMOR	share/defs.h	727;"	d
+DROP_CELLS	share/defs.h	726;"	d
+DROP_NAILS	share/defs.h	724;"	d
+DROP_ROCKETS	share/defs.h	725;"	d
+DROP_SHELLS	share/defs.h	723;"	d
+DVER	Makefile	/^	fteqcc64 -DVER=\\"$(VER)\\" -DREV=\\"$(REV)\\" -DLOGIN_SALT=\\"$(LOGIN_SALT)\\" .\/csqc\/csprogs.src$/;"	m
+DVER	Makefile	/^	fteqcc64 -DVER=\\"$(VER)\\" -DREV=\\"$(REV)\\" .\/menu\/menu.src$/;"	m
+DelayPacketState	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^} DelayPacketState;$/;"	v	language:C++	typeref:struct:__anon1
+Destroy	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    virtual void() Destroy = {$/;"	m	language:C++	class:FOPlayer	file:
+DoubleCheckCollision	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void DoubleCheckCollision(entity player,$/;"	f	language:C++	file:
+DuelWin	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity winner) DuelWin = {$/;"	v	language:C++
+DumpLog	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void DumpLog(RewindState* rs) {$/;"	f	language:C++
+EF_BLUE	share/defs.h	203;"	d
+EF_BRIGHTFIELD	share/defs.h	196;"	d
+EF_BRIGHTLIGHT	share/defs.h	198;"	d
+EF_DIMLIGHT	share/defs.h	199;"	d
+EF_FLAG1	share/defs.h	200;"	d
+EF_FLAG2	share/defs.h	201;"	d
+EF_MUZZLEFLASH	share/defs.h	197;"	d
+EF_RED	share/defs.h	204;"	d
+ENEMY_TEAM_READY	share/defs.h	235;"	d
+Engineer_QuietlyRemoveBuildings	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity eng) Engineer_QuietlyRemoveBuildings;$/;"	v	language:C++
+Engineer_RemoveBuildings	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity eng) Engineer_RemoveBuildings;$/;"	v	language:C++
+Engineer_UseDispenser	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity disp) Engineer_UseDispenser;$/;"	v	language:C++
+Engineer_UseSentryGun	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity gun) Engineer_UseSentryGun;$/;"	v	language:C++
+EntGet	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static EntHash* EntGet(int ent_num) {$/;"	f	language:C++	file:
+EntHash	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^struct EntHash {$/;"	s	language:C++	file:
+ExecImpulseCommand	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void ExecImpulseCommand(int impulse, int arg = 0) {$/;"	f	language:C++
+FALSE	share/defs.h	17;"	d
+FLAG_INFO	share/defs.h	441;"	d
+FLAME_BURNRATIO	share/defs.h	1249;"	d
+FLAME_MAXBURNTIME	share/defs.h	1245;"	d
+FLAME_MAXPLYRFLAMES	share/defs.h	1247;"	d
+FLAME_NUMLIGHTS	share/defs.h	1248;"	d
+FLAME_PLYRMAXTIME	share/defs.h	1244;"	d
+FL_CLIENT	share/defs.h	23;"	d
+FL_FLY	share/defs.h	21;"	d
+FL_GODMODE	share/defs.h	26;"	d
+FL_INWATER	share/defs.h	24;"	d
+FL_ITEM	share/defs.h	28;"	d
+FL_JUMPRELEASED	share/defs.h	33;"	d
+FL_MONSTER	share/defs.h	25;"	d
+FL_NOTARGET	share/defs.h	27;"	d
+FL_ONGROUND	share/defs.h	29;"	d
+FL_PARTIALGROUND	share/defs.h	30;"	d
+FL_SWIM	share/defs.h	22;"	d
+FL_WATERJUMP	share/defs.h	31;"	d
+FOPlayer	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    void() FOPlayer = {$/;"	m	language:C++	class:FOPlayer	file:
+FOPlayer	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^class FOPlayer {$/;"	c	language:C++	file:
+FO_FireAssCanPellet	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void FO_FireAssCanPellet(vector org, vector dir, float proj_speed, int index) {$/;"	f	language:C++
+FO_GetUserSetting	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float FO_GetUserSetting(entity ent, string ps_short, string ps_setting,$/;"	f	language:C++
+FO_GetUserSettingRaw	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^string FO_GetUserSettingRaw(entity ent, string ps_short, string ps_setting,$/;"	f	language:C++
+FO_GrenExplode	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void FO_GrenExplode(entity e) {$/;"	f	language:C++
+FO_HUD_AMMO_ICON_NAME	share/defs.h	1401;"	d
+FO_HUD_AMMO_NAME	share/defs.h	1400;"	d
+FO_HUD_ARMOUR_ICON_NAME	share/defs.h	1403;"	d
+FO_HUD_ARMOUR_NAME	share/defs.h	1402;"	d
+FO_HUD_CAPS_NAME	share/defs.h	1384;"	d
+FO_HUD_CLIPSIZE_NAME	share/defs.h	1382;"	d
+FO_HUD_CLIPSIZE_PANEL_X	share/defs.h	1376;"	d
+FO_HUD_CLIPSIZE_PANEL_Y	share/defs.h	1377;"	d
+FO_HUD_CONFIG_PATH	share/defs.h	1369;"	d
+FO_HUD_FACE_NAME	share/defs.h	1399;"	d
+FO_HUD_FLAGINFO_NAME	share/defs.h	1391;"	d
+FO_HUD_FRAGSTREAK_NAME	share/defs.h	1383;"	d
+FO_HUD_GAME_MODE_NAME	share/defs.h	1394;"	d
+FO_HUD_GREN1_NAME	share/defs.h	1386;"	d
+FO_HUD_GREN2_NAME	share/defs.h	1387;"	d
+FO_HUD_GRENTIMER_NAME	share/defs.h	1389;"	d
+FO_HUD_GROW_DOWN	share/defs.h	1365;"	d
+FO_HUD_GROW_LEFT	share/defs.h	1366;"	d
+FO_HUD_GROW_RIGHT	share/defs.h	1367;"	d
+FO_HUD_GROW_UP	share/defs.h	1364;"	d
+FO_HUD_HEALTH_NAME	share/defs.h	1398;"	d
+FO_HUD_IDENTIFY_NAME	share/defs.h	1385;"	d
+FO_HUD_INSERT_AFTER	share/defs.h	1379;"	d
+FO_HUD_INSERT_BEFORE	share/defs.h	1378;"	d
+FO_HUD_INSERT_MIDDLE	share/defs.h	1380;"	d
+FO_HUD_INV_CELLS_NAME	share/defs.h	1407;"	d
+FO_HUD_INV_NAILS_NAME	share/defs.h	1405;"	d
+FO_HUD_INV_ROCKETS_NAME	share/defs.h	1406;"	d
+FO_HUD_INV_SHELLS_NAME	share/defs.h	1404;"	d
+FO_HUD_MAP_MENU_NAME	share/defs.h	1397;"	d
+FO_HUD_MENU_HINT_NAME	share/defs.h	1393;"	d
+FO_HUD_MOTD_NAME	share/defs.h	1392;"	d
+FO_HUD_OPTIONS_NAME	share/defs.h	1390;"	d
+FO_HUD_READY_NAME	share/defs.h	1395;"	d
+FO_HUD_SHOWSCORES_NAME	share/defs.h	1396;"	d
+FO_HUD_SPECIAL_NAME	share/defs.h	1388;"	d
+FO_HUD_TEAM_SCORE_NAME	share/defs.h	1408;"	d
+FO_HandleTFStateUpdate	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void FO_HandleTFStateUpdate() {$/;"	f	language:C++
+FO_MISC_INFO_NO_Z_TEST	share/defs.h	1238;"	d
+FO_Predict_Init	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void FO_Predict_Init() {$/;"	f	language:C++
+FO_TOKEN_PATH	share/defs.h	1370;"	d
+FO_T_GrenExplode	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void FO_T_GrenExplode() {$/;"	f	language:C++
+FPP_ApplyGrenadeProperties	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void FPP_ApplyGrenadeProperties(entity proj) {$/;"	f	language:C++	file:
+FPP_FindTrail	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^int FPP_FindTrail(entity e) {$/;"	f	language:C++
+FPP_Init	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void FPP_Init(int fpp_type, entity proj) {$/;"	f	language:C++
+FindConcTimer	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^entity FindConcTimer(entity player);$/;"	p	language:C++	file:
+FindConcTimer	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^entity FindConcTimer(entity player);$/;"	p	language:C++	file:
+FlagCarried	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float FlagCarried() {  \/\/ Just awful.$/;"	f	language:C++	file:
+Forward_OpenDoors	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void Forward_OpenDoors(entity player) {$/;"	f	language:C++
+Forward_Projectile	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {$/;"	f	language:C++
+FreeRewind	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void FreeRewind(RewindState* h) {$/;"	f	language:C++	file:
+GL_NORMAL	share/defs.h	822;"	d
+GL_PIPEBOMB	share/defs.h	823;"	d
+GREEN	share/defs.h	671;"	d
+GREY	share/defs.h	678;"	d
+GR_CONCUSS_DEC	share/defs.h	827;"	d
+GR_CONCUSS_TIME	share/defs.h	826;"	d
+GR_HALLU_DEC	share/defs.h	831;"	d
+GR_HALLU_TIME	share/defs.h	830;"	d
+GR_TYPE_FLAMES_NO	share/defs.h	1250;"	d
+GR_TYPE_MIRV_NO	share/defs.h	1348;"	d
+GR_TYPE_NAPALM_NO	share/defs.h	1349;"	d
+GetConcMode	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^ConcMode GetConcMode() {$/;"	f	language:C++
+HUD_ICON_SIZE_X	share/defs.h	1374;"	d
+HUD_ICON_SIZE_Y	share/defs.h	1375;"	d
+HandleButtonThrowgren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void HandleButtonThrowgren(float index, float button) {$/;"	f	language:C++	file:
+HasLight	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float HasLight(int fpp_type) {$/;"	f	language:C++	file:
+ICON_CAPS	share/defs.h	1413;"	d
+ICON_CLIPSIZE	share/defs.h	1411;"	d
+ICON_DEMOMAN	share/defs.h	1431;"	d
+ICON_ENGINEER_DISP	share/defs.h	1437;"	d
+ICON_ENGINEER_SG	share/defs.h	1436;"	d
+ICON_FLAG_ANY	share/defs.h	1443;"	d
+ICON_FLAG_BLUE	share/defs.h	1444;"	d
+ICON_FLAG_GREEN	share/defs.h	1447;"	d
+ICON_FLAG_RED	share/defs.h	1445;"	d
+ICON_FLAG_YELLOW	share/defs.h	1446;"	d
+ICON_FRAGSTREAK	share/defs.h	1412;"	d
+ICON_GREN_BURST	share/defs.h	1427;"	d
+ICON_GREN_CALTROP	share/defs.h	1425;"	d
+ICON_GREN_CONCUSSION	share/defs.h	1418;"	d
+ICON_GREN_EMP	share/defs.h	1420;"	d
+ICON_GREN_FLARE	share/defs.h	1424;"	d
+ICON_GREN_FLASH	share/defs.h	1419;"	d
+ICON_GREN_GAS	share/defs.h	1423;"	d
+ICON_GREN_MIRV	share/defs.h	1421;"	d
+ICON_GREN_NAIL	share/defs.h	1417;"	d
+ICON_GREN_NAPALM	share/defs.h	1422;"	d
+ICON_GREN_NONE	share/defs.h	1415;"	d
+ICON_GREN_NORMAL	share/defs.h	1416;"	d
+ICON_GREN_SHOCK	share/defs.h	1426;"	d
+ICON_HWGUY	share/defs.h	1433;"	d
+ICON_IDENTIFY	share/defs.h	1414;"	d
+ICON_MEDIC	share/defs.h	1432;"	d
+ICON_PYRO	share/defs.h	1434;"	d
+ICON_SCOUT	share/defs.h	1428;"	d
+ICON_SECURITY_BUTTON_ANY	share/defs.h	1438;"	d
+ICON_SECURITY_BUTTON_BLUE	share/defs.h	1439;"	d
+ICON_SECURITY_BUTTON_GREEN	share/defs.h	1442;"	d
+ICON_SECURITY_BUTTON_RED	share/defs.h	1440;"	d
+ICON_SECURITY_BUTTON_YELLOW	share/defs.h	1441;"	d
+ICON_SNIPER	share/defs.h	1429;"	d
+ICON_SOLDIER	share/defs.h	1430;"	d
+ICON_SPY	share/defs.h	1435;"	d
+IT_ARMOR1	share/defs.h	89;"	d
+IT_ARMOR2	share/defs.h	90;"	d
+IT_ARMOR3	share/defs.h	91;"	d
+IT_AXE	share/defs.h	74;"	d
+IT_CELLS	share/defs.h	87;"	d
+IT_EXTRA_WEAPON	share/defs.h	82;"	d
+IT_GRENADE_LAUNCHER	share/defs.h	79;"	d
+IT_HOOK	share/defs.h	101;"	d
+IT_INVISIBILITY	share/defs.h	97;"	d
+IT_INVULNERABILITY	share/defs.h	98;"	d
+IT_KEY1	share/defs.h	94;"	d
+IT_KEY2	share/defs.h	95;"	d
+IT_LIGHTNING	share/defs.h	81;"	d
+IT_NAILGUN	share/defs.h	77;"	d
+IT_NAILS	share/defs.h	85;"	d
+IT_QUAD	share/defs.h	100;"	d
+IT_ROCKETS	share/defs.h	86;"	d
+IT_ROCKET_LAUNCHER	share/defs.h	80;"	d
+IT_SHELLS	share/defs.h	84;"	d
+IT_SHOTGUN	share/defs.h	75;"	d
+IT_SUIT	share/defs.h	99;"	d
+IT_SUPERHEALTH	share/defs.h	92;"	d
+IT_SUPER_NAILGUN	share/defs.h	78;"	d
+IT_SUPER_SHOTGUN	share/defs.h	76;"	d
+ImpulseAllowed	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^static int ImpulseAllowed(int impulse) {$/;"	f	language:C++	file:
+ImpulseCommands	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void ImpulseCommands() {$/;"	f	language:C++
+InitPrematch	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void InitPrematch()$/;"	f	language:C++
+InitProjectileEnt	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void InitProjectileEnt(float sendflags) {$/;"	f	language:C++
+InsertRewindBarrier	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    nonvirtual void(float when) InsertRewindBarrier = {$/;"	m	language:C++	class:FOPlayer	file:
+IsAttacking	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float IsAttacking(entity player) {$/;"	f	language:C++	file:
+IsEffectFrame	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float IsEffectFrame() {$/;"	f	language:C++
+IsEffectFrameMulti	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float IsEffectFrameMulti() {$/;"	f	language:C++
+KickCheater	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity p) KickCheater;$/;"	v	language:C++
+LAST_NOT_READY	share/defs.h	236;"	d
+LOGIN_REQUEST	share/defs.h	1496;"	d
+LocalTeam	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float LocalTeam() {$/;"	f	language:C++	file:
+MAX_SNAPSHOTS	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	11;"	d	language:C++	file:
+MAX_WORLD_AMMOBOXES	share/defs.h	1346;"	d
+MAX_WORLD_FLAMES	share/defs.h	1343;"	d
+MAX_WORLD_PIPEBOMBS	share/defs.h	1344;"	d
+MENU_CLASS	share/defs.h	1318;"	d
+MENU_DEFAULT	share/defs.h	1316;"	d
+MENU_DEMOMAN	share/defs.h	1321;"	d
+MENU_DEMOMAN_CANCEL	share/defs.h	1322;"	d
+MENU_DISPENSER	share/defs.h	1334;"	d
+MENU_DROP	share/defs.h	1319;"	d
+MENU_ENGINEER	share/defs.h	1330;"	d
+MENU_ENGINEER_FIX_DISPENSER	share/defs.h	1331;"	d
+MENU_ENGINEER_FIX_SENTRYGUN	share/defs.h	1332;"	d
+MENU_INTRO	share/defs.h	1320;"	d
+MENU_REFRESH_RATE	share/defs.h	1336;"	d
+MENU_REPEATHELP	share/defs.h	1323;"	d
+MENU_SCOUT	share/defs.h	1333;"	d
+MENU_SPY	share/defs.h	1327;"	d
+MENU_SPY_COLOR	share/defs.h	1329;"	d
+MENU_SPY_SKIN	share/defs.h	1328;"	d
+MENU_SPY_SKIN_1	share/defs.h	1324;"	d
+MENU_SPY_SKIN_2	share/defs.h	1325;"	d
+MENU_SPY_SKIN_3	share/defs.h	1326;"	d
+MENU_TEAM	share/defs.h	1317;"	d
+MOVETYPE_BOUNCE	share/defs.h	46;"	d
+MOVETYPE_BOUNCEMISSILE	share/defs.h	47;"	d
+MOVETYPE_FLY	share/defs.h	41;"	d
+MOVETYPE_FLYMISSILE	share/defs.h	45;"	d
+MOVETYPE_NOCLIP	share/defs.h	44;"	d
+MOVETYPE_NONE	share/defs.h	36;"	d
+MOVETYPE_PUSH	share/defs.h	43;"	d
+MOVETYPE_STEP	share/defs.h	40;"	d
+MOVETYPE_TOSS	share/defs.h	42;"	d
+MOVETYPE_WALK	share/defs.h	39;"	d
+MSG_ALL	share/defs.h	209;"	d
+MSG_BROADCAST	share/defs.h	207;"	d
+MSG_INIT	share/defs.h	210;"	d
+MSG_MULTICAST	share/defs.h	211;"	d
+MSG_ONE	share/defs.h	208;"	d
+MULTICAST_ALL	share/defs.h	220;"	d
+MULTICAST_ALL_R	share/defs.h	223;"	d
+MULTICAST_PHS	share/defs.h	221;"	d
+MULTICAST_PHS_R	share/defs.h	224;"	d
+MULTICAST_PVS	share/defs.h	222;"	d
+MULTICAST_PVS_R	share/defs.h	225;"	d
+ModulateDelayPackets	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void ModulateDelayPackets() {$/;"	f	language:C++
+NAPALM_MAXBURNTIME	share/defs.h	1246;"	d
+NB_CONC_CAP_AIR	share/defs.h	1693;"	d
+NB_CONC_CAP_LAND	share/defs.h	1694;"	d
+NB_ImpellerCoolDown	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float NB_ImpellerCoolDown(FO_WeapInfo* wi) {$/;"	f	language:C++
+NGR_BURST_DEFAULT_COUNT	share/defs.h	817;"	d
+NGR_BURST_DEFAULT_INTERVAL	share/defs.h	818;"	d
+NGR_BURST_DEFAULT_RANGE	share/defs.h	819;"	d
+NGR_LASER_DEFAULT_DAMAGE	share/defs.h	814;"	d
+NGR_LASER_DEFAULT_RANGE	share/defs.h	815;"	d
+NGR_LASER_DEFAULT_ROTATIONCOUNT	share/defs.h	812;"	d
+NGR_LASER_DEFAULT_ROTATIONTIME	share/defs.h	813;"	d
+NGR_TYPE_BURST	share/defs.h	809;"	d
+NGR_TYPE_LASER	share/defs.h	808;"	d
+NGR_TYPE_NAIL	share/defs.h	807;"	d
+NIT_GOLD_DOOR_OPENED	share/defs.h	839;"	d
+NIT_SCANNER	share/defs.h	836;"	d
+NIT_SCANNER_ENEMY	share/defs.h	844;"	d
+NIT_SCANNER_FRIENDLY	share/defs.h	845;"	d
+NIT_SCANNER_MAXCELL	share/defs.h	854;"	d
+NIT_SCANNER_MIN_MOVEMENT	share/defs.h	855;"	d
+NIT_SCANNER_POWER	share/defs.h	852;"	d
+NIT_SCANNER_SOUND	share/defs.h	847;"	d
+NIT_SILVER_DOOR_OPENED	share/defs.h	838;"	d
+NUM_GREN_TIMERS	share/defs.h	178;"	d
+NextRewindIdx	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^inline int NextRewindIdx(int idx) {$/;"	f	language:C++
+NoRewindSyncFn	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void NoRewindSyncFn(entity e, float target_time) {$/;"	f	language:C++
+ORANGE	share/defs.h	675;"	d
+OutlineShader	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static string OutlineShader(string texture) {$/;"	f	language:C++	file:
+PC_CIVILIAN	share/defs.h	386;"	d
+PC_CIVILIAN_ARMORCLASSES	share/defs.h	1139;"	d
+PC_CIVILIAN_GRENADE_INIT_1	share/defs.h	1149;"	d
+PC_CIVILIAN_GRENADE_INIT_2	share/defs.h	1150;"	d
+PC_CIVILIAN_GRENADE_MAX_1	share/defs.h	1151;"	d
+PC_CIVILIAN_GRENADE_MAX_2	share/defs.h	1152;"	d
+PC_CIVILIAN_INITAMMO_CELL	share/defs.h	1147;"	d
+PC_CIVILIAN_INITAMMO_NAIL	share/defs.h	1146;"	d
+PC_CIVILIAN_INITAMMO_ROCKET	share/defs.h	1148;"	d
+PC_CIVILIAN_INITAMMO_SHOT	share/defs.h	1145;"	d
+PC_CIVILIAN_INITARMOR	share/defs.h	1136;"	d
+PC_CIVILIAN_INITARMORCLASS	share/defs.h	1140;"	d
+PC_CIVILIAN_INITARMORTYPE	share/defs.h	1138;"	d
+PC_CIVILIAN_MAXAMMO_CELL	share/defs.h	1143;"	d
+PC_CIVILIAN_MAXAMMO_NAIL	share/defs.h	1142;"	d
+PC_CIVILIAN_MAXAMMO_ROCKET	share/defs.h	1144;"	d
+PC_CIVILIAN_MAXAMMO_SHOT	share/defs.h	1141;"	d
+PC_CIVILIAN_MAXARMOR	share/defs.h	1135;"	d
+PC_CIVILIAN_MAXARMORTYPE	share/defs.h	1137;"	d
+PC_CIVILIAN_MAXHEALTH	share/defs.h	1133;"	d
+PC_CIVILIAN_MAXSPEED	share/defs.h	1134;"	d
+PC_CIVILIAN_SKIN	share/defs.h	1132;"	d
+PC_CIVILIAN_TF_ITEMS	share/defs.h	1153;"	d
+PC_DEMOMAN	share/defs.h	375;"	d
+PC_DEMOMAN_ARMORCLASSES	share/defs.h	958;"	d
+PC_DEMOMAN_GRENADE_INIT_1	share/defs.h	970;"	d
+PC_DEMOMAN_GRENADE_INIT_2	share/defs.h	971;"	d
+PC_DEMOMAN_GRENADE_MAX_1	share/defs.h	972;"	d
+PC_DEMOMAN_GRENADE_MAX_2	share/defs.h	973;"	d
+PC_DEMOMAN_INITAMMO_CELL	share/defs.h	967;"	d
+PC_DEMOMAN_INITAMMO_DETPACK	share/defs.h	969;"	d
+PC_DEMOMAN_INITAMMO_NAIL	share/defs.h	966;"	d
+PC_DEMOMAN_INITAMMO_ROCKET	share/defs.h	968;"	d
+PC_DEMOMAN_INITAMMO_SHOT	share/defs.h	965;"	d
+PC_DEMOMAN_INITARMOR	share/defs.h	955;"	d
+PC_DEMOMAN_INITARMORCLASS	share/defs.h	959;"	d
+PC_DEMOMAN_INITARMORTYPE	share/defs.h	957;"	d
+PC_DEMOMAN_MAXAMMO_CELL	share/defs.h	962;"	d
+PC_DEMOMAN_MAXAMMO_DETPACK	share/defs.h	964;"	d
+PC_DEMOMAN_MAXAMMO_NAIL	share/defs.h	961;"	d
+PC_DEMOMAN_MAXAMMO_ROCKET	share/defs.h	963;"	d
+PC_DEMOMAN_MAXAMMO_SHOT	share/defs.h	960;"	d
+PC_DEMOMAN_MAXARMOR	share/defs.h	954;"	d
+PC_DEMOMAN_MAXARMORTYPE	share/defs.h	956;"	d
+PC_DEMOMAN_MAXHEALTH	share/defs.h	952;"	d
+PC_DEMOMAN_MAXSPEED	share/defs.h	953;"	d
+PC_DEMOMAN_SKIN	share/defs.h	951;"	d
+PC_DEMOMAN_TF_ITEMS	share/defs.h	974;"	d
+PC_ENGINEER	share/defs.h	380;"	d
+PC_ENGINEER_ARMORCLASSES	share/defs.h	1114;"	d
+PC_ENGINEER_GRENADE_INIT_1	share/defs.h	1124;"	d
+PC_ENGINEER_GRENADE_INIT_2	share/defs.h	1125;"	d
+PC_ENGINEER_GRENADE_MAX_1	share/defs.h	1126;"	d
+PC_ENGINEER_GRENADE_MAX_2	share/defs.h	1127;"	d
+PC_ENGINEER_INITAMMO_CELL	share/defs.h	1122;"	d
+PC_ENGINEER_INITAMMO_NAIL	share/defs.h	1121;"	d
+PC_ENGINEER_INITAMMO_ROCKET	share/defs.h	1123;"	d
+PC_ENGINEER_INITAMMO_SHOT	share/defs.h	1120;"	d
+PC_ENGINEER_INITARMOR	share/defs.h	1111;"	d
+PC_ENGINEER_INITARMORCLASS	share/defs.h	1115;"	d
+PC_ENGINEER_INITARMORTYPE	share/defs.h	1113;"	d
+PC_ENGINEER_MAXAMMO_CELL	share/defs.h	1118;"	d
+PC_ENGINEER_MAXAMMO_NAIL	share/defs.h	1117;"	d
+PC_ENGINEER_MAXAMMO_ROCKET	share/defs.h	1119;"	d
+PC_ENGINEER_MAXAMMO_SHOT	share/defs.h	1116;"	d
+PC_ENGINEER_MAXARMOR	share/defs.h	1110;"	d
+PC_ENGINEER_MAXARMORTYPE	share/defs.h	1112;"	d
+PC_ENGINEER_MAXHEALTH	share/defs.h	1108;"	d
+PC_ENGINEER_MAXSPEED	share/defs.h	1109;"	d
+PC_ENGINEER_RAILSPEED	share/defs.h	1129;"	d
+PC_ENGINEER_SKIN	share/defs.h	1107;"	d
+PC_ENGINEER_TF_ITEMS	share/defs.h	1128;"	d
+PC_HVYWEAP	share/defs.h	377;"	d
+PC_HVYWEAP_ARMORCLASSES	share/defs.h	1022;"	d
+PC_HVYWEAP_GRENADE_INIT_1	share/defs.h	1032;"	d
+PC_HVYWEAP_GRENADE_INIT_2	share/defs.h	1033;"	d
+PC_HVYWEAP_GRENADE_MAX_1	share/defs.h	1034;"	d
+PC_HVYWEAP_GRENADE_MAX_2	share/defs.h	1035;"	d
+PC_HVYWEAP_INITAMMO_CELL	share/defs.h	1030;"	d
+PC_HVYWEAP_INITAMMO_NAIL	share/defs.h	1029;"	d
+PC_HVYWEAP_INITAMMO_ROCKET	share/defs.h	1031;"	d
+PC_HVYWEAP_INITAMMO_SHOT	share/defs.h	1028;"	d
+PC_HVYWEAP_INITARMOR	share/defs.h	1019;"	d
+PC_HVYWEAP_INITARMORCLASS	share/defs.h	1023;"	d
+PC_HVYWEAP_INITARMORTYPE	share/defs.h	1021;"	d
+PC_HVYWEAP_MAXAMMO_CELL	share/defs.h	1026;"	d
+PC_HVYWEAP_MAXAMMO_NAIL	share/defs.h	1025;"	d
+PC_HVYWEAP_MAXAMMO_ROCKET	share/defs.h	1027;"	d
+PC_HVYWEAP_MAXAMMO_SHOT	share/defs.h	1024;"	d
+PC_HVYWEAP_MAXARMOR	share/defs.h	1018;"	d
+PC_HVYWEAP_MAXARMORTYPE	share/defs.h	1020;"	d
+PC_HVYWEAP_MAXHEALTH	share/defs.h	1016;"	d
+PC_HVYWEAP_MAXSPEED	share/defs.h	1017;"	d
+PC_HVYWEAP_SKIN	share/defs.h	1015;"	d
+PC_HVYWEAP_TF_ITEMS	share/defs.h	1036;"	d
+PC_LASTCLASS	share/defs.h	388;"	d
+PC_MEDIC	share/defs.h	376;"	d
+PC_MEDIC_ARMORCLASSES	share/defs.h	984;"	d
+PC_MEDIC_AURA_ACTIVE	share/defs.h	1010;"	d
+PC_MEDIC_AURA_HEAL_AMOUNT	share/defs.h	1004;"	d
+PC_MEDIC_AURA_HEAL_TIME	share/defs.h	1003;"	d
+PC_MEDIC_AURA_OUTOFPOWER	share/defs.h	1012;"	d
+PC_MEDIC_AURA_RANGE	share/defs.h	1005;"	d
+PC_MEDIC_AURA_RECHARGING	share/defs.h	1011;"	d
+PC_MEDIC_CELL_REGEN_CD	share/defs.h	1008;"	d
+PC_MEDIC_CELL_REGEN_PERCENT	share/defs.h	1007;"	d
+PC_MEDIC_CELL_REGEN_TIME	share/defs.h	1006;"	d
+PC_MEDIC_GRENADE_INIT_1	share/defs.h	996;"	d
+PC_MEDIC_GRENADE_INIT_2	share/defs.h	997;"	d
+PC_MEDIC_GRENADE_MAX_1	share/defs.h	998;"	d
+PC_MEDIC_GRENADE_MAX_2	share/defs.h	999;"	d
+PC_MEDIC_INITAMMO_CELL	share/defs.h	993;"	d
+PC_MEDIC_INITAMMO_MEDIKIT	share/defs.h	995;"	d
+PC_MEDIC_INITAMMO_NAIL	share/defs.h	992;"	d
+PC_MEDIC_INITAMMO_ROCKET	share/defs.h	994;"	d
+PC_MEDIC_INITAMMO_SHOT	share/defs.h	991;"	d
+PC_MEDIC_INITARMOR	share/defs.h	981;"	d
+PC_MEDIC_INITARMORCLASS	share/defs.h	985;"	d
+PC_MEDIC_INITARMORTYPE	share/defs.h	983;"	d
+PC_MEDIC_MAXAMMO_CELL	share/defs.h	988;"	d
+PC_MEDIC_MAXAMMO_MEDIKIT	share/defs.h	990;"	d
+PC_MEDIC_MAXAMMO_NAIL	share/defs.h	987;"	d
+PC_MEDIC_MAXAMMO_ROCKET	share/defs.h	989;"	d
+PC_MEDIC_MAXAMMO_SHOT	share/defs.h	986;"	d
+PC_MEDIC_MAXARMOR	share/defs.h	980;"	d
+PC_MEDIC_MAXARMORTYPE	share/defs.h	982;"	d
+PC_MEDIC_MAXHEALTH	share/defs.h	978;"	d
+PC_MEDIC_MAXSPEED	share/defs.h	979;"	d
+PC_MEDIC_REGEN_AMOUNT	share/defs.h	1002;"	d
+PC_MEDIC_REGEN_TIME	share/defs.h	1001;"	d
+PC_MEDIC_SAVEME_GRACE	share/defs.h	1009;"	d
+PC_MEDIC_SKIN	share/defs.h	977;"	d
+PC_MEDIC_TF_ITEMS	share/defs.h	1000;"	d
+PC_PYRO	share/defs.h	378;"	d
+PC_PYRO_AIRBLASTJUMP_CELLS	share/defs.h	1064;"	d
+PC_PYRO_AIRBLAST_CELLS	share/defs.h	1063;"	d
+PC_PYRO_AIRBLAST_RANGE	share/defs.h	1062;"	d
+PC_PYRO_ARMORCLASSES	share/defs.h	1047;"	d
+PC_PYRO_BURN_DAMAGE_AMP	share/defs.h	1072;"	d
+PC_PYRO_BURN_MULTIPLIER	share/defs.h	1071;"	d
+PC_PYRO_FLAMETHROWER_DAM	share/defs.h	1067;"	d
+PC_PYRO_GRENADE_INIT_1	share/defs.h	1057;"	d
+PC_PYRO_GRENADE_INIT_2	share/defs.h	1058;"	d
+PC_PYRO_GRENADE_MAX_1	share/defs.h	1059;"	d
+PC_PYRO_GRENADE_MAX_2	share/defs.h	1060;"	d
+PC_PYRO_INITAMMO_CELL	share/defs.h	1055;"	d
+PC_PYRO_INITAMMO_NAIL	share/defs.h	1054;"	d
+PC_PYRO_INITAMMO_ROCKET	share/defs.h	1056;"	d
+PC_PYRO_INITAMMO_SHOT	share/defs.h	1053;"	d
+PC_PYRO_INITARMOR	share/defs.h	1044;"	d
+PC_PYRO_INITARMORCLASS	share/defs.h	1048;"	d
+PC_PYRO_INITARMORTYPE	share/defs.h	1046;"	d
+PC_PYRO_INIT_BURN_DAM	share/defs.h	1070;"	d
+PC_PYRO_LAVA_LIFETIME	share/defs.h	1065;"	d
+PC_PYRO_LAVA_RETICK	share/defs.h	1066;"	d
+PC_PYRO_MAXAMMO_CELL	share/defs.h	1051;"	d
+PC_PYRO_MAXAMMO_NAIL	share/defs.h	1050;"	d
+PC_PYRO_MAXAMMO_ROCKET	share/defs.h	1052;"	d
+PC_PYRO_MAXAMMO_SHOT	share/defs.h	1049;"	d
+PC_PYRO_MAXARMOR	share/defs.h	1043;"	d
+PC_PYRO_MAXARMORTYPE	share/defs.h	1045;"	d
+PC_PYRO_MAXHEALTH	share/defs.h	1041;"	d
+PC_PYRO_MAXSPEED	share/defs.h	1042;"	d
+PC_PYRO_NAPALM_INIT_DAM	share/defs.h	1068;"	d
+PC_PYRO_NAPALM_MAX_EXPLOSIONS	share/defs.h	1069;"	d
+PC_PYRO_SKIN	share/defs.h	1040;"	d
+PC_PYRO_TF_ITEMS	share/defs.h	1061;"	d
+PC_RANDOM	share/defs.h	385;"	d
+PC_SCOUT	share/defs.h	372;"	d
+PC_SCOUT_ARMORCLASSES	share/defs.h	880;"	d
+PC_SCOUT_GRENADE_INIT_1	share/defs.h	890;"	d
+PC_SCOUT_GRENADE_INIT_2	share/defs.h	891;"	d
+PC_SCOUT_GRENADE_MAX_1	share/defs.h	892;"	d
+PC_SCOUT_GRENADE_MAX_2	share/defs.h	893;"	d
+PC_SCOUT_INITAMMO_CELL	share/defs.h	888;"	d
+PC_SCOUT_INITAMMO_NAIL	share/defs.h	887;"	d
+PC_SCOUT_INITAMMO_ROCKET	share/defs.h	889;"	d
+PC_SCOUT_INITAMMO_SHOT	share/defs.h	886;"	d
+PC_SCOUT_INITARMOR	share/defs.h	877;"	d
+PC_SCOUT_INITARMORCLASS	share/defs.h	881;"	d
+PC_SCOUT_INITARMORTYPE	share/defs.h	879;"	d
+PC_SCOUT_MAXAMMO_CELL	share/defs.h	884;"	d
+PC_SCOUT_MAXAMMO_NAIL	share/defs.h	883;"	d
+PC_SCOUT_MAXAMMO_ROCKET	share/defs.h	885;"	d
+PC_SCOUT_MAXAMMO_SHOT	share/defs.h	882;"	d
+PC_SCOUT_MAXARMOR	share/defs.h	876;"	d
+PC_SCOUT_MAXARMORTYPE	share/defs.h	878;"	d
+PC_SCOUT_MAXHEALTH	share/defs.h	874;"	d
+PC_SCOUT_MAXSPEED	share/defs.h	875;"	d
+PC_SCOUT_MOTION_MIN_I	share/defs.h	896;"	d
+PC_SCOUT_MOTION_MIN_MOVE	share/defs.h	897;"	d
+PC_SCOUT_SKIN	share/defs.h	873;"	d
+PC_SCOUT_TF_ITEMS	share/defs.h	894;"	d
+PC_SNIPER	share/defs.h	373;"	d
+PC_SNIPER_ARMORCLASSES	share/defs.h	907;"	d
+PC_SNIPER_GRENADE_INIT_1	share/defs.h	917;"	d
+PC_SNIPER_GRENADE_INIT_2	share/defs.h	918;"	d
+PC_SNIPER_GRENADE_MAX_1	share/defs.h	919;"	d
+PC_SNIPER_GRENADE_MAX_2	share/defs.h	920;"	d
+PC_SNIPER_INITAMMO_CELL	share/defs.h	915;"	d
+PC_SNIPER_INITAMMO_NAIL	share/defs.h	914;"	d
+PC_SNIPER_INITAMMO_ROCKET	share/defs.h	916;"	d
+PC_SNIPER_INITAMMO_SHOT	share/defs.h	913;"	d
+PC_SNIPER_INITARMOR	share/defs.h	904;"	d
+PC_SNIPER_INITARMORCLASS	share/defs.h	908;"	d
+PC_SNIPER_INITARMORTYPE	share/defs.h	906;"	d
+PC_SNIPER_MAXAMMO_CELL	share/defs.h	911;"	d
+PC_SNIPER_MAXAMMO_NAIL	share/defs.h	910;"	d
+PC_SNIPER_MAXAMMO_ROCKET	share/defs.h	912;"	d
+PC_SNIPER_MAXAMMO_SHOT	share/defs.h	909;"	d
+PC_SNIPER_MAXARMOR	share/defs.h	903;"	d
+PC_SNIPER_MAXARMORTYPE	share/defs.h	905;"	d
+PC_SNIPER_MAXDAM	share/defs.h	923;"	d
+PC_SNIPER_MAXHEALTH	share/defs.h	901;"	d
+PC_SNIPER_MAXSPEED	share/defs.h	902;"	d
+PC_SNIPER_SKIN	share/defs.h	900;"	d
+PC_SNIPER_TF_ITEMS	share/defs.h	921;"	d
+PC_SOLDIER	share/defs.h	374;"	d
+PC_SOLDIER_ARMORCLASSES	share/defs.h	933;"	d
+PC_SOLDIER_GRENADE_INIT_1	share/defs.h	943;"	d
+PC_SOLDIER_GRENADE_INIT_2	share/defs.h	944;"	d
+PC_SOLDIER_GRENADE_MAX_1	share/defs.h	945;"	d
+PC_SOLDIER_GRENADE_MAX_2	share/defs.h	946;"	d
+PC_SOLDIER_INITAMMO_CELL	share/defs.h	941;"	d
+PC_SOLDIER_INITAMMO_NAIL	share/defs.h	940;"	d
+PC_SOLDIER_INITAMMO_ROCKET	share/defs.h	942;"	d
+PC_SOLDIER_INITAMMO_SHOT	share/defs.h	939;"	d
+PC_SOLDIER_INITARMOR	share/defs.h	930;"	d
+PC_SOLDIER_INITARMORCLASS	share/defs.h	934;"	d
+PC_SOLDIER_INITARMORTYPE	share/defs.h	932;"	d
+PC_SOLDIER_MAXAMMO_CELL	share/defs.h	937;"	d
+PC_SOLDIER_MAXAMMO_NAIL	share/defs.h	936;"	d
+PC_SOLDIER_MAXAMMO_ROCKET	share/defs.h	938;"	d
+PC_SOLDIER_MAXAMMO_SHOT	share/defs.h	935;"	d
+PC_SOLDIER_MAXARMOR	share/defs.h	929;"	d
+PC_SOLDIER_MAXARMORTYPE	share/defs.h	931;"	d
+PC_SOLDIER_MAXHEALTH	share/defs.h	927;"	d
+PC_SOLDIER_MAXSPEED	share/defs.h	928;"	d
+PC_SOLDIER_ROCKET_SPEED	share/defs.h	947;"	d
+PC_SOLDIER_SKIN	share/defs.h	926;"	d
+PC_SOLDIER_TF_ITEMS	share/defs.h	948;"	d
+PC_SPY	share/defs.h	379;"	d
+PC_SPY_ARMORCLASSES	share/defs.h	1082;"	d
+PC_SPY_GO_UNDERCOVER_TIME	share/defs.h	1097;"	d
+PC_SPY_GRENADE_INIT_1	share/defs.h	1092;"	d
+PC_SPY_GRENADE_INIT_2	share/defs.h	1093;"	d
+PC_SPY_GRENADE_MAX_1	share/defs.h	1094;"	d
+PC_SPY_GRENADE_MAX_2	share/defs.h	1095;"	d
+PC_SPY_INITAMMO_CELL	share/defs.h	1090;"	d
+PC_SPY_INITAMMO_NAIL	share/defs.h	1089;"	d
+PC_SPY_INITAMMO_ROCKET	share/defs.h	1091;"	d
+PC_SPY_INITAMMO_SHOT	share/defs.h	1088;"	d
+PC_SPY_INITARMOR	share/defs.h	1079;"	d
+PC_SPY_INITARMORCLASS	share/defs.h	1083;"	d
+PC_SPY_INITARMORTYPE	share/defs.h	1081;"	d
+PC_SPY_MAXAMMO_CELL	share/defs.h	1086;"	d
+PC_SPY_MAXAMMO_NAIL	share/defs.h	1085;"	d
+PC_SPY_MAXAMMO_ROCKET	share/defs.h	1087;"	d
+PC_SPY_MAXAMMO_SHOT	share/defs.h	1084;"	d
+PC_SPY_MAXARMOR	share/defs.h	1078;"	d
+PC_SPY_MAXARMORTYPE	share/defs.h	1080;"	d
+PC_SPY_MAXHEALTH	share/defs.h	1076;"	d
+PC_SPY_MAXSPEED	share/defs.h	1077;"	d
+PC_SPY_SKIN	share/defs.h	1075;"	d
+PC_SPY_TF_ITEMS	share/defs.h	1096;"	d
+PC_SPY_TRANQSPEED	share/defs.h	1098;"	d
+PC_UNDEFINED	share/defs.h	370;"	d
+PINK	share/defs.h	674;"	d
+PLAYER_READY	share/defs.h	234;"	d
+PM_AddNudgeDash	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PM_AddNudgeDash(float cseq);$/;"	p	language:C++	file:
+PM_Enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float PM_Enabled();$/;"	p	language:C++	file:
+PM_Enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float PM_Enabled() { return pengine.pm_enabled; }$/;"	f	language:C++
+PM_Refresh	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PM_Refresh();$/;"	p	language:C++	file:
+PM_ServerUpdate	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PM_ServerUpdate();$/;"	p	language:C++	file:
+PM_SyncTo	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PM_SyncTo(float seq);$/;"	p	language:C++	file:
+PM_TestJump	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PM_TestJump();$/;"	p	language:C++	file:
+PP_Cleanup	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PP_Cleanup(entity proj) {$/;"	f	language:C++
+PP_CreateProjectile	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {$/;"	f	language:C++
+PP_EPS	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float PP_EPS = 0.05;$/;"	v	language:C++	file:
+PP_Enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float PP_Enabled() { return pengine.pp_enabled; }$/;"	f	language:C++
+PP_PredrawActive	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float PP_PredrawActive() {$/;"	f	language:C++
+PP_PredrawPredicted	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float PP_PredrawPredicted() {$/;"	f	language:C++
+PRINT_CHAT	share/defs.h	217;"	d
+PRINT_CONFIG	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	177;"	d	language:C++	file:
+PRINT_CONFIG	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	249;"	d	language:C++	file:
+PRINT_CONFIG_ACTIVE	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	179;"	d	language:C++	file:
+PRINT_HIGH	share/defs.h	216;"	d
+PRINT_LOW	share/defs.h	214;"	d
+PRINT_MEDIUM	share/defs.h	215;"	d
+PRNG_CONC	share/defs.h	/^    PRNG_CONC,$/;"	e	enum:__anon1
+PRNG_HWGUY	share/defs.h	/^    PRNG_HWGUY,$/;"	e	enum:__anon1
+PRNG_MOVE	share/defs.h	/^    PRNG_MOVE,$/;"	e	enum:__anon1
+PRNG_NUM_STATES	share/defs.h	/^    PRNG_NUM_STATES,$/;"	e	enum:__anon1
+PRNG_WEAP	share/defs.h	/^    PRNG_WEAP,$/;"	e	enum:__anon1
+PURPLE	share/defs.h	676;"	d
+PUSH_EXCLUDEGRENADE	share/defs.h	1477;"	d
+PUSH_EXCLUDEOTHER	share/defs.h	1474;"	d
+PUSH_INCLUDETFITEM	share/defs.h	1473;"	d
+PUSH_MEGAJUMPER	share/defs.h	1476;"	d
+PUSH_NONOISE	share/defs.h	1475;"	d
+PUSH_ONCE	share/defs.h	1472;"	d
+ParseGrenPrimed	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^CsGrenTimer ParseGrenPrimed(float grentype, float explodes_at,$/;"	p	language:C++	file:
+ParseTFDetect	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity AD) ParseTFDetect;$/;"	v	language:C++
+PlayerPeriodicThink	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void PlayerPeriodicThink(float is_player) {$/;"	f	language:C++
+PlayerPostThinkAlive	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^static void PlayerPostThinkAlive() {$/;"	f	language:C++	file:
+PredProj_Sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PredProj_Sound(int proj_type, float vol = 1) {$/;"	f	language:C++
+PredProjectile_DebugMatch	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void PredProjectile_DebugMatch(entity cprj, entity sprj) {$/;"	f	language:C++
+PredProjectile_MatchProjectile	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float PredProjectile_MatchProjectile() {$/;"	f	language:C++
+Pred_Sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void Pred_Sound(SoundIndex snd, float vol = 1) {$/;"	f	language:C++
+PredictConc	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void PredictConc() {$/;"	f	language:C++	file:
+Predictable_Sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void Predictable_Sound(float stime, float ent_no, string samp, float chan,$/;"	f	language:C++
+Predicted_Sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void Predicted_Sound(string samp, float chan, float vol);$/;"	p	language:C++	file:
+Predicted_Sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void Predicted_Sound(string samp, float channel, float vol) {$/;"	f	language:C++
+PrevRewindIdx	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^inline int PrevRewindIdx(int idx) {$/;"	f	language:C++
+PrintClientScore	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity c) PrintClientScore = {$/;"	v	language:C++
+PrintFlagField	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void PrintFlagField(string desc, float bits, float nbits,$/;"	f	language:C++	file:
+ProjRewindForPhys	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void ProjRewindForPhys(entity e, float target_time) {$/;"	f	language:C++
+ProjRewindForTravel	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void ProjRewindForTravel(entity e, float target_time) {$/;"	f	language:C++
+RANGE_FAR	share/defs.h	60;"	d
+RANGE_MELEE	share/defs.h	57;"	d
+RANGE_MID	share/defs.h	59;"	d
+RANGE_NEAR	share/defs.h	58;"	d
+RED	share/defs.h	672;"	d
+RESPAWN_DELAY_TIME	share/defs.h	1358;"	d
+REV	Makefile	/^    REV := $(shell .\/version.sh --revision)$/;"	m
+REV	share/defs.h	10;"	d
+RE_GRENADE_LAUNCHER	share/defs.h	778;"	d
+RE_GRENADE_LAUNCHER_TIME	share/defs.h	784;"	d
+RE_ROCKET_LAUNCHER	share/defs.h	779;"	d
+RE_ROCKET_LAUNCHER_TIME	share/defs.h	785;"	d
+RE_SHOTGUN	share/defs.h	776;"	d
+RE_SHOTGUN_TIME	share/defs.h	782;"	d
+RE_SUPER_SHOTGUN	share/defs.h	777;"	d
+RE_SUPER_SHOTGUN_TIME	share/defs.h	783;"	d
+RL_FOR_EACH	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	80;"	d	language:C++	file:
+RL_Insert	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RL_Insert(RewindState** head, RewindState* node) {$/;"	f	language:C++	file:
+RL_Remove	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RL_Remove(RewindState** head, RewindState* node) {$/;"	f	language:C++	file:
+RL_RestorePositions	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RL_RestorePositions(RewindState* head) {$/;"	f	language:C++	file:
+RL_RewindTo	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RL_RewindTo(RewindState* head, entity exclude, float rtime) {$/;"	f	language:C++	file:
+RL_StashPositions	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RL_StashPositions(RewindState* head) {$/;"	f	language:C++	file:
+RW_RestoreAll	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void RW_RestoreAll() {$/;"	f	language:C++
+RW_RewindAll	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void RW_RewindAll(float when) {$/;"	f	language:C++
+RW_StashAll	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void RW_StashAll() {$/;"	f	language:C++
+RawPred_Sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void RawPred_Sound(SoundIndex snd, float channel, float vol = 1) {$/;"	f	language:C++
+RegisterPlayerListener	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^void RegisterPlayerListener() {$/;"	f	language:C++
+RegisterPlayerListener	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void RegisterPlayerListener();$/;"	p	language:C++	file:
+RemoveAttached	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void RemoveAttached() {$/;"	f	language:C++	file:
+RemoveConc	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void RemoveConc(entity player, float remove_timer = TRUE);$/;"	p	language:C++	file:
+RenderExplosion	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void RenderExplosion(vector origin) {$/;"	f	language:C++
+RenderGrenTimer	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float RenderGrenTimer(entity p, float test_only) {$/;"	f	language:C++	file:
+RenderPipeLockout	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void RenderPipeLockout(float new_lockout) {$/;"	f	language:C++	file:
+Respawn	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    nonvirtual void() Respawn = {$/;"	m	language:C++	class:FOPlayer	file:
+RewindAll	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    static void (float when) RewindAll = {$/;"	m	language:C++	class:FOPlayer	file:
+RewindBarrier	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^void RewindBarrier(entity player) {$/;"	f	language:C++
+RewindExcept	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    nonvirtual void(float when) RewindExcept = {$/;"	m	language:C++	class:FOPlayer	file:
+RewindLog	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^RewindSnapshot* RewindLog(RewindState* target) {$/;"	f	language:C++
+RewindPlayersExcept	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^float RewindPlayersExcept(entity except, float farthest_rewind_point) {$/;"	f	language:C++
+RewindRestore	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RewindRestore(RewindState* rs, float type) {$/;"	f	language:C++	file:
+RewindSave	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RewindSave(RewindState* rs) {$/;"	f	language:C++	file:
+RewindSeek	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static SeekResult RewindSeek(RewindState* rstate, float rtime) {$/;"	f	language:C++	file:
+RewindSnapshot	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^struct RewindSnapshot {$/;"	s	language:C++	file:
+RewindState	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^struct RewindState {$/;"	s	language:C++	file:
+RewindTo	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^static void RewindTo(RewindState* rstate, float rtime) {$/;"	f	language:C++	file:
+RewindUpdate	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    nonvirtual void() RewindUpdate = {$/;"	m	language:C++	class:FOPlayer	file:
+SNIPER_RIFLE_RELOAD_TIME	share/defs.h	1356;"	d
+SOLID_BBOX	share/defs.h	52;"	d
+SOLID_BSP	share/defs.h	54;"	d
+SOLID_NOT	share/defs.h	50;"	d
+SOLID_SLIDEBOX	share/defs.h	53;"	d
+SOLID_TRIGGER	share/defs.h	51;"	d
+SPAWNFLAG_BLOCK_EMP	share/defs.h	708;"	d
+SPEC_MAXSPEED	share/defs.h	1500;"	d
+SPY_DISGUISED	share/defs.h	/^    SPY_DISGUISED,$/;"	e	enum:__anon3
+SPY_DISGUISING	share/defs.h	/^    SPY_DISGUISING,$/;"	e	enum:__anon3
+SPY_NO_DISGUISE	share/defs.h	/^    SPY_NO_DISGUISE,$/;"	e	enum:__anon3
+STATE_ACTIVE	share/defs.h	120;"	d
+STATE_BOTTOM	share/defs.h	112;"	d
+STATE_DISABLED	share/defs.h	118;"	d
+STATE_DOWN	share/defs.h	114;"	d
+STATE_INACTIVE	share/defs.h	119;"	d
+STATE_INVISIBLE	share/defs.h	121;"	d
+STATE_NONE	share/defs.h	117;"	d
+STATE_TOP	share/defs.h	111;"	d
+STATE_UP	share/defs.h	113;"	d
+STAT_ALL_TIME	share/defs.h	1456;"	d
+STAT_FLAGS	share/defs.h	1452;"	d
+STAT_NOFIRE	share/defs.h	1454;"	d
+STAT_ORG_GAME	share/defs.h	1459;"	d
+STAT_PAUSED	share/defs.h	1453;"	d
+STAT_ROUND_END	share/defs.h	1458;"	d
+STAT_SPAWN_GEN	share/defs.h	1457;"	d
+STAT_TEAMNO	share/defs.h	1451;"	d
+STAT_TEAMNO_ATTACK	share/defs.h	1455;"	d
+SVC_BIGKICK	share/defs.h	140;"	d
+SVC_CDTRACK	share/defs.h	136;"	d
+SVC_DELTAPACKETENTITIES	share/defs.h	147;"	d
+SVC_FINALE	share/defs.h	135;"	d
+SVC_FOUNDSECRET	share/defs.h	133;"	d
+SVC_INTERMISSION	share/defs.h	134;"	d
+SVC_KILLEDMONSTER	share/defs.h	132;"	d
+SVC_MUZZLEFLASH	share/defs.h	143;"	d
+SVC_PACKETENTITIES	share/defs.h	146;"	d
+SVC_PLAYERINFO	share/defs.h	145;"	d
+SVC_SELLSCREEN	share/defs.h	137;"	d
+SVC_SETINFO	share/defs.h	148;"	d
+SVC_SMALLKICK	share/defs.h	139;"	d
+SVC_TEMPENTITY	share/defs.h	131;"	d
+SVC_UPDATEPING	share/defs.h	141;"	d
+SVC_UPDATEPL	share/defs.h	149;"	d
+SVC_UPDATETIME	share/defs.h	142;"	d
+SVC_UPDATEUSERINFO	share/defs.h	144;"	d
+Scout_ToggleScanner	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void Scout_ToggleScanner(float toggle_mask);$/;"	p	language:C++	file:
+SeekResult	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^struct SeekResult {$/;"	s	language:C++	file:
+SetAllRoles	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^static void SetAllRoles(float pc, float gren, float limit) {$/;"	f	language:C++	file:
+SetTeamName	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity p) SetTeamName;$/;"	v	language:C++
+SetVoteParams	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity p) SetVoteParams = {$/;"	v	language:C++
+ShellOutlineShader	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static string ShellOutlineShader(float thickness) {$/;"	f	language:C++	file:
+ShowFlagOutline	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float ShowFlagOutline() {$/;"	f	language:C++	file:
+ShowPlayerOutline	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float ShowPlayerOutline(entity player) {$/;"	f	language:C++	file:
+ShowTeamGrenTimer	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float ShowTeamGrenTimer(float team, float my_team) {$/;"	f	language:C++	file:
+Slot	share/defs.h	/^struct Slot { int id; };$/;"	s
+SlotWI	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static inline FO_WeapInfo* SlotWI(Slot slot) {$/;"	f	language:C++	file:
+SndLog	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^struct SndLog {$/;"	s	language:C++	file:
+SndLog_Append	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void SndLog_Append(string sound, int channel) {$/;"	f	language:C++
+SndLog_Search	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float SndLog_Search(float stime, string sound, int channel) {$/;"	f	language:C++
+SniperState	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^} SniperState;$/;"	v	language:C++	typeref:struct:__anon2
+Sniper_ZoomReset	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity pl) Sniper_ZoomReset;$/;"	v	language:C++
+SpawnBubble	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void SpawnBubble(vector origin);$/;"	p	language:C++	file:
+Spy_CheckArea	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float (entity pe_player) Spy_CheckArea;$/;"	v	language:C++
+StopAssCan	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void StopAssCan();$/;"	p	language:C++	file:
+StopGrenTimers	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void StopGrenTimers();$/;"	p	language:C++	file:
+TAN	share/defs.h	673;"	d
+TEAM1_CIVILIANS	share/defs.h	364;"	d
+TEAM2_CIVILIANS	share/defs.h	365;"	d
+TEAM3_CIVILIANS	share/defs.h	366;"	d
+TEAM4_CIVILIANS	share/defs.h	367;"	d
+TEAMPLAY_HALFDIRECT	share/defs.h	356;"	d
+TEAMPLAY_HALFEXPLOSIVE	share/defs.h	358;"	d
+TEAMPLAY_LESSPLAYERSHELP	share/defs.h	360;"	d
+TEAMPLAY_LESSSCOREHELP	share/defs.h	361;"	d
+TEAMPLAY_NODIRECT	share/defs.h	357;"	d
+TEAMPLAY_NOEXPLOSIVE	share/defs.h	359;"	d
+TEAMPLAY_NORMAL	share/defs.h	355;"	d
+TEAM_BLUE	share/defs.h	1485;"	d
+TEAM_GREN	share/defs.h	1488;"	d
+TEAM_HELP_RATE	share/defs.h	1351;"	d
+TEAM_RED	share/defs.h	1486;"	d
+TEAM_YELL	share/defs.h	1487;"	d
+TE_BLOOD	share/defs.h	163;"	d
+TE_EXPLOSION	share/defs.h	154;"	d
+TE_GUNSHOT	share/defs.h	153;"	d
+TE_KNIGHTSPIKE	share/defs.h	159;"	d
+TE_LAVASPLASH	share/defs.h	161;"	d
+TE_LIGHTNING1	share/defs.h	156;"	d
+TE_LIGHTNING2	share/defs.h	157;"	d
+TE_LIGHTNING3	share/defs.h	160;"	d
+TE_LIGHTNINGBLOOD	share/defs.h	164;"	d
+TE_SPIKE	share/defs.h	151;"	d
+TE_SUPERSPIKE	share/defs.h	152;"	d
+TE_TAREXPLOSION	share/defs.h	155;"	d
+TE_TELEPORT	share/defs.h	162;"	d
+TE_WIZSPIKE	share/defs.h	158;"	d
+TFAlias	share/defs.h	/^struct TFAlias {$/;"	s
+TFGA_REVERSE_AP	share/defs.h	1164;"	d
+TFGA_SPANNER	share/defs.h	1165;"	d
+TFGA_TOUCH	share/defs.h	1162;"	d
+TFGA_TOUCH_DETPACK	share/defs.h	1163;"	d
+TFGE_AP	share/defs.h	1168;"	d
+TFGE_AP_TEAM	share/defs.h	1169;"	d
+TFGE_NOT_AP	share/defs.h	1171;"	d
+TFGE_NOT_AP_TEAM	share/defs.h	1170;"	d
+TFGE_SAME_ENVIRONMENT	share/defs.h	1173;"	d
+TFGE_TIMER_CHECK_AP	share/defs.h	1174;"	d
+TFGE_WALL	share/defs.h	1172;"	d
+TFGI_ALLOWTHROW	share/defs.h	1202;"	d
+TFGI_CB_IGNORE	share/defs.h	1233;"	d
+TFGI_CB_IGNORE	share/defs.h	1237;"	d
+TFGI_DONTREMOVERES	share/defs.h	1200;"	d
+TFGI_DROP	share/defs.h	1192;"	d
+TFGI_DROPTOFLOOR	share/defs.h	1201;"	d
+TFGI_GLOW	share/defs.h	1190;"	d
+TFGI_ITEMGLOWS	share/defs.h	1199;"	d
+TFGI_KEEP	share/defs.h	1198;"	d
+TFGI_NOGLOW	share/defs.h	1232;"	d
+TFGI_NOGLOW	share/defs.h	1236;"	d
+TFGI_REMOVE	share/defs.h	1197;"	d
+TFGI_RETURN_DROP	share/defs.h	1193;"	d
+TFGI_RETURN_GOAL	share/defs.h	1194;"	d
+TFGI_RETURN_REMOVE	share/defs.h	1195;"	d
+TFGI_REVERSE_AP	share/defs.h	1196;"	d
+TFGI_SLOW	share/defs.h	1191;"	d
+TFGI_SOLID	share/defs.h	1203;"	d
+TFGR_ADD_BONUSES	share/defs.h	1178;"	d
+TFGR_ENDGAME	share/defs.h	1179;"	d
+TFGR_FORCE_RESPAWN	share/defs.h	1182;"	d
+TFGR_NO_ITEM_RESULTS	share/defs.h	1180;"	d
+TFGR_REMOVE_DISGUISE	share/defs.h	1181;"	d
+TFGR_SINGLE	share/defs.h	1177;"	d
+TFGS_ACTIVE	share/defs.h	1214;"	d
+TFGS_DELAYED	share/defs.h	1217;"	d
+TFGS_INACTIVE	share/defs.h	1215;"	d
+TFGS_NONE	share/defs.h	1213;"	d
+TFGS_REMOVED	share/defs.h	1216;"	d
+TFLAG_AUTOTEAM	share/defs.h	341;"	d
+TFLAG_CHEATCHECK	share/defs.h	336;"	d
+TFLAG_CLASS_PERSIST	share/defs.h	335;"	d
+TFLAG_FIRSTENTRY	share/defs.h	343;"	d
+TFLAG_FLAGEMU	share/defs.h	348;"	d
+TFLAG_FULLTEAMSCORE	share/defs.h	347;"	d
+TFLAG_GRAPPLE	share/defs.h	346;"	d
+TFLAG_RESPAWNDELAY	share/defs.h	337;"	d
+TFLAG_TEAMFRAGS	share/defs.h	342;"	d
+TFLAG_UN	share/defs.h	338;"	d
+TFLAG_UN2	share/defs.h	339;"	d
+TFLAG_UN3	share/defs.h	340;"	d
+TFLAG_WARSTANDARD	share/defs.h	349;"	d
+TFL_ANNOUNCE	share/defs.h	1497;"	d
+TFL_CONFIG_PATH	share/defs.h	1372;"	d
+TFL_RESULT	share/defs.h	1498;"	d
+TFSP_MULTIPLEITEMS	share/defs.h	1206;"	d
+TFSP_MULTIPLEMSGS	share/defs.h	1207;"	d
+TFSP_REMOVESELF	share/defs.h	1210;"	d
+TFSTATE_AC_FIRING	share/defs.h	286;"	d
+TFSTATE_AC_MASK	share/defs.h	285;"	d
+TFSTATE_GREN_MASK_ALL	share/defs.h	283;"	d
+TFSTATE_GREN_MASK_PRIMED	share/defs.h	282;"	d
+TFX_Flag_Init	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^void TFX_Flag_Init() {$/;"	f	language:C++
+TFX_Flag_Init	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void TFX_Flag_Init();$/;"	p	language:C++	file:
+TFX_Init	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^void TFX_Init() {$/;"	f	language:C++
+TFX_Init	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void TFX_Init();$/;"	p	language:C++	file:
+TF_ADMIN_ADMINMENU	share/defs.h	648;"	d
+TF_ADMIN_BAN	share/defs.h	596;"	d
+TF_ADMIN_CEASEFIRE	share/defs.h	598;"	d
+TF_ADMIN_CLANMODE	share/defs.h	616;"	d
+TF_ADMIN_COUNTPLAYERS	share/defs.h	597;"	d
+TF_ADMIN_CYCLEDEAL	share/defs.h	594;"	d
+TF_ADMIN_DUELMODE	share/defs.h	618;"	d
+TF_ADMIN_FORCESTARTMATCH	share/defs.h	542;"	d
+TF_ADMIN_KICK	share/defs.h	595;"	d
+TF_ADMIN_LISTIPS	share/defs.h	603;"	d
+TF_ADMIN_NEXT	share/defs.h	600;"	d
+TF_ADMIN_QUADMODE	share/defs.h	617;"	d
+TF_ADMIN_READYSTATUS	share/defs.h	543;"	d
+TF_AIRBLAST	share/defs.h	464;"	d
+TF_CHANGECLASS	share/defs.h	515;"	d
+TF_CHANGEPC_DEMOMAN	share/defs.h	519;"	d
+TF_CHANGEPC_ENGINEER	share/defs.h	524;"	d
+TF_CHANGEPC_HVYWEAP	share/defs.h	521;"	d
+TF_CHANGEPC_MEDIC	share/defs.h	520;"	d
+TF_CHANGEPC_PYRO	share/defs.h	522;"	d
+TF_CHANGEPC_RANDOM	share/defs.h	525;"	d
+TF_CHANGEPC_SCOUT	share/defs.h	516;"	d
+TF_CHANGEPC_SNIPER	share/defs.h	517;"	d
+TF_CHANGEPC_SOLDIER	share/defs.h	518;"	d
+TF_CHANGEPC_SPY	share/defs.h	523;"	d
+TF_CHANGETEAM	share/defs.h	505;"	d
+TF_CLASSHELP	share/defs.h	527;"	d
+TF_CLASSMENU	share/defs.h	414;"	d
+TF_DASH	share/defs.h	445;"	d
+TF_DEBUG_CSQC	share/defs.h	658;"	d
+TF_DEMOMAN_DETPACK	share/defs.h	453;"	d
+TF_DETPACK	share/defs.h	454;"	d
+TF_DETPACK_20	share/defs.h	457;"	d
+TF_DETPACK_5	share/defs.h	456;"	d
+TF_DETPACK_50	share/defs.h	458;"	d
+TF_DETPACK_STOP	share/defs.h	455;"	d
+TF_DISCARD	share/defs.h	437;"	d
+TF_DISCARD_DROP_AMMO	share/defs.h	488;"	d
+TF_DISGUISE_BLUE	share/defs.h	481;"	d
+TF_DISGUISE_DEMOMAN	share/defs.h	476;"	d
+TF_DISGUISE_ENEMY	share/defs.h	470;"	d
+TF_DISGUISE_ENGINEER	share/defs.h	480;"	d
+TF_DISGUISE_GREEN	share/defs.h	484;"	d
+TF_DISGUISE_HWGUY	share/defs.h	478;"	d
+TF_DISGUISE_LAST	share/defs.h	471;"	d
+TF_DISGUISE_LAST_SPAWNED	share/defs.h	491;"	d
+TF_DISGUISE_MEDIC	share/defs.h	477;"	d
+TF_DISGUISE_PYRO	share/defs.h	479;"	d
+TF_DISGUISE_RED	share/defs.h	482;"	d
+TF_DISGUISE_RESET	share/defs.h	472;"	d
+TF_DISGUISE_SCOUT	share/defs.h	473;"	d
+TF_DISGUISE_SNIPER	share/defs.h	474;"	d
+TF_DISGUISE_SOLDIER	share/defs.h	475;"	d
+TF_DISGUISE_YELLOW	share/defs.h	483;"	d
+TF_DISPLAYLOCATION	share/defs.h	510;"	d
+TF_DROPFLAG	share/defs.h	435;"	d
+TF_DROPKEY	share/defs.h	436;"	d
+TF_DROP_AMMO	share/defs.h	438;"	d
+TF_ENGINEER_BUILD	share/defs.h	485;"	d
+TF_ENGINEER_DETDISP	share/defs.h	486;"	d
+TF_ENGINEER_DETSENTRY	share/defs.h	487;"	d
+TF_ENGINEER_TOGGLEDISPENSER	share/defs.h	494;"	d
+TF_ENGINEER_TOGGLESENTRY	share/defs.h	493;"	d
+TF_FORCENEXT	share/defs.h	539;"	d
+TF_GRENADE_1	share/defs.h	423;"	d
+TF_GRENADE_2	share/defs.h	424;"	d
+TF_GRENADE_PT_1	share/defs.h	426;"	d
+TF_GRENADE_PT_2	share/defs.h	427;"	d
+TF_GRENADE_T	share/defs.h	425;"	d
+TF_HELP_MAP	share/defs.h	526;"	d
+TF_HVYWEAP_LOCK_TOGGLE	share/defs.h	461;"	d
+TF_ID	share/defs.h	442;"	d
+TF_ID_ENEMY	share/defs.h	444;"	d
+TF_ID_TEAM	share/defs.h	443;"	d
+TF_ILL_DEMOMAN	share/defs.h	1223;"	d
+TF_ILL_ENGINEER	share/defs.h	1229;"	d
+TF_ILL_HVYWEP	share/defs.h	1225;"	d
+TF_ILL_MEDIC	share/defs.h	1224;"	d
+TF_ILL_PYRO	share/defs.h	1226;"	d
+TF_ILL_RANDOMPC	share/defs.h	1227;"	d
+TF_ILL_SCOUT	share/defs.h	1220;"	d
+TF_ILL_SNIPER	share/defs.h	1221;"	d
+TF_ILL_SOLDIER	share/defs.h	1222;"	d
+TF_ILL_SPY	share/defs.h	1228;"	d
+TF_IMPULSE1	share/defs.h	408;"	d
+TF_IMPULSE2	share/defs.h	409;"	d
+TF_IMPULSE3	share/defs.h	410;"	d
+TF_IMPULSE4	share/defs.h	411;"	d
+TF_INVENTORY	share/defs.h	440;"	d
+TF_LOCKOFF	share/defs.h	463;"	d
+TF_LOCKON	share/defs.h	462;"	d
+TF_MEDIC_AURA_TOGGLE	share/defs.h	460;"	d
+TF_MEDIC_HELPME	share/defs.h	439;"	d
+TF_NAILGREN_INFO	share/defs.h	545;"	d
+TF_NUM_SLOTS	share/defs.h	412;"	d
+TF_PB_DETONATE	share/defs.h	459;"	d
+TF_PLAYER_NOT_READY	share/defs.h	541;"	d
+TF_PLAYER_READY	share/defs.h	540;"	d
+TF_PRACSPAWN_PLACE	share/defs.h	489;"	d
+TF_PRACSPAWN_REMOVE	share/defs.h	490;"	d
+TF_PREMATCH_INVULN	share/defs.h	504;"	d
+TF_RELOAD	share/defs.h	432;"	d
+TF_RELOAD_NEXT	share/defs.h	433;"	d
+TF_RELOAD_SLOT1	share/defs.h	429;"	d
+TF_RELOAD_SLOT2	share/defs.h	430;"	d
+TF_RELOAD_SLOT3	share/defs.h	431;"	d
+TF_RESPAWNDELAY1	share/defs.h	351;"	d
+TF_RESPAWNDELAY2	share/defs.h	352;"	d
+TF_RESPAWNDELAY3	share/defs.h	353;"	d
+TF_SCAN	share/defs.h	446;"	d
+TF_SCAN_ENEMY	share/defs.h	447;"	d
+TF_SCAN_FRIENDLY	share/defs.h	448;"	d
+TF_SCAN_SOUND	share/defs.h	449;"	d
+TF_SHOWLEGALCLASSES	share/defs.h	512;"	d
+TF_SHOWTF	share/defs.h	511;"	d
+TF_SHOW_IDS	share/defs.h	513;"	d
+TF_SLOT1	share/defs.h	604;"	d
+TF_SLOT2	share/defs.h	605;"	d
+TF_SLOT3	share/defs.h	606;"	d
+TF_SLOT4	share/defs.h	607;"	d
+TF_SPECIAL_SKILL1	share/defs.h	434;"	d
+TF_SPECIAL_SKILL2	share/defs.h	492;"	d
+TF_SPY_FEIGN	share/defs.h	465;"	d
+TF_SPY_FEIGN_SILENT	share/defs.h	468;"	d
+TF_SPY_SPY	share/defs.h	469;"	d
+TF_SPY_UNFEIGN	share/defs.h	467;"	d
+TF_STATUS_QUERY	share/defs.h	531;"	d
+TF_TD_ELECTRICITY	share/defs.h	305;"	d
+TF_TD_EXPLOSION	share/defs.h	304;"	d
+TF_TD_FIRE	share/defs.h	306;"	d
+TF_TD_IGNOREARMOR	share/defs.h	297;"	d
+TF_TD_NAIL	share/defs.h	303;"	d
+TF_TD_NOMOMENTUM	share/defs.h	308;"	d
+TF_TD_NOSOUND	share/defs.h	307;"	d
+TF_TD_NOTSELF	share/defs.h	299;"	d
+TF_TD_NOTTEAM	share/defs.h	298;"	d
+TF_TD_OTHER	share/defs.h	301;"	d
+TF_TD_SHOT	share/defs.h	302;"	d
+TF_TEAM_1	share/defs.h	506;"	d
+TF_TEAM_2	share/defs.h	507;"	d
+TF_TEAM_3	share/defs.h	508;"	d
+TF_TEAM_4	share/defs.h	509;"	d
+TF_TEAM_CLASSES	share/defs.h	528;"	d
+TF_TEAM_LIST	share/defs.h	529;"	d
+TF_TEAM_SCORES	share/defs.h	530;"	d
+TF_TOGGLEVOTE	share/defs.h	535;"	d
+TF_VOTENEXT	share/defs.h	536;"	d
+TF_VOTERACE	share/defs.h	538;"	d
+TF_VOTETRICK	share/defs.h	537;"	d
+TF_WEAPLAST	share/defs.h	422;"	d
+TF_WEAPNEXT	share/defs.h	420;"	d
+TF_WEAPPREV	share/defs.h	421;"	d
+TF_ZOOMIN	share/defs.h	451;"	d
+TF_ZOOMOUT	share/defs.h	452;"	d
+TF_ZOOMTOGGLE	share/defs.h	450;"	d
+TFxGrenTimerUpdate	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^void TFxGrenTimerUpdate(float ent_num, float expiry) {$/;"	f	language:C++
+TFxRenderGrenadeTimers	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^void TFxRenderGrenadeTimers() {$/;"	f	language:C++
+TM_MAX_NO	share/defs.h	732;"	d
+TP_FULLMIRRORAOE	share/defs.h	324;"	d
+TP_FULLMIRRORDIRECT	share/defs.h	322;"	d
+TP_HALFAOE	share/defs.h	319;"	d
+TP_HALFDIRECT	share/defs.h	317;"	d
+TP_HALFMIRRORAOE	share/defs.h	323;"	d
+TP_HALFMIRRORDIRECT	share/defs.h	321;"	d
+TP_NOAOE	share/defs.h	320;"	d
+TP_NODIRECT	share/defs.h	318;"	d
+TRANQ_TIME	share/defs.h	804;"	d
+TRUE	share/defs.h	18;"	d
+T_Knock_Antilag	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void T_Knock_Antilag() {$/;"	f	language:C++
+T_RadiusBounce	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void T_RadiusBounce(entity inflictor, entity attacker, float bounce,$/;"	p	language:C++	file:
+TeamBlue	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^    TeamBlue = 1,$/;"	e	language:C++	enum:__anon1	file:
+TeamFortress_DetonatePipebombs	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float TeamFortress_DetonatePipebombs(float force);$/;"	p	language:C++	file:
+TeamFortress_ExecMapScript	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity p) TeamFortress_ExecMapScript;$/;"	v	language:C++
+TeamFortress_PlacePracticeSpawn	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity e) TeamFortress_PlacePracticeSpawn;$/;"	v	language:C++
+TeamFortress_PrimeGrenade	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void TeamFortress_PrimeGrenade(float inp, float is_player);$/;"	p	language:C++	file:
+TeamFortress_QueuedDetpipe	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void TeamFortress_QueuedDetpipe();$/;"	p	language:C++	file:
+TeamFortress_RemovePracticeSpawn	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity e) TeamFortress_RemovePracticeSpawn;$/;"	v	language:C++
+TeamFortress_TeamShowMemberClasses	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity Player) TeamFortress_TeamShowMemberClasses;$/;"	v	language:C++
+TeamNo	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float TeamNo(entity player) {$/;"	f	language:C++	file:
+TeamNone	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^    TeamNone = 0,$/;"	e	language:C++	enum:__anon1	file:
+TeamRed	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^    TeamRed = 2,$/;"	e	language:C++	enum:__anon1	file:
+UPDATE_BINARY	share/defs.h	192;"	d
+UPDATE_GENERAL	share/defs.h	190;"	d
+UPDATE_STATIC	share/defs.h	191;"	d
+UPDATE_TEMP	share/defs.h	193;"	d
+UnrewoundOrigin	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    nonvirtual vector() UnrewoundOrigin = {$/;"	m	language:C++	class:FOPlayer	file:
+UpdateDelayPackets	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void UpdateDelayPackets(float val, float user) {$/;"	f	language:C++	file:
+UpdateFlag	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^float UpdateFlag(float isnew) {$/;"	f	language:C++
+UpdateFlagOutline	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void UpdateFlagOutline(entity flag) {$/;"	f	language:C++	file:
+UpdateFoMinPing	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void UpdateFoMinPing(string arg) {$/;"	f	language:C++
+UpdateGrenList	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void UpdateGrenList() {$/;"	f	language:C++	file:
+UpdateMinPing	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void UpdateMinPing() {$/;"	f	language:C++
+UpdateOutline	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static void UpdateOutline(entity player) {$/;"	f	language:C++	file:
+UpdatePlayer	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^float UpdatePlayer(float isnew) {$/;"	f	language:C++
+UpdateScoreboardInfo	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity player) UpdateScoreboardInfo = {$/;"	v	language:C++
+UseMinPing	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^static float UseMinPing() {$/;"	f	language:C++	file:
+VEC_HULL2_MAX	share/defs.h	128;"	d
+VEC_HULL2_MIN	share/defs.h	127;"	d
+VEC_HULL_MAX	share/defs.h	125;"	d
+VEC_HULL_MIN	share/defs.h	124;"	d
+VEC_ORIGIN	share/defs.h	123;"	d
+VER	Makefile	/^    VER := $(shell .\/version.sh --version)$/;"	m
+VER	share/defs.h	6;"	d
+ValidateUser	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (entity e) ValidateUser = {$/;"	v	language:C++
+WALL_HIDE_ON_USE	share/defs.h	1481;"	d
+WALL_SOLID_NOT	share/defs.h	1480;"	d
+WALL_SOLID_NOT_ON_USE	share/defs.h	1482;"	d
+WEAP_ASSAULT_CANNON	share/defs.h	/^    WEAP_ASSAULT_CANNON,$/;"	e	enum:__anon2
+WEAP_AUTO_RIFLE	share/defs.h	/^    WEAP_AUTO_RIFLE,$/;"	e	enum:__anon2
+WEAP_AXE	share/defs.h	/^    WEAP_AXE,$/;"	e	enum:__anon2
+WEAP_DETPACK	share/defs.h	/^    WEAP_DETPACK,$/;"	e	enum:__anon2
+WEAP_DETPACK_BITS_NO	share/defs.h	801;"	d
+WEAP_DETPACK_DISARMTIME	share/defs.h	798;"	d
+WEAP_DETPACK_SETTIME	share/defs.h	799;"	d
+WEAP_DETPACK_SIZE	share/defs.h	800;"	d
+WEAP_FLAMETHROWER	share/defs.h	/^    WEAP_FLAMETHROWER,$/;"	e	enum:__anon2
+WEAP_GRENADE_LAUNCHER	share/defs.h	/^    WEAP_GRENADE_LAUNCHER,$/;"	e	enum:__anon2
+WEAP_HOOK	share/defs.h	/^    WEAP_HOOK = 1,$/;"	e	enum:__anon2
+WEAP_IMPELLER	share/defs.h	/^    WEAP_IMPELLER,$/;"	e	enum:__anon2
+WEAP_INCENDIARY	share/defs.h	/^    WEAP_INCENDIARY,$/;"	e	enum:__anon2
+WEAP_KNIFE	share/defs.h	/^    WEAP_KNIFE,$/;"	e	enum:__anon2
+WEAP_LAST	share/defs.h	/^    WEAP_LAST = WEAP_IMPELLER,$/;"	e	enum:__anon2
+WEAP_LIGHTNING	share/defs.h	/^    WEAP_LIGHTNING,$/;"	e	enum:__anon2
+WEAP_MEDIKIT	share/defs.h	/^    WEAP_MEDIKIT,$/;"	e	enum:__anon2
+WEAP_MEDIKIT_HEAL	share/defs.h	791;"	d
+WEAP_MEDIKIT_OVERHEAL	share/defs.h	792;"	d
+WEAP_NAILGUN	share/defs.h	/^    WEAP_NAILGUN,$/;"	e	enum:__anon2
+WEAP_NONE	share/defs.h	741;"	d
+WEAP_PIPE_LAUNCHER	share/defs.h	/^    WEAP_PIPE_LAUNCHER,$/;"	e	enum:__anon2
+WEAP_RAILGUN	share/defs.h	/^    WEAP_RAILGUN,$/;"	e	enum:__anon2
+WEAP_ROCKET_LAUNCHER	share/defs.h	/^    WEAP_ROCKET_LAUNCHER,$/;"	e	enum:__anon2
+WEAP_SHOTGUN	share/defs.h	/^    WEAP_SHOTGUN,$/;"	e	enum:__anon2
+WEAP_SNIPER_RIFLE	share/defs.h	/^    WEAP_SNIPER_RIFLE,$/;"	e	enum:__anon2
+WEAP_SNIPER_RIFLE_MAX_MOVE	share/defs.h	788;"	d
+WEAP_SPANNER	share/defs.h	/^    WEAP_SPANNER,$/;"	e	enum:__anon2
+WEAP_SPANNER_REPAIR	share/defs.h	795;"	d
+WEAP_SUPER_NAILGUN	share/defs.h	/^    WEAP_SUPER_NAILGUN,$/;"	e	enum:__anon2
+WEAP_SUPER_SHOTGUN	share/defs.h	/^    WEAP_SUPER_SHOTGUN,$/;"	e	enum:__anon2
+WEAP_TRANQ	share/defs.h	/^    WEAP_TRANQ,$/;"	e	enum:__anon2
+WHITE	share/defs.h	668;"	d
+WPP_Dump	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WPP_Dump() {$/;"	f	language:C++
+WPP_Dump	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WPP_Dump();$/;"	p	language:C++	file:
+WPP_Status	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WPP_Status() {$/;"	f	language:C++
+WPP_UpdateEnable	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WPP_UpdateEnable(float force) {$/;"	f	language:C++
+WPP_ViewModelMask	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float WPP_ViewModelMask() { return pengine.view_mask; }$/;"	f	language:C++
+WP_ActivateBuildingPreview	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ActivateBuildingPreview(float type) {$/;"	f	language:C++
+WP_AnimateModel	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_AnimateModel() {$/;"	f	language:C++
+WP_Attack	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_Attack() {$/;"	f	language:C++
+WP_Attack	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_Attack();$/;"	p	language:C++	file:
+WP_BestWeaponSlot	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^Slot WP_BestWeaponSlot() {$/;"	f	language:C++
+WP_CanReload	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_CanReload(Slot slot, string* msg = __NULL__) {$/;"	f	language:C++
+WP_ChangeIfQueued	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_ChangeIfQueued() {$/;"	f	language:C++	file:
+WP_ChangeWeapon	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ChangeWeapon(Slot slot) {$/;"	f	language:C++
+WP_CheckAmmo	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_CheckAmmo(FO_WeapInfo* wi) {$/;"	f	language:C++
+WP_CheckReloadFinished	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_CheckReloadFinished() {$/;"	f	language:C++
+WP_CheckSpecialReady	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_CheckSpecialReady() {$/;"	f	language:C++
+WP_ClientThink	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ClientThink() {$/;"	f	language:C++
+WP_ClientThink	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ClientThink();$/;"	p	language:C++	file:
+WP_ClipFired	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float* WP_ClipFired(Slot slot) {$/;"	f	language:C++	file:
+WP_ConsumeAmmo	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ConsumeAmmo(Slot slot) {$/;"	f	language:C++
+WP_CurrentAmmo	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_CurrentAmmo() {$/;"	f	language:C++
+WP_CurrentClipFired	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_CurrentClipFired() {$/;"	f	language:C++
+WP_CurrentWeapon	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline FO_WeapInfo* WP_CurrentWeapon() {$/;"	f	language:C++
+WP_DeactivateBuildingPreview	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_DeactivateBuildingPreview() {$/;"	f	language:C++
+WP_DeactivateBuildingPreview	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_DeactivateBuildingPreview();$/;"	p	language:C++	file:
+WP_Enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float WP_Enabled() { return pengine.wp_enabled; }$/;"	f	language:C++
+WP_ExplodeGren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_ExplodeGren() {$/;"	f	language:C++	file:
+WP_ExplodeGren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ExplodeGren();$/;"	p	language:C++	file:
+WP_Frame	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_Frame() {$/;"	f	language:C++
+WP_GetAmmo	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_GetAmmo(float ammo_type) {$/;"	f	language:C++
+WP_GetClip	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^string WP_GetClip() {$/;"	f	language:C++
+WP_GrenCount	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_GrenCount(float index) {$/;"	f	language:C++
+WP_GrenadeTimers	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_GrenadeTimers() {$/;"	f	language:C++	file:
+WP_HandleGrenadeInputs	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_HandleGrenadeInputs() {$/;"	f	language:C++
+WP_HandleHeavyInputs	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_HandleHeavyInputs() {$/;"	f	language:C++	file:
+WP_Impulse	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_Impulse() {$/;"	f	language:C++
+WP_InitSentryPreview	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_InitSentryPreview() {$/;"	f	language:C++	file:
+WP_InitSniper	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_InitSniper() {$/;"	f	language:C++	file:
+WP_IsReloading	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float WP_IsReloading() {$/;"	f	language:C++
+WP_LockedCannon	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_LockedCannon() {$/;"	f	language:C++
+WP_PlayerClass	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_PlayerClass() {$/;"	f	language:C++
+WP_PreviewSentry	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_PreviewSentry() {$/;"	f	language:C++
+WP_ProcessServerUpdate	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ProcessServerUpdate() {$/;"	f	language:C++
+WP_ReloadCurrentIfNeeded	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ReloadCurrentIfNeeded() { return WP_ReloadIfNeeded(CurrentSlot()); }$/;"	f	language:C++
+WP_ReloadIfNeeded	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ReloadIfNeeded(Slot slot) {$/;"	f	language:C++
+WP_ReloadNext	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ReloadNext() {$/;"	f	language:C++
+WP_ReloadNext	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ReloadNext();$/;"	p	language:C++	file:
+WP_ReloadPercent	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ReloadPercent() {$/;"	f	language:C++
+WP_ReloadSlot	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ReloadSlot(Slot slot) {$/;"	f	language:C++
+WP_ReloadSlot	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_ReloadSlot(Slot slot);$/;"	p	language:C++	file:
+WP_ServerFrame	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_ServerFrame() {$/;"	f	language:C++
+WP_SniperCharge	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_SniperCharge() {$/;"	f	language:C++
+WP_Sniper_IsAttack	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float WP_Sniper_IsAttack() {$/;"	f	language:C++	file:
+WP_Sniper_UpdateSight	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_Sniper_UpdateSight() {$/;"	f	language:C++	file:
+WP_Special	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_Special() {$/;"	f	language:C++	file:
+WP_UpdatePings	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_UpdatePings() {$/;"	f	language:C++
+WP_UpdatePredict	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void WP_UpdatePredict() {$/;"	f	language:C++	file:
+WP_UpdateViewModel	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_UpdateViewModel() {$/;"	f	language:C++
+WP_UpdateViewModel	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void WP_UpdateViewModel();$/;"	p	language:C++	file:
+WP_WeaponReady	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float WP_WeaponReady() {$/;"	f	language:C++
+W_BestWeaponSlot	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^Slot W_BestWeaponSlot()  {$/;"	f	language:C++
+W_ChangeQueuedWeaponIfReady	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_ChangeQueuedWeaponIfReady() {$/;"	f	language:C++
+W_ChangeToBestWeapon	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void W_ChangeToBestWeapon() {$/;"	f	language:C++
+W_ChangeToSlotAlternate	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void W_ChangeToSlotAlternate(string opt1, string opt2, string opt3, string opt4) {$/;"	f	language:C++
+W_ChangeWeaponLast	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_ChangeWeaponLast() {$/;"	f	language:C++
+W_ChangeWeaponNext	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_ChangeWeaponNext() {$/;"	f	language:C++
+W_ChangeWeaponPrev	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_ChangeWeaponPrev() {$/;"	f	language:C++
+W_ChangeWeaponSlot	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (Slot slot) W_ChangeWeaponSlot;$/;"	v	language:C++
+W_ChangeWeaponSlot	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_ChangeWeaponSlot(Slot slot) {$/;"	f	language:C++
+W_ConsumeAmmoIfPossible	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float W_ConsumeAmmoIfPossible(float ammo_type, float amount) {$/;"	f	language:C++
+W_ConsumeAmmoIfPossible	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float W_ConsumeAmmoIfPossible(float ammo_type, float amount) {$/;"	f	language:C++
+W_FireAssaultCannon	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void W_FireAssaultCannon() {$/;"	f	language:C++
+W_FireGrenade	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void W_FireGrenade(int gren_type) {$/;"	f	language:C++
+W_FireGrenade	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_FireGrenade(vector org, vector v_ang, float use_ctime=0) {$/;"	f	language:C++
+W_FireIncendiaryCannon	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_FireIncendiaryCannon(vector org, vector angles, float use_ctime=0);$/;"	p	language:C++	file:
+W_FireRocket	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_FireRocket(vector org, vector v_ang, float use_ctime=0) = {$/;"	p	language:C++	file:
+W_PrimeGren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void W_PrimeGren(float index) {$/;"	f	language:C++	file:
+W_PrimeGren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void W_PrimeGren(float index);$/;"	p	language:C++	file:
+W_ThrowGren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void W_ThrowGren(float is_throw) {$/;"	f	language:C++	file:
+W_ThrowGren	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^void W_ThrowGren(float is_throw);$/;"	p	language:C++	file:
+W_UpdateCurrentWeapon	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity pl) W_UpdateCurrentWeapon = {$/;"	v	language:C++
+W_UpdateCurrentWeapon	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void (entity pl) W_UpdateCurrentWeapon;$/;"	v	language:C++
+W_UpdateWeaponModel	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^void W_UpdateWeaponModel(entity pl) {$/;"	f	language:C++
+W_ammo_to_p	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float* W_ammo_to_p(entity player, AmmoType ammo_type) {$/;"	f	language:C++
+WeaponReady	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float WeaponReady() {$/;"	f	language:C++
+YELLOW	share/defs.h	680;"	d
+after	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindSnapshot* after;$/;"	m	language:C++	struct:SeekResult	file:
+alias	share/defs.h	/^    string alias;$/;"	m	struct:TFAlias
+already_cycled	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float already_cycled;$/;"	v	language:C++
+ammo	dump.c	/^    int     ammo[AMMO_LAST];$/;"	m	struct:prediction_state	file:
+attack_finished	dump.c	/^    float   attack_finished;$/;"	m	struct:prediction_state	file:
+barrier	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    float barrier;$/;"	m	language:C++	struct:RewindState	file:
+before	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindSnapshot* before;$/;"	m	language:C++	struct:SeekResult	file:
+blood_count	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float blood_count;$/;"	v	language:C++
+blood_org	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^vector blood_org;$/;"	v	language:C++
+building_owner	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    entity building_preview, building_owner;$/;"	m	language:C++	struct:pengine_t	file:
+building_preview	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    entity building_preview, building_owner;$/;"	m	language:C++	struct:pengine_t	file:
+c_forward	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    vector c_forward;$/;"	m	language:C++	struct:__anon3	file:
+c_view	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    vector c_view;$/;"	m	language:C++	struct:__anon3	file:
+channel	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    int channel;$/;"	m	language:C++	struct:SndLog	file:
+class_skins	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static string class_skins[] = {$/;"	v	language:C++	file:
+client_aliases	share/defs.h	/^TFAlias client_aliases[] = {$/;"	v
+client_delay_packets	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float client_delay_packets;$/;"	v	language:C++	file:
+client_nextthink	dump.c	/^    float   client_nextthink;$/;"	m	struct:prediction_state	file:
+client_ping	dump.c	/^    float   client_ping;$/;"	m	struct:prediction_state	file:
+client_predflags	dump.c	/^    int     client_predflags;$/;"	m	struct:prediction_state	file:
+client_thinkindex	dump.c	/^    int     client_thinkindex;$/;"	m	struct:prediction_state	file:
+client_time	dump.c	/^    float   client_time;$/;"	m	struct:prediction_state	file:
+clip_fired	dump.c	/^    int     clip_fired[5];$/;"	m	struct:prediction_state	file:
+cmd	share/defs.h	/^    string cmd;$/;"	m	struct:TFAlias
+csqc_aliases	share/defs.h	/^TFAlias csqc_aliases[] = {$/;"	v
+csqc_get_user_setting	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float csqc_get_user_setting(string s_short, string s_long, string def);$/;"	p	language:C++	file:
+csqc_print	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	117;"	d	language:C++	file:
+cur	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    int cur;$/;"	m	language:C++	struct:RewindState	file:
+cuss_state	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^} cuss_state;$/;"	v	language:C++	typeref:struct:__anon3
+cussed	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float cussed;$/;"	m	language:C++	struct:__anon3	file:
+disp_index	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float disp_index, sentry_index;$/;"	v	language:C++	file:
+eff_name	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    string eff_name[2];$/;"	m	language:C++	struct:trail_table_entry	file:
+end_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float end_time;$/;"	m	language:C++	struct:__anon3	file:
+endtime	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^.float starttime, endtime, p_time;$/;"	v	language:C++
+ent_hash	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static EntHash ent_hash[43];$/;"	v	language:C++	file:
+entnum	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^    int entnum;$/;"	m	language:C++	struct:EntHash	file:
+eprintf	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	1156;"	d	language:C++	file:
+fill_avg_ping	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float fill_avg_ping(float* mean, float* variance) {$/;"	f	language:C++	file:
+filter_pproj_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float filter_pproj_time;$/;"	v	language:C++	file:
+fo_min_ping	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float fo_min_ping;$/;"	m	language:C++	struct:__anon1	file:
+frame	dump.c	/^    int     frame;$/;"	m	struct:prediction_state	file:
+getPingPanelText	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^string getPingPanelText() {$/;"	f	language:C++
+get_phys_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float get_phys_time(entity e) {$/;"	f	language:C++
+gren_list	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static entity gren_list[20];$/;"	v	language:C++	file:
+grentimer_expires	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^    float grentimer_expires;$/;"	m	language:C++	struct:EntHash	file:
+held_origin	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    vector held_origin, held_velocity;$/;"	m	language:C++	struct:RewindState	file:
+held_velocity	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    vector held_origin, held_velocity;$/;"	m	language:C++	struct:RewindState	file:
+id	share/defs.h	/^struct Slot { int id; };$/;"	m	struct:Slot
+impulse	dump.c	/^    int     impulse;$/;"	m	struct:prediction_state	file:
+impulse	share/defs.h	/^    float impulse;$/;"	m	struct:TFAlias
+inst_ping_ms	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float inst_ping_ms;$/;"	v	language:C++	file:
+inst_ping_t	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float inst_ping_t;$/;"	v	language:C++	file:
+interp_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^float interp_time() {$/;"	f	language:C++
+is_effectframe	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float is_effectframe;$/;"	m	language:C++	struct:pengine_t	file:
+items	dump.c	/^    int     items;$/;"	m	struct:prediction_state	file:
+kRenderDt	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static const float kRenderDt = 1.0 \/ 144.0;$/;"	v	language:C++	file:
+kSndLogSize	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static const float kSndLogSize = 50;$/;"	v	language:C++	file:
+last_a	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float last_a;$/;"	m	language:C++	struct:__anon3	file:
+last_effectframe	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float last_effectframe;$/;"	m	language:C++	struct:pengine_t	file:
+last_still_loading	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float last_still_loading;$/;"	v	language:C++	file:
+last_val	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float last_val;$/;"	m	language:C++	struct:__anon1	file:
+lastspawn_team1	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^entity lastspawn_team1;$/;"	v	language:C++
+lastspawn_team2	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^entity lastspawn_team2;$/;"	v	language:C++
+lastspawn_team3	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^entity lastspawn_team3;$/;"	v	language:C++
+lastspawn_team4	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^entity lastspawn_team4;$/;"	v	language:C++
+local_player	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static entity local_player;$/;"	v	language:C++	file:
+minv	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float minv, user_controlled;$/;"	m	language:C++	struct:__anon1	file:
+model_cache	dump.c	/^static float model_cache[32][2];$/;"	v	file:
+modelindex_eyes	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float modelindex_eyes;$/;"	v	language:C++
+modelindex_null	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float modelindex_null;$/;"	v	language:C++
+modelindex_player	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^float modelindex_player;$/;"	v	language:C++
+multi_damage	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float multi_damage;$/;"	v	language:C++
+multi_ent	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^entity multi_ent;$/;"	v	language:C++
+next	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindState* next;$/;"	m	language:C++	struct:RewindState	file:
+next_end_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float next_end_time;$/;"	m	language:C++	struct:pengine_t	file:
+next_grenlist_update	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float next_grenlist_update;$/;"	v	language:C++	file:
+nocsqc_cmd	share/defs.h	/^    string nocsqc_cmd;$/;"	m	struct:TFAlias
+nocsqc_impulse	share/defs.h	/^    float nocsqc_impulse;$/;"	m	struct:TFAlias
+num_gren_list	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static int num_gren_list;$/;"	v	language:C++	file:
+origin	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    vector origin;$/;"	m	language:C++	struct:RewindSnapshot	file:
+owner	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    entity owner;$/;"	m	language:C++	struct:RewindState	file:
+p_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^.float starttime, endtime, p_time;$/;"	v	language:C++
+part_sentry_range	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float part_sentry_range[2];$/;"	v	language:C++	file:
+pengine	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^} pengine;$/;"	v	language:C++	typeref:struct:pengine_t
+pengine_t	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^struct pengine_t {$/;"	s	language:C++	file:
+pipe_cooldown	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float pipe_cooldown;$/;"	m	language:C++	struct:pengine_t	file:
+player_asscan_down1	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void player_asscan_down1();$/;"	p	language:C++	file:
+player_ent	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    entity player_ent;$/;"	m	language:C++	struct:pengine_t	file:
+player_entnum	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float player_entnum;  \/\/ player_localentnum iff is_player == 1$/;"	m	language:C++	struct:pengine_t	file:
+pm_enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float pm_enabled;$/;"	m	language:C++	struct:pengine_t	file:
+pp_enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float pp_enabled;$/;"	m	language:C++	struct:pengine_t	file:
+pred_prev	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^.entity pred_next, pred_prev;$/;"	v	language:C++
+pred_time_dt	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float pred_time_dt;  \/\/ delta-time that the world predicted forward by$/;"	v	language:C++	file:
+predicted_projectiles	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^entity predicted_projectiles;$/;"	v	language:C++
+prediction_state	dump.c	/^typedef struct prediction_state$/;"	s	file:
+prev	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindState* prev;$/;"	m	language:C++	struct:RewindState	file:
+preview	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float preview, preview_rotation;$/;"	m	language:C++	struct:pengine_t	file:
+preview_rotation	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float preview, preview_rotation;$/;"	m	language:C++	struct:pengine_t	file:
+puff_count	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^float puff_count;$/;"	v	language:C++
+puff_org	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^vector puff_org;$/;"	v	language:C++
+removed	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    float save_solid, removed;$/;"	m	language:C++	struct:RewindState	file:
+renderself	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    entity renderself;$/;"	m	language:C++	struct:pengine_t	file:
+rewind_	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindState* rewind_;$/;"	m	language:C++	class:FOPlayer	file:
+rewind_players	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^RewindState* rewind_players;$/;"	v	language:C++
+rewound	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindStatus rewound;$/;"	m	language:C++	struct:RewindState	file:
+rnds	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static string rnds(string prefix) {$/;"	f	language:C++	file:
+rw_printd	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	5;"	d	language:C++	file:
+rw_printd	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	8;"	d	language:C++	file:
+rw_printf	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	4;"	d	language:C++	file:
+rw_printf	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	7;"	d	language:C++	file:
+save_solid	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    float save_solid, removed;$/;"	m	language:C++	struct:RewindState	file:
+sentry_index	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static float disp_index, sentry_index;$/;"	v	language:C++	file:
+server_time	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float server_time() {$/;"	f	language:C++
+server_time_dt	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float server_time_dt() {$/;"	f	language:C++
+server_time_ms	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^inline float server_time_ms() {$/;"	f	language:C++
+shader_flag	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float shader_team[2], shader_flag, shader_over_outline, shader_shell;$/;"	v	language:C++	file:
+shader_over_outline	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float shader_team[2], shader_flag, shader_over_outline, shader_shell;$/;"	v	language:C++	file:
+shader_shell	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float shader_team[2], shader_flag, shader_over_outline, shader_shell;$/;"	v	language:C++	file:
+shader_team	/home/pjt/dev/server-qwprogs/csqc/tfx.qc	/^static float shader_team[2], shader_flag, shader_over_outline, shader_shell;$/;"	v	language:C++	file:
+sight	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    entity sight;$/;"	m	language:C++	struct:__anon2	file:
+sight_modelindex	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float sight_modelindex;$/;"	m	language:C++	struct:__anon2	file:
+snapshot	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    RewindSnapshot snapshot[MAX_SNAPSHOTS];$/;"	m	language:C++	struct:RewindState	file:
+snd_last	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^int snd_last;$/;"	v	language:C++
+sound	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    string sound;$/;"	m	language:C++	struct:SndLog	file:
+sound_log	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^SndLog sound_log[kSndLogSize];$/;"	v	language:C++
+spawn_tfog	/home/pjt/dev/server-qwprogs/ssqc/client.qc	/^void (vector org) spawn_tfog;$/;"	v	language:C++
+special1	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^    int special1;$/;"	m	language:C++	struct:__anon1	file:
+special2	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^    int special2;$/;"	m	language:C++	struct:__anon1	file:
+special_impulses	/home/pjt/dev/server-qwprogs/ssqc/weapons.qc	/^} special_impulses[] = {$/;"	v	language:C++	typeref:struct:__anon1	file:
+start_seq	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float start_seq;$/;"	m	language:C++	struct:__anon2	file:
+state	dump.c	/^    int     state;$/;"	m	struct:prediction_state	file:
+sub	sub_field.sh	/^function sub() {$/;"	f
+time	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    float time;$/;"	m	language:C++	struct:RewindSnapshot	file:
+trail	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float trail[2];$/;"	m	language:C++	struct:trail_table_entry	file:
+trail_table	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^trail_table_entry trail_table[] = {$/;"	v	language:C++
+trail_table_entry	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^struct trail_table_entry {$/;"	s	language:C++	file:
+update_avg_ping	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void update_avg_ping() {$/;"	f	language:C++	file:
+update_interp_time_dt	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^static void update_interp_time_dt() {$/;"	f	language:C++	file:
+user_controlled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float minv, user_controlled;$/;"	m	language:C++	struct:__anon1	file:
+velocity	/home/pjt/dev/server-qwprogs/ssqc/rewind.qc	/^    vector velocity;$/;"	m	language:C++	struct:RewindSnapshot	file:
+view_mask	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float view_mask;$/;"	m	language:C++	struct:pengine_t	file:
+viewmodel	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    entity viewmodel;$/;"	m	language:C++	struct:pengine_t	file:
+weapon	dump.c	/^    int     weapon;$/;"	m	struct:prediction_state	file:
+weapon_predicted	dump.c	/^prediction_state weapon_predicted;$/;"	v
+weapon_server	dump.c	/^prediction_state weapon_server;$/;"	v
+when	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float when;$/;"	m	language:C++	struct:SndLog	file:
+wp_enabled	/home/pjt/dev/server-qwprogs/csqc/weapon_predict.qc	/^    float wp_enabled;$/;"	m	language:C++	struct:pengine_t	file:

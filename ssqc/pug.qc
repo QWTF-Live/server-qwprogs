@@ -1636,7 +1636,7 @@ void Pug_Init() {
         return;
     }
 
-    pug.round_time = CF_GetSetting("pug.round_time", "pug.round_time", "10");
+    pug.round_time = CF_GetSetting("pug_round_time", "pug_round_time", "10");
     if (pug.round_time <= 0)
         pug.round_time = 10;
 

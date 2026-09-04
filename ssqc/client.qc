@@ -1033,11 +1033,6 @@ void () DecodeLevelParms = {
     if (tfx_exp)
         tf_config.tfx_flags |= TFX_SCOUT_SEE_ENEMIES;
 
-    // Overrides other settings.
-    new_balance = CF_GetSetting("new_balance", "new_balance", "1");
-    // mirror current state into desired state bit
-    new_balance |= (new_balance << 1);
-
     if (org_game)  // This used to depend on new balance
         ActivateOrgGame();
 

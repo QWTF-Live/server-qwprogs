@@ -1,0 +1,13 @@
+[1mdiff --git a/ssqc/sentry.qc b/ssqc/sentry.qc[m
+[1mindex 0c2fc61d..201151ec 100644[m
+[1m--- a/ssqc/sentry.qc[m
+[1m+++ b/ssqc/sentry.qc[m
+[36m@@ -335,7 +335,7 @@[m [mvoid () Sentry_HuntTarget = {[m
+         self.think = lvl1_sentry_atk1;[m
+     else if (self.weapon == 2)[m
+         self.think = lvl2_sentry_atk1;[m
+[31m-    ELSE[m
+[32m+[m[32m    else[m
+         self.think = lvl3_sentry_atk1;[m
+ [m
+     self.ideal_yaw = vectoyaw(self.enemy.origin - self.origin);[m

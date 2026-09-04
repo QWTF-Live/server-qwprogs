@@ -1,0 +1,98 @@
+fteqcc64 -DVER=\"r1072dc98~1072dc98\" -DREV=\"1072dc98\" ./ssqc/progs.src
+FTEQCC: 6186 (2022-02-07T14:34:36.247395Z)
+Source file: ./ssqc/progs.src
+Outputfile: ./ssqc/../qwprogs.dat
+including ./ssqc/../share/fteextensions.qc
+including ./ssqc/../share/debug.qc
+including ./ssqc/defs.qc
+including ./ssqc/../share/commondefs.qc
+including ./ssqc/../share/common_helpers.qc
+including ./ssqc/qw.qc
+including ./ssqc/debug.qc
+including ./ssqc/time.qc
+including ./ssqc/../share/defs.h
+including ./ssqc/../share/weapons.qc
+in function QuickSlotToBit (line 558),
+./ssqc/../share/weapons.qc:561: error: Unknown value "TFSTATE_QUICKSLOt1".
+./ssqc/../share/weapons.qc:33: macro MakeSlot is defined here
+./ssqc/../share/weapons.qc:23: macro CheckSlot is defined here
+in function FO_SlotByInput (line 580),
+./ssqc/../share/weapons.qc:582:MakeSlot:1:CheckSlot:1: error: Unknown value "TF_IMPULSE_SLOT1_UNIQUE".
+including ./ssqc/../share/prediction.qc
+including ./ssqc/../share/animate.qc
+including ./ssqc/events.qc
+including ./ssqc/roles.qc
+including ./ssqc/q3defs.qc
+including ./ssqc/status.qc
+including ./ssqc/functions.qc
+including ./ssqc/menu.qc
+including ./ssqc/csmenu.qc
+including ./ssqc/../share/common_vote.qc
+including ./ssqc/vote.qc
+including ./ssqc/extraents.qc
+including ./ssqc/help.qc
+including ./ssqc/subs.qc
+including ./ssqc/items.qc
+including ./ssqc/locfiles.qc
+including ./ssqc/antilag.qc
+at global scope,
+./ssqc/antilag.qc:297: warning: FOPlayer::RewindExcept was not qualified. Assuming non-virtual.
+./ssqc/antilag.qc:309: warning: FOPlayer::RestoreNow was not qualified. Assuming non-virtual.
+./ssqc/antilag.qc:317: warning: FOPlayer::TrueOrigin was not qualified. Assuming non-virtual.
+including ./ssqc/combat.qc
+including ./ssqc/weapons.qc
+in function W_WeaponFrame (line 2490),
+./ssqc/weapons.qc:2565: error: Unknown field "tf_State" in class "entity"
+./ssqc/weapons.qc:2565: error: Type mismatch on assignment. __variant |= __variant is not supported
+
+including ./ssqc/world.qc
+including ./ssqc/client.qc
+including ./ssqc/player.qc
+including ./ssqc/doors.qc
+including ./ssqc/buttons.qc
+including ./ssqc/triggers.qc
+including ./ssqc/tforttm.qc
+including ./ssqc/plats.qc
+including ./ssqc/misc.qc
+including ./ssqc/monsters.qc
+including ./ssqc/flare.qc
+including ./ssqc/sentry.qc
+including ./ssqc/boss.qc
+including ./ssqc/admin.qc
+including ./ssqc/scout.qc
+including ./ssqc/sniper.qc
+including ./ssqc/tsoldier.qc
+including ./ssqc/demoman.qc
+including ./ssqc/medic.qc
+including ./ssqc/hwguy.qc
+including ./ssqc/pyro.qc
+including ./ssqc/spy.qc
+including ./ssqc/engineer.qc
+including ./ssqc/camera.qc
+including ./ssqc/clan.qc
+including ./ssqc/quadmode.qc
+including ./ssqc/tfort.qc
+including ./ssqc/tforthlp.qc
+in function Quick_Aliases (line 12),
+./ssqc/tforthlp.qc:13: error: Unknown value "TFSLOT1_UNIQUE".
+./ssqc/tforthlp.qc:15: error: Unknown value "TFSLOT2_UNIQUE".
+./ssqc/tforthlp.qc:17: error: Unknown value "TFSLOT3_UNIQUE".
+./ssqc/tforthlp.qc:19: error: Unknown value "TFSLOT4_UNIQUE".
+including ./ssqc/tfortmap.qc
+including ./ssqc/login.qc
+including ./ssqc/commands.qc
+including ./ssqc/ctf.qc
+including ./ssqc/coop.qc
+including ./ssqc/actions.qc
+including ./ssqc/spect.qc
+including ./ssqc/q3.qc
+including ./ssqc/mvdsv.qc
+including ./ssqc/rotate.qc
+including ./ssqc/fo_logic.qc
+including ./ssqc/fo_math.qc
+including ./ssqc/fo_misc_info.qc
+
+************ ERROR ************
+Errors have occured
+Error in ./ssqc/weapons.qc on line 2565
+make: *** [Makefile:10: all] Error 1

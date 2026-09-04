@@ -783,7 +783,6 @@ void Predict_InitDefaultConfig() {
     tf_config.clown_flags = 0;
     tf_config.clown_grav = 400;
     tf_config.fo_concuss = 0;
-    tf_config.new_balance = 0;
     tf_config.new_balance_flags = 0;
     tf_config.pipe_cooldown = 0.5;
 }
@@ -857,10 +856,7 @@ static void TflCheckConfigUpdate() {
         update = TRUE;
     }
 
-    if ((new_balance & 1) != tf_config.new_balance) {
-        tf_config.new_balance = new_balance & 1;
-        update = TRUE;
-    }
+
 
     CONFIG_UPDATE(TRUE,  "rewind", rewind_flags);
     CONFIG_UPDATE(TRUE,  "tfx", tfx_flags);

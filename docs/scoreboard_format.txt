@@ -1,0 +1,180 @@
+*============================================================================*
+* QWTF.live / FortressOne                                 scoreboard_format *
+*============================================================================*
+
+Live scoreboard and match events, served as JSON over the server's own HTTP
+listener.  Implemented in ssqc/json.qc (HTTP_GeneratePage).
+
+
+--------------------------------------------
+Accessing it
+--------------------------------------------
+
+    GET http://<server>:<sv_port_tcp>/scoreboard
+
+FTE listens for HTTP on its TCP port, which is normally the same number as the
+game's UDP port (27500 by default), but it is a separate listener and it is off
+unless the operator has enabled it:
+
+    sv_port_tcp     must be set (commonly the same as the UDP port)
+    net_enable_http must be on
+
+With those unset there is no TCP listener at all and the request will simply
+not connect.  A trailing query string is ignored, so "/scoreboard?foo=1" is
+equivalent.  The response is "Content-Type: application/json".
+
+Only GET is handled.  Any other method, and any other path, is passed to the
+engine's normal file-serving behaviour -- expect 405 and 403 respectively, not
+a JSON error document.
+
+
+--------------------------------------------
+Response
+--------------------------------------------
+
+    {
+      "round":   1,
+      "players": [ <player>, ... ],
+      "events":  [ <event>,  ... ]
+    }
+
+  round    Which round is in progress: 1 or 2.  Games without rounds always
+           report 1.
+
+Both arrays are always present and may be empty.
+
+  { "round": 1, "players": [], "events": [] }   -- valid, idle server
+
+
+--------------------------------------------
+player
+--------------------------------------------
+
+    {
+      "name":   "algorithm",
+      "login":  "someuser",
+      "team":   1,
+      "pc":     3,
+      "rounds": [
+        { "kills": 4, "deaths": 2, "dmgg": 1900, "dmgt": 1100,
+          "caps": 1, "touches": 3 },
+        { "kills": 1, "deaths": 0, "dmgg": 400,  "dmgt": 250,
+          "caps": 0, "touches": 1 }
+      ]
+    }
+
+  name     Display name.  Colour markup is stripped and the Quake red/brown
+           charset is folded back to plain characters.  Standard JSON string
+           escaping applies, and anything outside printable ASCII is emitted as
+           a \uXXXX escape, so the value is always valid UTF-8.
+  login    Account name, or "" when the player is not logged in.  Do not treat
+           this as a stable identity for anonymous players.
+  team     1 Blue, 2 Red, 3 Yellow, 4 Green.  0 means no team.
+  pc       Player class, see the table below.  0 means no class chosen yet.
+  rounds   Per-round statistics, oldest round first.  See below.
+
+Each entry in "rounds" covers one round and contains:
+
+  kills    Frags.
+  deaths   Deaths.
+  dmgg     Damage given.
+  dmgt     Damage taken.
+  caps     Flag captures.
+  touches  Flag touches.
+
+The array has one entry during round one and two entries during round two, so
+its length matches the top-level "round".  Figures are per-round, not
+cumulative: for a game total, sum the entries.  Do not assume two entries are
+always present -- read the array's actual length.
+
+Only connected human players appear.  Bots and other non-real client slots are
+excluded, so the array can be shorter than the server's reported player count.
+
+Player class values:
+
+    0  none / not yet chosen        6  HWGuy
+    1  Scout                        7  Pyro
+    2  Sniper                       8  Spy
+    3  Soldier                      9  Engineer
+    4  Demoman                     10  Random (transient)
+    5  Medic                       11  Civilian
+
+All numeric fields are JSON numbers, not strings.
+
+
+--------------------------------------------
+event
+--------------------------------------------
+
+    {
+      "event": {
+        "type":        "capture",
+        "time":        412,
+        "round_start": 130,
+        "team1score":  "3",
+        "team2score":  "1"
+      },
+      "player": {
+        "name":  "algorithm",
+        "login": "someuser",
+        "team":  1,
+        "pc":    3
+      }
+    }
+
+  type         One of: capture, game_start, round_end, game_end.
+  time         Server time, in seconds since the map started.
+  round_start  Server time at which the current round began.
+  team1score   Blue score.  NOTE: quoted -- this is a JSON *string*.
+  team2score   Red score.   NOTE: quoted -- this is a JSON *string*.
+
+The "player" object is present only for events caused by a specific player
+(currently just "capture") and is absent otherwise -- check for the key rather
+than assuming it.  Its fields follow the same rules as the player object above,
+including "login" being "" for a player who is not logged in.
+
+The quoting of team1score/team2score is inconsistent with the numeric fields
+elsewhere.  It is a quirk of how the payload is built, not a signal about the
+value.  Parse both as numbers.
+
+
+--------------------------------------------
+Event delivery -- read this before polling
+--------------------------------------------
+
+Events do not behave like the player list.  The player list is a snapshot and
+you may read it as often as you like.  Events are a queue with these
+properties:
+
+1. READING DRAINS THEM.  Each GET returns the events buffered since the last
+   GET, and empties the buffer.  The request is not idempotent.  Two pollers
+   will split the stream between them, each seeing roughly half the events;
+   run exactly one consumer per server.
+
+2. THE BUFFER HOLDS 16.  It is a ring.  If more than 16 events accumulate
+   between reads, the oldest are overwritten and lost silently -- there is no
+   overflow indicator.  Poll often enough that this cannot happen.
+
+3. NOTHING IS BUFFERED UNTIL THE FIRST READ.  The server does not record
+   events until something has queried /scoreboard at least once.  Events
+   occurring before your first request are not held for you.  In practice:
+   make an initial request at startup and discard the result, then poll.
+
+4. ORDER IS OLDEST FIRST within a response.
+
+There is no cursor, sequence number, or acknowledgement.  If your consumer
+crashes between the read and processing the data, those events are gone.
+
+
+--------------------------------------------
+Notes
+--------------------------------------------
+
+Both the player list and the event queue are built on demand, per request.
+There is no rate limiting and no cache, so a consumer polling very aggressively
+does real work on the server for each request.  A poll interval on the order of
+a second is appropriate; sub-100ms polling is not.
+
+Values are live server state at the instant of the request.  There is no
+guarantee of consistency between the "players" and "events" halves beyond both
+being read within the same request.

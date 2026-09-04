@@ -1,0 +1,43 @@
+
+        // max projection latency for "non-dodgeable" weapons
+        project_weapons_fast_threshold = CF_GetSetting("pwft",
+            "project_weapons_fast_threshold", "1000");
+        project_weapons_fast_max_latency = CF_GetSetting("pwfml",
+            "project_weapons_fast_max_latency", ftos(0.3));
+
+        pointparticles(particleeffectnum("te_teleportsplash"), self.origin + v_forward * PC_PYRO_AIRBLAST_RANGE / 4, v_forward);
+
+#if 0
+float StartGrenTimer(float expires, float grentype, float play_sound);
+
+void ClientSidePrimeThrow(float is_gren1, float held) {
+    if (!CVARF(fo_clientside_grenades))
+        return;
+
+    local float num_grens = getstatf(is_gren1 ? STAT_NO_GREN1 : STAT_NO_GREN2);
+
+    print(sprintf("CSPT t=%f e=%f thr=%f\n",
+        time, last_grentimer.expires, last_grentimer.thrown));
+
+    if (last_grentimer.expires < time || last_grentimer.thrown) { // Prime
+        if (num_grens > 0) {
+            print("cspt PRIME\n");
+            local float offset = getplayerkeyfloat(player_localnum, INFOKEY_P_PING) / 1000 / 2;
+            StartGrenTimer(time + 3.8 - offset, 1, TRUE);
+        }
+    } else { // Throw
+        print("cspt THROW\n");
+        last_grentimer.thrown = TRUE;
+    }
+}
+#endif
+
+
+MISS: {"type"=>"kill", "kind"=>"team", "player"=>"", "playerClass"=>9,
+"playerTeam"=>1, "target"=>"grome#741", "targetClass"=>6, "targetTeam"=>1,
+"inflictor"=>"building_sentrygun", "time"=>755,
+"gameTimeStamp"=>"2024-04-14T00:05:00.537Z"}
+SRC:
+TGT: #<Parser::Player:0x00007f031eba6008>
+
+exp sentry?

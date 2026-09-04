@@ -1,0 +1,382 @@
+[33mcommit 90d1251be6b7b13ba023ec068acd635ab93f67a5[m
+Author: newby <newby@rakis.net>
+Date:   Mon Oct 3 14:09:12 2022 -0700
+
+    Implement predicted reload and ammo tracking
+    
+    Client side handling around all of the ammo/clip details so that we can reload
+    (and not predict firing) correctly.  Integrates with displayed ammo/clip/etc.
+
+[1mdiff --git a/csqc/status.qc b/csqc/status.qc[m
+[1mindex 7e9128af..efea8c5f 100644[m
+[1m--- a/csqc/status.qc[m
+[1m+++ b/csqc/status.qc[m
+[36m@@ -1112,7 +1112,7 @@[m [mvar FO_Hud_Panel Hud_Panels[] = {[m
+ //  Style, Snap, Status[m
+ [m
+     {"hudoptions",FO_HUD_OPTIONS_NAME,    '10 10',   '150 182',1,   0,1,0, doNothing, {return DrawPanel.id;}, 1},[m
+[31m-    {"clipsize",FO_HUD_CLIPSIZE_NAME,     '464 455', '26 26',  0.75,0,1,0, drawClipSize, { return SBAR.ClipSize; }},[m
+[32m+[m[32m    {"clipsize",FO_HUD_CLIPSIZE_NAME,     '464 455', '26 26',  0.75,0,1,0, drawClipSize, { return WP_GetClip(); }},[m
+     {"fragstreak",FO_HUD_FRAGSTREAK_NAME, '10 50',   '26 26',  1,0,1,0, drawFragStreakPanel, {return ftos(SBAR.FragStreak);}},[m
+     {"caps",FO_HUD_CAPS_NAME,             '10 80',   '26 26',  1,0,1,0, drawCapsPanel, {return ftos(SBAR.Caps);}},[m
+     {"gren1",FO_HUD_GREN1_NAME,           '10 110',  '26 26',  1,0,1,0, drawGren1Panel, {return ftos(getstatf(STAT_NO_GREN1));}},[m
+[36m@@ -1131,14 +1131,14 @@[m [mvar FO_Hud_Panel Hud_Panels[] = {[m
+     {"mapmenu",FO_HUD_MAP_MENU_NAME,      '10 30',   '800 400',1,0,1,FO_HUD_INSERT_MIDDLE, drawMapMenuPanel, {return "";}},[m
+     {"health",FO_HUD_HEALTH_NAME,         '-22 -2',  '72 24',  1,0,1,0, drawHealthTextPanel, {return ftos(getstatf(STAT_HEALTH));}, 0, 34},[m
+     {"face",FO_HUD_FACE_NAME,             '-70 -2',  '24 24',  1,0,1,0, drawFacePanel, {return "";}, 0, 34},[m
+[31m-    {"ammo",FO_HUD_AMMO_NAME,             '90 -2',   '72 24',  1,0,1,0, drawAmmoTextPanel, {return ftos(getstatf(STAT_AMMO));}, 0, 34},[m
+[32m+[m[32m    {"ammo",FO_HUD_AMMO_NAME,             '90 -2',   '72 24',  1,0,1,0, drawAmmoTextPanel, {return ftos(WP_CurrentAmmo());}, 0, 34},[m
+     {"ammoicon",FO_HUD_AMMO_ICON_NAME ,   '42 -2',   '24 24',  1,0,1,0, drawAmmoPanel, {return "";}, 0, 34},[m
+     {"armour",FO_HUD_ARMOUR_NAME,         '-134 -2', '72 24',  1,0,1,0, drawHealthTextPanel, {return ftos(getstatf(STAT_ARMOR));}, 0, 34},[m
+     {"armouricon",FO_HUD_ARMOUR_ICON_NAME,'-182 -2', '24 24',  1,0,1,0, drawArmourPanel, {return "";}, 0, 34},[m
+[31m-    {"invshells",FO_HUD_INV_SHELLS_NAME,  '-2 -244', '24 24',  1,1.4,1,0, drawInvShellsPanel, {return ftos(getstatf(STAT_SHELLS));}, 1, 33},[m
+[31m-    {"invnails",FO_HUD_INV_NAILS_NAME,    '-2 -220', '24 24',  1,1.4,1,0, drawInvNailsPanel, {return ftos(getstatf(STAT_NAILS));}, 1, 33},[m
+[31m-    {"invrockets",FO_HUD_INV_ROCKETS_NAME,'-2 -196', '24 24',  1,1.4,1,0, drawInvRocketsPanel, {return ftos(getstatf(STAT_ROCKETS));}, 1, 33},[m
+[31m-    {"invcells",FO_HUD_INV_CELLS_NAME,    '-2 -172', '24 24',  1,1.4,1,0, drawInvCellsPanel, {return ftos(getstatf(STAT_CELLS));}, 1, 33},[m
+[32m+[m[32m    {"invshells",FO_HUD_INV_SHELLS_NAME,  '-2 -244', '24 24',  1,1.4,1,0, drawInvShellsPanel, {return ftos(WP_GetAmmo(AMMO_SHELLS));}, 1, 33},[m
+[32m+[m[32m    {"invnails",FO_HUD_INV_NAILS_NAME,    '-2 -220', '24 24',  1,1.4,1,0, drawInvNailsPanel, {return ftos(WP_GetAmmo(AMMO_NAILS));}, 1, 33},[m
+[32m+[m[32m    {"invrockets",FO_HUD_INV_ROCKETS_NAME,'-2 -196', '24 24',  1,1.4,1,0, drawInvRocketsPanel, {return ftos(WP_GetAmmo(AMMO_ROCKETS));}, 1, 33},[m
+[32m+[m[32m    {"invcells",FO_HUD_INV_CELLS_NAME,    '-2 -172', '24 24',  1,1.4,1,0, drawInvCellsPanel, {return ftos(WP_GetAmmo(AMMO_CELLS));}, 1, 33},[m
+     {"gameclock","Game Clock",            '0 0'   ,  '108 24', 1,0.8,1,0, drawClockPanel, {return gameClockString();}, 0, 10},[m
+     {"quad","Quad Icon",                  '-200 -30','26 26',  1,1.4,1,0, drawInvIconPanel, {return (getstatf(STAT_ITEMS) & IT_QUAD)?"textures/wad/sb_quad":"";}, 0, 36},[m
+     {"pent","Pentagram Icon",             '-170 -30','26 26',  1,1.4,1,0, drawInvIconPanel, {return (getstatf(STAT_ITEMS) & IT_INVULNERABILITY)?"textures/wad/sb_invuln":"";}, 0, 36},[m
+[1mdiff --git a/share/fo_weapon_predict.qc b/share/fo_weapon_predict.qc[m
+[1mindex c014997e..72c16ed3 100644[m
+[1m--- a/share/fo_weapon_predict.qc[m
+[1m+++ b/share/fo_weapon_predict.qc[m
+[36m@@ -8,6 +8,7 @@[m [menumflags {[m
+     FOWP_TFSTATE,[m
+     FOWP_WF,[m
+     FOWP_CLASS,[m
+[32m+[m[32m    FOWP_RELOAD,[m
+ };[m
+ #define FOWP_ALL 0xFF[m
+ [m
+[36m@@ -24,6 +25,10 @@[m [mstruct predict_tf_state {[m
+     float attack_finished;[m
+     float client_nextthink;[m
+     float client_thinkindex;[m
+[32m+[m
+[32m+[m[32m    float reload_finished;[m
+[32m+[m[32m    float clip_fired[4];[m
+[32m+[m[32m    float ammo_used[AMMO_NUM_TYPES];  // We don't actually communicate these.[m
+ };[m
+ [m
+ #ifdef SSQC[m
+[36m@@ -86,9 +91,12 @@[m [mvoid UpdateWeaponPred(entity player) {[m
+ [m
+     M1(FOWP_CLASS, playerclass);[m
+     M3(FOWP_IMPULSE, impulse, current_slot.id, queue_slot.id);[m
+[31m-    /* M1(FOWP_TFSTATE, tfstate); */[m
+[32m+[m[32m    M1(FOWP_TFSTATE, tfstate);[m
+     M2(FOWP_WF, attack_finished, weaponframe);[m
+     M2(FOWP_THINK, client_nextthink, client_thinkindex)[m
+[32m+[m[32m    M2(FOWP_CLIP, clip_fired[0], clip_fired[1]);[m
+[32m+[m[32m    M2(FOWP_CLIP, clip_fired[2], clip_fired[3]);[m
+[32m+[m[32m    M1(FOWP_RELOAD, reload_finished);[m
+ [m
+     player.predict_entity.SendFlags = mask;[m
+ }[m
+[36m@@ -141,6 +149,16 @@[m [mvoid EntUpdate_WeaponPred(float isnew) {[m
+         COMM(Float, client_nextthink);[m
+         COMM(Float, client_thinkindex);[m
+     }[m
+[32m+[m
+[32m+[m[32m    if (sendflags & FOWP_CLIP) {[m
+[32m+[m[32m        COMM(Byte, clip_fired[0]);[m
+[32m+[m[32m        COMM(Byte, clip_fired[1]);[m
+[32m+[m[32m        COMM(Byte, clip_fired[2]);[m
+[32m+[m[32m        COMM(Byte, clip_fired[3]);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    if (sendflags & FOWP_RELOAD)[m
+[32m+[m[32m        COMM(Float, reload_finished);[m
+ #ifdef SSQC[m
+     return TRUE;[m
+ #else[m
+[36m@@ -257,39 +275,6 @@[m [minline void WeaponPred_HidePredicted() {[m
+     wp_draw_weapon = FALSE;[m
+ }[m
+ [m
+[31m-void WeaponPred_UpdateViewModel() {[m
+[31m-    float pmodelindex, pframe;[m
+[31m-[m
+[31m-    if (!wp_draw_weapon) {[m
+[31m-        self.modelindex = 0;[m
+[31m-        self.frame = 0;[m
+[31m-        wp_model_mask |= MASK_VIEWMODEL;  // Show engine model.[m
+[31m-        return;[m
+[31m-    } else {[m
+[31m-        wp_model_mask &= ~MASK_VIEWMODEL;  // Hide engine model.[m
+[31m-    }[m
+[31m-[m
+[31m-    FO_WeapInfo* wi = FO_SlotWeapInfo(pstate_pred.playerclass,[m
+[31m-                                      pstate_pred.current_slot);[m
+[31m-[m
+[31m-    pmodelindex = (wi->models)->modelindex;[m
+[31m-    pframe = pstate_pred.weaponframe;[m
+[31m-[m
+[31m-    if (self.modelindex != pmodelindex) {[m
+[31m-        self.frame = pframe;[m
+[31m-        self.modelindex = pmodelindex;[m
+[31m-        self.lerpfrac = 0;[m
+[31m-    } else if (self.frame != pframe) {[m
+[31m-        self.frame2 = self.frame;[m
+[31m-        self.frame = pframe;[m
+[31m-        self.lerpfrac = 1;[m
+[31m-    }[m
+[31m-[m
+[31m-    self.lerpfrac = max(0, self.lerpfrac - frametime * 10);[m
+[31m-[m
+[31m-    /* print(sprintf("UVM W=%d %s:%d\n", getv(pstate_pred.current_weapon), (wi->models)->model, pframe)); */[m
+[31m-}[m
+[31m-[m
+ void WeaponPred_ChangeWeapon(float input) {[m
+     Slot slot = FO_SlotByInput(input);[m
+ [m
+[36m@@ -299,6 +284,8 @@[m [mvoid WeaponPred_ChangeWeapon(float input) {[m
+     // UpdateViewModel will propagate.[m
+ }[m
+ [m
+[32m+[m[32mvoid WeaponPred_Reload();[m
+[32m+[m
+ void WeaponPred_Impulse() {[m
+     if (!pstate_pred.impulse)[m
+         return;[m
+[36m@@ -309,6 +296,9 @@[m [mvoid WeaponPred_Impulse() {[m
+ [m
+         WeaponPred_ChangeWeapon(pstate_pred.impulse);[m
+         clear = TRUE;[m
+[32m+[m[32m    } else if (pstate_pred.impulse == TF_RELOAD) {[m
+[32m+[m[32m        WeaponPred_Reload();[m
+[32m+[m
+     }[m
+ [m
+     if (clear)[m
+[36m@@ -348,18 +338,130 @@[m [mvoid DoAnim() {[m
+     }[m
+ }[m
+ [m
+[32m+[m[32mstatic float AmmoToStat(float ammo_type) {[m
+[32m+[m[32m    switch (ammo_type) {[m
+[32m+[m[32m        case AMMO_SHELLS: return STAT_SHELLS;[m
+[32m+[m[32m        case AMMO_ROCKETS: return STAT_ROCKETS;[m
+[32m+[m[32m        case AMMO_NAILS: return STAT_ROCKETS;[m
+[32m+[m[32m        case AMMO_CELLS: return STAT_CELLS;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    return STAT_AMMO;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfloat WP_GetAmmo(float ammo_type) {[m
+[32m+[m[32m    if (ammo_type == AMMO_NONE)[m
+[32m+[m[32m        return 0;[m
+[32m+[m
+[32m+[m[32m    float base = getstatf(AmmoToStat(ammo_type));[m
+[32m+[m[32m    base -= pstate_pred.ammo_used[ammo_type];[m
+[32m+[m[32m    return max(0, base);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfloat WP_CurrentAmmo() {[m
+[32m+[m[32m    FO_WeapInfo* wi = FO_SlotWeapInfo(pstate_pred.playerclass,[m
+[32m+[m[32m                                      pstate_pred.current_slot);[m
+[32m+[m
+[32m+[m[32m    return WP_GetAmmo(wi->ammo_type);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mstring WP_GetClip() {[m
+[32m+[m[32m    // SBAR.ClipSize[m
+[32m+[m[32m    Slot slot = pstate_pred.current_slot;[m
+[32m+[m[32m    FO_WeapInfo* wi = FO_SlotWeapInfo(pstate_pred.playerclass, slot);[m
+[32m+[m
+[32m+[m[32m    if (!wi->needs_reload || IsSlotNull(slot))[m
+[32m+[m[32m        return "";[m
+[32m+[m
+[32m+[m[32m    float fired = pstate_pred.clip_fired[SlotIndex(slot)];[m
+[32m+[m[32m    float capacity = wi->clip_size;[m
+[32m+[m[32m    return sprintf("%d/%d", capacity - fired, capacity);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mstatic float GetClip() {[m
+[32m+[m[32m    return pstate_pred.clip_fired[SlotIndex(pstate_pred.current_slot)];[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mstatic void ResetClip() {[m
+[32m+[m[32m    Slot slot = pstate_pred.current_slot;[m
+[32m+[m[32m    if (!IsSlotNull(slot))[m
+[32m+[m[32m        pstate_pred.clip_fired[SlotIndex(slot)] = 0;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfloat WeaponPred_CheckReload() {[m
+[32m+[m[32m    if (pstate_pred.client_time > pstate_pred.reload_finished &&[m
+[32m+[m[32m        pstate_pred.tfstate & TFSTATE_RELOADING) {[m
+[32m+[m[32m        pstate_pred.tfstate &= ~TFSTATE_RELOADING;[m
+[32m+[m[32m        ResetClip();[m
+[32m+[m
+[32m+[m[32m        if (pengine.is_effectframe)[m
+[32m+[m[32m            print("Finished reloading\n");[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid WeaponPred_Reload() {[m
+[32m+[m[32m    FO_WeapInfo* wi = FO_SlotWeapInfo(pstate_pred.playerclass,[m
+[32m+[m[32m                                      pstate_pred.current_slot);[m
+[32m+[m[32m    float clip_fired = GetClip();[m
+[32m+[m
+[32m+[m[32m    if (pengine.is_effectframe) {[m
+[32m+[m[32m        if (clip_fired > 0)[m
+[32m+[m[32m            print(strcat("Reloading ", FO_GetWeapName(wi->weapon), "...\n"));[m
+[32m+[m[32m        else[m
+[32m+[m[32m            print("Clip full...\n");[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pstate_pred.tfstate |= TFSTATE_RELOADING;[m
+[32m+[m[32m    pstate_pred.reload_finished =[m
+[32m+[m[32m        pstate_pred.client_time + (clip_fired / wi->clip_size) * wi->full_reload_time;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfloat WeaponPred_IsReloading() {[m
+[32m+[m[32m    return pstate_pred.tfstate & TFSTATE_RELOADING;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m
+[32m+[m[32mfloat WeaponPred_ConsumeAmmo(FO_WeapInfo* wi) {[m
+[32m+[m[32m    if (wi->ammo_type == AMMO_NONE || IsSlotMelee(pstate_pred.current_slot))[m
+[32m+[m[32m        return TRUE;[m
+[32m+[m
+[32m+[m[32m    float ammo = WP_GetAmmo(wi->ammo_type);[m
+[32m+[m[32m    if (wi->ammo_per_shot > ammo)[m
+[32m+[m[32m        return FALSE;[m
+[32m+[m
+[32m+[m[32m    if (wi->needs_reload) {[m
+[32m+[m[32m        float* clip_fired =[m
+[32m+[m[32m            &pstate_pred.clip_fired[SlotIndex(pstate_pred.current_slot)];[m
+[32m+[m
+[32m+[m[32m        if (*clip_fired >= wi->clip_size)[m
+[32m+[m[32m            return FALSE;[m
+[32m+[m
+[32m+[m[32m        *clip_fired += wi->ammo_per_shot;[m
+[32m+[m
+[32m+[m[32m#if 0[m
+[32m+[m[32m        if (*clip_fired == wi->clip_size) {[m
+[32m+[m[32m            WeaponPred_Reload();[m
+[32m+[m[32m        }[m
+[32m+[m[32m#endif[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pstate_pred.ammo_used[wi->ammo_type] -= wi->ammo_per_shot;[m
+[32m+[m[32m    return TRUE;[m
+[32m+[m[32m}[m
+[32m+[m
+ void WeaponPred_Attack() {[m
+[31m-    print(sprintf("t=%0.3f ct=%0.3f pt=%0.3f\n",[m
+[31m-                    time, pstate_server.client_time, pstate_pred.client_time));[m
+[32m+[m[32m    /* print(sprintf("t=%0.3f ct=%0.3f pt=%0.3f\n", */[m
+[32m+[m[32m                    /* time, pstate_server.client_time, pstate_pred.client_time)); */[m
+     Slot slot = pstate_pred.current_slot;[m
+ [m
+     FO_WeapInfo* wi = FO_SlotWeapInfo(pstate_pred.playerclass, slot);[m
+ [m
+[32m+[m[32m    if (!WeaponPred_ConsumeAmmo(wi))[m
+[32m+[m[32m        return;[m
+[32m+[m
+     pstate_pred.client_thinkindex = 1;[m
+     pstate_pred.attack_finished = pstate_pred.client_time + wi->attack_time;[m
+ [m
+     DoAnim();[m
+[31m-[m
+ }[m
+ [m
+ void WeaponPred_DoClientThink(void) {[m
+[36m@@ -376,6 +478,40 @@[m [mvoid WeaponPred_DoClientThink(void) {[m
+     DoAnim();[m
+ }[m
+ [m
+[32m+[m[32mvoid WeaponPred_UpdateViewModel() {[m
+[32m+[m[32m    float pmodelindex, pframe;[m
+[32m+[m
+[32m+[m[32m    if (WeaponPred_IsReloading() || !wp_draw_weapon) {[m
+[32m+[m[32m        self.modelindex = 0;[m
+[32m+[m[32m        self.frame = 0;[m
+[32m+[m[32m        if (!wp_draw_weapon)[m
+[32m+[m[32m            wp_model_mask |= MASK_VIEWMODEL;  // Show engine model.[m
+[32m+[m[32m        return;[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m        wp_model_mask &= ~MASK_VIEWMODEL;  // Hide engine model.[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    FO_WeapInfo* wi = FO_SlotWeapInfo(pstate_pred.playerclass,[m
+[32m+[m[32m                                      pstate_pred.current_slot);[m
+[32m+[m
+[32m+[m[32m    pmodelindex = (wi->models)->modelindex;[m
+[32m+[m[32m    pframe = pstate_pred.weaponframe;[m
+[32m+[m
+[32m+[m[32m    if (self.modelindex != pmodelindex) {[m
+[32m+[m[32m        self.frame = pframe;[m
+[32m+[m[32m        self.modelindex = pmodelindex;[m
+[32m+[m[32m        self.lerpfrac = 0;[m
+[32m+[m[32m    } else if (self.frame != pframe) {[m
+[32m+[m[32m        self.frame2 = self.frame;[m
+[32m+[m[32m        self.frame = pframe;[m
+[32m+[m[32m        self.lerpfrac = 1;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    self.lerpfrac = max(0, self.lerpfrac - frametime * 10);[m
+[32m+[m
+[32m+[m[32m    /* print(sprintf("UVM W=%d %s:%d\n", getv(pstate_pred.current_weapon), (wi->models)->model, pframe)); */[m
+[32m+[m[32m}[m
+[32m+[m
+ float last_af;[m
+ float WeaponPred_ClientThink() {[m
+     pstate_pred = pstate_server;[m
+[36m@@ -413,7 +549,10 @@[m [mfloat WeaponPred_ClientThink() {[m
+         /* print(sprintf("CT=%0.3f AF=%0.3f/%0.3f\n", pstate_pred.client_time, pstate_pred.attack_finished, pstate_server.attack_finished)); */[m
+         last_af = pstate_pred.attack_finished;[m
+         }[m
+[31m-        if (pstate_pred.client_time >= pstate_pred.attack_finished) {[m
+[32m+[m
+[32m+[m[32m        WeaponPred_CheckReload();[m
+[32m+[m[32m        if (pstate_pred.client_time >= pstate_pred.attack_finished &&[m
+[32m+[m[32m            !WeaponPred_IsReloading()) {[m
+             WeaponPred_Impulse();[m
+ [m
+             if (input_buttons & BUTTON0)[m
+[1mdiff --git a/share/fo_weapons.qc b/share/fo_weapons.qc[m
+[1mindex 1ebdc872..bb2ec6f6 100644[m
+[1m--- a/share/fo_weapons.qc[m
+[1m+++ b/share/fo_weapons.qc[m
+[36m@@ -204,9 +204,6 @@[m [mSlot WEAP_to_slot(float playerclass, float weapon) {[m
+     return SlotNull;[m
+ }[m
+ [m
+[31m-// Internal clip storage for both SSQC/CSQC.[m
+[31m-.float clip_fired[TF_NUM_SLOTS];[m
+[31m-[m
+ struct FO_WeapToItem {[m
+     int weapon;[m
+     float it_weapon;[m
+[1mdiff --git a/ssqc/qw.qc b/ssqc/qw.qc[m
+[1mindex 46b256fe..0c8d47d0 100644[m
+[1m--- a/ssqc/qw.qc[m
+[1m+++ b/ssqc/qw.qc[m
+[36m@@ -230,6 +230,8 @@[m [mfloat coop;[m
+ .float reload_clipsize;         // how much ammo is currently in the reloading clip[m
+ .float reload_sniper_ticks;		// used to indicate when sniper rifle (with only 1 clip) will be reloaded[m
+ [m
+[32m+[m[32m.float clip_fired[TF_NUM_SLOTS];[m
+[32m+[m
+ // Assault Cannon[m
+ .float heat;[m
+ [m
+[1mdiff --git a/ssqc/weapons.qc b/ssqc/weapons.qc[m
+[1mindex 0b662cf9..c226dec8 100644[m
+[1m--- a/ssqc/weapons.qc[m
+[1m+++ b/ssqc/weapons.qc[m
+[36m@@ -1658,7 +1658,7 @@[m [mvoid () W_Attack = {[m
+         (self.undercover_skin != 0))[m
+         Spy_RemoveDisguise(self);[m
+ [m
+[31m-    sprint(self, PRINT_HIGH, sprintf("PEW t=%0.3f\n", time));[m
+[32m+[m[32m    /* sprint(self, PRINT_HIGH, sprintf("PEW t=%0.3f\n", time)); */[m
+     makevectors(self.v_angle);[m
+     self.show_hostile = time + 1;[m
+ [m

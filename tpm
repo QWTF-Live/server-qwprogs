@@ -1,0 +1,433 @@
+DEFCVAR_FLOAT(fo_jumpvolume, 1);
+
+static float pm_enabled;
+inline float PM_Enabled() { return pm_enabled; }
+
+#define ERRORTIME 0.05
+#define STEPTIME 8
+
+enumflags {
+    PMF_JUMP_HELD,
+    PMF_RESERVED,
+    PMF_ONGROUND
+};
+
+struct PMS_Data {
+    vector org, vel;
+    float seq, pmove_flags;
+} pm_s, pm_so;
+
+struct {
+    entity ent;
+
+    float seq;
+    vector error;
+    float errortime;
+
+    float step, steptime, step_oldz;
+
+    vector vieworg;
+} pm;
+
+void PM_SetActive(float active) {
+    pm_enabled = active;
+    // Below may parse active.
+    pm.ent.solid = PM_Enabled() ? SOLID_SLIDEBOX : SOLID_NOT;
+    sendevent("SetPmove", "f", stof(argv(1)));
+}
+
+vector PM_Org() { return PM_Enabled() ? pm.ent.origin : pmove_org; }
+vector PM_Vel() { return PM_Enabled() ? pm.ent.velocity : pmove_vel; }
+inline entity PM_Ent() { return pm.ent; }
+
+inline float CSQC_JumpSounds_Active() { return CVARF(fo_csjumpsounds); }
+
+// Sets *type to whatever is at the feet of `point`.
+static float PM_GetWaterLevel(vector point, float* type) {
+    float waterlevel = 0;
+    float offsets[] = { PLAYER_MINS.z + 1, (PLAYER_MINS.z + PLAYER_MAXS.z) / 2,
+                        DEFAULT_VIEWHEIGHT };
+    for (int i = 0; i < 3; i++) {
+        float cont = pointcontents(point + offsets[i] * '0 0 1');
+        if (i == 0)
+            *type = cont;
+        if (cont == CONTENT_WATER || cont == CONTENT_SLIME || cont == CONTENT_LAVA)
+            waterlevel++;
+        else
+            break;
+    }
+    return waterlevel;
+}
+
+// Some versions of FTE do not correctly update pmove_vel (although other state,
+// e.g. PM_Org() is).  Until we're directly tied to pmove, we snoop on recent
+// values when we think this is happening.
+float recent_pmove_vel_z;
+
+void PM_PredictJump() {
+    if (!CSQC_JumpSounds_Active() || getstatf(STAT_PAUSED))
+        return;
+
+    static float last_onground, last_waterlevel, last_vel_z;
+
+    float fluidtype;
+    float waterlevel = PM_GetWaterLevel(PM_Org(), &fluidtype);
+    float jumping = input_buttons & BUTTON2;
+    float onground = pmove_onground;
+    float landing = onground && !last_onground;
+    float vel_z = pmove_vel_z ?: recent_pmove_vel_z;
+
+    if (!game_state.is_alive) {
+        last_onground = 1;
+        last_vel_z = 0;
+        last_waterlevel = 0;
+        return;
+    }
+
+    static float swimsound_next;
+
+    string sound;
+    if (landing && last_vel_z < -300) {  // Hard or water land.
+        if (fluidtype == CONTENT_WATER)
+            localsound("player/h2ojump.wav", CHAN_BODY, 1);
+        else if (last_vel_z < -650)  // Will take damage.
+            localsound("player/land2.wav", CHAN_VOICE, 1);
+        else
+            localsound("player/land.wav", CHAN_VOICE, 1);
+    }
+
+    // TODO: Model health above and not play jump when landing into death.
+    if (jumping) {
+        if (waterlevel >= 2 && time > swimsound_next) {
+            swimsound_next = time + 1;
+            sound = random() < 0.5 ? "player/water1.wav" : "player/water2.wav";
+            localsound(sound, CHAN_BODY, 1);
+        } else if (last_onground && !onground && vel_z > last_vel_z + 200) {
+            // The default pmove implementation and server behave slightly
+            // differently here in two important ways here:
+            // 1) Jump calculations run _prior_ to movement rather than post,
+            //    meaning you can test for jumping and onground directly.  We
+            //    get around this by just using prior frame's onground.
+            // 2) Something (probably airstep) masks on-grounds that get
+            //    skipped, which otherwise results in false jumps moving up
+            //    stairs when combined with (1).  We can test for this by
+            //    watching to see whether we actually got a sufficiently large
+            //    velocity increase.
+            localsound("player/plyrjmp8.wav", CHAN_AUTO, CVARF(fo_jumpvolume));
+        }
+    }
+
+    if (waterlevel > 0 && last_waterlevel == 0) {  // Water entry.
+        sound = "";
+        switch(fluidtype) {
+            case CONTENT_LAVA: sound = "player/inlava.wav"; break;
+            case CONTENT_WATER: sound = "player/inh2o.wav"; break;
+            case CONTENT_SLIME: sound = "player/slimbrn2.wav"; break;
+        }
+        localsound(sound, CHAN_BODY, 1);
+    } else if (waterlevel == 0 && last_waterlevel > 0) {  // Water exit.
+        localsound("misc/outwater.wav", CHAN_BODY, 1);
+    }
+
+    last_vel_z = vel_z;
+    last_onground = onground;
+    last_waterlevel = waterlevel;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Pmove
+////////////////////////////////////////////////////////////////////////////////
+
+enum {
+    SERVER,
+    PMOVE,
+    VIEW,
+    NUM_DBG_GRAPH_TYPES,
+};
+
+#define NIMP 300
+
+DEFCVAR_FLOAT(fopmd_graph_x, -10);
+DEFCVAR_FLOAT(fopmd_graph_y, 100);
+DEFCVAR_FLOAT(fopmd_graph_w, 200);
+DEFCVAR_FLOAT(fopmd_graph_h, 100);
+
+enumflags {
+    PMDG_ON,
+    PMDG_ALIGN_INTERP,
+};
+DEFCVAR_FLOAT(fopmd_graph, PMDG_ON | PMDG_ALIGN_INTERP);
+
+void PM_Init() {
+    pm.ent = spawn();
+    pm.ent.solid = SOLID_NOT;
+    pm.ent.movetype = MOVETYPE_WALK;
+    setsize(pm.ent, '-16 -16 -24', '16 16 32');
+}
+
+
+static inline void PM_SavePMS(PMS_Data *pms) {
+    entity ent = pm.ent;
+    pms->org = ent.origin;
+    pms->vel = ent.velocity;
+    pms->pmove_flags = ent.pmove_flags;
+    pms->seq = servercommandframe;
+
+    pm.seq = servercommandframe + 1;
+}
+
+static inline void PM_ActivatePMS(PMS_Data *pms) {
+    entity ent = pm.ent;
+
+    ent.origin = pms->org;
+    ent.velocity = pms->vel;
+    pm.seq = pms->seq + 1; // received frame includes server side move
+    ent.pmove_flags = pms->pmove_flags;
+};
+
+static void PM_RunMovement(entity ent, float endframe) {
+    if (servercommandframe >= pm_s.seq + 63) {
+        // We're meant to be updating the player faster than this
+        // hopefully its just that we're throttled...
+        // Uncommenting this block will result in the player continuing to be
+        // predicted rather than frozen.
+        pm_s.seq = servercommandframe - 63;
+        return;
+    }
+
+    /* if (endframe < pm.seq) */
+        PM_ActivatePMS(&pm_s);
+
+    if (!game_state.is_alive) {
+        pm.seq = clientcommandframe;
+        //just update the angles
+        if (!getinputstate(pm.seq-1)) { }
+        return;
+    }
+
+    if (pm.seq < clientcommandframe - 128)
+        pm.seq = clientcommandframe - 128;
+
+    while (pm.seq <= endframe) {
+        if (!getinputstate(pm.seq))
+            break;
+        runstandardplayerphysics(ent);
+        pm.seq++;
+    }
+
+    //add in anything that was applied after (for low packet rate protocols)
+    input_angles = view_angles;
+};
+
+DEFCVAR_FLOAT(fopm_noerror, 0);
+
+static void PM_UpdateError() {
+    entity ent = pm.ent;
+
+    if (CVARF(fopm_noerror)) {
+        pm.error = '0 0 0';
+        pm.errortime = 0;
+        return;
+    }
+
+    // Run prior prediction to present.
+    PM_ActivatePMS(&pm_so);
+    PM_RunMovement(ent, clientcommandframe);
+    vector err = ent.origin;
+
+    // Repeat with updated state.
+    PM_ActivatePMS(&pm_s);
+    PM_RunMovement(ent, clientcommandframe);
+
+    err -= ent.origin;
+    float nerr = vlen(err);
+    if (nerr > 128) {  // teleport
+        pm.error = '0 0 0';
+        pm.errortime = 0;
+    } else { // figure out the error amount, and add it to accumulated lerp
+        pm.error = (pm.errortime - time)*(1 / ERRORTIME) * pm.error + err;
+        if (vlen(pm.error) < 1)
+            pm.error = '0 0 0';
+        else
+            printf("E: %0.2f %0.2f NE: %0.2f\n",
+                    vlen(pm.error), pm.errortime - time, nerr);
+        pm.errortime = time + ERRORTIME;
+    }
+}
+
+DEFCVAR_FLOAT(v_viewheight, 0);
+DEFCVAR_FLOAT(fopm_nostep, 0);
+void PM_UpdateLocalMovement() {
+    entity ent = pm.ent;
+
+    PM_ActivatePMS(&pm_s);
+    PM_RunMovement(ent, clientcommandframe);
+
+    // Smooth stair stepping
+    if (ent.origin_z > pm.step_oldz+8 && ent.origin_z < pm.step_oldz+24 &&
+        ent.velocity_z == 0) { // Evaluate out the remaining old step
+        if (pm.steptime - time > 0)
+            pm.step = (pm.steptime - time)*STEPTIME*pm.step;
+        else
+            pm.step = 0;
+
+        // Work out the new step
+        pm.step += (pm.step_oldz - ent.origin_z);
+        pm.steptime = time + 1/STEPTIME;
+    }
+    pm.step_oldz = ent.origin_z;
+
+    float viewheight = CVARF(v_viewheight);
+    if (viewheight < -7)
+        viewheight = -7;
+    else if (viewheight > 7)
+        viewheight = 7;
+
+    pm.vieworg = ent.origin;
+    pm.vieworg.z += getstatf(STAT_VIEWHEIGHT) + viewheight;
+
+    // Correct view position over ERRORTIME
+    if (pm.errortime - time > 0)
+        pm.vieworg += (pm.errortime - time)*(1 / ERRORTIME) * pm.error;
+
+    if (!CVARF(fopm_nostep))
+        if (pm.steptime - time > 0)
+            pm.vieworg.z += (pm.steptime - time)*STEPTIME * pm.step;
+}
+
+void PMD_UpdateImpulse(int seq, vector sv, vector pv);
+
+float PM_Seq() {
+    return pm.seq;
+}
+
+void PM_RunTo(float seq) {
+    if (!PM_Enabled())
+        return;
+
+    PM_RunMovement(pm.ent, seq);
+}
+
+void PM_Reset(float exp_seq) {
+    if (!PM_Enabled())
+        return;
+
+    if (pm_s.seq + 1 != exp_seq) {
+        printf("SKIP s=%d pm_s=%d e=%d\n", servercommandframe, pm_s.seq, exp_seq);
+        return;
+    }
+    PM_ActivatePMS(&pm_s);
+    ASSERTF_EQ(exp_seq, pm.seq);
+}
+
+void PM_Update() {
+    pm_so = pm_s;
+    PM_SavePMS(&pm_s);
+
+    if (!PM_Enabled()) {
+        PMD_UpdateImpulse(servercommandframe, pm.ent.velocity, PM_Vel());
+        return;
+    }
+
+    PM_UpdateError();
+
+    if (!CVARF(fopmd_graph))
+        return;
+
+    PM_UpdateLocalMovement();
+    PMD_UpdateImpulse(pstate_server.seq, pm_s.vel, PM_Vel());
+}
+
+
+void PM_UpdateView() {
+    PM_UpdateLocalMovement();
+    setviewprop(VF_ORIGIN, pm.vieworg);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Debug
+////////////////////////////////////////////////////////////////////////////////
+
+struct PmoveDebug {
+    float points[NIMP];
+    int nimp;
+};
+
+static PmoveDebug pmd[NUM_DBG_GRAPH_TYPES];
+
+static void PMD_AddPoint(int ptype, float val) {
+    PmoveDebug* pd = &pmd[ptype];
+
+    pd->points[pd->nimp++ % NIMP] = val;
+}
+
+void PMD_UpdateImpulse(int seq, vector sv, vector pv) {
+    if (!CVARF(fopmd_graph))
+        return;
+
+    static int old_seq;
+    if (old_seq == seq)
+        return;
+    old_seq = seq;
+
+    if (!vlen(pv) && !vlen(sv))
+        return;
+
+    PMD_AddPoint(SERVER, vlen(sv));
+    PMD_AddPoint(PMOVE,  vlen(pv));
+    PMD_AddPoint(VIEW, vlen(pm.error) / 128 * 1200);
+}
+
+static void PMD_Graph(int type, int offset, vector c1, vector c2, vector rgb) {
+    PmoveDebug* pd = &pmd[type];
+    float wx = c2.x - c1.x, wy = c2.y - c1.y;
+
+    float maxv = pd->points[0], minv = pd->points[0];
+    for (int i = 1; i < NIMP; i++) {
+        maxv = max(maxv, pd->points[i]);
+        minv = min(minv, pd->points[i]);
+    }
+
+    float h = max(maxv - minv, 1200);
+
+    float px = wx / NIMP, py = (wy - 2) / h;
+    vector lend = c1 + [0, wy, 0];
+
+    vector m1 = [0, wy - maxv * py, 0];
+    drawline(1, c1 + m1, c1 + m1 + [wx, 0, 0], '50 150 150', 1);
+
+    for (int i = offset; i < NIMP; i++) {
+        int idx = (pd->nimp + i) % NIMP;
+        vector sx =
+            [c1.x + (i - offset) * px, c2.y - (pd->points[idx]) * py + 1, 0];
+        vector sy = [sx.x + px, sx.y, 0];
+
+        drawline(1, sx, sy, rgb, 1);
+        drawline(1, lend, sx, rgb, 1);
+        lend = sy;
+    }
+}
+
+void PMD_DrawGraphs(float width) {
+    if (!CVARF(fopmd_graph))
+        return;
+
+    vector c1 = [CVARF(fopmd_graph_x), CVARF(fopmd_graph_y), 0];
+    if (c1.x < 0)
+        c1.x += width - CVARF(fopmd_graph_w);
+    vector w =  [CVARF(fopmd_graph_w), CVARF(fopmd_graph_h), 0];
+    vector c2 = c1 + w;
+
+    drawfill(c1, w, '0.2 0.2 0.2', 1);
+    drawfill(c2, '5 5 5', '1 0 0', 1);
+
+    float offset = (CVARF(fopmd_graph) & PMDG_ALIGN_INTERP) ?
+        clientcommandframe - servercommandframe : 0;
+
+    offset = max(0, offset);
+    PMD_Graph(PMOVE, 0, c1, c2, '0 0 1');
+    PMD_Graph(VIEW, 0, c1, c2, '0 1 0');
+    PMD_Graph(SERVER, offset, c1, c2, '1 0 0');
+}
+
+

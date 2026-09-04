@@ -423,7 +423,6 @@ var fo_menu FO_MENU_ADMIN_MODES = {
         {"2","Clan Mode","","Game has a prematch",FO_MENU_STATE_NORMAL,{localcmd("cmd clanmode\n");},MENU_BORDER_WARNING},
         {"3","Quad Mode","","Play for a set number of rounds, designed for attack vs defence",FO_MENU_STATE_NORMAL,{localcmd("cmd quadmode\n");},MENU_BORDER_WARNING},
         {"4","Duel Mode","","Simplifies 1 on 1 action",FO_MENU_STATE_NORMAL,{localcmd("cmd duelmode\n");},MENU_BORDER_WARNING},
-        {"8","New Balance","","New Balance Test",FO_MENU_STATE_NORMAL,{localcmd("cmd new_balance");},MENU_BORDER_WARNING},
         {"9","Force Start","","Skip prematch and start the game\nPlease use sparingly",FO_MENU_STATE_NORMAL,{localcmd("cmd forcestart\n");},MENU_BORDER_WARNING},
         {"0","Close Menu","","",FO_MENU_STATE_NORMAL,{Menu_Cancel();},MENU_BUTTON},
         {"+","Next - Settings","","",FO_MENU_STATE_NORMAL,{Menu_Cancel(); TF_Menu_Admin_Settings(TRUE);},MENU_BUTTON},
@@ -434,10 +433,6 @@ var fo_menu FO_MENU_ADMIN_MODES = {
         FO_MENU_ADMIN_MODES.options[1].value = modeStatus(SERVER_ADMIN.clanmode);
         FO_MENU_ADMIN_MODES.options[2].value = modeStatus(SERVER_ADMIN.quadmode);
         FO_MENU_ADMIN_MODES.options[3].value = modeStatus(SERVER_ADMIN.duelmode);
-        // New Balance is row 4 now that Captains Mode is gone.  This was
-        // writing to options[8], the "Next - Settings" row, so New Balance
-        // never showed its value and Next showed one it had no business with.
-        FO_MENU_ADMIN_MODES.options[4].value = modeStatus(SERVER_ADMIN.new_balance);
     }
 };
 var fo_menu FO_MENU_ADMIN_SETTINGS = {

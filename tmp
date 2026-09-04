@@ -1,0 +1,14 @@
+curl --header "Content-Type: application/json" \
+  --request POST \
+  --data '{
+     "content": "Scoreboard: 1on1r",
+     "embeds": [ {
+               "fields": [
+                   {"name": "Blue", "inline":true, "values": "ogre" },
+                   {"name": "Kills", "inline":true, "values": "0" },
+                   {"name": "DMG", "inline":true, "values": "0" }
+               ]
+           } ]
+}' \
+  https://discord.com/api/webhooks/1221561643801120778/rQvCiclJ4gvi1UXi16EZCZooAZnhE8mfEhEYJvciNYGrQQ8rS8U1-TsV1sAZFX1F-nl5
+

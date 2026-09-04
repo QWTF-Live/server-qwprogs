@@ -53,7 +53,6 @@ enumflags {
     _OP(5, Byte,  float, fo_concuss) \
     _OP(6, Float, float, rj) \
     _OP(6, Float, float, pipe_cooldown) \
-    _OP(7, Short, float, new_balance) \
     _OP(7, Short, float, new_balance_flags)
 
 
@@ -334,18 +333,6 @@ enumflags {
     CSQC_FORCE_POS,
     CSQC_SNIPER_SIGHT,
 };
-
-#ifdef SSQC
-float new_balance;
-#endif
-
-float NewBalanceActive() {
-#ifdef CSQC
-    return tf_config.new_balance;
-#else
-    return new_balance & 1;
-#endif
-}
 
 enumflags {
     NBF_CONC_NEW_CAP,

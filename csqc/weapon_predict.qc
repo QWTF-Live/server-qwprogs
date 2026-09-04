@@ -228,7 +228,6 @@ void WPP_Status() {
     PRINT_CONFIG(max_rewind_fast_projectile_ms);
     PRINT_CONFIG(max_rewind_grenade_ms);
     PRINT_CONFIG(rewind_fast_projectile_thresh);
-    PRINT_CONFIG(new_balance);
     printf("\n");
 
     PrintFlagField("Rewind Settings [rewind_flags=%d]\n",

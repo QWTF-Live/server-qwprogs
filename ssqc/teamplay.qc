@@ -103,7 +103,7 @@ static int(entity p) FilOwnerTeamNEQ[] = {
 };
 
 void TeamPlay_Cap(vector origin, entity player) {
-  if (!org_game || !new_balance || is_small_game)
+  if (!org_game || is_small_game)
     return;
 
   teamplay_string = "The enemy captured! You are afflicted by the Curse of Isma!";

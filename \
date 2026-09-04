@@ -1,0 +1,1 @@
+antilag: fix type-cast on passing weapon for on-death projectiles

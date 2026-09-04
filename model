@@ -1,0 +1,9 @@
+csqc/weapon_predict.qc:        if (e.server_modelindex == desc->modelindex)
+csqc/weapon_predict.qc:            return desc->trailindex;
+csqc/weapon_predict.qc:  proj.velocity = v_forward * desc->speed;
+csqc/weapon_predict.qc:  proj.server_modelindex = desc->modelindex;
+csqc/weapon_predict.qc:  float modelindex = desc->modelindex;
+share/prediction.qc:        ASSERTD_EQ(i, desc->id);
+share/prediction.qc:        desc->modelindex = getmodelindex(strcat("progs/", desc->model));
+share/prediction.qc:        if (desc->trail != "")
+share/prediction.qc:            desc->trailindex = particleeffectnum(strcat("fo-particles.",desc->trail));

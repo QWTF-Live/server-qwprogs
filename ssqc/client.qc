@@ -763,8 +763,8 @@ void () DecodeLevelParms = {
         // keep teams on map change [off]
         cb_keepteams = CF_GetSetting("kt", "keep_teams", "0");
 
-        // how a team spawn is chosen: 0 classical, 1 random [classical]
-        spawn_location = CF_GetSetting("sl", "spawn_location", "0");
+        // how a team spawn is chosen: 0 classical, 1 random [random]
+        spawn_location = CF_GetSetting("sl", "spawn_location", "1");
 
         // opens the debug commands to everyone, not just admins [off]
         qwtf_debug = CF_GetSetting("qwtf_debug", "qwtf_debug", "0");

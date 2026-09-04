@@ -37,6 +37,15 @@ void (string evt) logevent = {
     string st = infokey (world, "event_debug");
     if (stof(st) > 0)
         bprint(PRINT_HIGH, evt, "\n");
+
+    // canlog says the match wants logging; it does not say a file was opened.
+    // logfilehandle is only opened by the demo path in PreMatch_Think, under
+    // serverdemo, so with recording off every event here hit
+    // an invalid handle and the engine printed "PF_fwrite: File out of range"
+    // once per event.
+    if (logfilehandle <= 0)
+        return;
+
     fputs(logfilehandle, evt);
 }
 

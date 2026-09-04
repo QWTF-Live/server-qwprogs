@@ -319,8 +319,10 @@ void() CSQC_Parse_Event = {
             SERVER_ADMIN.clanmode = readfloat();
             SERVER_ADMIN.quadmode = readfloat();
             SERVER_ADMIN.duelmode = readfloat();
-            SERVER_ADMIN.pubmode =  (((SERVER_ADMIN.clanmode & 1) || (SERVER_ADMIN.quadmode & 1) || (SERVER_ADMIN.duelmode & 1))?1:0) + 
-                                    (((SERVER_ADMIN.clanmode & 2) || (SERVER_ADMIN.quadmode & 2) || (SERVER_ADMIN.duelmode & 2))?2:0);
+            SERVER_ADMIN.pugmode = readfloat();
+            // Pub is "none of the others", so pug counts towards it too.
+            SERVER_ADMIN.pubmode =  (((SERVER_ADMIN.clanmode & 1) || (SERVER_ADMIN.quadmode & 1) || (SERVER_ADMIN.duelmode & 1) || (SERVER_ADMIN.pugmode & 1))?1:0) + 
+                                    (((SERVER_ADMIN.clanmode & 2) || (SERVER_ADMIN.quadmode & 2) || (SERVER_ADMIN.duelmode & 2) || (SERVER_ADMIN.pugmode & 2))?2:0);
             SERVER_ADMIN.pubmode = 3 - SERVER_ADMIN.pubmode; //Invert
             SERVER_ADMIN.captainmode = readfloat();
             break;

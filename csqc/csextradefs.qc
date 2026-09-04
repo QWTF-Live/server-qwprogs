@@ -336,6 +336,7 @@ typedef struct {
     float clanmode;
     float quadmode;
     float duelmode;
+    float pugmode;
     float quad_rounds;
     float quad_round_time;
     float login_required;

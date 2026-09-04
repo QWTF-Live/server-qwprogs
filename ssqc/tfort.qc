@@ -1127,6 +1127,8 @@ void (entity p) TeamFortress_SetSkin = {
     }
 };
 
+void Pug_ApplyClassOverrides(entity p);   // ssqc/pug.qc
+
 void () TeamFortress_SetEquipment = {
     local entity te;
     local string st;
@@ -1752,6 +1754,9 @@ void () TeamFortress_SetEquipment = {
 
     if (self.last_playerclass != self.playerclass)
         W_ChangeToBestWeapon();
+
+    // After the class defaults above, so the pug table wins.  No-op otherwise.
+    Pug_ApplyClassOverrides(self);
 
     W_UpdateCurrentWeapon(self);
     self.last_playerclass = self.playerclass;

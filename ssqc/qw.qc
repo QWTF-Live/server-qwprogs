@@ -447,6 +447,7 @@ float team3frags;
 float team4frags;
 float last_id;
 float quadmode;
+float pugmode;      // ssqc/pug.qc
 float quad_winner;
 float rounds;
 float round_active;

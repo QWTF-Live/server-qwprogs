@@ -625,28 +625,7 @@ float ConsoleCmd(string cmd) {
             return 1;
         }
     }
-    else if (arg_val0 == "autorecord")
-    {
-        if (arg_num == 2) {
-            localcmd("localinfo demo_auto_left ");
-            localcmd(arg_val1);
-            localcmd("\n");
-            return 1;
-        }
-        if (arg_num == 1) {
-            tmp = infokey (world, "demo_auto_left");
-            if ((stof(tmp) > 0)) {
-                dprint("Auto-Recording off\n");
-                localcmd("localinfo demo_auto_left 0\n");
-                return 1;
-            }
-            else {
-                dprint("Auto-Recording the next match\n");
-                localcmd("localinfo demo_auto_left 1\n");
-                return 1;
-            }
-        }
-    } else if (arg_val0 == "clan") {
+    else if (arg_val0 == "clan") {
         ClanMode();
         return 1;
     } else if (arg_val0 == "quadmode") {

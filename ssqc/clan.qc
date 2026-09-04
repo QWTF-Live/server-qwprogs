@@ -320,16 +320,13 @@ void () PreMatch_Think = {
             lightstyle(0, "e");
             //preventing double demo recording
             localcmd("cancel\n");
-            if (stof(infokey(world, "demo_auto_left")) > 0) {
-                if (infokey(world, "serverdemo") == "on") {
+            if (infokey(world, "serverdemo") == "on") {
+                GenerateMvdName();
+                localcmd(sprintf("record %s\n", MvdName(FALSE)));
 
-                    GenerateMvdName();
-                    localcmd(sprintf("record %s\n", MvdName(FALSE)));
-
-                    str = strcat(mvd_name, ".json");
-                    fclose(logfilehandle);
-                    logfilehandle = fopen(str, FILE_WRITE);
-                }
+                str = strcat(mvd_name, ".json");
+                fclose(logfilehandle);
+                logfilehandle = fopen(str, FILE_WRITE);
             }
         } else if (self.cnt2 == 1) {
             InitAllStatuses(world);

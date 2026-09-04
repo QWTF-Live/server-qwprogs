@@ -1128,25 +1128,6 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                     localcmd("easyrecord\n");
                 }
                 break;
-            case "autorecord":
-                processedCmd = TRUE;
-                if (arg_num == 2) {
-                    localcmd("localinfo demo_auto_left ");
-                    localcmd(arg2);
-                    localcmd("\n");
-                }
-                if (arg_num == 1) {
-                    tmp = infokey(world, "demo_auto_left");
-                    if (stof(tmp) > 0) {
-                        sprint (self, PRINT_HIGH, "Auto-Recording off\n");
-                        localcmd ("localinfo demo_auto_left 0\n");
-                    }
-                    else {
-                        sprint(self, PRINT_HIGH, "Auto-Recording the next match\n");
-                        localcmd("localinfo demo_auto_left 1\n");
-                    }
-                }
-                break;
             case "cancel":
                 localcmd ("cancel\n");
                 processedCmd = TRUE;
@@ -1344,7 +1325,6 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                 sprint(self, PRINT_HIGH, "cmd map <map>\n");
                 sprint(self, PRINT_HIGH, "cmd record <demoname>\n");
                 sprint(self, PRINT_HIGH, "cmd easyrecord [<demoname>]\n");
-                sprint(self, PRINT_HIGH, "cmd autorecord [0|1]\n");
                 sprint(self, PRINT_HIGH, "cmd cancel\n");
                 sprint(self, PRINT_HIGH, "cmd stop\n");
                 sprint(self, PRINT_HIGH, "cmd kick [userid]\n");

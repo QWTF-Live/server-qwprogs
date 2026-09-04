@@ -53,6 +53,8 @@ void (entity pl) Sniper_ZoomReset;
 void () StartTimer;
 void () StopTimer;
 void () StartQuadRound;
+void Pug_Init();   // ssqc/pug.qc, compiled after this file
+float Pug_Frozen();
 void (string cl_pwd) Admin_Check;
 void () PreMatch_Message;
 void () UpdateReadyStatus;
@@ -744,8 +746,8 @@ void () DecodeLevelParms = {
             vote_threshold = 0.5;
         }
         
-        //default round interval for quadmode (seconds)
-        round_delay_time = CF_GetSetting("round_delay_time", "rdt", "30");
+        //default round interval between rounds, quad and pug (seconds)
+        round_delay_time = CF_GetSetting("round_delay_time", "rdt", "15");
 
         map_restart_time = CF_GetSetting("map_restart_Time", "mrt", "120");
 
@@ -1035,6 +1037,12 @@ void () DecodeLevelParms = {
 
     if (org_game)  // This used to depend on new balance
         ActivateOrgGame();
+
+    // After ActivateOrgGame, not before: pug carries its own balance table and
+    // would otherwise be overwritten by it.  org_game is read just above and
+    // nowhere else in here, so setting it this late costs nothing.
+    // No-op unless localinfo "pug" is set; see ssqc/pug.qc.
+    Pug_Init();
 
     Config_Final();
 };
@@ -1640,6 +1648,8 @@ void () ClientKill = {
     if (self.has_disconnected == 1)
         return;
     if (self.deadflag)
+        return;
+    if (Pug_Frozen())
         return;
     if(!votemode) {
         if (self.playerclass == PC_UNDEFINED)

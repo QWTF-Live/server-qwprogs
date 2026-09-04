@@ -486,7 +486,9 @@ void(PanelID panelid, string text) drawGameModePanel = {
         if(SBAR.GameMode & GAMEMODE_VOTE) {
             message = "Vote Mode";
         } else {
-            if(SBAR.GameMode & GAMEMODE_DUEL) {
+            if(SBAR.GameMode & GAMEMODE_PUG) {
+                message = "Pug Mode";
+            } else if(SBAR.GameMode & GAMEMODE_DUEL) {
                 message = "Duel Mode";
             } else if(SBAR.GameMode & GAMEMODE_QUAD) {
                 message = "Quad Mode";

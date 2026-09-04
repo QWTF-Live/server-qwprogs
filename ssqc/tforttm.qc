@@ -199,6 +199,9 @@ static void EnsureAutoTeam() {
 
 float (float tno) TeamFortress_TeamGetNoPlayersExcludingAllTime;
 
+// ssqc/pug.qc -- pug keeps its own roster so this file's copy can go away.
+float Pug_TeamJoinAllowed(entity pe, float tno);
+void Pug_AutoTeam(entity p);
 // Once a pug is under way a team only has room if it is short of its roster --
 // someone dropped.  All-time attack and defence players sit outside the roster
 // count, so they neither fill a slot nor open one.
@@ -242,6 +245,11 @@ void TFL_AutoTeam() {
     if (self.is_spectator)
         return;
 
+    if (pugmode) {
+        Pug_AutoTeam(self);
+        return;
+    }
+
     float autot = TFL_PugAutoTeam(self);
 
     if (autot != -1 && TeamFortress_TeamSet_Options(self, autot, TRUE) == 1) {
@@ -270,8 +278,12 @@ float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options 
     // login); after that, switching sides is yours to do.  What the lock still
     // enforces is that a team already under way has a free slot -- except for
     // its own roster members, who can always reclaim their place.
-    if (pe.team_no != tno && TFL_PugAutoTeam(pe) != tno &&
-        !TFL_PugTeamHasRoom(tno)) {
+    if (pugmode) {
+        // Pug owns its own roster and lock; see ssqc/pug.qc.
+        if (!Pug_TeamJoinAllowed(pe, tno))
+            return (0);
+    } else if (pe.team_no != tno && TFL_PugAutoTeam(pe) != tno &&
+               !TFL_PugTeamHasRoom(tno)) {
         sprint(pe, PRINT_HIGH,
                "That team is full -- teams are locked once the game starts.\n");
         return (0);

@@ -106,6 +106,8 @@ void () TeamFortress_CTF_FlagInfo;
 void () ClanMode;
 void () QuadMode;
 void () PlayerReady;
+void Pug_PlayerReady();
+void Pug_PlayerNotReady();
 void () PlayerNotReady;
 void () Broadcast_Players_NotReady;
 void () StartTimer;
@@ -2159,7 +2161,9 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
         case TF_TEAM_CLASSES:
             TeamFortress_TeamShowMemberClasses(self); break;
         case TF_PLAYER_READY:
-            if (clanbattle == 1) {
+            if (pugmode)
+                Pug_PlayerReady();
+            else if (clanbattle == 1) {
                 if (!cb_prematch)
                     sprint (self, 2, "Match already in progress...\n");
                 else
@@ -2167,7 +2171,9 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
             }
             break;
         case TF_PLAYER_NOT_READY:
-            if (clanbattle == 1) {
+            if (pugmode)
+                Pug_PlayerNotReady();
+            else if (clanbattle == 1) {
                 if (!cb_prematch)
                     sprint (self, 2, "Match already in progress...\n");
                 else

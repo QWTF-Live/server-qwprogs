@@ -209,6 +209,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define GAMEMODE_QUAD       2
 #define GAMEMODE_DUEL       4
 #define GAMEMODE_VOTE       8
+#define GAMEMODE_PUG        16
 
 #define MSG_FLAGINFOINIT    1
 #define MSG_FLAGINFO        2

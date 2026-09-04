@@ -17,6 +17,14 @@ void () UpdateAllAdmins = {
     }
 }
 
+float Pug_ForceStart();   // ssqc/pug.qc
+float Pug_NextRound();
+float Pug_SetScore(float blue, float red);
+float Pug_SetTime(string spec);
+float Pug_Status();
+void Pug_UnlockTeams();
+float Pug_AllTimeAllowed(entity pe, float want);
+
 void () RestartMap = {
     bprint(PRINT_HIGH, self.netname);
     bprint(PRINT_HIGH, " Has restarted the map.\n");
@@ -30,6 +38,12 @@ void () ForceStartMatch = {
     // No login check here any more: quad and pug refuse to let anyone join a
     // team unlogged in the first place (TeamFortress_TeamSet), so a match that
     // can be force started is already made of signed-in players.
+    if (Pug_ForceStart()) {
+        bprint(PRINT_HIGH, self.netname);
+        bprint(PRINT_HIGH, " has forced the match start.\n");
+        return;
+    }
+
     if (clanbattle == 1 && cb_prematch == 1) {
         bprint(PRINT_HIGH, self.netname);
         bprint(PRINT_HIGH, " has forced the match start.\n");
@@ -51,6 +65,7 @@ void (float inp) SetQuadRounds = {
 void () QuadMode =
 {
     localcmd ("localinfo clan on\n");
+    localcmd ("localinfo pug off\n");
     localcmd ("localinfo quadmode on\n");
     localcmd ("localinfo duelmode off\n");
     localcmd ("localinfo rounds 2\n");
@@ -67,9 +82,31 @@ void () QuadMode =
     bprint (PRINT_HIGH, "Map Restart needed to take effect!\n");
 };
 
+// No fo_pugmode.cfg: the balance is codified in ssqc/pug.qc precisely so a
+// pug does not depend on a config file being present and current per host.
+void () PugMode =
+{
+    localcmd ("localinfo pug on\n");
+    localcmd ("localinfo quadmode off\n");
+    localcmd ("localinfo clan off\n");
+    localcmd ("localinfo duelmode off\n");
+    localcmd ("localinfo rounds 2\n");
+    localcmd ("timelimit 0\n");
+    localcmd ("localinfo round_time 10\n");
+    localcmd ("localinfo teamfrags on\n");
+    localcmd ("localinfo fullteamscore off\n");
+    localcmd ("fraglimit 0\n");
+    localcmd ("localinfo rd 0\n");
+    localcmd ("localinfo votemode 0\n");
+    localcmd ("localinfo vote_style 2\n");
+    bprint (PRINT_HIGH, "Pug Mode set to on\n");
+    bprint (PRINT_HIGH, "Map Restart needed to take effect!\n");
+};
+
 void () ClanMode =
 {
     localcmd("localinfo clan on\n");
+    localcmd ("localinfo pug off\n");
     localcmd ("localinfo rd 0\n"); 
     localcmd ("localinfo votemode 0\n"); 
     localcmd ("localinfo vote_style 2\n"); 
@@ -82,6 +119,7 @@ void () ClanMode =
 void () PubMode = 
 {
     localcmd ("localinfo clan off\n");
+    localcmd ("localinfo pug off\n");
     localcmd ("localinfo quadmode off\n");
     localcmd ("localinfo duelmode off\n");
     localcmd ("localinfo teamfrags off\n");
@@ -388,6 +426,18 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             }
 
             if (arg2) {
+                // Checked before the switch below rather than inside it: on
+                // refusal we want the command to stop, not fall through to the
+                // team parsing with arg2 still reading "attack".
+                local float want_all_time = 0;
+                if (arg2 == "attack")
+                    want_all_time = ALL_TIME_ATTACK;
+                else if (arg2 == "defence")
+                    want_all_time = ALL_TIME_DEFENCE;
+
+                if (want_all_time && !Pug_AllTimeAllowed(self, want_all_time))
+                    break;
+
                 local float final_round = (rounds == 1);
 
                 switch(arg2) {
@@ -1200,6 +1250,7 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                 break;
             case "pug_unlock":
                 auto_pug_team = FALSE;
+                Pug_UnlockTeams();
                 bprint(PRINT_HIGH, self.netname, " disabled auto-teams\n");
                 processedCmd = TRUE;
                 break;
@@ -1257,13 +1308,46 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                 processedCmd = TRUE;
                 QuadMode();
                 break;
+            case "pugmode":
+                processedCmd = TRUE;
+                PugMode();
+                break;
             case "duelmode":
                 processedCmd = TRUE;
                 DuelMode();
                 break;
             case "forcestart":
+            case "pug_forcestart":
                 processedCmd = TRUE;
                 ForceStartMatch();
+                break;
+            case "pug_nextround":
+                processedCmd = TRUE;
+                if (!Pug_NextRound())
+                    sprint(self, PRINT_HIGH, "Pug mode is not active.\n");
+                break;
+            case "pug_status":
+                processedCmd = TRUE;
+                if (!Pug_Status())
+                    sprint(self, PRINT_HIGH, "Pug mode is not active.\n");
+                break;
+            case "pug_settime":
+                processedCmd = TRUE;
+                if (!arg2) {
+                    sprint(self, PRINT_HIGH,
+                           "usage: cmd pug_settime mm:ss\n");
+                } else if (!Pug_SetTime(arg2)) {
+                    sprint(self, PRINT_HIGH, "Pug mode is not active.\n");
+                }
+                break;
+            case "pug_setscore":
+                processedCmd = TRUE;
+                if (!arg2 || !arg3) {
+                    sprint(self, PRINT_HIGH,
+                           "usage: cmd pug_setscore <blue> <red>\n");
+                } else if (!Pug_SetScore(stof(arg2), stof(arg3))) {
+                    sprint(self, PRINT_HIGH, "Pug mode is not active.\n");
+                }
                 break;
             case "rounds":
                 processedCmd = TRUE;
@@ -1336,12 +1420,18 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                 sprint(self, PRINT_HIGH, "cmd pubmode\n");
                 sprint(self, PRINT_HIGH, "cmd clanmode\n");
                 sprint(self, PRINT_HIGH, "cmd quaddmode\n");
+                sprint(self, PRINT_HIGH, "cmd pugmode\n");
                 sprint(self, PRINT_HIGH, "cmd duelmode\n");
                 sprint(self, PRINT_HIGH, "cmd forcestart\n");
                 sprint(self, PRINT_HIGH, "cmd rounds #\b: Set number of Quad rounds\b\n");
                 sprint(self, PRINT_HIGH, "cmd roundtime #\b: Set Quad round time\b\n");
                 sprint(self, PRINT_HIGH, "cmd captainmode {<userid1> <userid2> | stop} \n");
                 sprint(self, PRINT_HIGH, "cmd forcebreak\b: End current map\b\n");
+                sprint(self, PRINT_HIGH, "cmd pug_forcestart\b: Skip waiting on ready\b\n");
+                sprint(self, PRINT_HIGH, "cmd pug_nextround\b: End the round now\b\n");
+                sprint(self, PRINT_HIGH, "cmd pug_setscore <blue> <red>\n");
+                sprint(self, PRINT_HIGH, "cmd pug_settime mm:ss\b: Jump to that point in the round\b\n");
+                sprint(self, PRINT_HIGH, "cmd pug_status\b: Dump phase and goal state\b\n");
                 sprint(self, PRINT_HIGH, "\n");
                 break;
         }

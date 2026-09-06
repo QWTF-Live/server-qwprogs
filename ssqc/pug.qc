@@ -63,12 +63,15 @@ static const PugClassBalance pug_balance[] = {
 // attacks and the other defends.  A row here only has to name the fields it
 // changes; -1 leaves the baseline value alone.  Both start empty.
 static const PugClassBalance pug_balance_o_override[] = {
-//   class          gren1  gren2  limit  armor
-    {PC_ENGINEER,     4,     2,     0,     60},
+//   class          gren1  gren2  limit  armor  rockets
+    {PC_ENGINEER,     4,     2,     0,     60,     -1},
 };
 
 static const PugClassBalance pug_balance_d_override[] = {
 //   class          gren1  gren2  limit  armor  rockets
+    // A table with no rows has no reliable .length, so an empty one is spelt
+    // with an inert row instead: class 0 is skipped by PugApplyRow.
+    {0,              -1,    -1,    -1,    -1,     -1},
 };
 
 
@@ -164,6 +167,11 @@ static struct {
 
 static void PugApplyRow(Team_Role* role, float armor_slot,
                         PugClassBalance row) {
+    // Class 0 is the inert row an otherwise-empty override table carries, and
+    // anything out of range would index past the role tables below.
+    if (row.pc < 1 || row.pc >= kPugNumClasses)
+        return;
+
     if (row.gren1 >= 0)
         role->gren1_limits[row.pc] = row.gren1;
     if (row.gren2 >= 0)

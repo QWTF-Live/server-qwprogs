@@ -2046,13 +2046,22 @@ void (entity player) UpdateScoreboardInfo = {
     // Stats_CaptureRoundBase() at each round edge and is zero during round one,
     // so these are whole-game figures until the first edge.  The HTTP
     // scoreboard reports each round separately and is unaffected by this.
-    // The team, forced rather than inferred.  CSQC used to work it out from
-    // the player's bottomcolor, but colour is assigned by stuffcmd -- the
-    // server asks the client to set it and waits for the userinfo to come
-    // back -- so a client that never applied it kept its previous colour for
-    // everyone else, and stayed the wrong team on their screens all game.
-    // forceinfokey does not round-trip through the client.
-    CheckSetInfoKey(player, "tno", player.team_no);
+    // The team as other clients should see it, forced rather than inferred.
+    //
+    // CSQC used to derive this from the player's bottomcolor, which drifts:
+    // players re-set their own colour from configs and binds, and the resync
+    // in TeamFortress_TeamSet only catches it a cycle later -- meanwhile they
+    // read as the wrong team, wrong outline colour and enemy grenade timers.
+    //
+    // Deliberately the *apparent* team, so a disguised spy still publishes the
+    // team they are pretending to be.  Same expression as combat.qc:195.
+    // Publishing the real one would defeat the disguise, which is what the
+    // colour-derived version got right by accident.
+    float apparent = player.undercover_team;
+    if (apparent == 0)
+        apparent = player.team_no;
+
+    CheckSetInfoKey(player, "tno", apparent);
 
     CheckSetInfoKey(player, "afflicted", player.afflicted - player.base_afflicted);
     CheckSetInfoKey(player, "teamafflicted", player.teamafflicted - player.base_teamafflicted);

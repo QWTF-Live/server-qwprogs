@@ -52,13 +52,26 @@ static EntHash* EntGet(int ent_num) {
 }
 
 static float TeamNo(entity player) {
-    // This is horrific, but the most immediately accessible thing we seem to
-    // have.  getentity() is just unreliable.
-    //
     // getplayerkeyvalue, not infokey: infokey is an SSQC builtin and does not
     // exist in CSQC.  Player indices are 0-based, entity numbers 1-based.
-    float pc = stof(getplayerkeyvalue(player.entnum - 1, "bottomcolor"));
-    switch (pc) {
+    float slot = player.entnum - 1;
+
+    // "tno" is forced by the server every second (UpdateScoreboardInfo), so it
+    // cannot go stale.  bottomcolor can: colour is assigned by stuffcmd, which
+    // asks the client to set it and relies on the userinfo coming back, so a
+    // client that never applied it reads as its old team to everyone else for
+    // the rest of the map -- wrong outline colour, and enemy grenade timers.
+    string tno = getplayerkeyvalue(slot, "tno");
+    if (tno != "") {
+        switch (stof(tno)) {
+            case 1: return TeamBlue;
+            case 2: return TeamRed;
+        }
+        return TeamNone;
+    }
+
+    // Older server, or the key has not arrived yet.
+    switch (stof(getplayerkeyvalue(slot, "bottomcolor"))) {
         case 13: return TeamBlue;
         case 4: return TeamRed;
     }

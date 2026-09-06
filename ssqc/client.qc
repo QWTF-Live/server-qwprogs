@@ -2046,6 +2046,14 @@ void (entity player) UpdateScoreboardInfo = {
     // Stats_CaptureRoundBase() at each round edge and is zero during round one,
     // so these are whole-game figures until the first edge.  The HTTP
     // scoreboard reports each round separately and is unaffected by this.
+    // The team, forced rather than inferred.  CSQC used to work it out from
+    // the player's bottomcolor, but colour is assigned by stuffcmd -- the
+    // server asks the client to set it and waits for the userinfo to come
+    // back -- so a client that never applied it kept its previous colour for
+    // everyone else, and stayed the wrong team on their screens all game.
+    // forceinfokey does not round-trip through the client.
+    CheckSetInfoKey(player, "tno", player.team_no);
+
     CheckSetInfoKey(player, "afflicted", player.afflicted - player.base_afflicted);
     CheckSetInfoKey(player, "teamafflicted", player.teamafflicted - player.base_teamafflicted);
     CheckSetInfoKey(player, "damagegiven", player.damagegiven - player.base_damagegiven);

@@ -56,11 +56,14 @@ static float TeamNo(entity player) {
     // exist in CSQC.  Player indices are 0-based, entity numbers 1-based.
     float slot = player.entnum - 1;
 
-    // "tno" is forced by the server every second (UpdateScoreboardInfo), so it
-    // cannot go stale.  bottomcolor can: colour is assigned by stuffcmd, which
-    // asks the client to set it and relies on the userinfo coming back, so a
-    // client that never applied it reads as its old team to everyone else for
-    // the rest of the map -- wrong outline colour, and enemy grenade timers.
+    // "tno" is forced by the server (UpdateScoreboardInfo) and republished
+    // every second, so it cannot drift.  bottomcolor can, because it is the
+    // player's own colour: configs and binds re-set it, and the resync in
+    // TeamFortress_TeamSet only notices on its next pass, so in between they
+    // read as the wrong team -- wrong outline, and enemy grenade timers.
+    //
+    // tno carries the *apparent* team, so a disguised spy still reads as the
+    // side they are pretending to be.
     string tno = getplayerkeyvalue(slot, "tno");
     if (tno != "") {
         switch (stof(tno)) {
@@ -70,7 +73,17 @@ static float TeamNo(entity player) {
         return TeamNone;
     }
 
-    // Older server, or the key has not arrived yet.
+    // Fallback, deliberately kept rather than removed once tno was added:
+    //
+    //   - demos recorded before tno existed have no such key, and playback is
+    //     the main way old matches get watched;
+    //   - a server running an older build sends nothing either;
+    //   - and tno may not have arrived yet on a freshly connected player.
+    //
+    // Colour is what every client used to go on, so this is exactly the old
+    // behaviour: right nearly always, and wrong in the cases above that tno
+    // exists to fix.  Spy disguises still work here too, for the same reason
+    // they did before -- the disguise changes the colour.
     switch (stof(getplayerkeyvalue(slot, "bottomcolor"))) {
         case 13: return TeamBlue;
         case 4: return TeamRed;

@@ -133,7 +133,7 @@ noref void(float apiver, string enginename, float enginever) CSQC_Init = {
 
     player_menu_type = 0;
     if (!is_demo) {
-        TF_Menu_Game(TRUE, TRUE);
+        TF_Menu_Connect();
     } else {
         setpause(TRUE);
     }
@@ -333,6 +333,8 @@ static void CSQC_DispCam(float width, float height) {
 noref void(float width, float height, float menushown) CSQC_UpdateView = {
     clearscene();
     setproperty(VF_DRAWWORLD, 1);     // we want to draw our world!
+
+    TF_Menu_Connect_Poll();
 
     if (!is_demo || TrackingPlayer())
       setproperty(VF_DRAWCROSSHAIR, 1);

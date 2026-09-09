@@ -859,7 +859,37 @@ static float IsSpectator() {
     return stof(getplayerkeyvalue(player_localnum, "*spectator"));
 }
 
-void TF_Menu_Game(float force, float first = FALSE) = {
+// Opened once at connect, straight to the team picker -- but only once we
+// know how many teams there are.
+//
+// Opening immediately shows every team disabled, because the count is still
+// zero. Asking the server for it is not reliable either: UpdateClientMenu_Team
+// drops its reply unless the client is already marked csqcactive, which is not
+// true the moment CSQC starts, so the connect request goes missing and the
+// menu only fills in if you close and reopen it.
+//
+// The count arrives by itself with the MOTD, which every client is sent on
+// connect, so wait for that. The deadline is a backstop: if it never comes,
+// show the picker anyway rather than nothing.
+float menu_connect_pending;
+float menu_connect_deadline;
+
+void TF_Menu_Connect() {
+    menu_connect_pending = TRUE;
+    menu_connect_deadline = time + 5;
+}
+
+void TF_Menu_Connect_Poll() {
+    if (!menu_connect_pending)
+        return;
+    if (!number_of_teams && time < menu_connect_deadline)
+        return;
+
+    menu_connect_pending = FALSE;
+    TF_Menu_Team(TRUE);
+}
+
+void TF_Menu_Game(float force) = {
     if(fo_hud_menu_active && (CurrentMenu == &FO_MENU_GAME || CurrentMenu == &FO_MENU_GAME_SPECTATOR)) {
         Menu_Cancel();
         return;
@@ -867,7 +897,7 @@ void TF_Menu_Game(float force, float first = FALSE) = {
     if(fo_hud_menu_active && !force)
         return;
 
-    if (IsSpectator() && !first) {
+    if (IsSpectator()) {
         //print(getplayerkeyvalue(player_localnum, "name"), " is a spectator!\n");
         //FO_MENU_GAME_SPECTATOR.num_opts = 3;
         FO_MENU_GAME_SPECTATOR.options[2].state = is_admin?FO_MENU_STATE_NORMAL:FO_MENU_STATE_DISABLED;

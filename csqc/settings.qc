@@ -94,7 +94,19 @@ DEFCVAR_STRING(r_brightlight_colour, "");
 DEFCVAR_STRING(r_redlight_colour, "");
 DEFCVAR_STRING(r_bluelight_colour, "");
 
+// Which web client this is, if any. Set from the engine config the page
+// serves: 0 = a normal client, 1 = the demo player, 2 = the live viewer.
+// Read through the helpers below rather than comparing the cvar, so the
+// intent of a check is visible at the call site.
+#define WEB_NONE 0
+#define WEB_DEMO 1
+#define WEB_LIVE 2
+
 DEFCVAR_FLOAT(qwtf_web, 0);
+
+inline float web_any()  { return CVARF(qwtf_web) != WEB_NONE; }
+inline float web_demo() { return CVARF(qwtf_web) == WEB_DEMO; }
+inline float web_live() { return CVARF(qwtf_web) == WEB_LIVE; }
 
 DEFCVAR_FLOAT(tf_dispcam, 1);
 

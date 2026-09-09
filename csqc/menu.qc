@@ -104,6 +104,15 @@ var fo_menu FO_MENU_GAME_SPECTATOR = {
         {"0","Main Menu","","",FO_MENU_STATE_NORMAL,{localcmd("tf_menu main\n"); Menu_Cancel();},MENU_BUTTON},
     }, 6, TRUE
 };
+// The web clients are embedded viewers, not players: joining a team or class,
+// readying up, admin and map votes have nowhere to go, and "Main Menu" drops
+// to the engine menu the live viewer deliberately keeps shut. Options is the
+// only entry that means anything, so it is the whole menu.
+var fo_menu FO_MENU_GAME_WEB = {
+    [0,0], [300,200], qwtf_live, FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS | FO_MENU_FLAG_ALLOW_INTERMISSION, {
+        {"1","Options", "","Client settings",FO_MENU_STATE_NORMAL,{TF_Menu_Options(TRUE);},MENU_BUTTON},
+    }, 1, TRUE
+};
 var fo_menu FO_MENU_SPECTATOR_TRACK = {
     [0,0], [300,200], "Track", FO_MENU_FLAG_USE_MOUSE | FO_MENU_FLAG_CENTER | FO_MENU_FLAG_SHOW_SHORTCUTS, {
         {"1","Join Game", "","",FO_MENU_STATE_NORMAL,{localcmd("track 1\n"); },MENU_BUTTON},
@@ -875,6 +884,9 @@ float menu_connect_pending;
 float menu_connect_deadline;
 
 void TF_Menu_Connect() {
+    if (web_any())
+        return;  // embedded viewer: no menu at all
+
     menu_connect_pending = TRUE;
     menu_connect_deadline = time + 5;
 }
@@ -890,14 +902,17 @@ void TF_Menu_Connect_Poll() {
 }
 
 void TF_Menu_Game(float force) = {
-    if(fo_hud_menu_active && (CurrentMenu == &FO_MENU_GAME || CurrentMenu == &FO_MENU_GAME_SPECTATOR)) {
+    if(fo_hud_menu_active && (CurrentMenu == &FO_MENU_GAME || CurrentMenu == &FO_MENU_GAME_SPECTATOR
+                            || CurrentMenu == &FO_MENU_GAME_WEB)) {
         Menu_Cancel();
         return;
     }
     if(fo_hud_menu_active && !force)
         return;
 
-    if (IsSpectator()) {
+    if (web_any()) {
+        CurrentMenu = &FO_MENU_GAME_WEB;
+    } else if (IsSpectator()) {
         //print(getplayerkeyvalue(player_localnum, "name"), " is a spectator!\n");
         //FO_MENU_GAME_SPECTATOR.num_opts = 3;
         FO_MENU_GAME_SPECTATOR.options[2].state = is_admin?FO_MENU_STATE_NORMAL:FO_MENU_STATE_DISABLED;
@@ -934,6 +949,7 @@ void TF_Menu_Track() = {
 }
 
 void TF_Menu_Team(float force) = {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active && CurrentMenu == &FO_MENU_TEAM && force != 2) {
         Menu_Cancel();
         return;
@@ -967,6 +983,7 @@ void TF_Menu_Team(float force) = {
 }
 
 void TF_Menu_Class(float force) = {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active && CurrentMenu == &FO_MENU_CLASS && force != 2) {
         Menu_Cancel();
         return;
@@ -978,6 +995,7 @@ void TF_Menu_Class(float force) = {
 }
 
 void TF_Menu_DropAmmo(float force) {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active && CurrentMenu == &FO_MENU_DROPAMMO) {
         Menu_Cancel();
         return;
@@ -1163,6 +1181,7 @@ void TF_Menu_Dispenser_Fix(float force, float old_spanner) = {
     fo_hud_menu_active = TRUE;
 }
 void TF_Menu_Dispenser_Use(float force) = {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active && !force)
         return;
     if(SBAR.IsBuilding) {
@@ -1173,6 +1192,7 @@ void TF_Menu_Dispenser_Use(float force) = {
     fo_hud_menu_active = TRUE;
 }
 void TF_Menu_Admin_Main(float force) = {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active && (CurrentMenu == &FO_MENU_ADMIN_MAIN || CurrentMenu == &FO_MENU_ADMIN_MODES || CurrentMenu == &FO_MENU_ADMIN_SETTINGS)) {
         Menu_Cancel();
         return;
@@ -1258,6 +1278,7 @@ void TF_Menu_Admin_Players(float force, float type, float page) = {
     fo_hud_menu_active = TRUE;
 }
 void TF_Menu_Vote(float force) = {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active && !force)
         return;
     CurrentMenu = &FO_MENU_VOTE;
@@ -1317,6 +1338,7 @@ void TF_Menu_Special(float force) = {
 };
 
 void (float show) showVoteMenu = {
+    if (web_any()) return;  // embedded viewer: not a participant
     if(fo_hud_menu_active) {
         Menu_Cancel();
     }
@@ -1497,6 +1519,7 @@ void FO_Hud_Init() {
     /* DrawPanel = *getHudPanel(HUDP_OPTIONS);  // XXX */
     INIT_MENU_IDS(FO_MENU_GAME);
     INIT_MENU_IDS(FO_MENU_GAME_SPECTATOR);
+    INIT_MENU_IDS(FO_MENU_GAME_WEB);
     INIT_MENU_IDS(FO_MENU_SPECTATOR_TRACK);
     INIT_MENU_IDS(FO_MENU_TEAM);
     INIT_MENU_IDS(FO_MENU_CLASS);

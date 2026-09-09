@@ -3,6 +3,17 @@ void Menu_Cancel();
 // TRUE --> capture input
 // FALSE --> pass input on
 float(float evtype, float scanx, float chary, float devid) CSQC_InputEvent = {
+    // Either web client: Escape opens our own menu instead of the engine's
+    // system menu, which has no place in an embedded page. Only the closed
+    // case is handled here -- when one of ours is already up, the block below
+    // cancels it, so this must fall through rather than swallow the key.
+    // Shift+Escape still bypasses CSQC and reaches the engine menu.
+    if (web_any() && evtype == IE_KEYDOWN && scanx == K_ESCAPE
+        && !fo_hud_menu_active && !fo_hud_editor) {
+        TF_Menu_Game(TRUE);
+        return TRUE;
+    }
+
     if (fo_hud_editor || fo_hud_menu_active) {
         sui_input_event(evtype, scanx, chary, devid);
         float menu_mouse = (fo_hud_menu_active && (CurrentMenu.flags & FO_MENU_FLAG_USE_MOUSE));

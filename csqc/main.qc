@@ -330,10 +330,32 @@ static void CSQC_DispCam(float width, float height) {
     renderscene();
 }
 
+// The live viewer connects with `setinfo spectator 1`, which the server
+// honours at connect -- but nothing guarantees it stays that way, and an
+// embedded page has no business being a player. Ask to observe once we are
+// actually in the game, since the request means nothing before that, and keep
+// asking until it takes rather than firing once and hoping.
+void Web_KeepSpectating() {
+    static float next_try;
+
+    if (!web_live())
+        return;
+    if (game_state.is_spectator || stof(getplayerkeyvalue(player_localnum, "*spectator")))
+        return;
+    if (!game_state.is_player)
+        return;
+    if (time < next_try)
+        return;
+
+    next_try = time + 2;
+    localcmd("observe\n");
+}
+
 noref void(float width, float height, float menushown) CSQC_UpdateView = {
     clearscene();
     setproperty(VF_DRAWWORLD, 1);     // we want to draw our world!
 
+    Web_KeepSpectating();
     TF_Menu_Connect_Poll();
 
     if (!is_demo || TrackingPlayer())
@@ -1222,6 +1244,13 @@ void ClientSettings_Check() {
     static string kRec = "^2RECOMMENDED:^7 ";
 
     localcmd("cl_movespeedkey 1\n");
+
+    // Nothing below is actionable in an embedded viewer: there is no console
+    // to type the command into and no config to keep it in, so the advice
+    // would just be noise printed over the game.
+    if (web_any())
+        return;
+
     if (cvar("worker_count") == 0)
         print(kError, "Please set `worker_count 4` to reduce stuttering!\n");
     if (cvar("r_temporalscenecache") == 0)

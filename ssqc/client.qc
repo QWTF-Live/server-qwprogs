@@ -3205,6 +3205,8 @@ void PlayerPeriodicThink(float is_player) {
     TFL_SendLogin();
 }
 
+void PlayerKnock_Apply();
+
 void () PlayerPostThink = {
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
@@ -3214,6 +3216,10 @@ void () PlayerPostThink = {
     } else {
         PlayerPostThinkAlive();
     }
+
+    // After the weapon frame, so a projectile fired by this command that
+    // explodes within its own forward is pushed on this command, not the next.
+    PlayerKnock_Apply();
 
     RW_LogPlayer(self);
     PP_PlayerPostThink();

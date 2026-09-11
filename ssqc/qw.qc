@@ -13,6 +13,8 @@ enum {
 .float last_attack_ctime;
 
 .float client_ping;              // ping used for prediction
+.entity pending_knock;           // deferred self-knocks, applied in PlayerPostThink (see AntilagKnock)
+.entity knock_next;              // chain of the above on a knock entity
 .float last_remote_time;         // For monoticity of remote_time()
 .float client_lastupdate;
 

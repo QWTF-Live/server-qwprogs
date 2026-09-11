@@ -1017,13 +1017,53 @@ void () BecomeExplosion = {
     dremove(self);
 };
 
+// The shooter's own push from a forwarded projectile is deferred to the
+// command issued the rocket's travel time after the fire command, since that
+// is where the shooter's own simulation has the explosion.  It is applied from
+// the shooter's PlayerPostThink, after that command's move, which is the order
+// the client applies its nudge in.  A think would fire between commands and
+// land before or after the move depending on packet phase.
+static void Knock_Unlink(entity e) {
+    entity o = e.owner, k = o.pending_knock, prev = world;
+    while (k) {
+        if (k == e) {
+            if (prev)
+                prev.knock_next = k.knock_next;
+            else
+                o.pending_knock = k.knock_next;
+            break;
+        }
+        prev = k;
+        k = k.knock_next;
+    }
+    e.knock_next = world;
+}
+
 static void Antilag_Knock(entity e) {
+    Knock_Unlink(e);
     T_RadiusDamage(e, e.owner, e.heat, __NULL__, __NULL__, e.owner);
     dremove(e);
 }
 
-void T_Knock_Antilag() {
-    Antilag_Knock(self);
+// Backstop: the owner left before the due time.
+void T_Knock_Expire() {
+    Knock_Unlink(self);
+    dremove(self);
+}
+
+// From PlayerPostThink: apply every pending knock whose due time this command has reached.
+void PlayerKnock_Apply() {
+    entity k = self.pending_knock, next;
+    entity held_self = self;
+    while (k) {
+        next = k.knock_next;
+        if (time >= k.forward_knock) {
+            self = k;
+            Antilag_Knock(k);
+            self = held_self;
+        }
+        k = next;
+    }
 }
 
 float AntilagKnock(entity e, float dmg) {
@@ -1047,12 +1087,15 @@ float AntilagKnock(entity e, float dmg) {
     float ttime = vlen(diff) / vlen(e.velocity);
 
     if (ttime > SERVER_FRAME_DT) {
-        knock_e.think = T_Knock_Antilag;
-        knock_e.nextthink = time + ttime;
         e.forward_knock = time + ttime;
+        knock_e.forward_knock = e.forward_knock;
     } else {
-        Antilag_Knock(knock_e);
+        knock_e.forward_knock = time;   // due now: the next command's PostThink
     }
+    knock_e.knock_next = e.owner.pending_knock;
+    e.owner.pending_knock = knock_e;
+    knock_e.think = T_Knock_Expire;
+    knock_e.nextthink = knock_e.forward_knock + 1;
 
     return TRUE;
 }

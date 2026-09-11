@@ -9,9 +9,15 @@ void FO_SetModel(entity e, string fomdl)
 }
 
 static void WriteMsgSound(entity targ, string samp, float chan, float vol) {
+    // A sound a player makes during its own command is stamped on that
+    // command's clock: the client logs the sounds it predicted on the same
+    // clock and drops the server's copy when the times agree, and the
+    // command clock can sit up to 50ms from real time.  PlayerPostThink runs
+    // on it already; PlayerPreThink (the jump) does not.
+    float stime = (targ == self && targ.cmd_clock) ? targ.cmd_clock : time;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_SOUND);
-    WriteFloat(MSG_MULTICAST, time);
+    WriteFloat(MSG_MULTICAST, stime);
     WriteEntity(MSG_MULTICAST, targ);
     WriteCoord(MSG_MULTICAST, targ.origin_x);
     WriteCoord(MSG_MULTICAST, targ.origin_y);

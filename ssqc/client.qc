@@ -2827,6 +2827,12 @@ float SpawnProtectWouldStick(entity p) {
 void () PlayerPreThink = {
     FO_UpdateClientPing();
 
+    if (self.rj_trace_until > time)
+        rj_trace("S: pt t=%.3f org=%v vel=%v og=%.0f\n",
+                 time, self.origin, self.velocity, (float)!!(self.flags & FL_ONGROUND));
+    if (self.rj_cmd_trace_until > time)
+        rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f\n", self.cmd_sequence, self.cmd_servertime, time);
+
     // Time, or an enemy close enough that the protection would be cover.
     // Enemy damage ends it too, from SpawnProtectedFrom.
     if (self.spawn_protect_until &&

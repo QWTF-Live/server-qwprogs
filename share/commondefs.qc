@@ -198,6 +198,16 @@ const float SERVER_FPS = 77;
 const float SERVER_FRAME_DT = 1/SERVER_FPS;
 const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 
+// Rocket-jump timing trace.  Server lines are prefixed "S:" and bprinted so
+// they land in the client's log next to the client's own "C:" lines.  Flip to
+// 0 to strip.
+#define RJ_TRACE 1
+#if RJ_TRACE
+#define rj_trace(...) printf(__VA_ARGS__)
+#else
+#define rj_trace(...)
+#endif
+
 .vector s_origin;
 
 #define MAX_FLAGINFO_LINES  10

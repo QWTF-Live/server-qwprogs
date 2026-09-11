@@ -1040,8 +1040,14 @@ static void Knock_Unlink(entity e) {
 }
 
 static void Antilag_Knock(entity e) {
+    entity o = e.owner;
+    vector vbefore = o.velocity;
     Knock_Unlink(e);
     T_RadiusDamage(e, e.owner, e.heat, __NULL__, __NULL__, e.owner);
+    rj_trace("S: knock t=%.3f due=%.3f late=%.1fms org=%v vel=%v -> %v og=%.0f\n",
+             time, e.forward_knock, (time - e.forward_knock) * 1000, o.origin, vbefore, o.velocity,
+             (float)!!(o.flags & FL_ONGROUND));
+    o.rj_trace_until = time + 0.4;
     dremove(e);
 }
 
@@ -1086,6 +1092,9 @@ float AntilagKnock(entity e, float dmg) {
     vector diff = e.origin - e.s_origin;
     float ttime = vlen(diff) / vlen(e.velocity);
 
+    rj_trace("S: impact t=%.3f org=%v dist=%.0f ttime=%.1fms due=%.3f fwd=%.0fms\n",
+             time, e.origin, vlen(diff), ttime * 1000, time + ttime, e.antilag_ms);
+
     if (ttime > SERVER_FRAME_DT) {
         e.forward_knock = time + ttime;
         knock_e.forward_knock = e.forward_knock;
@@ -1117,7 +1126,18 @@ void () T_MissileTouch = {
 
     float dmg = (self.owner.classname == "building_sentrygun") ? 150 : 92;
     entity ignore_self = AntilagKnock(self, dmg) ? self.owner : __NULL__;
+    vector ovel = self.owner.velocity;
     T_RadiusDamage(self, self.owner, dmg, other, ignore_self);
+    {
+        rj_trace("S: touch t=%.3f own=%s org=%v deferred=%.0f fwd=%.0fms\n",
+                 time, self.owner.classname, self.origin, (float)(ignore_self != __NULL__), self.antilag_ms);
+        if (!ignore_self && self.owner.velocity != ovel) {
+            rj_trace("S: knock t=%.3f due=%.3f late=0.0ms org=%v vel=%v -> %v og=%.0f\n",
+                     time, time, self.owner.origin, ovel, self.owner.velocity,
+                     (float)!!(self.owner.flags & FL_ONGROUND));
+            self.owner.rj_trace_until = time + 0.4;
+        }
+    }
 
     self.origin = self.origin - 8 * normalize(self.velocity);
 

@@ -3,6 +3,10 @@
 // sees the same value for that command as the player's cmd_servertime.
 float input_servertime;
 
+// RJ_TRACE: per-command stamp reporting window and the frame last loaded by the weapon replay.
+float rj_cmd_trace_until_seq;
+float rj_last_input_frame;
+
 #include "../share/defs.h"
 
 #define DEFCVAR_FLOAT(n,d) var float autocvar_##n = d;

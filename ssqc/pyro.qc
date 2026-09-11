@@ -572,6 +572,8 @@ void () T_IncendiaryTouch = {
 
     entity ignore_self = AntilagKnock(self, damg) ? self.owner : __NULL__;
     T_RadiusDamage(self, self.owner, damg, other, ignore_self);
+    rj_trace("S: touch t=%.3f own=%s org=%v deferred=%.0f fwd=%.0fms\n",
+             time, self.owner.classname, self.origin, (float)(ignore_self != __NULL__), self.antilag_ms);
 
     self.origin = (self.origin - (8 * normalize (self.velocity)));
     WriteByte(4, 23);

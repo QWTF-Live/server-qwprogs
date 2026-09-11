@@ -1562,6 +1562,14 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
 
   proj.s_time = proj.phys_time;  // Set after static_dt processed.
 
+  {
+      rj_trace("C: fire %s t=%.3f svt=%.3f seq=%.0f ccf=%.0f scf=%.0f ptime=%.3f",
+               FPP_Name(proj.fpp.index), time, pstate_server.server_time, proj.created_seq, clientcommandframe, servercommandframe, proj.s_time);
+      rj_trace(" cmdt=%.0f stamp=%.3f anchor=%.3f start=%.3f pseq=%i loaded=%.0f", tf_config.cmd_time, input_servertime, stamp_anchor, proj.starttime, pstate_pred.seq, rj_last_input_frame);
+      rj_cmd_trace_until_seq = clientcommandframe + 12;
+      rj_trace(" sorg=%v org=%v vel=%v\n", proj.s_origin, PM_Org(), PM_Vel());
+  }
+
   proj.oldorigin = proj.origin;
   if (sdt2 > 0)
       Phys_Advance(proj, sdt2, PHYSF_CONSUME_ALL);
@@ -1900,7 +1908,7 @@ void PredProjectile_DebugMatch(entity cprj, entity sprj) {
     string sgn =
         vlen(cprj.origin - PM_Org()) > vlen(sprj.origin - PM_Org()) ? "+" : "-";
 
-    string s = sprintf(" p_diff: %s%-2.1f [%0.3f] ", sgn,
+    string s = sprintf(" p_diff: %s %s%-2.1f [%0.3f] ", FPP_Name(sprj.fpp.index), sgn,
                     vlen(cprj.origin - sprj.origin),
                     vlen(cprj.origin - sprj.origin) / vlen(cprj.velocity));
     s = strcat(s, sprintf("t=%0.3f p_t=[c:%0.3f s:%0.3f d=%0.3f]",
@@ -2171,6 +2179,7 @@ static void WP_UpdatePredict() {
 
     for(; pframe <= eframe; pframe++) {
         old_input_buttons = input_buttons;
+        rj_last_input_frame = pframe;
         if (!getinputstate(pframe) || input_timelength <= 0)
             break;
         makevectors(input_angles);

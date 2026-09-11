@@ -13,6 +13,8 @@ enum {
 .float last_attack_ctime;
 
 .float client_ping;              // ping used for prediction
+.float rj_trace_until;           // RJ_TRACE: per-command trace after a self-knock
+.float rj_cmd_trace_until;       // RJ_TRACE: per-command stamp trace after a fire
 .entity pending_knock;           // deferred self-knocks, applied in PlayerPostThink (see AntilagKnock)
 .entity knock_next;              // chain of the above on a knock entity
 // Engine-provided (fteqw fork): the client's own clock stamp and input frame

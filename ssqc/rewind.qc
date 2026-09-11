@@ -376,6 +376,7 @@ void NoRewindSyncFn(entity e, float target_time) {
 // event; it is the fallback for firing-before-death and is to go.
 void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
     float ping = proj.owner.client_ping;
+    float given_ctime = use_ctime;
     float stamp_mode = FALSE;
     if (!use_ctime && tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_servertime > 0) {
         use_ctime = proj.owner.cmd_servertime;
@@ -434,6 +435,15 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
         RL_RestorePositions(rewind_players);
 
     proj.antilag_ms = ft * 1000;
+
+    {
+        rj_trace("S: fire %s t=%.3f own=%s ping=%.0f static=%.0f dyn=%.0f fwd=%.0fms",
+                 FPP_Name(fpp_type), time, proj.owner.classname, ping, offset.static_ms, offset.dynamic_ms, proj.antilag_ms);
+        proj.owner.rj_cmd_trace_until = time + 0.16;
+        rj_trace(" cmdt=%.0f ctime=%.3f age=%.0fms given=%.3f seq=%.0f\n",
+                 tf_config.cmd_time, proj.owner.cmd_servertime, (time - proj.owner.cmd_servertime) * 1000, given_ctime, proj.owner.cmd_sequence);
+        rj_trace(" sorg=%v porg=%v pvel=%v\n", proj.s_origin, proj.owner.origin, proj.owner.velocity);
+    }
 }
 
 void Forward_OpenDoors(entity player) {

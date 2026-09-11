@@ -211,6 +211,23 @@ enum {
     FPP_ASSAULT_CANNON,
 };
 
+// Short weapon/projectile name for traces.
+string FPP_Name(int fpp_type) {
+    switch (fpp_type) {
+        case FPP_ROCKET:         return "rocket";
+        case FPP_GRENADE:        return "gl";
+        case FPP_HANDGRENADE:    return "hgren";
+        case FPP_INCENDIARY:     return "ic";
+        case FPP_NAIL:           return "nail";
+        case FPP_SUPER_NAIL:     return "snail";
+        case FPP_FLAMETHROWER:   return "flame";
+        case FPP_TRANQ:          return "tranq";
+        case FPP_RAILGUN:        return "rail";
+        case FPP_ASSAULT_CANNON: return "ac";
+        default:                 return ftos(fpp_type);
+    }
+}
+
 struct fo_projectile {
     int id;
     int movetype;

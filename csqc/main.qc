@@ -1093,7 +1093,13 @@ noref void CSQC_Input_Frame() {
     PM_InputFrame();
     FO_ApplyCussInput();
 
+    if (input_servertime != held_servertime)
+        rj_trace("C: inputframe ccf=%.0f servertime clobbered %.3f -> %.3f (restored)\n",
+                 clientcommandframe, held_servertime, input_servertime);
     input_servertime = held_servertime;
+
+    if (clientcommandframe < rj_cmd_trace_until_seq)
+        rj_trace("C: cmd seq=%.0f st=%.3f len=%.3f t=%.3f\n", clientcommandframe, input_servertime, input_timelength, time);
 }
 
 float(float save, float take, vector inflictororg) CSQC_Parse_Damage = {

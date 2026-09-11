@@ -292,6 +292,7 @@ struct PM_Nudge {
     vector org;
     float aux;
     float src_cseq;    // created_seq of the projectile this came from (predicted and server copies share it)
+    float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 
 const static float NUDGE_SEQ = 3;
@@ -299,6 +300,11 @@ const static float NUDGE_EPS = NUDGE_SEQ * SERVER_FRAME_DT;
 static PM_Nudge nudges[8];
 static float num_nudges, have_active_nudges;
 static float nudges_added;   // since the last error pass; its saved prior state predates them
+static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors until this seq
+// RJ_TRACE: per-frame result of the most recent replay, i.e. what was shown for that frame.
+struct RJ_Shown { float seq; vector org, vel; };
+static const float RJ_NSHOWN = 64;
+static RJ_Shown rj_shown[RJ_NSHOWN];
 
 static float nudge_expired(PM_Nudge* n) {
     if (n->expire_frame && n->expire_frame <= pstate_server.seq)
@@ -365,6 +371,11 @@ static void PM_RemoveSelfNudges() {
     // The removal arrives before the frame with the affect included.  Normally
     // this coincides with the arrival of something else which replaces the
     // nudge.
+    float push_frame = n->seq;
+    if (n->nat == NA_SEQTIME)
+        push_frame += floor(n->itime / SERVER_FRAME_DT);
+    rj_trace("C: nudge-removed src=%.0f ent=%.0f nat=%s seq=%.0f itime=%.3f", n->src_no, self.entnum, NAT_tos(n->nat), n->seq, n->itime);
+    rj_trace(" push@%.0f expire@scf=%.0f ccf=%.0f\n", push_frame, servercommandframe, clientcommandframe);
     n->expire_frame = servercommandframe;
 }
 
@@ -425,6 +436,14 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
     dmg = Class_ScaleMoment(WP_PlayerClass(), dmg);
     vector knock = CalcKnock(nudge->org, ent, flg, dmg);
 
+    if (nudge->trace_seq != pm.seq) {   // replays re-apply at the same seq; report once per seq
+        nudge->trace_seq = pm.seq;
+        rj_trace("C: nudge seq=%.0f win=%.3f..%.3f itime=%.3f nat=%s",
+                 pm.seq, pm.interp_t, pm.interp_t + input_timelength, nudge->itime, NAT_tos(nudge->nat));
+        rj_trace(" org=%v vel=%v knock=%v\n", ent.origin, pm.ent.velocity, knock);
+        rj_trace_until_seq = pm.seq + 30;
+    }
+
     pm.ent.velocity += knock;
 }
 
@@ -476,6 +495,8 @@ static void PM_SupersedePredictedNudge(entity sent) {
             continue;
         if (n->src_cseq != sent.created_seq)
             continue;
+        rj_trace("C: nudge-superseded cseq=%.0f nat=%s seq=%.0f itime=%.3f by fk=%.3f\n",
+                 n->src_cseq, NAT_tos(n->nat), n->seq, n->itime, sent.forward_knock);
         n->nat = NA_NONE;
     }
 }
@@ -555,6 +576,12 @@ void PM_AddSimExplosion(float itime, entity ent) {
     }
 
     float seq = 0, nat = NA_ITIME;
+    if (ent.owner == pengine.player_ent)
+    {
+        rj_trace("C: sim t=%.3f type=%i itime=%.3f fk=%.3f stime=%.3f cseq=%.0f",
+                 time, ent.fpp.index, itime, ent.forward_knock, ent.s_time, ent.created_seq);
+        rj_trace(" svt=%.3f ccf=%.0f org=%v\n", pstate_server.server_time, clientcommandframe, ent.origin);
+    }
     if (ent.forward_knock && ent.owner == pengine.player_ent) {
         if (ent.forward_knock == -1)
             return;
@@ -727,6 +754,14 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
             }
         }
 
+#if RJ_TRACE
+        {
+            RJ_Shown* sh = &rj_shown[pm.seq % RJ_NSHOWN];
+            sh->seq = pm.seq;
+            sh->org = ent.origin;
+            sh->vel = ent.velocity;
+        }
+#endif
         pm.seq++;
         pm.interp_t += input_timelength;
     }
@@ -815,10 +850,15 @@ static void PM_UpdateError() {
     // New nudges can result in small errors on replay due to timeshift, we
     // could backdate all the nudges and recompute the world but as a first
     // simpler pass let's just filter them out.
-    if (pm.last_nudge == clientcommandframe - 1)
+    float filtered = (pm.last_nudge == clientcommandframe - 1);
+    if (filtered)
         err = '0 0 0';
     else
         err -= ent.origin;
+
+    if (servercommandframe < rj_trace_until_seq)
+        rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f lastnudge=%.0f acc=%.2f\n",
+                 servercommandframe, clientcommandframe, vlen(err), err, filtered, pm.last_nudge, vlen(pm.error));
 
 
     float nerr = vlen(err);
@@ -1208,6 +1248,8 @@ static void PM_HandleRemovedNudges() {
 
         for (float j = 0; j < pstate_server.num_filter_ents; j++) {
             if (n->nat != NA_SEQ && n->src_no == pstate_server.filter_ents[j]) {
+                rj_trace("C: nudge-replaced src=%.0f was=%s seq=%.0f itime=%.3f -> SEQ at scf=%i (expires there)\n",
+                         n->src_no, NAT_tos(n->nat), n->seq, n->itime, pstate_server.seq);
                 n->nat = NA_SEQ;
                 n->seq = n->expire_frame = pstate_server.seq;
             }
@@ -1246,6 +1288,25 @@ void PM_ServerUpdate() {
     pm.server_seq = servercommandframe;
     pm.seq = pm.server_seq + 1;  // server state includes move
     pm.interp_t = pstate_server.server_time;
+
+    if (servercommandframe < rj_trace_until_seq)
+        rj_trace("C: sv scf=%.0f svt=%.3f org=%v vel=%v\n",
+                 servercommandframe, pstate_server.server_time, pstate_server.pmove.origin, pstate_server.pmove.velocity);
+#if RJ_TRACE
+    // Same-frame alignment: the last replay's result for the frame this
+    // update makes authoritative (i.e. what was shown for it), against what
+    // the server says it was.
+    {
+        RJ_Shown* sh = &rj_shown[servercommandframe % RJ_NSHOWN];
+        if (sh->seq == servercommandframe && was_enabled && game_state.is_alive) {
+            vector dp = sh->org - pstate_server.pmove.origin;
+            vector dv = sh->vel - pstate_server.pmove.velocity;
+            if (servercommandframe < rj_trace_until_seq || vlen(dp) > 0.5 || vlen(dv) > 5)
+                rj_trace("C: pm scf=%.0f svt=%.3f dpos=%.2f %v dvel=%.1f %v\n",
+                         servercommandframe, pstate_server.server_time, vlen(dp), dp, vlen(dv), dv);
+        }
+    }
+#endif
     pm.ent.origin = pstate_server.pmove.origin;
     pm.ent.velocity = pstate_server.pmove.velocity;
     PM_SavePMS(&pm_s);

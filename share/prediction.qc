@@ -58,6 +58,13 @@ enumflags {
 };
 
 .float forward_knock;
+// Command clock of the firing command (server: warped `time` at fire; client:
+// pstate_pred.server_time at the fire frame -- the same number).  The
+// shooter's own push from this projectile is due at fire_cmd_time plus the
+// projectile's travel, computed the same way on both sides.
+.float fire_cmd_time;
+// Physics clock right after the static projection (the clock s_origin was set at).
+.float s_time;
 
 enumflags {
     PF_PMOVE,
@@ -532,7 +539,6 @@ void InitProjectileEnt(float sendflags);
 void WPP_UpdateEnable(float force);
 
 .float owner_entnum;
-.float s_time;
 #endif
 
 #ifdef SSQC

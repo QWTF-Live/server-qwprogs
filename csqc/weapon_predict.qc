@@ -1561,6 +1561,7 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
   Phys_Init(proj, proj.starttime - sdt2, static_dt - sdt2, PHYSF_CONSUME_ALL);
 
   proj.s_time = proj.phys_time;  // Set after static_dt processed.
+  proj.fire_cmd_time = pstate_pred.server_time;   // the fire frame's command clock, equal to the server's
 
   {
       rj_trace("C: fire %s t=%.3f svt=%.3f seq=%.0f ccf=%.0f scf=%.0f ptime=%.3f",

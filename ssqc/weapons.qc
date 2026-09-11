@@ -1072,10 +1072,21 @@ void PlayerKnock_Apply() {
     }
 }
 
+// The shooter's own push is due at the fire command's clock plus the
+// projectile's travel, where the shooter's own simulation has the explosion.
+// Travel is the projectile's physics clock at impact minus its clock after the
+// static projection: exact for bounces as well as straight flight, and the
+// same quantity the client computes for its predicted copy.  Applies whether
+// the impact fell inside the initial forward or later, in the engine's own
+// flight (real time since the forward ended, which is where the physics clock
+// stopped); in the latter case the due time is simply ahead of now by what
+// the forward removed.  A due time within a server frame of the fire lands on
+// the fire command itself; the client mirrors that threshold.
 float AntilagKnock(entity e, float dmg) {
     e.forward_knock = -1;
-    // Only applies during initial antilag forward
-    if (e.flags & FL_FORWARD_KNOCK == 0)
+    if (!RewindFlagEnabled(REWIND_FORWARD_PROJ_SELFKNOCK))
+        return FALSE;
+    if (e.owner.classname != "player" || !e.fire_cmd_time)
         return FALSE;
 
     entity knock_e = spawn();
@@ -1089,18 +1100,17 @@ float AntilagKnock(entity e, float dmg) {
     knock_e.heat = dmg;
     knock_e.filter_ent = e;
 
-    vector diff = e.origin - e.s_origin;
-    float ttime = vlen(diff) / vlen(e.velocity);
+    float impact_at = e.impact_phys_time ? e.impact_phys_time : RealTime();
+    float ttime = max(impact_at - e.s_time, 0);
 
-    rj_trace("S: impact t=%.3f org=%v dist=%.0f ttime=%.1fms due=%.3f fwd=%.0fms\n",
-             time, e.origin, vlen(diff), ttime * 1000, time + ttime, e.antilag_ms);
+    if (ttime > SERVER_FRAME_DT)
+        e.forward_knock = e.fire_cmd_time + ttime;
+    else
+        e.forward_knock = e.fire_cmd_time;   // on the fire command itself
+    knock_e.forward_knock = e.forward_knock;
 
-    if (ttime > SERVER_FRAME_DT) {
-        e.forward_knock = time + ttime;
-        knock_e.forward_knock = e.forward_knock;
-    } else {
-        knock_e.forward_knock = time;   // due now: the next command's PostThink
-    }
+    rj_trace("S: impact t=%.3f org=%v ttime=%.1fms due=%.4f fire=%.4f fwd=%.0fms\n",
+             time, e.origin, ttime * 1000, e.forward_knock, e.fire_cmd_time, e.antilag_ms);
     knock_e.knock_next = e.owner.pending_knock;
     e.owner.pending_knock = knock_e;
     knock_e.think = T_Knock_Expire;

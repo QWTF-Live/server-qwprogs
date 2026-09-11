@@ -423,6 +423,8 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
     // Static projection happens instantly.  If rewind is active, we'll do it at
     // a prior point in time, but we don't advance time while stepping.
     float ft = Phys_Init(proj, stime, static_dt, PHYSF_CONSUME_ALL);
+    proj.s_time = proj.phys_time;   // as the client sets it: after the static projection
+    proj.fire_cmd_time = time;      // command clock inside the warp
 
     // We initialize s_origin after Phys_Init, they are used when
     // knockback forwarding is on to determine delay.

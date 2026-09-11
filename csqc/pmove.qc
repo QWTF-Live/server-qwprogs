@@ -592,9 +592,19 @@ void PM_AddSimExplosion(float itime, entity ent) {
         float dtime = 0;
         if (ent.s_time)
             dtime = max(itime - ent.s_time, 0);
-        seq = ent.created_seq;
-        itime = dtime;
-        nat = NA_SEQTIME;  // Same as NA_SEQ when itime == 0
+        if (tf_config.cmd_time && ent.fire_cmd_time > 0) {
+            // Same due time the server computes for its copy: the fire
+            // command's clock plus the projectile's travel, on the fire
+            // command itself when within a server frame.  Matched by window
+            // like the server's explicit push, so the two land on the same
+            // frame rather than one counted in frames and one in time.
+            nat = NA_ITIME_EXPLICIT_EXPIRE;
+            itime = ent.fire_cmd_time + (dtime > SERVER_FRAME_DT ? dtime : 0);
+        } else {
+            seq = ent.created_seq;
+            itime = dtime;
+            nat = NA_SEQTIME;  // Same as NA_SEQ when itime == 0
+        }
     }
 
     PM_AddNudgeExplosion(nat, seq, itime, ent, dmg);

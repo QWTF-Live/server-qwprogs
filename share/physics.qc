@@ -3,6 +3,7 @@
 static const float phys_tic = 0.005;
 
 .float phys_time;  // Current physics time
+.float impact_phys_time;  // phys time of the impact whose .touch is running, else 0
 
 enumflags {
     PHYSF_CONSUME_ALL,
@@ -32,12 +33,16 @@ static void Phys_Impact(entity e, float dt, float phys_flags) {
     if (e.touch) {
         if (phys_flags & PHYSF_FORWARD_KNOCK)
             e.flags |= FL_FORWARD_KNOCK;
+        // Valid only inside this touch: an impact the engine's own flight
+        // delivers later has none, and is on real time instead.
+        e.impact_phys_time = e.phys_time + dt;
 
         entity held_self = self;
         self = e;
         other = trace_ent;
         self.touch();
         self = held_self;
+        e.impact_phys_time = 0;
     }
 
     AugmentGrenadeImpact();

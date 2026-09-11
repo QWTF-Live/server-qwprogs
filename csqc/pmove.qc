@@ -245,6 +245,10 @@ static void PM_ActivatePMS(PMS_Data *pmsd) {
 };
 
 static float cache_invalidated;
+// Frame and time of the previous server update, for judging nudge expiry in
+// the error pass's prior replay as it stood when that prediction was shown.
+static int pm_prev_update_seq;
+static float pm_prev_update_time;
 static PMS_Data* SimPMSD() {
     return (cache_invalidated || CVARF(fopm_nocache)) ? &pm_s : &pm_c;
 }
@@ -287,12 +291,14 @@ struct PM_Nudge {
 
     vector org;
     float aux;
+    float src_cseq;    // created_seq of the projectile this came from (predicted and server copies share it)
 };
 
 const static float NUDGE_SEQ = 3;
 const static float NUDGE_EPS = NUDGE_SEQ * SERVER_FRAME_DT;
 static PM_Nudge nudges[8];
 static float num_nudges, have_active_nudges;
+static float nudges_added;   // since the last error pass; its saved prior state predates them
 
 static float nudge_expired(PM_Nudge* n) {
     if (n->expire_frame && n->expire_frame <= pstate_server.seq)
@@ -327,6 +333,7 @@ static PM_Nudge* find_nudge_slot() {
             continue;
 
         cache_invalidated = TRUE;
+        nudges_added = TRUE;
         n->nat = NA_NONE;
         n->src_no = 0;
         n->src = 0;
@@ -449,11 +456,28 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
 
     n->src = ent;
     n->src_no = ent.entnum;
+    n->src_cseq = ent.created_seq;
 
     ent.nudge = n;
     ent.removefunc = PM_RemoveSelfNudges;
 
     return n;
+}
+
+// The server's copy of a predicted projectile has arrived with an explicit
+// push time: it supersedes whatever the predicted copy scheduled.  Kill that
+// outright rather than letting removal expire it at the current frame, so
+// the error pass's prior replay (which judges expiry as of the previous
+// update) doesn't apply both.
+static void PM_SupersedePredictedNudge(entity sent) {
+    for (float i = 0; i < nudges.length; i++) {
+        PM_Nudge* n = &nudges[i];
+        if (n->type != NT_EXPLOSION || n->src_no != 0 || nudge_expired(n))
+            continue;
+        if (n->src_cseq != sent.created_seq)
+            continue;
+        n->nat = NA_NONE;
+    }
 }
 
 static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
@@ -536,6 +560,7 @@ void PM_AddSimExplosion(float itime, entity ent) {
             return;
         nat = NA_ITIME_EXPLICIT_EXPIRE;  // Knock forwards are synchronized
         itime = ent.forward_knock;
+        PM_SupersedePredictedNudge(ent);
     } else if (ent.created_seq && ent.entnum == 0) {
         float dtime = 0;
         if (ent.s_time)
@@ -752,12 +777,34 @@ static void PM_UpdateError() {
         return;
     }
 
+    // The saved prior is a mid-prediction state from the previous update.  A
+    // nudge added since then may land before it, so it can't be replayed in;
+    // start from the raw previous state instead so the prior and the new
+    // prediction contain the same pushes and only real mismatch remains.
     static PMS_Data last;
-    if (last.server_seq != pm_s.server_seq - 1)
+    if (nudges_added || last.server_seq != pm_s.server_seq - 1)
         last = pm_so;
+    nudges_added = FALSE;
 
-    // Run prior prediction to present.
+    // Run prior prediction to present.  Nudge expiry is judged against the
+    // previous update's frame and time, as it was when this prediction was
+    // shown.  This update may already have expired a nudge whose push it is
+    // the first to carry -- an immediate self-knock, or the update after a
+    // lost one -- and replaying without it reports the whole knock as a
+    // correction that never happened on screen.
+    // have_active_nudges was recomputed against this update above and may
+    // already be false for the same reason, which would skip nudges entirely.
+    float held_seq = pstate_server.seq, held_time = pstate_server.server_time;
+    float held_active = have_active_nudges;
+    if (pm_prev_update_seq) {
+        pstate_server.seq = pm_prev_update_seq;
+        pstate_server.server_time = pm_prev_update_time;
+        have_active_nudges = TRUE;
+    }
     PM_RunMovement(&last, clientcommandframe);
+    pstate_server.seq = held_seq;
+    pstate_server.server_time = held_time;
+    have_active_nudges = held_active;
     vector err = ent.origin;
 
     // Repeat with updated state.
@@ -1217,6 +1264,9 @@ void PM_ServerUpdate() {
     if (enabled && was_enabled)
         PM_UpdateError();
     PMD_UpdateImpulse(servercommandframe);
+
+    pm_prev_update_seq = pstate_server.seq;
+    pm_prev_update_time = pstate_server.server_time;
 }
 
 void PM_Refresh() {

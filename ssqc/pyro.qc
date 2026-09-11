@@ -585,7 +585,7 @@ void () T_IncendiaryTouch = {
     dremove_sent(self);
 };
 
-void W_FireIncendiaryCannon(vector org, vector v_ang, float use_ctime=0) {
+void W_FireIncendiaryCannon(vector org, vector v_ang) {
     if (self.ammo_rockets < 3) {
         return;
     }
@@ -605,7 +605,7 @@ void W_FireIncendiaryCannon(vector org, vector v_ang, float use_ctime=0) {
     proj.classname = "pyro_rocket";
     setorigin(proj, org + v_forward * 8 + '0 0 16');
 
-    FOProj_Finalize(proj, use_ctime);
+    FOProj_Finalize(proj);
 };
 
 void () AirBlastReloadFinished = {

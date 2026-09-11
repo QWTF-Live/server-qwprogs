@@ -376,29 +376,19 @@ void NoRewindSyncFn(entity e, float target_time) {
 // tf_config.cmd_time (localinfo cmd_time / cmdt, live, sent to clients): forward
 // projectiles fired by a command from the client's own clock stamp on that
 // command (engine field cmd_servertime) instead of a ping estimate; the client
-// starts its predicted projectile at the same stamp.  Only the command path: a
-// sendevent attack is processed out of order with the move it belongs to, so
-// the stamp on hand is the wrong command's.  Nothing new is built on the
-// event; it is the fallback for firing-before-death and is to go.
-void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
+// starts its predicted projectile at the same stamp.  Every fire is on the
+// command path, including those from before a death the client had not yet
+// seen (the ghost replay in client.qc).
+void Forward_Projectile(int fpp_type, entity proj) {
     float ping = proj.owner.client_ping;
-    float given_ctime = use_ctime;
-    float stamp_mode = FALSE;
-    if (!use_ctime && tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_stamp_clock > 0) {
-        use_ctime = proj.owner.cmd_stamp_clock;
-        stamp_mode = TRUE;
-    }
-    if (use_ctime) {
-        // These can be pretty late with sendevent latency on top so let's be
-        // conservative.
-        ping = min((RealTime() - use_ctime) * 1000,
+    if (tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_stamp_clock > 0) {
+        ping = min((RealTime() - proj.owner.cmd_stamp_clock) * 1000,
                    tf_config.max_rewind_ms - 25);
         // Forward_ProjectOffset takes a server frame off whatever it is given,
         // on the basis that a ping is an estimate.  The stamp is exact, and the
         // client anchors its copy on it exactly, so give the frame back: the
         // projectile then starts at the stamp, not a frame after it.
-        if (stamp_mode)
-            ping += SERVER_FRAME_MS;
+        ping += SERVER_FRAME_MS;
     }
 
     ProjectResult offset = Forward_ProjectOffset(fpp_type, ping);
@@ -442,8 +432,8 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
         rj_trace("S: fire %s t=%.3f own=%s ping=%.0f static=%.0f dyn=%.0f fwd=%.0fms",
                  FPP_Name(fpp_type), RealTime(), proj.owner.classname, ping, offset.static_ms, offset.dynamic_ms, proj.antilag_ms);
         proj.owner.rj_cmd_trace_until = RealTime() + 0.16;
-        rj_trace(" cmdt=%.0f ctime=%.3f age=%.0fms given=%.3f seq=%.0f clk=%.4f",
-                 tf_config.cmd_time, proj.owner.cmd_servertime, (RealTime() - proj.owner.cmd_servertime) * 1000, given_ctime, proj.owner.cmd_sequence, proj.owner.cmd_clock);
+        rj_trace(" cmdt=%.0f ctime=%.3f age=%.0fms seq=%.0f clk=%.4f",
+                 tf_config.cmd_time, proj.owner.cmd_servertime, (RealTime() - proj.owner.cmd_servertime) * 1000, proj.owner.cmd_sequence, proj.owner.cmd_clock);
         rj_trace(" cnt=%.4f af=%.4f\n", proj.owner.client_nextthink, proj.owner.attack_finished);
         rj_trace(" sorg=%v porg=%v pvel=%v\n", proj.s_origin, proj.owner.origin, proj.owner.velocity);
     }

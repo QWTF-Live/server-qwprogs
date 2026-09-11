@@ -1823,15 +1823,12 @@ void WP_Attack() {
     pstate_pred.client_thinkindex = 1;
 
     if (IsEffectFrame() && !wi->fire_in_anim && (time > filter_pproj_time)) {
-        float send_event = FALSE;
         switch (wi->weapon) {
             case WEAP_ROCKET_LAUNCHER:
                 PP_CreateProjectile(FPP_ROCKET, PM_Org() + v_forward * 8 + '0 0 16');
-                send_event = TRUE;
                 break;
             case WEAP_INCENDIARY:
                 PP_CreateProjectile(FPP_INCENDIARY, PM_Org() + v_forward * 8 + '0 0 16');
-                send_event = TRUE;
                 break;
             case WEAP_TRANQ:
                 PP_CreateProjectile(FPP_TRANQ, PM_Org() + v_forward * 8 + '0 0 16');
@@ -1841,7 +1838,6 @@ void WP_Attack() {
                 break;
 
             case WEAP_GRENADE_LAUNCHER:
-                send_event = TRUE;
             case WEAP_PIPE_LAUNCHER:
                 W_FireGrenade((wi->weapon == WEAP_GRENADE_LAUNCHER || prematch) ?
                         GREN_RED : GREN_PIPE);
@@ -1858,15 +1854,6 @@ void WP_Attack() {
             case WEAP_SHOTGUN: Pred_Sound(SND_SG); break;
             case WEAP_SUPER_SHOTGUN: Pred_Sound(SND_SSG); break;
             case WEAP_SNIPER_RIFLE: Pred_Sound(SND_SNIPER_RIFLE); break;
-        }
-
-        if (send_event && RewindFlagEnabled(REWIND_SENDEVENT)) {
-            // It's slightly confusing that we pass server and not pred here,
-            // but this includes the ping adjustment that would occur at pred.
-            // Tested both ways and this seems to be more stable.
-            sendevent("Attack", "ifvv",
-                      wi->weapon, pstate_server.server_time,
-                      PM_Org(), input_angles);
         }
     }
 

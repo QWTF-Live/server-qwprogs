@@ -1007,7 +1007,7 @@ void PredProj_Sound(int proj_type, float vol = 1) {
     Pred_Sound(FPP_Get(proj_type)->snd, vol);
 }
 
-void Forward_Projectile(int fpp_type, entity projectile, float use_ctime=0);
+void Forward_Projectile(int fpp_type, entity projectile);
 
 entity FOProj_Create(int fpp_type) {
     entity prj = spawn();
@@ -1021,7 +1021,7 @@ entity FOProj_Create(int fpp_type) {
     return prj;
 }
 
-void FOProj_Finalize(entity mis, float use_ctime=0) {
+void FOProj_Finalize(entity mis) {
     int fpp_type = mis.fpp.index;
     // We explicitly do not use newmis.  Newmis internally implements a fixed
     // 50m forward of physics handling (equivalent to our projection below)
@@ -1049,7 +1049,7 @@ void FOProj_Finalize(entity mis, float use_ctime=0) {
 
     mis.customphysics = FO_CustomPhysics;
 
-    Forward_Projectile(mis.fpp.index, mis, use_ctime);
+    Forward_Projectile(mis.fpp.index, mis);
 
     mis.SendEntity = PP_SendEntity;
     mis.SendFlags = FOPP_INIT;

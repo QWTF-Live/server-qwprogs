@@ -94,7 +94,7 @@ void () BioInfection_MonsterDecay;
 float (float weap) W_GetSlot;
 float (float weap) W_OldGetSlot;
 void () W_FireFlame;
-void W_FireIncendiaryCannon(vector org, vector angles, float use_ctime=0);
+void W_FireIncendiaryCannon(vector org, vector angles);
 void () W_FireTranq;
 void () W_FireRailgun;
 void () W_FireImpeller;
@@ -173,7 +173,6 @@ void (float att_delay) Attack_Finished = {
         att_delay *= 2;
 
     self.attack_finished = time + att_delay;
-    self.last_attack_ctime = time;
 };
 
 float* W_ammo_to_p(entity player, AmmoType ammo_type) {
@@ -1160,7 +1159,7 @@ void () T_MissileTouch = {
     dremove_sent(self);
 };
 
-void W_FireRocket(vector org, vector v_ang, float use_ctime=0) = {
+void W_FireRocket(vector org, vector v_ang) = {
     entity proj = FOProj_Create(FPP_ROCKET);
     proj.owner = self;
     proj.movetype = MOVETYPE_FLYMISSILE;
@@ -1180,7 +1179,7 @@ void W_FireRocket(vector org, vector v_ang, float use_ctime=0) = {
     proj.classname = "proj_rocket";
     proj.origin = org + v_forward * 8 + '0 0 16';
 
-    FOProj_Finalize(proj, use_ctime);
+    FOProj_Finalize(proj);
 
     KickPlayer(-2, self);
 };
@@ -1373,7 +1372,7 @@ void () ExplodeOldestPipebomb = {
     }
 };
 
-void W_FireGrenade(vector org, vector v_ang, float use_ctime=0) {
+void W_FireGrenade(vector org, vector v_ang) {
     Pred_Sound(SND_GREN);
     KickPlayer(-2, self);
 
@@ -1412,7 +1411,7 @@ void W_FireGrenade(vector org, vector v_ang, float use_ctime=0) {
     proj.think = GrenadeExplode;
     setorigin(proj, org);
 
-    FOProj_Finalize(proj, use_ctime);
+    FOProj_Finalize(proj);
 };
 
 void () spike_touch;
@@ -2710,30 +2709,3 @@ void () ToggleInvincibility = {
     }
 };
 
-// TODO: trust the client less, validate more.
-// TODO: Could support hitscan (e.g. sg/ssg)
-void (int weap, float ctime, vector pos, vector angles) CSEv_Attack_ifvv = {
-    if (!RewindFlagEnabled(REWIND_SENDEVENT))
-        return;
-    if (tf_config.cmd_time)   // the ghost replay covers these on the command path
-        return;
-
-    // Only applies to attacks before the last death.   We can't use
-    // attack_finished here as there's an 0.3s lockout on spawn that obscures.
-    float lockout = 15*MSEC;  // Be a tiny bit conservative
-    if (ctime >= self.last_death - lockout ||
-        ctime < self.last_attack_ctime - lockout)
-        return;
-
-    switch (weap) {
-        case WEAP_ROCKET_LAUNCHER:
-            W_FireRocket(pos, angles, ctime);
-            break;
-        case WEAP_INCENDIARY:
-            W_FireIncendiaryCannon(pos, angles, ctime);
-            break;
-        case WEAP_GRENADE_LAUNCHER:
-            W_FireGrenade(pos, angles, ctime);
-            break;
-    }
-};

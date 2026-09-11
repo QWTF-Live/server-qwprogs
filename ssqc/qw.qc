@@ -10,7 +10,6 @@ enum {
 };
 
 .float last_death;
-.float last_attack_ctime;
 
 .float client_ping;              // ping used for prediction
 .float rj_trace_until;           // RJ_TRACE: per-command trace after a self-knock

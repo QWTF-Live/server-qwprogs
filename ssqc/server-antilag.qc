@@ -33,11 +33,14 @@
 //                       through their own advance.  0: only the player whose
 //                       path produced it.
 //
-// Not predicted: a closing door being re-triggered (the engine reports real
-// motion while a pusher moves, so the reversal shows up one RTT late), plats
-// (the player stands on them; advancing a plat into a predicted player would
-// need a carry step the client's pmove doesn't have), and shootable, keyed or
-// button-driven doors, which have no trigger field.
+// A closing door is predicted too: door_go_up sends it back up from wherever
+// it is when the trigger fires, so the offer carries the velocity SUB_CalcMove
+// will compute from that point and the engine switches from the real motion to
+// it at the predicted time.
+//
+// Not predicted: plats (the player stands on them; advancing a plat into a
+// predicted player would need a carry step the client's pmove doesn't have),
+// and shootable, keyed or button-driven doors, which nothing traces into.
 
 // Engine fields (fteqw server/progdefs.h).
 .float  pusher_advance;         // players: seconds to report pushers ahead by
@@ -75,11 +78,21 @@ static void PP_Offer(entity door, float start, vector vel, float end, entity who
     door.pusher_predict_client = who;
 }
 
-// door_fire only moves a door that is closed and at rest.  A door at the top
-// just has its wait extended, and a moving door is reported by the engine from
-// real motion, so neither gets a prediction.
-static float PP_DoorClosed(entity master) {
-    return master.state == STATE_BOTTOM && master.velocity == '0 0 0';
+// door_go_up does something visible for a door that is closed and at rest, or
+// one still closing (it is sent back up from where it is).  A door already
+// opening returns, and one at the top just has its wait extended.
+static float PP_DoorPredictable(entity e) {
+    return (e.state == STATE_BOTTOM && e.velocity == '0 0 0') || e.state == STATE_DOWN;
+}
+
+static float PP_ChainPredictable(entity master) {
+    entity e = master;
+    do {
+        if (PP_DoorPredictable(e))
+            return TRUE;
+        e = e.enemy;
+    } while (e != master && e != world);
+    return FALSE;
 }
 
 // Mirrors door_trigger_touch, with no side effects.
@@ -88,7 +101,7 @@ static float PP_FieldWouldFire(entity trigger, entity pl) {
         return FALSE;
     if (!Activated(trigger, pl))
         return FALSE;
-    return PP_DoorClosed(trigger.owner);
+    return PP_ChainPredictable(trigger.owner);
 }
 
 // Mirrors multi_touch, with no side effects.  Doors with a targetname have no
@@ -107,27 +120,34 @@ static float PP_MultiWouldFire(entity trigger, entity pl) {
 }
 
 // door_fire moves the whole linked set, so offer the plan to each door in the
-// master's chain, with the velocity SUB_CalcMove will give it.
+// master's chain that would react, with the velocity SUB_CalcMove will give it
+// from wherever the door will be at the predicted time.
 static void PP_OfferChain(entity master, float start, entity who) {
     entity e = master;
-    vector delta;
-    float len, traveltime;
+    vector org, delta;
+    float len, traveltime, dt;
     do {
-        delta = e.pos2 - e.origin;
-        len = vlen(delta);
-        if (len > 0 && e.speed > 0) {
-            traveltime = max(len / e.speed, 0.03);
-            PP_Offer(e, start, delta * (1 / traveltime), start + traveltime, who);
+        if (PP_DoorPredictable(e)) {
+            dt = start - time;
+            if (e.nextthink > e.ltime && dt > e.nextthink - e.ltime)
+                dt = e.nextthink - e.ltime;     // a closing door stops at the bottom first
+            org = e.origin + e.velocity * max(0, dt);
+            delta = e.pos2 - org;
+            len = vlen(delta);
+            if (len > 0 && e.speed > 0) {
+                traveltime = max(len / e.speed, 0.03);
+                PP_Offer(e, start, delta * (1 / traveltime), start + traveltime, who);
+            }
         }
         e = e.enemy;
     } while (e != master && e != world);
 }
 
-// The first closed door a trigger_multiple would open, or world.
+// The first door a trigger_multiple would visibly move, or world.
 static entity PP_MultiFirstDoor(entity trigger) {
     entity t;
     for (t = find(world, targetname, trigger.target); t; t = find(t, targetname, trigger.target))
-        if (t.use == door_use && PP_DoorClosed(t.owner))
+        if (t.use == door_use && PP_ChainPredictable(t.owner))
             return t.owner;
     return world;
 }
@@ -178,7 +198,7 @@ void PP_PlayerPostThink() {
             start = trigger.nextthink;          // still in its wait; fires when it re-arms
         start += trigger.delay;                 // SUB_UseTargets' DelayedUse
         for (e = find(world, targetname, trigger.target); e; e = find(e, targetname, trigger.target))
-            if (e.use == door_use && PP_DoorClosed(e.owner))
+            if (e.use == door_use && PP_ChainPredictable(e.owner))
                 PP_OfferChain(e.owner, start, who);
     }
 }

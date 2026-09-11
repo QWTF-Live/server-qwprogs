@@ -69,7 +69,6 @@ enumflags {
 enumflags {
     PF_PMOVE,
     PF_POS,
-    PF_PMOVE_ACTIVATING,
     // Target's armour absorbs explosion damage.  Needed for knockback
     // prediction and not derivable client-side: no class grants
     // AT_SAVEEXPLOSION (every *_INITARMORCLASS is 0 bar pyro's AT_SAVEFIRE),
@@ -1042,57 +1041,19 @@ void FOProj_Finalize(entity mis) {
     mis.SendFlags = FOPP_INIT;
 }
 
-.float pmt_nexttime;
-.float pmt_nextstate;
-
-enum PmtState {
-    PMT_INACTIVE,
-    PMT_ACTIVE,
-    PMT_ACTIVATE1,
-    PMT_DEACTIVATE1,
-    PMT_DEACTIVATE2,
-};
-
+// Client-side player movement prediction (fo_pmove): while the client
+// advertises it, send the pmove block.  The server's own copy of the player
+// is sent to that client non-solid (engine), so there is nothing to hide or
+// stage.
 void Predict_SyncPmove(float is_player) {
-    if (time < self.pmt_nexttime)
-        return;
-
-    float active = self.predict_flags & PF_PMOVE;
-    float want_active = (ClientPred_Enabled(self, CSQC_PMOVE)) && is_player;
-    float state = self.pmt_nextstate;
-
-    if ((!!active) == (!!want_active))
-        return;
-
-    if (want_active && state == PMT_INACTIVE)
-        state = PMT_ACTIVATE1;
-    else if (!want_active && state == PMT_ACTIVE)
-        state = PMT_DEACTIVATE1;
-
-    float next_step = 0.025;
-    switch (state) {
-        case PMT_ACTIVATE1:
-            sprint(self, PRINT_HIGH, "*** PMOVE ACTIVATED\n");
-            self.nodrawtoclient = self;
-            self.predict_flags |= PF_POS | PF_PMOVE;
-            self.maxspeed = SPEC_MAXSPEED;
-            self.pmt_nextstate = PMT_ACTIVE;
-            break;
-        case PMT_DEACTIVATE1:
-            self.nodrawtoclient = world;
-            self.pmt_nextstate = PMT_DEACTIVATE2;
-            // Just pause for client to catch up
-            break;
-        case PMT_DEACTIVATE2:
-            sprint(self, PRINT_HIGH, "*** PMOVE DEACTIVATED\n");
-            float mask = PF_PMOVE;
-            if (!ClientPred_Enabled(self, CSQC_FORCE_POS))
-                mask |= PF_POS;
-            self.predict_flags &= ~mask;
-            self.pmt_nextstate = PMT_INACTIVE;
-            break;
+    if (ClientPred_Enabled(self, CSQC_PMOVE) && is_player) {
+        self.predict_flags |= PF_POS | PF_PMOVE;
+    } else {
+        float mask = PF_PMOVE;
+        if (!ClientPred_Enabled(self, CSQC_FORCE_POS))
+            mask |= PF_POS;
+        self.predict_flags &= ~mask;
     }
-    self.pmt_nexttime = time + next_step;
 }
 #endif
 

@@ -2860,7 +2860,7 @@ void () PlayerPreThink = {
         rj_trace("S: pt t=%.3f org=%v vel=%v og=%.0f\n",
                  time, self.origin, self.velocity, (float)!!(self.flags & FL_ONGROUND));
     if (self.rj_cmd_trace_until > time)
-        rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f\n", self.cmd_sequence, self.cmd_servertime, time);
+        rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f clk=%.4f msec=%.2f anchors=%.0f\n", self.cmd_sequence, self.cmd_servertime, time, self.cmd_clock, input_timelength * 1000, self.cmd_clock_k);
 
     // Time, or an enemy close enough that the protection would be cover.
     // Enemy damage ends it too, from SpawnProtectedFrom.

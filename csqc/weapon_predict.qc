@@ -1566,6 +1566,7 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
       rj_trace("C: fire %s t=%.3f svt=%.3f seq=%.0f ccf=%.0f scf=%.0f ptime=%.3f",
                FPP_Name(proj.fpp.index), time, pstate_server.server_time, proj.created_seq, clientcommandframe, servercommandframe, proj.s_time);
       rj_trace(" cmdt=%.0f stamp=%.3f anchor=%.3f start=%.3f pseq=%i loaded=%.0f", tf_config.cmd_time, input_servertime, stamp_anchor, proj.starttime, pstate_pred.seq, rj_last_input_frame);
+      rj_trace(" pt=%.4f cnt=%.4f af=%.4f len=%.2fms", pstate_pred.server_time, pstate_pred.client_nextthink, pstate_pred.attack_finished, input_timelength * 1000);
       rj_cmd_trace_until_seq = clientcommandframe + 12;
       rj_trace(" sorg=%v org=%v vel=%v\n", proj.s_origin, PM_Org(), PM_Vel());
   }
@@ -2185,8 +2186,11 @@ static void WP_UpdatePredict() {
         makevectors(input_angles);
 
         pstate_pred.seq = pframe;
-        pstate_pred.server_time += input_timelength;
-        pstate_pred.pmove.cmd_servertime += input_timelength;
+        float chain_len = input_timelength;
+        pstate_pred.server_time += chain_len;
+        pstate_pred.pmove.cmd_servertime += chain_len;
+        if (pframe == eframe && pframe < rj_cmd_trace_until_seq)
+            rj_trace("C: pf seq=%i pt=%.4f echo=%.4f scf=%.0f len=%.2fms\n", pframe, pstate_pred.server_time, pstate_server.server_time, servercommandframe, input_timelength * 1000);
 
         pstate_pred.buttons_held = input_buttons;
         pstate_pred.buttons_up = old_input_buttons & (~input_buttons);

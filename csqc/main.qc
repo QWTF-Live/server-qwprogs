@@ -1099,7 +1099,7 @@ noref void CSQC_Input_Frame() {
     input_servertime = held_servertime;
 
     if (clientcommandframe < rj_cmd_trace_until_seq)
-        rj_trace("C: cmd seq=%.0f st=%.3f len=%.3f t=%.3f\n", clientcommandframe, input_servertime, input_timelength, time);
+        rj_trace("C: cmd seq=%.0f st=%.3f len=%.2fms t=%.3f\n", clientcommandframe, input_servertime, input_timelength * 1000, time);
 }
 
 float(float save, float take, vector inflictororg) CSQC_Parse_Damage = {

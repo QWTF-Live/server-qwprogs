@@ -444,10 +444,11 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
 
     {
         rj_trace("S: fire %s t=%.3f own=%s ping=%.0f static=%.0f dyn=%.0f fwd=%.0fms",
-                 FPP_Name(fpp_type), time, proj.owner.classname, ping, offset.static_ms, offset.dynamic_ms, proj.antilag_ms);
-        proj.owner.rj_cmd_trace_until = time + 0.16;
-        rj_trace(" cmdt=%.0f ctime=%.3f age=%.0fms given=%.3f seq=%.0f\n",
-                 tf_config.cmd_time, proj.owner.cmd_servertime, (time - proj.owner.cmd_servertime) * 1000, given_ctime, proj.owner.cmd_sequence);
+                 FPP_Name(fpp_type), RealTime(), proj.owner.classname, ping, offset.static_ms, offset.dynamic_ms, proj.antilag_ms);
+        proj.owner.rj_cmd_trace_until = RealTime() + 0.16;
+        rj_trace(" cmdt=%.0f ctime=%.3f age=%.0fms given=%.3f seq=%.0f clk=%.4f",
+                 tf_config.cmd_time, proj.owner.cmd_servertime, (RealTime() - proj.owner.cmd_servertime) * 1000, given_ctime, proj.owner.cmd_sequence, proj.owner.cmd_clock);
+        rj_trace(" cnt=%.4f af=%.4f\n", proj.owner.client_nextthink, proj.owner.attack_finished);
         rj_trace(" sorg=%v porg=%v pvel=%v\n", proj.s_origin, proj.owner.origin, proj.owner.velocity);
     }
 }

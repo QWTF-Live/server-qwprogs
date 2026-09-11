@@ -118,9 +118,12 @@ void Forward_Projectile(int fpp_type, entity proj) {
 
     // Static projection happens instantly.  If rewind is active, we'll do it at
     // a prior point in time, but we don't advance time while stepping.
-    float ft = Phys_Init(proj, stime, static_dt, phys_flags);
-    proj.s_time = proj.phys_time;   // as the client sets it: after the static projection
+    // Before the projection: an impact inside it is deferred to the fire
+    // command like any other, with the real damage sent to the client,
+    // rather than applied inline with damage the client could only guess.
+    proj.s_time = stime;            // the clock after the static projection, as the client sets it
     proj.fire_cmd_time = time;      // command clock inside the warp
+    float ft = Phys_Init(proj, stime, static_dt, phys_flags);
     proj.s_origin = proj.origin;
 
     if (!proj.voided)

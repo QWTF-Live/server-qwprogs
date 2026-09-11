@@ -1558,10 +1558,11 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
 
   // Trail starts at 0.05, we, split physics calcs longer than this.
   float sdt2 = max(static_dt - 0.05, 0);
-  Phys_Init(proj, proj.starttime - sdt2, static_dt - sdt2, PHYSF_CONSUME_ALL);
-
-  proj.s_time = proj.phys_time;  // Set after static_dt processed.
+  // Before the static projection: an impact inside it schedules the push
+  // from these, on the fire command, the same way the server does.
+  proj.s_time = proj.starttime - sdt2;   // the clock after the static projection
   proj.fire_cmd_time = pstate_pred.server_time;   // the fire frame's command clock, equal to the server's
+  Phys_Init(proj, proj.starttime - sdt2, static_dt - sdt2, PHYSF_CONSUME_ALL);
 
   {
       rj_trace("C: fire %s t=%.3f svt=%.3f seq=%.0f ccf=%.0f scf=%.0f ptime=%.3f",

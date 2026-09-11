@@ -124,8 +124,7 @@ void () trigger_multiple = {
         self.solid = SOLID_BBOX;
         setorigin(self, self.origin);
     } else if (!(self.spawnflags & SPAWNFLAG_NOTOUCH)) {
-        if (ForwardDoorsPossible())
-            self.flags |= FL_FINDABLE_NONSOLID;
+        self.flags |= FL_FINDABLE_NONSOLID;   // seen by MOVE_TRIGGERS traces: Forward_OpenDoors, server-antilag.qc
         self.touch = multi_touch;
     }
 };

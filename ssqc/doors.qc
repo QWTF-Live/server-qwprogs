@@ -224,6 +224,7 @@ entity(vector fmins, vector fmaxs) spawn_field =
     trigger.solid = SOLID_TRIGGER;
     trigger.owner = self;
     trigger.touch = door_trigger_touch;
+    trigger.flags = trigger.flags | FL_FINDABLE_NONSOLID;   // visible to MOVE_TRIGGERS traces (server-antilag.qc)
     trigger.team_no = self.team_no;
     trigger.playerclass = self.playerclass;
     trigger.items_allowed = self.items_allowed;

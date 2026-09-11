@@ -42,3 +42,10 @@ With project_weapons turned on, FortressOne will calculate where the rocket woul
 
 This means that 500ms from the player clicking the shoot button, the rocket is 45 units (spawn position) + 405 (450ms * 900) units from the player position - 450 - ie, the same position had the player had 0 ping. 
 
+
+Doors
+-----
+- Enabled with the fteqw fork's `.pusher_advance` support (always on; set `localinfo pusher_max 0` to disable)
+- Configurable: `localinfo pusher_buffer` (default: 25), `localinfo pusher_max` (default: 200), `localinfo pusher_share` (default: 1)
+
+Doors, plats and trains are reported to each client advanced along their movement by that client's ping, minus the buffer and capped at the max, so a player at 100ms sees the door where it will be when their commands reach the server. A door about to be opened by a player's current path is additionally reported as already starting to move, hiding the round trip on the trigger. The server's own door never opens early; only what each client is told changes. Everyone above `pusher_buffer` ms feels like they are playing at `pusher_buffer` ms. With `pusher_share 1` every client gets the predicted start; with 0 only the player who will trigger the door.

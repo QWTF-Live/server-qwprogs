@@ -3216,6 +3216,7 @@ void () PlayerPostThink = {
     }
 
     RW_LogPlayer(self);
+    PP_PlayerPostThink();
     Predict_Update(TRUE);
     PlayerPeriodicThink(TRUE);
 };

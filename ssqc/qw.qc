@@ -15,6 +15,11 @@ enum {
 .float client_ping;              // ping used for prediction
 .entity pending_knock;           // deferred self-knocks, applied in PlayerPostThink (see AntilagKnock)
 .entity knock_next;              // chain of the above on a knock entity
+// Engine-provided (fteqw fork): the client's own clock stamp and input frame
+// number for the command being run, valid from PlayerPreThink through
+// PlayerPostThink.  CSQC sees the stamp as input_servertime for that frame.
+.float cmd_servertime;
+.float cmd_sequence;
 .float last_remote_time;         // For monoticity of remote_time()
 .float client_lastupdate;
 

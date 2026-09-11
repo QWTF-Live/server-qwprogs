@@ -1523,7 +1523,14 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
   float static_dt = push_t.static_ms / 1000.0;
 
   // Note: We use true time here as created projectiles exist outside of pred.
-  proj.starttime = time + uncorrected_dt - input_timelength / 2;
+  // The server's stamp for this frame, rebuilt from the echoed stamp of the
+  // last acked command plus frame lengths since; the server anchors its copy
+  // of this projectile on the same number.
+  float stamp_anchor = pstate_pred.pmove.cmd_servertime;
+  if (tf_config.cmd_time && stamp_anchor > 0)
+      proj.starttime = stamp_anchor;
+  else
+      proj.starttime = time + uncorrected_dt - input_timelength / 2;
   proj.endtime = proj.starttime + ms_ahead / 1000.0 + PP_EPS;
 
   proj.predraw = PP_PredrawPredicted;
@@ -2170,6 +2177,7 @@ static void WP_UpdatePredict() {
 
         pstate_pred.seq = pframe;
         pstate_pred.server_time += input_timelength;
+        pstate_pred.pmove.cmd_servertime += input_timelength;
 
         pstate_pred.buttons_held = input_buttons;
         pstate_pred.buttons_up = old_input_buttons & (~input_buttons);

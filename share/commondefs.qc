@@ -53,7 +53,8 @@ enumflags {
     _OP(5, Byte,  float, fo_concuss) \
     _OP(6, Float, float, rj) \
     _OP(6, Float, float, pipe_cooldown) \
-    _OP(7, Short, float, new_balance_flags)
+    _OP(7, Short, float, new_balance_flags) \
+    _OP(7, Byte,  float, cmd_time)
 
 
 // Suffix appended to the shader and particle effect names a client could

@@ -1069,6 +1069,14 @@ static void InputFrameDebounce() {
 }
 
 noref void CSQC_Input_Frame() {
+    // The engine copies input_servertime in before this hook and, because the
+    // global is declared, copies it back onto the outgoing command afterwards,
+    // float and wire integer both.  Anything in here that replays another
+    // frame with getinputstate() leaves the global holding that frame's time,
+    // which would then be sent as this command's stamp.  Hold the value and
+    // put it back so the write-back is a no-op.
+    float held_servertime = input_servertime;
+
     InputFrameDebounce();
     Sync_GameState();
 
@@ -1084,6 +1092,8 @@ noref void CSQC_Input_Frame() {
 
     PM_InputFrame();
     FO_ApplyCussInput();
+
+    input_servertime = held_servertime;
 }
 
 float(float save, float take, vector inflictororg) CSQC_Parse_Damage = {

@@ -1,3 +1,8 @@
+// Engine global (not in the generated csdefs.qc): the client's own timestamp
+// for the input frame most recently loaded with getinputstate(); the server
+// sees the same value for that command as the player's cmd_servertime.
+float input_servertime;
+
 #include "../share/defs.h"
 
 #define DEFCVAR_FLOAT(n,d) var float autocvar_##n = d;

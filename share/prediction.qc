@@ -131,6 +131,13 @@ struct predict_tf_state {
         int enabled;
         vector origin;
         vector velocity;
+        // The client's wire timestamp of the command that produced this
+        // state, as the server saw it (engine field cmd_servertime).  Stamps
+        // are chained by msec, so the client rebuilds the server's stamp for
+        // any later frame as this plus its own input_timelength per frame:
+        // the same number on both sides without either trusting its own
+        // clock.  Advanced per replayed frame in pstate_pred.
+        float cmd_servertime;
     } pmove;
 
 #ifdef CSQC
@@ -578,6 +585,7 @@ void TFL_RecvPredictState() {
         COMM_PM(Short, velocity[0]);
         COMM_PM(Short, velocity[1]);
         COMM_PM(Short, velocity[2]);
+        COMM_PM(Float, cmd_servertime);
     }
 
     if (mask & FOWP_FILTER_ENTS) {
@@ -793,6 +801,7 @@ void Predict_InitDefaultConfig() {
     tf_config.fo_concuss = 0;
     tf_config.new_balance_flags = 0;
     tf_config.pipe_cooldown = 0.5;
+    tf_config.cmd_time = 0;
 }
 
 #ifdef SSQC
@@ -871,6 +880,7 @@ static void TflCheckConfigUpdate() {
     CONFIG_UPDATE(TRUE,  "clown", clown_flags);
     CONFIG_UPDATE(FALSE, "clown_grav", clown_grav);
     CONFIG_UPDATE(FALSE, "rj", rj);
+    CONFIG_UPDATE(FALSE, "cmdt", cmd_time);
 
     CLAMP_UPDATE(dynamic_newmis_ms, 0, tf_config.static_newmis_ms);
     CLAMP_UPDATE(max_rewind_ms, 0, 250);

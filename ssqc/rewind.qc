@@ -367,13 +367,31 @@ void NoRewindSyncFn(entity e, float target_time) {
     error("not set\n");
 }
 
+// tf_config.cmd_time (localinfo cmd_time / cmdt, live, sent to clients): forward
+// projectiles fired by a command from the client's own clock stamp on that
+// command (engine field cmd_servertime) instead of a ping estimate; the client
+// starts its predicted projectile at the same stamp.  Only the command path: a
+// sendevent attack is processed out of order with the move it belongs to, so
+// the stamp on hand is the wrong command's.  Nothing new is built on the
+// event; it is the fallback for firing-before-death and is to go.
 void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
     float ping = proj.owner.client_ping;
+    float stamp_mode = FALSE;
+    if (!use_ctime && tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_servertime > 0) {
+        use_ctime = proj.owner.cmd_servertime;
+        stamp_mode = TRUE;
+    }
     if (use_ctime) {
         // These can be pretty late with sendevent latency on top so let's be
         // conservative.
         ping = min((time - use_ctime) * 1000,
                    tf_config.max_rewind_ms - 25);
+        // Forward_ProjectOffset takes a server frame off whatever it is given,
+        // on the basis that a ping is an estimate.  The stamp is exact, and the
+        // client anchors its copy on it exactly, so give the frame back: the
+        // projectile then starts at the stamp, not a frame after it.
+        if (stamp_mode)
+            ping += SERVER_FRAME_MS;
     }
 
     ProjectResult offset = Forward_ProjectOffset(fpp_type, ping);

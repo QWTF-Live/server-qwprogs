@@ -793,14 +793,6 @@ void () DecodeLevelParms = {
         // disable setinfo keepcells [off]
         nokeepcells = CF_GetSetting("nkc", "nokeepcells", "0");
 
-        // temporary gating on god-moding players behind their rewind barrier
-        rewind_barrier = CF_GetSetting("rwbar", "rewind_barrier", "0");
-
-        // draw rewound player positions [off].  Cached rather than read in
-        // RL_RewindTo(), which runs once per physics tic per projectile.
-        rewind_debug_show = CF_GetSetting("rds", "rewind_debug_show",
-                                          DEBUG_REWIND ? "on" : "off");
-
         // allow clients to place a personal practice spawn [off]
         allowpracspawns = CF_GetSetting("aps", "allowpracspawns", "0");
 
@@ -2299,11 +2291,6 @@ void () PutClientInServer = {
     self.angles = spot.angles;
     self.fixangle = 1;
 
-    // Spawning relocates the player, so the snapshots either side of this
-    // moment belong to different places (and different lives).  Mark the seam
-    // so a rewind can't resolve back into the previous one.
-    RewindBarrier(self);
-
     if (self.playerclass != 0)
         spawn_tdeath(self.origin, self);
 
@@ -3415,7 +3402,9 @@ void () PlayerPostThink = {
     time = held_time;
     cmd_real_time = 0;
 
-    RW_LogPlayer(self);
+    if (RewindFlagEnabled(REWIND_PROJ_CROSSING))
+        Antilag_CrossCheck(self);
+    self.al_cmd_prev = self.origin;
     PP_PlayerPostThink();
     PlayerPeriodicThink(TRUE);
 };
@@ -3451,8 +3440,6 @@ void () ClientConnect = {
     // csqc is required, and the engine has already dropped anyone without it
     // (sv_csqc_required, set in worldspawn).
     bprint(PRINT_HIGH, self.netname, " entered the game\n");
-
-    RW_InitPlayer(self);
 
     self.connect_time = time;
     self.motd = 0;
@@ -3613,8 +3600,6 @@ void () ClientDisconnect = {
     if(votemode) {
         UnvoteForMap(self);
     }
-
-    RW_DestroyPlayer(self);
 };
 
 string (entity pe_target, entity pe_attacker, float pf_deathmsg) GetDeathMessage = {

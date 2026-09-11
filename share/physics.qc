@@ -7,10 +7,23 @@ static const float phys_tic = 0.005;
 
 enumflags {
     PHYSF_CONSUME_ALL,
-    PHYSF_REWIND_PLAYERS,
+    PHYSF_REWIND_PLAYERS,         // server: resolve players at each step's time from the engine's history
+    PHYSF_REWIND_EXCLUDE_OWNER,   // ...but leave the owner live (the fire forward)
     PHYSF_FAIL_STARTSOLID,
     PHYSF_SIM,
 };
+
+#ifdef SSQC
+// fteqw fork: the server's per-frame player history.
+const float MOVE_LAGGEDTIME = 512;
+void(float t) setlaggedtime = #0:setlaggedtime;
+void(float t, optional entity exclude) rewindworld = #0:rewindworld;
+void() restoreworld = #0:restoreworld;
+vector(entity player, float t) laggedorigin = #0:laggedorigin;
+.float al_proj;               // a live projectile on the integrator (Antilag_CrossCheck finds them)
+.vector al_prev_origin;       // projectile: origin before its last physics frame
+.vector al_cmd_prev;          // player: origin before this command
+#endif
 
 void AugmentGrenadeImpact();
 
@@ -32,12 +45,20 @@ static void Phys_Impact(entity e, float dt, float phys_flags) {
         // delivers later has none, and is on real time instead.
         e.impact_phys_time = e.phys_time + dt;
 
+        // Radius damage inside the touch goes through findradius, so for a
+        // rewound flight put the players where the trace found them.
+        if (phys_flags & PHYSF_REWIND_PLAYERS)
+            rewindworld(e.phys_time + dt, (phys_flags & PHYSF_REWIND_EXCLUDE_OWNER) ? e.owner : world);
+
         entity held_self = self;
         self = e;
         other = trace_ent;
         self.touch();
         self = held_self;
         e.impact_phys_time = 0;
+
+        if (phys_flags & PHYSF_REWIND_PLAYERS)
+            restoreworld();
     }
 
     AugmentGrenadeImpact();
@@ -114,6 +135,10 @@ float Phys_Push(entity e, vector offset, float dt, float phys_flags) {
 
     if (e.movetype == MOVETYPE_FLYMISSILE)
         trace_flags |= MOVE_MISSILE;
+#ifdef SSQC
+    if (phys_flags & PHYSF_REWIND_PLAYERS)
+        trace_flags |= MOVE_LAGGEDTIME;   // players as they were at setlaggedtime's time
+#endif
 
     // Note: Networked entities don't currently intersect on CSQC instantiation
     // of this, we fudge this in Phys_Impact from the server side.
@@ -205,8 +230,6 @@ float Phys_Adv_Linear(entity e, float dt, float phys_flags) {
     return dt;
 }
 
-var void(entity e, float target_time) RewindSyncTime;
-
 static void Phys_CapVel(entity e) {
     static const float limit = 32 / phys_tic;
 
@@ -243,8 +266,10 @@ float Phys_Advance(entity e, float target_time, float phys_flags) {
         }
 
         step = min(phys_tic, delta);
+#ifdef SSQC
         if (phys_flags & PHYSF_REWIND_PLAYERS)
-            RewindSyncTime(e, e.phys_time + step/2);
+            setlaggedtime(e.phys_time + step/2);
+#endif
 
         if (IsClownMode(CLOWN_PROJ_GRAVITY))
             e.velocity_z += -tf_config.clown_grav * step;

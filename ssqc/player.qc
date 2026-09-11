@@ -441,7 +441,6 @@ void () GibPlayer = {
 void () PlayerDie = {
     self.spawn_gen += 1;
     self.last_death = RealTime();   // compared with the engine's cmd_acked_time
-    RewindBarrier(self);
 
     local float i;
     local entity te;

@@ -1076,11 +1076,12 @@ void PlayerKnock_Apply() {
 // Travel is the projectile's physics clock at impact minus its clock after the
 // static projection: exact for bounces as well as straight flight, and the
 // same quantity the client computes for its predicted copy.  Applies whether
-// the impact fell inside the initial forward or later, in the engine's own
-// flight (real time since the forward ended, which is where the physics clock
-// stopped); in the latter case the due time is simply ahead of now by what
-// the forward removed.  A due time within a server frame of the fire lands on
-// the fire command itself; the client mirrors that threshold.
+// the impact fell inside the initial forward or later in flight; in the
+// latter case the due time is simply ahead of now by what the forward
+// removed.  A touch the engine delivers outside the integrator (a player
+// walking into the projectile) has no impact clock and uses real time.  A due
+// time within a server frame of the fire lands on the fire command itself;
+// the client mirrors that threshold.
 float AntilagKnock(entity e, float dmg) {
     e.forward_knock = -1;
     if (!RewindFlagEnabled(REWIND_FORWARD_PROJ_SELFKNOCK))

@@ -47,7 +47,6 @@ enum {
 .float cmd_stamp_clock;
 float cmd_real_time;             // real `time` while the warp is active, else 0
 .float last_remote_time;         // For monoticity of remote_time()
-.float client_lastupdate;
 
 .void() client_think;            // client-time relative think
 .float client_thinkindex;
@@ -820,8 +819,6 @@ string mvd_name;
 string tfl_endpoint;
 float tfl_debug;
 
-float rewind_barrier;
-float rewind_debug_show;
 float is_small_game; // quad or 1v1
 
 float auto_pug_team;

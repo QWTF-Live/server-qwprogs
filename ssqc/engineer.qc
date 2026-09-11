@@ -165,7 +165,7 @@ void W_FireImpeller() {
     entity hit = FindImpellerTarget(org, 0.985, &direct);
 
     if (rewound)
-        RW_RestoreAll();
+        restoreworld();
 
     float mag = 250;
     vector end;
@@ -1494,7 +1494,7 @@ void RemoveEngEnt(entity bld, float explode, float antilag) {
             rewound = RewindPlayersExcept(owner, bld.building_finish);
         TF_T_Damage(bld, world, world, 500, 0, 0);
         if (rewound)
-            RW_RestoreAll();
+            restoreworld();
     } else {
         if(bld.classname == "building_dispenser")
             owner.has_dispenser = BUILD_STATE_NONE;

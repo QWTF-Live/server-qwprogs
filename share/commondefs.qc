@@ -79,8 +79,8 @@ enumflags {
     REWIND_PROJ_TRAVEL,
     REWIND_GRENADES,
     REWIND_FORWARD_PROJ_SELFKNOCK,
-    REWIND_DOUBLE_COL,
     REWIND_FORWARD_DOORS,
+    REWIND_PROJ_CROSSING,
 };
 
 string REWIND_DESC[] = {
@@ -88,14 +88,14 @@ string REWIND_DESC[] = {
     "rewind on projectile travel",
     "rewind grenade throws",
     "forward projectile self-knockback",
-    "additional collision checks",
     "open doors earlier for hpbs [requires rfd=1]",
+    "catch a player and a projectile crossing paths within a frame",
 };
 
 const float REWIND_DEFAULT_FLAGS = REWIND_PROJ_FIRE |
                                    REWIND_PROJ_TRAVEL |
                                    REWIND_FORWARD_PROJ_SELFKNOCK |
-                                   REWIND_DOUBLE_COL;
+                                   REWIND_PROJ_CROSSING;
 
 
 float RewindFlagEnabled(float flag) {

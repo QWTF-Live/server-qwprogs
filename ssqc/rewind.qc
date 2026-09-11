@@ -338,16 +338,22 @@ void RW_RestoreAll() {
 
 float (string ps_short, string ps_setting, string ps_default) CF_GetSetting;
 
+// `time` may be warped to the command clock inside PlayerPostThink; the
+// rewind log and projectile forwarding are on real time.
+float RealTime() {
+    return cmd_real_time ? cmd_real_time : time;
+}
+
 float RewindPlayersExcept(entity except, float farthest_rewind_point) {
     float rewind_max_offset = (MAX_SNAPSHOTS - 1) * SERVER_FRAME_DT;
     farthest_rewind_point = max(farthest_rewind_point,
-                                time - rewind_max_offset);
+                                RealTime() - rewind_max_offset);
 
     // Det was pushed at remote_time(), let's see if we can get there.
     float rewind_to = max(farthest_rewind_point, remote_time());
 
     // Ignore for LAN pings.
-    if (time - rewind_to < SERVER_FRAME_DT)
+    if (RealTime() - rewind_to < SERVER_FRAME_DT)
         return FALSE;
 
     RL_StashPositions(rewind_players);
@@ -378,14 +384,14 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
     float ping = proj.owner.client_ping;
     float given_ctime = use_ctime;
     float stamp_mode = FALSE;
-    if (!use_ctime && tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_servertime > 0) {
-        use_ctime = proj.owner.cmd_servertime;
+    if (!use_ctime && tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_stamp_clock > 0) {
+        use_ctime = proj.owner.cmd_stamp_clock;
         stamp_mode = TRUE;
     }
     if (use_ctime) {
         // These can be pretty late with sendevent latency on top so let's be
         // conservative.
-        ping = min((time - use_ctime) * 1000,
+        ping = min((RealTime() - use_ctime) * 1000,
                    tf_config.max_rewind_ms - 25);
         // Forward_ProjectOffset takes a server frame off whatever it is given,
         // on the basis that a ping is an estimate.  The stamp is exact, and the
@@ -405,7 +411,7 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
                        dynamic_dt > 0;
 
     float phys_flags = PHYSF_CONSUME_ALL;
-    float stime = time;
+    float stime = RealTime();
 
     if (rewind_hit) {
         stime -= dynamic_dt;
@@ -427,7 +433,7 @@ void Forward_Projectile(int fpp_type, entity proj, float use_ctime) {
 
     if (!proj.voided) {
         RewindSyncTime = ProjRewindForPhys;
-        ft += Phys_Advance(proj, time, phys_flags);
+        ft += Phys_Advance(proj, RealTime(), phys_flags);
         RewindSyncTime = NoRewindSyncFn;
     }
 

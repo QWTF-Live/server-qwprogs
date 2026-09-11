@@ -2824,8 +2824,37 @@ float SpawnProtectWouldStick(entity p) {
     return trace_startsolid && trace_ent.classname == "player" && !trace_ent.spawn_passthrough;
 }
 
+// The command clock chains the msec the engine runs this command with
+// (input_timelength), which is the same length the client replays the frame
+// with, so the client's chain of echoed state time plus frame lengths equals
+// it exactly.  The wire stamp itself can't be used for this: with the
+// current client it steps by its own servo'd clock rather than by msec.
+// Anchored to real time at first use and whenever it drifts more than 50ms
+// from it; in between it is jitter-free.
+static void CmdClock_Update() {
+    if (!tf_config.cmd_time || input_timelength <= 0) {
+        self.cmd_clock = 0;
+        self.cmd_clock_last = 0;
+        self.cmd_stamp_clock = 0;
+        return;
+    }
+    float clk = self.cmd_clock_last + input_timelength;
+    if (!self.cmd_clock_last || fabs(time - clk) > 0.05) {
+        clk = time;
+        self.cmd_clock_k += 1;   // count of (re)anchors, for the trace
+    }
+    self.cmd_clock = clk;
+    self.cmd_clock_last = clk;
+
+    float sclk = self.cmd_stamp_clock + input_timelength;
+    if (!self.cmd_stamp_clock || self.cmd_servertime <= 0 || fabs(self.cmd_servertime - sclk) > 0.05)
+        sclk = self.cmd_servertime;
+    self.cmd_stamp_clock = sclk;
+}
+
 void () PlayerPreThink = {
     FO_UpdateClientPing();
+    CmdClock_Update();
 
     if (self.rj_trace_until > time)
         rj_trace("S: pt t=%.3f org=%v vel=%v og=%.0f\n",
@@ -3214,6 +3243,18 @@ void PlayerPeriodicThink(float is_player) {
 void PlayerKnock_Apply();
 
 void () PlayerPostThink = {
+    // Run the weapon, think and predict-state path on the command clock, so
+    // every schedule set here and every comparison against it uses the clock
+    // the client rebuilds from the echoed state plus exact frame lengths: the
+    // fire frame then falls out the same on both sides.  Anything needing
+    // real time (projectile forwarding, the rewind log) reads cmd_real_time
+    // or runs after the restore.
+    float held_time = time;
+    if (self.cmd_clock) {
+        cmd_real_time = time;
+        time = self.cmd_clock;
+    }
+
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
 
@@ -3226,10 +3267,13 @@ void () PlayerPostThink = {
     // After the weapon frame, so a projectile fired by this command that
     // explodes within its own forward is pushed on this command, not the next.
     PlayerKnock_Apply();
+    Predict_Update(TRUE);
+
+    time = held_time;
+    cmd_real_time = 0;
 
     RW_LogPlayer(self);
     PP_PlayerPostThink();
-    Predict_Update(TRUE);
     PlayerPeriodicThink(TRUE);
 };
 

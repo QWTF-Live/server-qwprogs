@@ -22,6 +22,22 @@ enum {
 // PlayerPostThink.  CSQC sees the stamp as input_servertime for that frame.
 .float cmd_servertime;
 .float cmd_sequence;
+
+// Command clock (tf_config.cmd_time): the client's stamp shifted by a
+// per-player constant so it reads like server time but advances by exactly
+// the command's msec.  `time` is warped to it for the weapon/predict part of
+// PlayerPostThink so schedules and comparisons there use the same clock the
+// client chains from the echoed predict state.  0 when unavailable.
+.float cmd_clock;
+.float cmd_clock_k;              // number of (re)anchors to real time, for the trace
+.float cmd_clock_last;           // for monotonicity
+// Stamp clock: the wire stamp chained by msec instead of read raw.  The raw
+// stamp steps by the client's servo'd clock (+-4ms a frame) so the client
+// can't rebuild it from its own frame lengths; this one it can, exactly.
+// Anchored to the raw stamp at first use and when it drifts >50ms from it.
+// Used for projectile forwarding and echoed in the predict state.
+.float cmd_stamp_clock;
+float cmd_real_time;             // real `time` while the warp is active, else 0
 .float last_remote_time;         // For monoticity of remote_time()
 .float client_lastupdate;
 

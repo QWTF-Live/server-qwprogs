@@ -6,7 +6,7 @@ float remote_time() {
     float adj_ping = max(self.client_ping - SERVER_FRAME_MS, 0);
     float offset = min(adj_ping, tf_config.max_rewind_ms);
 
-    float target = time - offset / 1000.0;
+    float target = (cmd_real_time ? cmd_real_time : time) - offset / 1000.0;
     target = max(target, self.last_remote_time);  // prevent jitter
     self.last_remote_time = target;
 

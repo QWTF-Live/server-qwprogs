@@ -575,6 +575,7 @@ void TFL_SendPredictState(entity to_player, float mask) {
 #define GETF(_field) pstate_server.##_field
 #define COMM(_type, _field) GETF(_field) = Read##_type()
 #define COMM_PM(_type, _field) pstate_server.pmove.##_field = Read##_type()
+#define cmd_stamp_clock cmd_servertime   // the echoed stamp clock lands in pmove.cmd_servertime
 
 void WP_ServerUpdate(float mask);
 
@@ -602,7 +603,7 @@ void TFL_RecvPredictState() {
         COMM_PM(Short, velocity[0]);
         COMM_PM(Short, velocity[1]);
         COMM_PM(Short, velocity[2]);
-        COMM_PM(Float, cmd_servertime);
+        COMM_PM(Float, cmd_stamp_clock);
     }
 
     if (mask & FOWP_FILTER_ENTS) {

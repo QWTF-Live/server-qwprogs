@@ -22,6 +22,15 @@ enum {
 // PlayerPostThink.  CSQC sees the stamp as input_servertime for that frame.
 .float cmd_servertime;
 .float cmd_sequence;
+.float cmd_acked_time;           // server time of the latest snapshot the client had when it generated this command
+
+// Ghost (tf_config.cmd_time): a copy of the player as of its last command
+// applied alive.  Commands the client generated before it learned of its
+// death are run against it, so what the client fired while still predicting
+// itself alive is fired here too, from where the engine's own physics puts it.
+// See Ghost_* in client.qc.
+.entity ghost;
+.float ghost_time;               // real time of the command the ghost was taken after
 
 // Command clock (tf_config.cmd_time): the client's stamp shifted by a
 // per-player constant so it reads like server time but advances by exactly

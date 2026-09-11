@@ -49,3 +49,10 @@ Doors
 - Configurable: `localinfo pusher_buffer` (default: 25), `localinfo pusher_max` (default: 200), `localinfo pusher_share` (default: 1)
 
 Doors, plats and trains are reported to each client advanced along their movement by that client's ping, minus the buffer and capped at the max, so a player at 100ms sees the door where it will be when their commands reach the server. A door about to be opened by a player's current path is additionally reported as already starting to move, hiding the round trip on the trigger. The server's own door never opens early; only what each client is told changes. Everyone above `pusher_buffer` ms feels like they are playing at `pusher_buffer` ms. With `pusher_share 1` every client gets the predicted start; with 0 only the player who will trigger the door.
+
+Firing before death
+-------------------
+- Always on with `cmd_time` (needs the fteqw fork's `.cmd_acked_time`)
+- Configurable: `localinfo ghost_lockout_snapshots` (default: 1)
+
+Commands a client generated before the snapshot carrying its death reached it are run against a copy of the player as of its last command applied alive, with the engine's player physics, so what it fired while still predicting itself alive is fired on the server too, from where those inputs put it. A command generated against one of the last `ghost_lockout_snapshots` snapshots before the death is not replayed.

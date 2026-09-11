@@ -2715,6 +2715,8 @@ void () ToggleInvincibility = {
 void (int weap, float ctime, vector pos, vector angles) CSEv_Attack_ifvv = {
     if (!RewindFlagEnabled(REWIND_SENDEVENT))
         return;
+    if (tf_config.cmd_time)   // the ghost replay covers these on the command path
+        return;
 
     // Only applies to attacks before the last death.   We can't use
     // attack_finished here as there's an 0.3s lockout on spawn that obscures.

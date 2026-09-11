@@ -3242,6 +3242,143 @@ void PlayerPeriodicThink(float is_player) {
 
 void PlayerKnock_Apply();
 
+// ---- Ghost: commands the client generated before it learned of its death ----
+//
+// A dead player's commands keep arriving, and the client that generated them
+// was predicting itself alive until the snapshot carrying the death reached
+// it.  Whatever it fired in those commands it has already shown itself.
+// Rather than have the client report where it was (the sendevent attack),
+// keep a copy of the player as of its last command applied alive and run
+// those commands against it with the engine's own player physics.  The fire
+// then goes through the normal weapon path at the position the server itself
+// computes from the actual inputs, on the command clock, with the stamp
+// forward, and credits the real player.  The copy collides with the map only
+// and touches nothing.  Godmode on it lets a push land (T_Damage pushes
+// before it checks godmode) without a second death.
+//
+// The window is exact: cmd_acked_time is the server time of the latest
+// snapshot the client had received when it generated the command, and every
+// snapshot sent from last_death on carries the death.  localinfo
+// ghost_lockout_snapshots (default 1) ends it early by that many snapshots:
+// a command generated against one of the last N snapshots before the death
+// is not replayed.  Snapshots go out once per client packet, so the client's
+// own command length is the interval.
+
+static entity ghost_stash;   // the player's own state while the ghost runs a command
+
+// Storage only: never linked, thought, touched, run or sent.
+static void Ghost_Neutralise(entity e) {
+    e.classname = "ghost";
+    e.solid = SOLID_NOT;
+    e.movetype = MOVETYPE_NONE;
+    e.flags &= ~FL_CLIENT;
+    e.modelindex = 0;
+    e.model = "";
+    e.effects = 0;
+    e.think = SUB_Null;
+    e.nextthink = 0;
+    e.touch = SUB_Null;
+    e.SendEntity = __NULL__;
+}
+
+// End of every command applied alive.
+static void Ghost_Snapshot() {
+    if (!tf_config.cmd_time || !self.cmd_acked_time ||
+        self.deadflag || self.health <= 0 || self.playerclass == 0)
+        return;
+    if (!self.ghost)
+        self.ghost = spawn();
+    copyentity(self, self.ghost);
+    Ghost_Neutralise(self.ghost);
+    self.ghost_time = RealTime();
+}
+
+// Was the command being run generated before the client saw its death?
+static float Ghost_Window() {
+    if (!tf_config.cmd_time || !self.ghost || !self.cmd_acked_time)
+        return FALSE;
+    if (self.ghost_time > self.last_death)   // the ghost is from a later life
+        return FALSE;
+    float lockout = CF_GetSetting("gls", "ghost_lockout_snapshots", "1") * input_timelength;
+    if (self.cmd_acked_time >= self.last_death - lockout)
+        return FALSE;
+    if (RealTime() - self.last_death > tf_config.max_rewind_ms / 1000 + 0.1)   // sanity bound
+        return FALSE;
+    return TRUE;
+}
+
+// The command's own state belongs to the command, not to either copy.
+static void Ghost_Carry(entity from, entity to) {
+    to.v_angle = from.v_angle;
+    // From the command itself: PlayerPreThink may have consumed the entity's
+    // copy (a respawn clears the buttons that triggered it).
+    to.button0 = (input_buttons & BUTTON_ATTACK) ? 1 : 0;
+    to.button1 = from.button1;
+    to.button2 = (input_buttons & BUTTON_JUMP) ? 1 : 0;
+    to.impulse = input_impulse;
+    to.movement = from.movement;
+    to.cmd_servertime = from.cmd_servertime;
+    to.cmd_sequence = from.cmd_sequence;
+    to.cmd_acked_time = from.cmd_acked_time;
+    to.cmd_clock = from.cmd_clock;
+    to.cmd_clock_k = from.cmd_clock_k;
+    to.cmd_clock_last = from.cmd_clock_last;
+    to.cmd_stamp_clock = from.cmd_stamp_clock;
+    to.client_ping = from.client_ping;
+    to.pending_knock = from.pending_knock;   // one list, drained by whoever runs the command
+    to.last_death = from.last_death;
+    to.ghost = from.ghost;
+    to.ghost_time = from.ghost_time;
+    to.rj_trace_until = from.rj_trace_until;
+    to.rj_cmd_trace_until = from.rj_cmd_trace_until;
+}
+
+// Run the current command as the ghost: the player entity takes on the ghost's
+// state for the duration, so the fire is owned by the real player.
+static void Ghost_RunCommand() {
+    if (!ghost_stash)
+        ghost_stash = spawn();
+    copyentity(self, ghost_stash);
+    copyentity(self.ghost, self);
+    Ghost_Carry(ghost_stash, self);
+    // Undo the storage neutralisation for the duration: the engine's player
+    // physics takes its movement type from the entity.
+    self.classname = "player";
+    self.movetype = MOVETYPE_WALK;
+    self.modelindex = ghost_stash.modelindex;
+    self.model = ghost_stash.model;
+    self.touch = ghost_stash.touch;
+    self.solid = SOLID_NOT;
+    self.flags |= FL_CLIENT | FL_GODMODE;
+    float held_hit = self.dimension_hit;
+    self.dimension_hit = 0;   // the map only: nothing to touch, nothing touched
+
+    runstandardplayerphysics(self);
+
+    rj_trace("S: ghost seq=%.0f acked=%.3f death=%.3f t=%.3f clk=%.4f",
+             self.cmd_sequence, self.cmd_acked_time, self.last_death, RealTime(), self.cmd_clock);
+    rj_trace(" att=%.0f org=%v vel=%v\n", self.button0, self.origin, self.velocity);
+
+    FO_CheckClientThink();
+    PlayerPostThinkAlive();
+    PlayerKnock_Apply();
+
+    rj_trace("S: ghost-state af=%.4f cnt=%.4f ti=%.0f tfs=%.0f weap=%.0f imp=%.0f",
+             self.attack_finished, self.client_nextthink, self.client_thinkindex, self.tfstate, FO_CurrentWeapon(), self.impulse);
+    rj_trace(" dead=%.0f hp=%.0f ammo=%.0f\n", self.deadflag, self.health, self.currentammo);
+
+    self.dimension_hit = held_hit;
+    self.flags &= ~FL_GODMODE;
+    copyentity(self, self.ghost);
+    Ghost_Neutralise(self.ghost);
+
+    entity knocks = self.pending_knock;
+    copyentity(ghost_stash, self);
+    self.pending_knock = knocks;
+    Ghost_Neutralise(ghost_stash);
+    setorigin(self, self.origin);   // relink after the copy
+}
+
 void () PlayerPostThink = {
     // Run the weapon, think and predict-state path on the command clock, so
     // every schedule set here and every comparison against it uses the clock
@@ -3258,7 +3395,10 @@ void () PlayerPostThink = {
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
 
-    if (self.deadflag || self.playerclass == 0) {
+    float ghosted = Ghost_Window();
+    if (ghosted) {
+        Ghost_RunCommand();   // the alive path and the knock drain, on the ghost
+    } else if (self.deadflag || self.playerclass == 0) {
         ImpulseCommands();
     } else {
         PlayerPostThinkAlive();
@@ -3266,8 +3406,11 @@ void () PlayerPostThink = {
 
     // After the weapon frame, so a projectile fired by this command that
     // explodes within its own forward is pushed on this command, not the next.
-    PlayerKnock_Apply();
+    if (!ghosted)
+        PlayerKnock_Apply();
     Predict_Update(TRUE);
+    if (!ghosted)
+        Ghost_Snapshot();
 
     time = held_time;
     cmd_real_time = 0;
@@ -3428,6 +3571,10 @@ void () CountMatchPlayersAndReset = {
 }
 
 void () ClientDisconnect = {
+    if (self.ghost) {
+        remove(self.ghost);
+        self.ghost = world;
+    }
     local string st;
     local float fr;
 

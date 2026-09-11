@@ -34,6 +34,10 @@ New commands
 * Added in `fo_hittext_colour3 "1 0 0"` - colour of friendly hittext if fo_hittext_friendly is set to 1 (rgb 0-1)
 
 * Added in csqc hitaudio and hittext for testing `localinfo zutmode 1` on server to enable.
+
+* `localinfo cmd_time 1` run weapon timing on the client's per-command clock (default on; needs the fteqw fork)
+* `localinfo ghost_lockout_snapshots 1` commands generated against the last N snapshots before a death are not replayed for the dead player
+* `localinfo pusher_buffer 25`, `localinfo pusher_max 200`, `localinfo pusher_share 1` per-client door/pusher advance, ms (see antilag.md)
   
 Client commands, default shown:
   

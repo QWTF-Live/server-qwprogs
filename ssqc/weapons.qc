@@ -1093,7 +1093,6 @@ float AntilagKnock(entity e, float dmg) {
 
     setorigin(knock_e, e.origin);
     setsize(knock_e, '0 0 0', '0 0 0');
-    knock_e.s_origin = e.s_origin;
     knock_e.owner = e.owner;
     knock_e.classname = e.classname;
     knock_e.oldenemy = other;

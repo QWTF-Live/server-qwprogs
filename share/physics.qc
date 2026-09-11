@@ -8,12 +8,9 @@ static const float phys_tic = 0.005;
 enumflags {
     PHYSF_CONSUME_ALL,
     PHYSF_REWIND_PLAYERS,
-    PHYSF_FORWARD_KNOCK,
     PHYSF_FAIL_STARTSOLID,
     PHYSF_SIM,
 };
-
-const float FL_FORWARD_KNOCK = FL_GODMODE;
 
 void AugmentGrenadeImpact();
 
@@ -31,8 +28,6 @@ static void Phys_Impact(entity e, float dt, float phys_flags) {
     }
 
     if (e.touch) {
-        if (phys_flags & PHYSF_FORWARD_KNOCK)
-            e.flags |= FL_FORWARD_KNOCK;
         // Valid only inside this touch: an impact the engine's own flight
         // delivers later has none, and is on real time instead.
         e.impact_phys_time = e.phys_time + dt;

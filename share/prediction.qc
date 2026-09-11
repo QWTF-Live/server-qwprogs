@@ -825,7 +825,7 @@ void Predict_InitDefaultConfig() {
     tf_config.fo_concuss = 0;
     tf_config.new_balance_flags = 0;
     tf_config.pipe_cooldown = 0.5;
-    tf_config.cmd_time = 0;
+    tf_config.cmd_time = 1;
 }
 
 #ifdef SSQC

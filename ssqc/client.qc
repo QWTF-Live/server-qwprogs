@@ -2839,6 +2839,8 @@ void () PlayerPreThink = {
             }
 
             self.alpha = 0;   // opaque again
+        } else {
+            self.alpha = kSpawnPassthroughAlpha;   // still pass-through, no longer exempt
         }
     }
 

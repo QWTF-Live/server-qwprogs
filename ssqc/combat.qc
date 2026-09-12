@@ -742,6 +742,11 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 // and gave a spy away; alpha rides the existing model, so a disguised spy
 // stays whoever they are pretending to be, just faded.
 const float kSpawnProtectAlpha = 0.6;
+// An all-time attacker keeps the pass-through after the window, but not the
+// damage exemption: less transparent from then on, so teammates can tell that
+// their rockets and grenades now land on them, while still readable as
+// pass-through.
+const float kSpawnPassthroughAlpha = 0.8;
 
 // Spawn pass-through is SOLID_CORPSE, which player movement and the client's
 // prediction pass through.  A trace hits a corpse only when its contents mask

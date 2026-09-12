@@ -2787,29 +2787,38 @@ static void ConcUpdate() {
     }
 }
 
-// Would turning solid right now leave us wedged inside another player?
-// SOLID_CORPSE entities are absent from this trace, so anyone still protected
-// does not count -- they are passable and cannot wedge us.
 // Ends the window early.  The point of it is to stop a spawn wave jamming
 // itself in its own doorway; once the enemy is already on top of the spawn it
 // would be cover instead, letting people walk out through a fight untouchable
 // by anything but a shotgun.
 const float kSpawnProtectEnemyDist = 750;
 
+// Runs on every command of every protected player, so it walks the client
+// slots rather than findradius over every entity on the map.
+static float spawnprotect_slots;
 float SpawnProtectEnemyNear(entity p) {
-    entity te = findradius(p.origin, kSpawnProtectEnemyDist);
-    while (te) {
-        if (te != p && te.classname == "player" && te.health > 0 &&
-            te.team_no && te.team_no != p.team_no)
+    if (!spawnprotect_slots)
+        spawnprotect_slots = cvar("maxclients");
+    for (float i = 1; i <= spawnprotect_slots; i++) {
+        entity te = edict_num(i);
+        if (te == p || te.classname != "player" || te.health <= 0)
+            continue;
+        if (!te.team_no || te.team_no == p.team_no)
+            continue;
+        if (vlen(te.origin - p.origin) <= kSpawnProtectEnemyDist)
             return TRUE;
-        te = te.chain;
     }
     return FALSE;
 }
 
+// Would turning solid right now leave us wedged inside another player?
+// Only a player counts: stuck in the map, waiting cannot help, so we go
+// solid at once as we always did.  SOLID_CORPSE entities are absent from
+// this trace, so anyone still protected does not count -- they are passable
+// and cannot wedge us.
 float SpawnProtectWouldStick(entity p) {
     tracebox(p.origin, p.mins, p.maxs, p.origin, MOVE_NORMAL, p);
-    return trace_startsolid;
+    return trace_startsolid && trace_ent.classname == "player";
 }
 
 void () PlayerPreThink = {

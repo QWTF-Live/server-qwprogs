@@ -169,7 +169,13 @@ float round_winner_print_health;
 
 float team_no_attack;
 .float spawn_protect_until;   // offense pass-through window after spawning
-.float spawn_passthrough;     // SOLID_CORPSE at rest, flipped solid for attacks (SpawnProtect_SetSolid)
+.float spawn_passthrough;     // phased: movement passes through them and they through everyone; traces still hit
+.float dimension_move;        // fteqw fork: the mask player movement is blocked by, when it differs from dimension_hit
+// Dimension bits.  Traces use dimension_hit (full for everyone: every attack
+// hits everyone) against dimension_solid; movement uses dimension_move.
+const float DIM_ALL = 255;
+const float DIM_PLAYER = 1;   // dimension_solid of a normal player
+const float DIM_PHASED = 2;   // dimension_solid of a spawn pass-through player
 .float spawn_protect_grace;   // window over but someone is inside us: stay pass-through until this, at most
 .float spawn_protect_start;   // when the window began, for the pulse
 .float spawn_pulse_phase;     // accumulated pulse phase, so the rate can change without a jump

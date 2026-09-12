@@ -743,7 +743,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 // stays whoever they are pretending to be, just faded.
 const float kSpawnProtectAlpha = 0.6;
 // Pass-through without the exemption: the window has ended but the player is
-// still SOLID_CORPSE, for good for an all-time attacker or during the grace
+// still phased, for good for an all-time attacker or during the grace
 // below for anyone still wedged in someone.  Less transparent than the
 // window itself, so teammates can tell that their splash now lands on them,
 // while still readable as pass-through.
@@ -773,7 +773,7 @@ void SpawnProtect_Pulse() {
         entity e = edict_num(i);
         if (!e.spawn_protect_until || time > e.spawn_protect_until)
             continue;
-        if (e.solid != SOLID_CORPSE && e.solid != SOLID_SLIDEBOX)
+        if (e.solid != SOLID_SLIDEBOX)
             continue;
 
         float ramp = (e.spawn_protect_until - kSpawnPulseFlashFor) - e.spawn_protect_start;
@@ -799,40 +799,6 @@ void SpawnProtect_Pulse() {
 // player telefragged.
 const float kSpawnProtectGrace = 2;
 
-// Spawn pass-through is SOLID_CORPSE, which player movement and the client's
-// prediction pass through.  A trace hits a corpse only when its contents mask
-// says so, and a player's default point trace does not, so every attack that
-// traces -- hitscan, melee, the projectile integrator, whose traces pass the
-// owner -- would go straight through a protected player, for good in the
-// case of an all-time attacker who never drops it.  Rather than widen the
-// mask at every such site, flip the few players in this state: corpse at
-// rest, which is what pmove and the snapshots see, and slidebox for the
-// stretches where anything else can touch them -- each command's PostThink,
-// where the weapons run, and the physics phase between StartFrame and
-// EndFrame, where projectiles fly.  Nothing runs between a command's
-// PreThink and its pmove, so movement always finds them corpse.  Solid is
-// read at trace time, so no relink is needed.
-//
-// Players are the first maxclients edicts, so this is a few dozen field
-// reads rather than a classname scan of every entity, and nothing to keep in
-// step on death or disconnect: a freed slot reads as unflagged.
-//
-// Only a player currently corpse or slidebox is touched.  Anything that takes
-// a player out of play sets SOLID_NOT -- death, observing, class change,
-// intermission, a kick -- and must stay that way whether or not it thought
-// to clear the flag.
-void SpawnProtect_SetSolid(float to_solid) {
-    if (!spawnprotect_maxclients)
-        spawnprotect_maxclients = cvar("maxclients");
-    for (float i = 1; i <= spawnprotect_maxclients; i++) {
-        entity e = edict_num(i);
-        if (!e.spawn_passthrough)
-            continue;
-        if (e.solid != SOLID_CORPSE && e.solid != SOLID_SLIDEBOX)
-            continue;
-        e.solid = to_solid;
-    }
-}
 
 float SpawnProtectActive(entity p) {
     return p.spawn_protect_until && time <= p.spawn_protect_until;

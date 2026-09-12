@@ -2117,15 +2117,18 @@ void () PutClientInServer = {
     self.solid = SOLID_SLIDEBOX;
     self.movetype = MOVETYPE_WALK;
 
-    // Fresh spawns briefly pass through other players, so a spawn wave does
-    // not jam itself in its own doorway.  Offense only once the game is live,
-    // both teams during prematch when everyone is milling around their own
-    // spawn.  SOLID_CORPSE is non-solid to SOLID_SLIDEBOX by design, and
-    // unlike the dimension masks it reaches the client, so movement stays
-    // predicted.  Note it is not per-team: enemies pass through too.  Attacks
-    // still land: see SpawnProtect_SetSolid.
+    // Fresh spawns are phased for a while, so a spawn wave does not jam itself
+    // in its own doorway: everyone's movement passes through them and theirs
+    // through everyone, while every trace still hits them.  Dimension masks
+    // carry it; the fork reports an entity non-solid to a viewer whose
+    // movement passes through it, so prediction agrees on both sides.  Not
+    // per-team: enemies pass through too.  Splash from teammates is exempt
+    // (SpawnProtectedFrom) for the window only.
     self.spawn_protect_until = 0;
     self.spawn_passthrough = FALSE;
+    self.dimension_solid = DIM_PLAYER;
+    self.dimension_hit = DIM_ALL;
+    self.dimension_move = DIM_ALL & ~DIM_PHASED;
     self.alpha = 0;   // 0 is remapped to opaque
     float spawn_prot = CF_GetSetting("spd", "spawn_protect_dur", "5");
     // All-time attackers always get it: they are offense every round by
@@ -2134,8 +2137,9 @@ void () PutClientInServer = {
     if (spawn_prot > 0 && (cb_prematch ||
                            self.all_time == ALL_TIME_ATTACK ||
                            self.team_no == team_no_attack)) {
-        self.solid = SOLID_CORPSE;
         self.spawn_passthrough = TRUE;
+        self.dimension_solid = DIM_PHASED;
+        self.dimension_move = DIM_ALL & ~(DIM_PHASED | DIM_PLAYER);
         self.alpha = kSpawnProtectAlpha;
         self.spawn_protect_until = time + spawn_prot;
         self.spawn_protect_start = time;
@@ -2813,12 +2817,12 @@ float SpawnProtectEnemyNear(entity p) {
 
 // Would turning solid right now leave us wedged inside another player?
 // Only a player counts: stuck in the map, waiting cannot help, so we go
-// solid at once as we always did.  SOLID_CORPSE entities are absent from
-// this trace, so anyone still protected does not count -- they are passable
-// and cannot wedge us.
+// solid at once as we always did.
 float SpawnProtectWouldStick(entity p) {
     tracebox(p.origin, p.mins, p.maxs, p.origin, MOVE_NORMAL, p);
-    return trace_startsolid && trace_ent.classname == "player";
+    // A phased player does not count: each still passes through the other
+    // after we go solid.
+    return trace_startsolid && trace_ent.classname == "player" && !trace_ent.spawn_passthrough;
 }
 
 void () PlayerPreThink = {
@@ -2836,18 +2840,18 @@ void () PlayerPreThink = {
             self.spawn_protect_grace = time + kSpawnProtectGrace;
     }
 
-    // Guarded on SOLID_CORPSE so dying mid-window does not resurrect the
-    // corpse's solidity -- PlayerDie has already set SOLID_NOT by then.
+    // Guarded on being in play so dying mid-window does not resurrect
+    // anything -- PlayerDie has already set SOLID_NOT and cleared the flag.
     if (self.spawn_protect_grace) {
-        if (self.solid != SOLID_CORPSE) {
+        if (!self.spawn_passthrough || self.solid != SOLID_SLIDEBOX) {
             self.spawn_protect_grace = 0;
         } else {
             float wedged = SpawnProtectWouldStick(self);
             if (!wedged || time >= self.spawn_protect_grace) {
                 self.spawn_protect_grace = 0;
-                self.solid = SOLID_SLIDEBOX;
                 self.spawn_passthrough = FALSE;
-                setorigin(self, self.origin);   // relink
+                self.dimension_solid = DIM_PLAYER;
+                self.dimension_move = DIM_ALL & ~DIM_PHASED;
                 self.alpha = 0;   // opaque again
 
                 // Still inside us after the whole grace period: telefragged.
@@ -3209,8 +3213,6 @@ void PlayerPeriodicThink(float is_player) {
 }
 
 void () PlayerPostThink = {
-    SpawnProtect_SetSolid(SOLID_SLIDEBOX);   // the weapons run here
-
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
 
@@ -3223,8 +3225,6 @@ void () PlayerPostThink = {
     RW_LogPlayer(self);
     Predict_Update(TRUE);
     PlayerPeriodicThink(TRUE);
-
-    SpawnProtect_SetSolid(SOLID_CORPSE);     // back to pass-through for the next command's move
 };
 
 void () UpdateAllClientsTeamScores = {
@@ -4109,7 +4109,6 @@ void ClientsFlagUpdate(entity only) {
 
 void EndFrame() {
     ClientsFlagUpdate(world);
-    SpawnProtect_SetSolid(SOLID_CORPSE);     // what the snapshots and the next moves see
 }
 
 #if 0

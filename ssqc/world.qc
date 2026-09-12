@@ -485,7 +485,6 @@ void AddToBodyQueue(entity ent) {
 };
 
 void () StartFrame = {
-    SpawnProtect_SetSolid(SOLID_SLIDEBOX);   // projectiles fly in this phase
     SpawnProtect_Pulse();
 
     teamplay = cvar("teamplay");

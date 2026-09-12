@@ -2812,35 +2812,40 @@ float SpawnProtectWouldStick(entity p) {
 void () PlayerPreThink = {
     FO_UpdateClientPing();
 
-    // Guarded on SOLID_CORPSE so dying mid-window does not resurrect the
-    // corpse's solidity -- PlayerDie has already set SOLID_NOT by then.
+    // The window ends: the explosion exemption goes now (that is all
+    // SpawnProtectActive gates on).  All-time attackers keep the pass-through
+    // and the transparency for good.  Everyone else enters the grace check
+    // below, which turns them solid as soon as that would not wedge anyone.
     if (self.spawn_protect_until &&
         (time > self.spawn_protect_until || SpawnProtectEnemyNear(self))) {
         self.spawn_protect_until = 0;
+        self.alpha = kSpawnPassthroughAlpha;   // pass-through, no longer exempt
+        if (self.all_time != ALL_TIME_ATTACK)
+            self.spawn_protect_grace = time + kSpawnProtectGrace;
+    }
 
-        // All-time attackers keep the pass-through and the transparency for
-        // good; for them only the explosion exemption ends here, since that is
-        // all SpawnProtectActive gates on.  Everyone else goes back to normal.
-        if (self.all_time != ALL_TIME_ATTACK) {
-            if (self.solid == SOLID_CORPSE) {
-                float wedged = SpawnProtectWouldStick(self);
-
+    // Guarded on SOLID_CORPSE so dying mid-window does not resurrect the
+    // corpse's solidity -- PlayerDie has already set SOLID_NOT by then.
+    if (self.spawn_protect_grace) {
+        if (self.solid != SOLID_CORPSE) {
+            self.spawn_protect_grace = 0;
+        } else {
+            float wedged = SpawnProtectWouldStick(self);
+            if (!wedged || time >= self.spawn_protect_grace) {
+                self.spawn_protect_grace = 0;
                 self.solid = SOLID_SLIDEBOX;
                 self.spawn_passthrough = FALSE;
                 setorigin(self, self.origin);   // relink
+                self.alpha = 0;   // opaque again
 
-                // Anyone still standing inside us is telefragged.  They held
-                // control of the collision throughout -- we were passable and they
-                // chose to occupy us -- and the alternative is two players wedged
-                // solid with neither able to move out.  spawn_tdeath skips its own
-                // owner, so this cannot kill us.
+                // Still inside us after the whole grace period: telefragged.
+                // They held control of the collision throughout -- we were
+                // passable and they chose to stay -- and the alternative is two
+                // players wedged solid with neither able to move out.
+                // spawn_tdeath skips its own owner, so this cannot kill us.
                 if (wedged)
                     spawn_tdeath(self.origin, self);
             }
-
-            self.alpha = 0;   // opaque again
-        } else {
-            self.alpha = kSpawnPassthroughAlpha;   // still pass-through, no longer exempt
         }
     }
 

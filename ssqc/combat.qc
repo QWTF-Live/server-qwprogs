@@ -742,11 +742,17 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 // and gave a spy away; alpha rides the existing model, so a disguised spy
 // stays whoever they are pretending to be, just faded.
 const float kSpawnProtectAlpha = 0.6;
-// An all-time attacker keeps the pass-through after the window, but not the
-// damage exemption: less transparent from then on, so teammates can tell that
-// their rockets and grenades now land on them, while still readable as
-// pass-through.
+// Pass-through without the exemption: the window has ended but the player is
+// still SOLID_CORPSE, for good for an all-time attacker or during the grace
+// below for anyone still wedged in someone.  Less transparent than the
+// window itself, so teammates can tell that their splash now lands on them,
+// while still readable as pass-through.
 const float kSpawnPassthroughAlpha = 0.8;
+// When the window ends with someone still inside the player, the pass-through
+// (not the exemption) lasts up to this much longer, ending the moment they
+// come apart; only if they are still overlapping at the end is the other
+// player telefragged.
+const float kSpawnProtectGrace = 2;
 
 // Spawn pass-through is SOLID_CORPSE, which player movement and the client's
 // prediction pass through.  A trace hits a corpse only when its contents mask

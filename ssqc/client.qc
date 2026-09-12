@@ -2122,9 +2122,10 @@ void () PutClientInServer = {
     // both teams during prematch when everyone is milling around their own
     // spawn.  SOLID_CORPSE is non-solid to SOLID_SLIDEBOX by design, and
     // unlike the dimension masks it reaches the client, so movement stays
-    // predicted.  Note it is not per-team: enemies pass through too, and
-    // hitscan misses until it expires.
+    // predicted.  Note it is not per-team: enemies pass through too.  Attacks
+    // still land: see SpawnProtect_SetSolid.
     self.spawn_protect_until = 0;
+    self.spawn_passthrough = FALSE;
     self.alpha = 0;   // 0 is remapped to opaque
     float spawn_prot = CF_GetSetting("spd", "spawn_protect_dur", "5");
     // All-time attackers always get it: they are offense every round by
@@ -2134,6 +2135,7 @@ void () PutClientInServer = {
                            self.all_time == ALL_TIME_ATTACK ||
                            self.team_no == team_no_attack)) {
         self.solid = SOLID_CORPSE;
+        self.spawn_passthrough = TRUE;
         self.alpha = kSpawnProtectAlpha;
         self.spawn_protect_until = time + spawn_prot;
     }
@@ -2824,6 +2826,7 @@ void () PlayerPreThink = {
                 float wedged = SpawnProtectWouldStick(self);
 
                 self.solid = SOLID_SLIDEBOX;
+                self.spawn_passthrough = FALSE;
                 setorigin(self, self.origin);   // relink
 
                 // Anyone still standing inside us is telefragged.  They held
@@ -3187,6 +3190,8 @@ void PlayerPeriodicThink(float is_player) {
 }
 
 void () PlayerPostThink = {
+    SpawnProtect_SetSolid(SOLID_SLIDEBOX);   // the weapons run here
+
     FO_CheckClientThink();
     UpdateScoreboardInfo(self);
 
@@ -3199,6 +3204,8 @@ void () PlayerPostThink = {
     RW_LogPlayer(self);
     Predict_Update(TRUE);
     PlayerPeriodicThink(TRUE);
+
+    SpawnProtect_SetSolid(SOLID_CORPSE);     // back to pass-through for the next command's move
 };
 
 void () UpdateAllClientsTeamScores = {
@@ -4083,6 +4090,7 @@ void ClientsFlagUpdate(entity only) {
 
 void EndFrame() {
     ClientsFlagUpdate(world);
+    SpawnProtect_SetSolid(SOLID_CORPSE);     // what the snapshots and the next moves see
 }
 
 #if 0

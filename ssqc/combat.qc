@@ -743,21 +743,40 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 // stays whoever they are pretending to be, just faded.
 const float kSpawnProtectAlpha = 0.6;
 
-// Spawn-protected players are SOLID_CORPSE, which a default trace passes
-// straight through -- so without this the other team could not shoot them.
-// Widen the shooter's mask around the trace itself; nothing runs in between,
-// so it cannot leak into their own movement traces.
+// Spawn pass-through is SOLID_CORPSE, which player movement and the client's
+// prediction pass through.  A trace hits a corpse only when its contents mask
+// says so, and a player's default point trace does not, so every attack that
+// traces -- hitscan, melee, the projectile integrator, whose traces pass the
+// owner -- would go straight through a protected player, for good in the
+// case of an all-time attacker who never drops it.  Rather than widen the
+// mask at every such site, flip the few players in this state: corpse at
+// rest, which is what pmove and the snapshots see, and slidebox for the
+// stretches where anything else can touch them -- each command's PostThink,
+// where the weapons run, and the physics phase between StartFrame and
+// EndFrame, where projectiles fly.  Nothing runs between a command's
+// PreThink and its pmove, so movement always finds them corpse.  Solid is
+// read at trace time, so no relink is needed.
 //
-// Applied for every shooter, since a trace cannot ask whose side the target is
-// on.  Harmless: a teammate's shot registers but TF_T_Damage discards same
-// team damage.  Nothing else in the mod uses SOLID_CORPSE -- dead players are
-// SOLID_NOT -- so this can only ever match a spawn-protected player.
-void HitscanBegin(entity e) {
-    e.hitcontentsmaski = CONTENTBITS_BOXSOLID | CONTENTBIT_CORPSE;
-}
-
-void HitscanEnd(entity e) {
-    e.hitcontentsmaski = 0;
+// Players are the first maxclients edicts, so this is a few dozen field
+// reads rather than a classname scan of every entity, and nothing to keep in
+// step on death or disconnect: a freed slot reads as unflagged.
+//
+// Only a player currently corpse or slidebox is touched.  Anything that takes
+// a player out of play sets SOLID_NOT -- death, observing, class change,
+// intermission, a kick -- and must stay that way whether or not it thought
+// to clear the flag.
+static float spawnprotect_maxclients;
+void SpawnProtect_SetSolid(float to_solid) {
+    if (!spawnprotect_maxclients)
+        spawnprotect_maxclients = cvar("maxclients");
+    for (float i = 1; i <= spawnprotect_maxclients; i++) {
+        entity e = edict_num(i);
+        if (!e.spawn_passthrough)
+            continue;
+        if (e.solid != SOLID_CORPSE && e.solid != SOLID_SLIDEBOX)
+            continue;
+        e.solid = to_solid;
+    }
 }
 
 float SpawnProtectActive(entity p) {

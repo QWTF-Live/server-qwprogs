@@ -479,6 +479,7 @@ void () PlayerDie = {
     self.view_ofs = '0 0 -8';
     self.deadflag = DEAD_DYING;
     self.solid = SOLID_NOT;
+    self.spawn_passthrough = FALSE;
     self.flags = self.flags - (self.flags & 512);
     self.movetype = MOVETYPE_TOSS;
 

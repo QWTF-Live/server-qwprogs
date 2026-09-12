@@ -2499,6 +2499,7 @@ void () PlayerObserverMode = {
     self.waterlevel = 3;
     self.takedamage = DAMAGE_NO;
     self.solid = SOLID_NOT;
+    self.spawn_passthrough = FALSE;
     self.movetype = MOVETYPE_NOCLIP;
 
     sprint(self, PRINT_HIGH, "Observer mode\n");

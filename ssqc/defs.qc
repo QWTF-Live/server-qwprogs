@@ -57,6 +57,7 @@ entity msg_entity;              // destination of single entity writes
 void () main;
 void () StartFrame;
 void SpawnProtect_SetSolid(float to_solid);   // combat.qc
+void SpawnProtect_Pulse();
 
 void () PlayerPreThink;         // Called every frame before physics are run
 void () PlayerPostThink;        // Called every frame after physics are run

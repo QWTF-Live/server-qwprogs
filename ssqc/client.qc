@@ -2138,6 +2138,9 @@ void () PutClientInServer = {
         self.spawn_passthrough = TRUE;
         self.alpha = kSpawnProtectAlpha;
         self.spawn_protect_until = time + spawn_prot;
+        self.spawn_protect_start = time;
+        self.spawn_pulse_phase = 0;
+        self.spawn_pulse_next = 0;
     }
 
     self.show_hostile = 0;

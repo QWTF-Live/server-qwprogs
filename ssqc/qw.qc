@@ -171,6 +171,9 @@ float team_no_attack;
 .float spawn_protect_until;   // offense pass-through window after spawning
 .float spawn_passthrough;     // SOLID_CORPSE at rest, flipped solid for attacks (SpawnProtect_SetSolid)
 .float spawn_protect_grace;   // window over but someone is inside us: stay pass-through until this, at most
+.float spawn_protect_start;   // when the window began, for the pulse
+.float spawn_pulse_phase;     // accumulated pulse phase, so the rate can change without a jump
+.float spawn_pulse_next;      // next alpha write: the pulse is sampled, not written every frame
 .float team_no;                 // The team you belong to
 .float all_time;                // Automatically join attacking/defending team during quads
 .float lives;                   // The number of lives you have left

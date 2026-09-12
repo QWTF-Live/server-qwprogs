@@ -748,6 +748,51 @@ const float kSpawnProtectAlpha = 0.6;
 // window itself, so teammates can tell that their splash now lands on them,
 // while still readable as pass-through.
 const float kSpawnPassthroughAlpha = 0.8;
+// Through the window the player's alpha pulses between the protected value
+// and what it will be when the window ends, opaque for most and the
+// pass-through value for an all-time attacker: slowly at first, the rate
+// rising steadily until it is a flash for the last half second, so everyone
+// can read how long the exemption has left.  The phase accumulates per frame
+// so the rate can change without the pulse jumping.
+//
+// Every alpha write is a delta to every client that can see the player, and
+// a spawn wave is many players at once standing still, so the alpha is
+// sampled at kSpawnPulseSampleHz rather than written every frame.
+const float kSpawnPulseSlowHz = 0.5;
+const float kSpawnPulseFastHz = 8;
+const float kSpawnPulseFlashFor = 0.5;
+const float kSpawnPulseSampleHz = 16;
+
+static float spawnprotect_maxclients;   // players are the first maxclients edicts
+
+// Once per physics frame, from StartFrame.
+void SpawnProtect_Pulse() {
+    if (!spawnprotect_maxclients)
+        spawnprotect_maxclients = cvar("maxclients");
+    for (float i = 1; i <= spawnprotect_maxclients; i++) {
+        entity e = edict_num(i);
+        if (!e.spawn_protect_until || time > e.spawn_protect_until)
+            continue;
+        if (e.solid != SOLID_CORPSE && e.solid != SOLID_SLIDEBOX)
+            continue;
+
+        float ramp = (e.spawn_protect_until - kSpawnPulseFlashFor) - e.spawn_protect_start;
+        float frac = ramp > 0 ? bound(0, (time - e.spawn_protect_start) / ramp, 1) : 1;
+        float hz = kSpawnPulseSlowHz + (kSpawnPulseFastHz - kSpawnPulseSlowHz) * frac;
+        e.spawn_pulse_phase += hz * frametime * 2 * M_PI;
+
+        if (time < e.spawn_pulse_next)
+            continue;
+        e.spawn_pulse_next = time + 1 / kSpawnPulseSampleHz;
+        float mix = 0.5 - 0.5 * cos(e.spawn_pulse_phase);
+
+        float end_alpha = (e.all_time == ALL_TIME_ATTACK) ? kSpawnPassthroughAlpha : 1;
+        float a = kSpawnProtectAlpha + (end_alpha - kSpawnProtectAlpha) * mix;
+        if (a != e.alpha)
+            e.alpha = a;
+    }
+}
+
 // When the window ends with someone still inside the player, the pass-through
 // (not the exemption) lasts up to this much longer, ending the moment they
 // come apart; only if they are still overlapping at the end is the other
@@ -776,7 +821,6 @@ const float kSpawnProtectGrace = 2;
 // a player out of play sets SOLID_NOT -- death, observing, class change,
 // intermission, a kick -- and must stay that way whether or not it thought
 // to clear the flag.
-static float spawnprotect_maxclients;
 void SpawnProtect_SetSolid(float to_solid) {
     if (!spawnprotect_maxclients)
         spawnprotect_maxclients = cvar("maxclients");

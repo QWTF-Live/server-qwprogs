@@ -8,7 +8,6 @@ void () EMPGrenadeTouch;
 void () EMPGrenadeExplode;
 void () TeamFortress_FinishedBuilding;
 void () Dispenser_Die;
-void () CheckDistance;
 void (entity disp) Engineer_Dispenser_InsertAmmo;
 void (entity disp) Engineer_Dispenser_InsertArmor;
 void (entity disp) Engineer_Dispenser_Repair;
@@ -964,7 +963,6 @@ void () TeamFortress_FinishedBuilding = {
     if (engineer_move)
         self.owner = ro;
 
-    local float csqcactive = infokeyf(self.owner, INFOKEY_P_CSQCACTIVE);
     
     oldself = self;
     self = self.owner;
@@ -1086,7 +1084,6 @@ void () TeamFortress_FinishedBuilding = {
 
 void () T_Dispenser = {
     local entity oldself;
-    local entity dist_checker;
 
     if (other == world)
         return;
@@ -1100,14 +1097,6 @@ void () T_Dispenser = {
 
     if ((other.building == world) && (other.building_wait < time)) {
         other.building = self;
-        if(!infokeyf(self, INFOKEY_P_CSQCACTIVE)) {
-            dist_checker = spawn();
-            dist_checker.classname = "timer";
-            dist_checker.owner = other;
-            dist_checker.enemy = self;
-            dist_checker.think = CheckDistance;
-            dist_checker.nextthink = time + 0.3;
-        }
         oldself = self;
         self = other;
         Menu_Dispenser();
@@ -1150,7 +1139,6 @@ void () Dispenser_Die = {
 };
 
 void (entity disp) Engineer_UseDispenser = {
-    local entity dist_checker;
     // engineer hits enemy dispenser - dismantle
     if(!(disp.team_no > 0 && disp.team_no == self.team_no)) {
         self.ammo_cells = self.ammo_cells + 50;
@@ -1199,14 +1187,6 @@ void (entity disp) Engineer_UseDispenser = {
 
     self.building = disp;
     Menu_EngineerFix_Dispenser();
-    if(!infokeyf(self, INFOKEY_P_CSQCACTIVE)) {
-        dist_checker = spawn();
-        dist_checker.classname = "timer";
-        dist_checker.owner = self;
-        dist_checker.enemy = disp;
-        dist_checker.think = CheckDistance;
-        dist_checker.nextthink = time + 0.3;
-    }
 };
 
 void (entity disp) Engineer_Dispenser_InsertAmmo = {
@@ -1398,16 +1378,7 @@ void (entity gun) Engineer_UseSentryGun = {
 };
 
 void (entity gun) Engineer_SentryGun_ShowMenu = {
-    local entity dist_checker;
 
-    if(!infokeyf(self, INFOKEY_P_CSQCACTIVE)) {
-        dist_checker = spawn();
-        dist_checker.classname = "timer";
-        dist_checker.owner = self;
-        dist_checker.enemy = gun;
-        dist_checker.think = CheckDistance;
-        dist_checker.nextthink = time + 0.3;
-    }
     Menu_EngineerFix_SentryGun();
 };
 
@@ -1501,23 +1472,6 @@ void (entity gunhead) CheckSentry = {
         bprint(PRINT_MEDIUM, self.real_owner.netname, "'s sentry gun malfunctioned\n");
         Sentry_Die();
     }
-};
-
-void () CheckDistance = {
-    local vector dist;
-
-    if (self.owner.building != self.enemy) {
-        dremove(self);
-        return;
-    }
-    dist = self.enemy.origin - self.owner.origin;
-    if (vlen(dist) > ENG_BUILDING_MAINT_DISTANCE) {
-        Menu_Close(self.owner);
-        self.owner.building = world;
-        dremove(self);
-        return;
-    }
-    self.nextthink = time + 0.3;
 };
 
 float IsEngEnt(entity ent) {

@@ -301,9 +301,7 @@ void () QuadRoundBegin = {
 	//	lightstyle (0, "m");
     te = find(world, classname, "observer");
     while (te) {
-        if(infokeyf(te, INFOKEY_P_CSQCACTIVE)) {
-            UpdateClientPrematch(te, FALSE);
-        }
+        UpdateClientPrematch(te, FALSE);
         te = find(te, classname, "observer");
     }
 
@@ -415,16 +413,12 @@ void () StartQuadRound =
 			p.modelindex = 0;
 			p.model = string_null;
 		}
-        if(infokeyf(p, INFOKEY_P_CSQCACTIVE)) {
-            UpdateClientPrematch(p, TRUE);
-        }
+        UpdateClientPrematch(p, TRUE);
 		p = find(p, classname, "player");
 	}
     te = find(world, classname, "observer");
     while (te) {
-        if(infokeyf(te, INFOKEY_P_CSQCACTIVE)) {
-            UpdateClientPrematch(te, TRUE);
-        }
+        UpdateClientPrematch(te, TRUE);
         te = find(te, classname, "observer");
     }
 
@@ -434,9 +428,7 @@ void () StartQuadRound =
 	if (rounds == 1) {
 		while (p != world) {
 			if (p.netname != "" && p.team_no && p.playerclass) {
-				if(infokeyf(p, INFOKEY_P_CSQCACTIVE)) {
-					UpdateClientPrematch(p, TRUE);
-				}
+				UpdateClientPrematch(p, TRUE);
 			}
 
 			p = find(p, classname, "player");
@@ -469,16 +461,12 @@ void () StartQuadRound =
 				p.modelindex = 0;
 				p.model = string_null;
 			}
-            if(infokeyf(p, INFOKEY_P_CSQCACTIVE)) {
-                UpdateClientPrematch(p, TRUE);
-            }
+            UpdateClientPrematch(p, TRUE);
 			p = find(p, classname, "player");
 		}
         te = find(world, classname, "observer");
         while (te) {
-            if(infokeyf(te, INFOKEY_P_CSQCACTIVE)) {
-                UpdateClientPrematch(te, TRUE);
-            }
+            UpdateClientPrematch(te, TRUE);
             te = find(te, classname, "observer");
         }
 

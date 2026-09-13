@@ -162,9 +162,8 @@ void (entity targ, entity inflictor, entity attacker, float damage) HitSound = {
                 trueattacker = attacker;
             }
 
-            local float csqcactive = infokeyf(trueattacker, INFOKEY_P_CSQCACTIVE);
 
-            if(zutmode && csqcactive)
+            if(zutmode)
                 return;	
 
             if (trueattacker == targ)
@@ -223,8 +222,7 @@ void (entity targ, entity attacker) KillSound = {
                 trueattacker = attacker;
             }
             
-            local float csqcactive = infokeyf(trueattacker, INFOKEY_P_CSQCACTIVE);
-            if(csqcactive && zutmode)
+            if(zutmode)
                  return;
                  
             local string killsound = infokey(trueattacker, "killsound");
@@ -278,7 +276,7 @@ void BroadcastHitFlag(entity targ, entity inflictor, entity attacker,
     if (attacker.classname != "player")
         attacker = attacker.real_owner;
 
-    if (!infokeyf(attacker, INFOKEY_P_CSQCACTIVE) || (attacker.tfstate & TFSTATE_FLASHED))
+    if ((attacker.tfstate & TFSTATE_FLASHED))
         return;
 
     // Feigned spies act as corpses unless they're a teammate

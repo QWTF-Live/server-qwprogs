@@ -536,85 +536,12 @@ void (entity pe_player) Vote_Menu = {
     else if (time - pe_player.menu_time < CF_MAPVOTE_FORCESHOW)
         f_timeleft = CF_MAPVOTE_FORCESHOW - (time - pe_player.menu_time);
 
-    if(infokeyf(pe_player, INFOKEY_P_CSQCACTIVE)) {
-        //fte+csqc has its own team menu
-        //ask the client to activate it
-        Menu_Close(pe_player);
-        pe_player.vote_close = 1;
-        UpdateClientMenu_Vote(pe_player, floor(f_timeleft - 0.1));
-        return;
-    }
-
-    s_choose = strzone(strcat("Vote for next map (closes in ", strcat(ftos(floor(f_timeleft - 0.1)), "s):\n\n")));
-    s_tmp1 = strzone("");
-    s_tmp2 = strzone("");
-    s_tmp3 = strzone("");
-    s_tmp4 = strzone("");
-    s_tmp5 = strzone("");
-
-    if (vote1_map != string_null) {
-        strunzone(s_tmp1);
-        s_tmp1 = strcat(Q"\s[1]\s ", vote1_map);
-        if (vote1_cnt)
-            s_tmp1 = strzone(strcat(s_tmp1, strcat(" (", strcat(ftos(vote1_cnt), " votes)"))));
-        else
-            s_tmp1 = strzone(strcat(s_tmp1, "          "));
-
-        if (strlen(s_tmp1) > f_width) f_width = strlen(s_tmp1);
-    }
-    if (vote2_map != string_null) {
-        strunzone(s_tmp2);
-        s_tmp2 = strcat(Q"\s[2]\s ", vote2_map);
-        if (vote2_cnt)
-            s_tmp2 = strzone(strcat(s_tmp2, strcat(" (", strcat(ftos(vote2_cnt), " votes)"))));
-        else
-            s_tmp2 = strzone(strcat(s_tmp2, "          "));
-
-        if (strlen(s_tmp2) > f_width) f_width = strlen(s_tmp2);
-    }
-    if (vote3_map != string_null) {
-        strunzone(s_tmp3);
-        if (!vote_decider || vote3_cnt)
-            s_tmp3 = strcat(Q"\s[3]\s ", vote3_map);
-        if (vote3_cnt)
-            s_tmp3 = strzone(strcat(s_tmp3, strcat(" (", strcat(ftos(vote3_cnt), " votes)"))));
-        else
-            s_tmp3 = strzone(strcat(s_tmp3, "          "));
-
-        if (strlen(s_tmp3) > f_width) f_width = strlen(s_tmp3);
-    }
-    if (vote4_map != string_null) {
-        strunzone(s_tmp4);
-        if (!vote_decider || vote4_cnt)
-            s_tmp4 = strcat(Q"\s[4]\s ", vote4_map);
-        if (vote4_cnt)
-            s_tmp4 = strzone(strcat(s_tmp4, strcat(" (", strcat(ftos(vote4_cnt), " votes)"))));
-        else
-            s_tmp4 = strzone(strcat(s_tmp4, "          "));
-
-        if (strlen(s_tmp4) > f_width) f_width = strlen(s_tmp4);
-    }
-    if (vote5_map != string_null) {
-        strunzone(s_tmp5);
-        if (!vote_decider || vote5_cnt)
-            s_tmp5 = strcat(Q"\s[5]\s ", vote5_map);
-        if (vote5_cnt)
-            s_tmp5 = strzone(strcat(s_tmp5, strcat(" (", strcat(ftos(vote5_cnt), " votes)"))));
-        else
-            s_tmp5 = strzone(strcat(s_tmp5, "          "));
-
-        if (strlen(s_tmp5) > f_width) f_width = strlen(s_tmp5);
-    }
-
-    s_vote1 = strzone(strpadr(s_tmp1, f_width));
-    s_vote2 = strzone(strpadr(s_tmp2, f_width));
-    s_vote3 = strzone(strpadr(s_tmp3, f_width));
-    s_vote4 = strzone(strpadr(s_tmp4, f_width));
-    s_vote5 = strzone(strpadr(s_tmp5, f_width));
-
-    Status_Menu(pe_player, Vote_Input, s_choose, s_vote1, "\n", s_vote2, "\n", s_vote3, "\n", s_vote4, "\n\n", s_vote5, "\n");
-    strunzone(s_choose); strunzone(s_vote1); strunzone(s_vote2); strunzone(s_vote3); strunzone(s_vote4); strunzone(s_vote5);
-    strunzone(s_tmp1); strunzone(s_tmp2); strunzone(s_tmp3); strunzone(s_tmp4); strunzone(s_tmp5);
+    //fte+csqc has its own team menu
+    //ask the client to activate it
+    Menu_Close(pe_player);
+    pe_player.vote_close = 1;
+    UpdateClientMenu_Vote(pe_player, floor(f_timeleft - 0.1));
+    return;
 };
 
 // removes a vote (if a user changes his mind)
@@ -1651,33 +1578,6 @@ void (float update) Vote_Menu_Map = {
         return;
     }
 
-    if(infokeyf(self, INFOKEY_P_CSQCACTIVE)){
-        UpdateClientMenu_Maps(self);
-        return;
-    }
-
-    // prepare menu strings
-    local string s_title = strcat("\sEquations\s\nPage ",ftos(self.current_menu_page),"\n\n");
-    local string s_8   = Q"\s[8]\s Previous            \n";
-    local string s_9   = Q"\s[9]\s Next                \n";
-    local string s_0   = Q"\s[0]\s Exit                \n";
-    local string s_choices = "";
-    local float count = 0, remainder = 0, page = 0;
-    local entity mc = find(world, classname, "map_candidate");
-    while(mc) {
-        page = floor(count / 7);
-        if(page == (self.current_menu_page - 1)) {
-            remainder = count % 7;
-            s_choices = strcat(s_choices, "\s[\s", ftos(remainder + 1), "\s]\s ", strpadr(mc.netname, 20), "\n");
-        } else if(page >= self.current_menu_page) {
-            break;
-        }
-        count++;
-        mc = find(mc, classname, "map_candidate");
-    }
-
-    Status_Menu(self, Vote_Menu_Map_Input, s_title, s_choices, "\n", s_8, s_9, s_0);
-    //self.current_menu_type = ADMIN_MENU_TYPE_MAIN;
-
-    strunzone(s_choices); strunzone(s_title);
+    UpdateClientMenu_Maps(self);
+    return;
 };

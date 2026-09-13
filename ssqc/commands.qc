@@ -178,12 +178,11 @@ void (float cap1, float cap2) CaptainMode = {
     captainmode = 1;
     bprint(PRINT_HIGH, "\x10\sCaptain Mode\s\x11\s:\s All available players are now Observers\n");
     local string st = 0;
-    local float userid = 0, csqcactive = 0;
+    local float userid = 0;
     local entity oldself;// = self;
     local entity te = find (world, classname, "player");
     while (te != world) {
         userid = infokeyf(te, INFOKEY_P_USERID);
-        csqcactive = infokeyf(te, INFOKEY_P_CSQCACTIVE);
         //te.immune_to_check = time + 10;
         if(userid == cap1 || userid == cap2) {
             te.captain = 9;
@@ -220,18 +219,9 @@ void (float cap1, float cap2) CaptainMode = {
             bprint(PRINT_HIGH, " \bis the captain for team\b ");
             bprint(PRINT_HIGH, TeamToString(te.team_no));
             bprint(PRINT_HIGH, "\b.\b\n");
-            if(csqcactive) {
-                //fte+csqc has its own team menu
-                //ask the client to activate it
-                Menu_Close(te);
-                UpdateClientMenu_Captain(te);
-            } else {
-                //self = te;
-                Menu_Close(te);
-                te.current_menu_type = ADMIN_MENU_TYPE_CAPTAINSELECT;
-                te.current_menu_page = 1;
-                //Menu_Admin();
-            }
+            //the client has its own team menu; ask it to activate it
+            Menu_Close(te);
+            UpdateClientMenu_Captain(te);
         } else {
             te.captain = 0;
             //self = te;
@@ -249,9 +239,7 @@ void (float cap1, float cap2) CaptainMode = {
 
             te.impulse = 0;
         }
-        if(csqcactive) {
-            UpdateClient_Captains(te, cap1, cap2);
-        }
+        UpdateClient_Captains(te, cap1, cap2);
         SetEquipmentForPlayer(te);
         te = find (te, classname, "player");
     }

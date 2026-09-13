@@ -37,14 +37,12 @@ void () SpectatorConnect = {
         stuffcmd(self, ".cfg\n");
     }
     self.motd = 0;
-    if(infokeyf(self, INFOKEY_P_CSQCACTIVE)) {
-        InitAllStatuses(self);
-        ClientsFlagUpdate(self);
-        UpdateClientMOTD(self);
-        UpdateClientTeamScores(self);
-        UpdateClientPrematch(self, !cb_prematch);
-        UpdateClient_VoteMap_AddAll(self);
-    }
+    InitAllStatuses(self);
+    ClientsFlagUpdate(self);
+    UpdateClientMOTD(self);
+    UpdateClientTeamScores(self);
+    UpdateClientPrematch(self, !cb_prematch);
+    UpdateClient_VoteMap_AddAll(self);
 
     TeamFortress_StartTimers();
     TeamFortress_RemovePracticeSpawn(self);

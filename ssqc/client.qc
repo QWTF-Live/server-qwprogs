@@ -215,10 +215,8 @@ void InitPrematch()
     pm_message.nextthink = 1;
     
     game_locked = CF_GetSetting("lg", "locked_game", "off");
-    if(infokeyf(self, INFOKEY_P_CSQCACTIVE)) {
-        UpdateClientPrematch(self, !cb_prematch);
-        UpdateClientMOTD(self);
-    }
+    UpdateClientPrematch(self, !cb_prematch);
+    UpdateClientMOTD(self);
 }
 
 static void SetAllRoles(float pc, float gren, float limit) {
@@ -3352,9 +3350,7 @@ void (entity pl) ResetAndRespawnPlayer = {
         setspawnparms(pl);
         PutClientInServer();
     }
-    if(infokeyf(pl, INFOKEY_P_CSQCACTIVE)) {
-        UpdateClientPrematch(pl, FALSE);
-    }
+    UpdateClientPrematch(pl, FALSE);
 }
 
 void () CountMatchPlayersAndReset = {

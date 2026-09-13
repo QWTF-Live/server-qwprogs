@@ -550,7 +550,7 @@ void NotifyPauseUnpause(float is_pause) {
     entity* p = find_list(classname, "player", EV_STRING, count);
 
     for (float i = 0; i < count; i++) {
-        if (p[i].netname == "" || !infokeyf(p[i], INFOKEY_P_CSQCACTIVE))
+        if (p[i].netname == "")
             continue;
 
         msg_entity = p[i];

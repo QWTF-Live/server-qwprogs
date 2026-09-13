@@ -812,14 +812,16 @@ void (entity inflictor, entity attacker, float bounce,
                     && (head.classname != "building_sentrygun")
                     && (head.classname != "building_sentrygun_base")
                     && (points > 0)) {
-                    vector pmd_before = head.velocity;
-                    head.velocity = org - inflictor.origin;
-                    head.velocity = head.velocity * (points / 20);
-                    PMD_Knock(head, head.velocity - pmd_before, points);
-                    Predict_AddFilterEnt(head, inflictor);
+                    if (!Knock_Defer(head, inflictor.origin, KK_BOUNCE)) {
+                        vector pmd_before = head.velocity;
+                        head.velocity = org - inflictor.origin;
+                        head.velocity = head.velocity * (points / 20);
+                        PMD_Knock(head, head.velocity - pmd_before, points);
 
-                    NB_ConcCapAction(head, head.playerclass, &head.tfstate,
-                                     time, &head.conc_cap_time, kLaunch);
+                        NB_ConcCapAction(head, head.playerclass, &head.tfstate,
+                                         time, &head.conc_cap_time, kLaunch);
+                    }
+                    Predict_AddFilterEnt(head, inflictor);
 
                     if (head.classname != "player") {
                         if (head.flags & FL_ONGROUND)

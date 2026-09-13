@@ -1050,6 +1050,86 @@ static void Antilag_Knock(entity e) {
     dremove(e);
 }
 
+// A blast the world schedules -- a grenade fuse, a conc -- goes off in the
+// server's physics phase, between two commands.  Which command runs next is
+// down to when the player's packet happens to arrive, so the push landed a
+// frame either side of where the client predicted it about half the time, and
+// the view lurched when the correction came back.
+//
+// Hold it until the command whose clock has reached the moment the blast was
+// due instead.  Both sides can name that command from the fuse time alone,
+// which is already replicated, so neither has to guess and neither can be
+// thrown off by the network.  This is what the shooter's own rocket push has
+// always done, and it is why rocket jumps agreed and grenade jumps did not.
+//
+// Held over: the push, and for a conc the launch.  Not the health damage,
+// which stays where the blast found you, and not the filter that retires the
+// client's copy of the push -- that is added when the blast goes off, as it
+// always was, and the couple of frames the nudge is held for cover the wait.
+void T_Knock_Expire();
+
+// The due time on this player's own command clock, which is the clock their
+// PlayerPostThink runs on and the one their client predicts against.
+entity Knock_Defer(entity targ, vector src, float kind) {
+    if (!blast_due || targ.classname != "player")
+        return world;
+
+    entity k = spawn();
+    setorigin(k, src);
+    setsize(k, '0 0 0', '0 0 0');
+    k.classname = "pending_knock";
+    k.knock_kind = kind;
+    k.owner = targ;
+    k.heat = blast_base;
+    k.forward_knock = blast_due + targ.cmd_clock_skew;
+    k.knock_next = targ.pending_knock;
+    targ.pending_knock = k;
+    k.think = T_Knock_Expire;
+    k.nextthink = RealTime() + 1;   // backstop: they stopped sending commands
+    return k;
+}
+
+// Re-run at the due command, against the position that command left them in,
+// which is the position the client's own prediction has reached there too.
+static void Blast_Knock(entity e) {
+    entity targ = e.owner;
+    vector before = targ.velocity;
+    float points = CalcRadiusDamage(e.origin, targ, e.knock_flags, e.heat);
+
+    Knock_Unlink(e);
+    if (points > 0) {
+        float moment = Class_ScaleMoment(targ.playerclass, points * e.knock_ratio);
+        targ.velocity += CalcKnock(e.origin, targ, e.knock_flags, moment);
+        PMD_Knock(targ, targ.velocity - before, moment);
+        rj_trace("S: knock t=%.3f seq=%.0f due=%.3f targ=%s", time, targ.cmd_sequence,
+                 e.forward_knock, targ.netname);
+        rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", e.origin,
+                 targ.origin + (targ.mins + targ.maxs) * 0.5,
+                 vlen(targ.origin + (targ.mins + targ.maxs) * 0.5 - e.origin),
+                 moment, targ.velocity - before);
+    }
+    dremove(e);
+}
+
+// The conc's launch assigns velocity outright rather than adding to it, so its
+// direction is the whole of the effect and has to come from the position the
+// server and the client agree on.
+static void Bounce_Knock(entity e) {
+    entity targ = e.owner;
+    vector before = targ.velocity;
+    vector org = targ.origin + (targ.mins + targ.maxs) * 0.5;
+    float points = e.heat - 0.5 * vlen(org - e.origin);
+
+    Knock_Unlink(e);
+    if (points > 0) {
+        targ.velocity = (org - e.origin) * (points / 20);
+        PMD_Knock(targ, targ.velocity - before, points);
+        NB_ConcCapAction(targ, targ.playerclass, &targ.tfstate,
+                         time, &targ.conc_cap_time, kLaunch);
+    }
+    dremove(e);
+}
+
 // Backstop: the owner left before the due time.
 void T_Knock_Expire() {
     Knock_Unlink(self);
@@ -1064,7 +1144,11 @@ void PlayerKnock_Apply() {
         next = k.knock_next;
         if (time >= k.forward_knock) {
             self = k;
-            Antilag_Knock(k);
+            switch (k.knock_kind) {
+                case KK_BLAST:  Blast_Knock(k);   break;
+                case KK_BOUNCE: Bounce_Knock(k);  break;
+                default:        Antilag_Knock(k); break;
+            }
             self = held_self;
         }
         k = next;
@@ -1288,10 +1372,15 @@ void FO_GrenExplode(entity e) {
     ASSERTF_TRUE(FO_GrenGetExp(e.fpp.gren_type, exp));
 
     deathmsg = exp.deathmsg;
+    // The fuse time the client predicted this explosion from, so both sides
+    // hang the push on the same command.
+    blast_due = e.fpp.expires_at;
+    blast_base = exp.dmg;
     if (exp.type == kRadiusDamage)
         T_RadiusDamage(self, self.owner, exp.dmg, world);
     else if (exp.type == kRadiusBounce)
         T_RadiusBounce(self, self.owner, exp.dmg, world);
+    blast_due = 0;
 
     RenderExplosion(e.origin);
 }

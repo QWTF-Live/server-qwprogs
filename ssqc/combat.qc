@@ -608,14 +608,24 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
             if (deathmsg != DMSG_GREN_NAIL && deathmsg != DMSG_GREN_SHOCK && deathmsg != DMSG_GREN_BURST) {
                 targ.immune_to_check = time + damage / 20;
 
-                float moment = Class_ScaleMoment(targ.playerclass, damage);
-                vector pmd_before = targ.velocity;
-                targ.velocity += CalcKnock(inflictor.origin, targ, fl, moment);
-                PMD_Knock(targ, targ.velocity - pmd_before, moment);
-                vector pmd_at = targ.origin + (targ.mins + targ.maxs) * 0.5;
-                rj_trace("S: knock t=%.3f seq=%.0f targ=%s", time, targ.cmd_sequence, targ.netname);
-                rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", inflictor.origin, pmd_at,
-                         vlen(pmd_at - inflictor.origin), moment, targ.velocity - pmd_before);
+                entity held = Knock_Defer(targ, inflictor.origin, KK_BLAST);
+                if (held) {
+                    // The blast-time pass has already taken armour and class
+                    // scaling off the damage; carry that as a ratio so the due
+                    // command can redo the falloff from where it stands and
+                    // arrive at the same number by the same route.
+                    held.knock_ratio = original_damage ? damage / original_damage : 1;
+                    held.knock_flags = fl;
+                } else {
+                    float moment = Class_ScaleMoment(targ.playerclass, damage);
+                    vector pmd_before = targ.velocity;
+                    targ.velocity += CalcKnock(inflictor.origin, targ, fl, moment);
+                    PMD_Knock(targ, targ.velocity - pmd_before, moment);
+                    vector pmd_at = targ.origin + (targ.mins + targ.maxs) * 0.5;
+                    rj_trace("S: knock t=%.3f seq=%.0f targ=%s", time, targ.cmd_sequence, targ.netname);
+                    rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", inflictor.origin, pmd_at,
+                             vlen(pmd_at - inflictor.origin), moment, targ.velocity - pmd_before);
+                }
                 Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
             }
         }

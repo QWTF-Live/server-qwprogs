@@ -16,6 +16,22 @@ enum {
 .float rj_cmd_trace_until;       // RJ_TRACE: per-command stamp trace after a fire
 .entity pending_knock;           // deferred self-knocks, applied in PlayerPostThink (see AntilagKnock)
 .entity knock_next;              // chain of the above on a knock entity
+.float knock_kind;               // what a pending knock entity carries (see weapons.qc)
+.float knock_ratio;              // blast knock: damage scaling the blast-time pass applied
+.float knock_flags;              // blast knock: the KF_ flags it was evaluated with
+
+enum {
+    KK_SELF_PROJ,       // the shooter's own push, re-run through the radius pass
+    KK_BLAST,           // one target's push from a world blast
+    KK_BOUNCE,          // one target's conc launch
+};
+
+// A blast the world schedules, held until the command it was due on; see
+// weapons.qc.  Returns the held knock so the caller can fill in what its own
+// kind needs, or world when there is nothing to hold it against.
+float blast_due;        // command clock the blast was due on, 0 when unscheduled
+float blast_base;       // the blast's damage before the radius falloff
+entity Knock_Defer(entity targ, vector src, float kind);
 // Engine-provided (fteqw fork): the client's own clock stamp and input frame
 // number for the command being run, valid from PlayerPreThink through
 // PlayerPostThink.  CSQC sees the stamp as input_servertime for that frame.

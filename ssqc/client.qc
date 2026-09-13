@@ -3451,6 +3451,8 @@ void () ClientConnect = {
     // (sv_csqc_required, set in worldspawn).
     bprint(PRINT_HIGH, self.netname, " entered the game\n");
 
+    SendPushVolumes(self);
+
     self.connect_time = time;
     self.motd = 0;
     self.is_spectator = 0;

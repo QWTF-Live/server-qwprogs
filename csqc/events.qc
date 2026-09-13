@@ -416,6 +416,9 @@ void() CSQC_Parse_Event = {
             TFL_SaveConfig();
             break;
 
+        case MSG_PUSHVOLS:
+            PM_SetPushVolumes(readbyte());
+            break;
         case MSG_PMDEBUG: {
             float pseq = readfloat();
             vector porg, pvel;

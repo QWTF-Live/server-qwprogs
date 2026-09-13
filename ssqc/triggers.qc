@@ -735,3 +735,67 @@ void () trigger_jumper = {
     self.spawnflags = self.spawnflags | PUSH_MEGAJUMPER;
     trigger_push();
 }
+
+// ---- jump pad prediction (experiment) ----
+//
+// Push volumes never move and their effect is a constant, so the client can
+// run them itself rather than waiting a round trip to be launched.  Sent once
+// when a player joins; the client tests its predicted box against them after
+// each movement frame and sets the same velocity.  See csqc/pmove.qc.
+//
+// An aimed pad computes its arc once, a second after the map starts, and then
+// pushes with that same vector forever, so it travels as well as a plain one.
+// The gated ones depend on goal state the client does not have, and the
+// flagged ones vary by what is touching them; those keep waiting for the
+// server, as everything did before.
+const float PUSHPRED_MAX = 32;
+
+void SendPushVolumes(entity pl) {
+    int count;
+    entity* list = find_list(classname, "trigger_push", EV_STRING, count);
+
+    int n = 0, n_sent;
+    for (int i = 0; i < count && n < PUSHPRED_MAX; i++) {
+        entity e = list[i];
+        if (e.else_goal || e.goal_no || e.spawnflags)
+            continue;   // gated or a variant: leave it to the server
+        n++;
+    }
+
+    n_sent = n;
+    msg_entity = pl;
+    WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+    WriteByte(MSG_MULTICAST, MSG_PUSHVOLS);
+    WriteByte(MSG_MULTICAST, n);
+    for (int i = 0; i < count && n > 0; i++) {
+        entity e = list[i];
+        if (e.else_goal || e.goal_no || e.spawnflags)
+            continue;
+        WriteCoord(MSG_MULTICAST, e.absmin_x);
+        WriteCoord(MSG_MULTICAST, e.absmin_y);
+        WriteCoord(MSG_MULTICAST, e.absmin_z);
+        WriteCoord(MSG_MULTICAST, e.absmax_x);
+        WriteCoord(MSG_MULTICAST, e.absmax_y);
+        WriteCoord(MSG_MULTICAST, e.absmax_z);
+        vector v = e.target ? e.movedir : e.speed * e.movedir * 10;
+        WriteCoord(MSG_MULTICAST, v_x);
+        WriteCoord(MSG_MULTICAST, v_y);
+        WriteCoord(MSG_MULTICAST, v_z);
+        n--;
+    }
+    multicast('0 0 0', MULTICAST_ONE_R);
+
+    if (pm_debug) {
+        sprint(pl, PRINT_HIGH, strcat("pmd: sent ", ftos(n_sent), " of ",
+               ftos(count), " push volumes\n"));
+        for (int i = 0; i < count; i++) {
+            entity e = list[i];
+            if (!e.else_goal && !e.goal_no && !e.spawnflags)
+                continue;
+            sprint(pl, PRINT_HIGH, strcat("pmd:   skipped pad flags=", ftos(e.spawnflags),
+                   " goal=", ftos(e.goal_no)));
+            sprint(pl, PRINT_HIGH, strcat(" else=", ftos(e.else_goal),
+                   " target=", e.target ? e.target : "-", "\n"));
+        }
+    }
+}

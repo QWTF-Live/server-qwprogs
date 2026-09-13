@@ -56,6 +56,7 @@ entity msg_entity;              // destination of single entity writes
 // required prog functions
 void () main;
 void () StartFrame;
+void SendPushVolumes(entity pl);   // triggers.qc
 float SpawnProtectedFrom(entity targ, entity inflictor, entity attacker);   // combat.qc
 void SpawnProtect_End(entity p);
 void SpawnProtect_Pulse();

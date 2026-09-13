@@ -255,6 +255,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define MSG_MIGRATE_LOGIN   33
 #define MSG_SPAWN_DEBUG     34
 #define MSG_PMDEBUG         35
+#define MSG_PUSHVOLS        36
 
 // What happened to a player during one command, as each side saw it.  The
 // client records its own while predicting; the server records its own and

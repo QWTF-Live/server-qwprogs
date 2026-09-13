@@ -195,6 +195,98 @@ enumflags {
 };
 DEFCVAR_FLOAT(fopmd_graph, 0);
 
+// ---- jump pad prediction (experiment) ----
+//
+// Push volumes are static and their effect is a constant, so the prediction
+// can run them itself instead of being launched a round trip late.  The server
+// sends the plain ones when we join (SendPushVolumes); anything aimed or gated
+// is left to arrive as state, as all of them used to.
+DEFCVAR_FLOAT(fopm_pushpred, 1);
+
+static const float PUSHPRED_MAX = 32;
+struct PM_Push { vector mins, maxs, vel; };
+static PM_Push pm_push[PUSHPRED_MAX];
+static float pm_npush;
+
+void PM_SetPushVolumes(float n) {
+    pm_npush = n > PUSHPRED_MAX ? PUSHPRED_MAX : n;
+    printf("pmd: %i push volumes for prediction\n", (int)pm_npush);
+    float verbose = CVARF(fopmd_debug) > 1;
+    for (float i = 0; i < n; i++) {
+        vector mins, maxs, vel;
+        mins_x = readcoord(); mins_y = readcoord(); mins_z = readcoord();
+        maxs_x = readcoord(); maxs_y = readcoord(); maxs_z = readcoord();
+        vel_x  = readcoord(); vel_y  = readcoord(); vel_z  = readcoord();
+        if (i >= PUSHPRED_MAX)
+            continue;
+        pm_push[i].mins = mins;
+        pm_push[i].maxs = maxs;
+        pm_push[i].vel = vel;
+        if (verbose)
+            printf("pmd:   pad %v .. %v vel=%v\n", mins, maxs, vel);
+    }
+}
+
+// Does the segment from a to b touch the box the way the server would?  One
+// axis at a time, narrowing the range of the segment that could still be
+// inside all of them.
+//
+// Leaving does not count.  The server picks triggers up from the move's own
+// traces and from where the move ended, so entering one, crossing it, or
+// staying in it all touch, but a frame that starts inside and ends outside
+// does not -- and on a pad that frame is a second launch the server never
+// gave.
+static float PM_SegHitsBox(vector a, vector b, vector lo, vector hi) {
+    vector d = b - a;
+    float tmin = 0, tmax = 1, t1, t2, t;
+
+    for (float axis = 0; axis < 3; axis++) {
+        float da = axis == 0 ? d_x : (axis == 1 ? d_y : d_z);
+        float aa = axis == 0 ? a_x : (axis == 1 ? a_y : a_z);
+        float la = axis == 0 ? lo_x : (axis == 1 ? lo_y : lo_z);
+        float ha = axis == 0 ? hi_x : (axis == 1 ? hi_y : hi_z);
+
+        if (fabs(da) < 0.000001) {
+            if (aa < la || aa > ha)
+                return FALSE;   // parallel to this slab and outside it
+            continue;
+        }
+        t1 = (la - aa) / da;
+        t2 = (ha - aa) / da;
+        if (t1 > t2) { t = t1; t1 = t2; t2 = t; }
+        if (t1 > tmin) tmin = t1;
+        if (t2 < tmax) tmax = t2;
+        if (tmin > tmax)
+            return FALSE;
+    }
+    if (tmin <= 0 && tmax < 1)
+        return FALSE;   // started inside and left: the server does not re-touch
+    return TRUE;
+}
+
+// The engine collects the triggers a player sweeps through during the move and
+// touches them after it, so a volume entered and left inside one frame still
+// fires.  Testing only where the frame ended misses the fast ones by a frame,
+// which on a pad is the difference between being launched now and next frame.
+// Sweep the player's box along the move instead, which is the same as sweeping
+// its origin through the volume grown by the box.
+static void PM_PushVolumes(entity ent, vector from) {
+    if (!CVARF(fopm_pushpred) || !pm_npush)
+        return;
+    // The volume arrives as the absolute bounds the server keeps, which the
+    // engine already grew by a unit when it linked the trigger, and the box it
+    // tests against them is grown by a unit as well.  Match both.
+    const vector margin = '1 1 1';
+    for (float i = 0; i < pm_npush; i++) {
+        vector lo = pm_push[i].mins - ent.maxs - margin;
+        vector hi = pm_push[i].maxs - ent.mins + margin;
+        if (!PM_SegHitsBox(from, ent.origin, lo, hi))
+            continue;
+        ent.velocity = pm_push[i].vel;
+        PMD_Event(PMDE_PUSH);
+    }
+}
+
 static const float NHIST = 21;
 struct PM_History {
     vector org, vel;
@@ -762,7 +854,9 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         if (pm.seq == clientcommandframe)
             PM_InputFrame();
 
+        vector pm_moved_from = ent.origin;
         RunPlayerPhysics();
+        PM_PushVolumes(ent, pm_moved_from);
 
         if (!CVARF(fopm_nonudge) && pm.seq != clientcommandframe) {
             float slack = 0;

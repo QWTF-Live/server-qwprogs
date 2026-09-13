@@ -555,7 +555,8 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
         nudge->trace_seq = pm.seq;
         rj_trace("C: nudge seq=%.0f win=%.3f..%.3f itime=%.3f nat=%s",
                  pm.seq, pm.interp_t, pm.interp_t + input_timelength, nudge->itime, NAT_tos(nudge->nat));
-        rj_trace(" org=%v vel=%v knock=%v\n", ent.origin, pm.ent.velocity, knock);
+        rj_trace(" org=%v src=%v d=%.2f dmg=%.1f vel=%v knock=%v\n", ent.origin,
+                 nudge->org, vlen(targ_org - nudge->org), dmg, pm.ent.velocity, knock);
         rj_trace_until_seq = pm.seq + 30;
     }
 

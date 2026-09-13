@@ -812,8 +812,10 @@ void (entity inflictor, entity attacker, float bounce,
                     && (head.classname != "building_sentrygun")
                     && (head.classname != "building_sentrygun_base")
                     && (points > 0)) {
+                    vector pmd_before = head.velocity;
                     head.velocity = org - inflictor.origin;
                     head.velocity = head.velocity * (points / 20);
+                    PMD_Knock(head, head.velocity - pmd_before, points);
                     Predict_AddFilterEnt(head, inflictor);
 
                     NB_ConcCapAction(head, head.playerclass, &head.tfstate,

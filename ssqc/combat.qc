@@ -612,6 +612,10 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                 vector pmd_before = targ.velocity;
                 targ.velocity += CalcKnock(inflictor.origin, targ, fl, moment);
                 PMD_Knock(targ, targ.velocity - pmd_before, moment);
+                vector pmd_at = targ.origin + (targ.mins + targ.maxs) * 0.5;
+                rj_trace("S: knock t=%.3f seq=%.0f targ=%s", time, targ.cmd_sequence, targ.netname);
+                rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", inflictor.origin, pmd_at,
+                         vlen(pmd_at - inflictor.origin), moment, targ.velocity - pmd_before);
                 Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
             }
         }

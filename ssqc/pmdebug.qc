@@ -24,9 +24,6 @@ void PMD_Knock(entity p, vector impulse, float dmg) {
 
 void PMD_BeginCommand(entity p) {
     p.pmd_msec = input_timelength * 1000;   // the step this command is run over
-    p.pmd_events = 0;
-    p.pmd_impulse = '0 0 0';
-    p.pmd_dmg = 0;
 }
 
 // From PlayerPostThink, after everything that command does.
@@ -68,4 +65,13 @@ void PMD_EndCommand(entity p) {
     WriteFloat(MSG_MULTICAST, p.spawn_gen);
     WriteFloat(MSG_MULTICAST, p.pmd_msec);
     multicast('0 0 0', MULTICAST_ONE);
+
+    // Cleared here rather than at the start of the next command: a fuse fires
+    // in the physics phase, between the two, and clearing on the way in threw
+    // away the one event whose cause we most wanted to read.  Whatever lands
+    // between commands is reported with the command whose state first shows
+    // it, which is where its velocity turns up anyway.
+    p.pmd_events = 0;
+    p.pmd_impulse = '0 0 0';
+    p.pmd_dmg = 0;
 }

@@ -144,6 +144,15 @@ struct predict_tf_state {
         // the same number on both sides without either trusting its own
         // clock.  Advanced per replayed frame in pstate_pred.
         float cmd_servertime;
+
+        // How far the command clock runs ahead of the server's own clock for
+        // this player.  Anything the server schedules on world time -- a
+        // grenade's fuse, a projectile the client did not fire -- has to be
+        // moved onto the command clock before the prediction can place it,
+        // because the windows it matches against are built from that clock.
+        // Sits anywhere up to the clock's re-anchor threshold, so it is worth
+        // tens of milliseconds and shows up as a knock landing frames early.
+        float cmd_clock_skew;
     } pmove;
 
 #ifdef CSQC
@@ -609,6 +618,7 @@ void TFL_RecvPredictState() {
         COMM_PM(Short, velocity[1]);
         COMM_PM(Short, velocity[2]);
         COMM_PM(Float, cmd_stamp_clock);
+        COMM_PM(Float, cmd_clock_skew);
     }
 
     if (mask & FOWP_FILTER_ENTS) {

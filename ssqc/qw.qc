@@ -51,6 +51,7 @@ enum {
 // Used for projectile forwarding and echoed in the predict state.
 .float cmd_stamp_clock;
 float cmd_real_time;             // real `time` while the warp is active, else 0
+.float cmd_clock_skew;           // cmd_clock - real time, sent so the client can place world-time events
 .float last_remote_time;         // For monoticity of remote_time()
 
 .void() client_think;            // client-time relative think

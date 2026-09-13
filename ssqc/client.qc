@@ -3404,6 +3404,7 @@ void () PlayerPostThink = {
     // explodes within its own forward is pushed on this command, not the next.
     if (!ghosted)
         PlayerKnock_Apply();
+    self.cmd_clock_skew = cmd_real_time ? time - cmd_real_time : 0;
     Predict_Update(TRUE);
     if (!ghosted)
         Ghost_Snapshot();

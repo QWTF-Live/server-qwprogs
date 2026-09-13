@@ -657,9 +657,18 @@ static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
 }
 
 
+// A time the server chose on its own clock, moved onto the command clock the
+// replay windows are built from.  Without this the push lands however far the
+// two clocks have drifted apart, which is tens of milliseconds and reads as a
+// blast going off a couple of frames early.
+float PM_WorldToCmdTime(float t) {
+    return t + pstate_server.pmove.cmd_clock_skew;
+}
+
 void PM_AddGrenadeExplosion(float itime, entity ent) {
     if (!PM_Enabled())
         return;
+    itime = PM_WorldToCmdTime(itime);
 
     FO_GrenExp exp;
     if (!FO_GrenGetExp(ent.fpp.gren_type, exp))
@@ -705,6 +714,8 @@ void PM_AddSimExplosion(float itime, entity ent) {
         nat = NA_ITIME_EXPLICIT_EXPIRE;  // Knock forwards are synchronized
         itime = ent.forward_knock;
         PM_SupersedePredictedNudge(ent);
+    } else if (ent.entnum) {
+        itime = PM_WorldToCmdTime(itime);   // the server's clock, not ours
     } else if (ent.created_seq && ent.entnum == 0) {
         float dtime = 0;
         if (ent.s_time)

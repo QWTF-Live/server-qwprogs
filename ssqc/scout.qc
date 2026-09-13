@@ -782,7 +782,7 @@ void (entity inflictor, entity attacker, float bounce,
 
     head = findradius(inflictor.origin, bounce + 40);
     while (head) {
-        if (SpawnProtectedFrom(head, inflictor.owner)) {
+        if (SpawnProtectedFrom(head, inflictor, inflictor.owner)) {
             head = head.chain;
             continue;
         }

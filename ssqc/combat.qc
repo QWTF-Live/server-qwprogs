@@ -353,6 +353,8 @@ void (entity targ, entity inflictor, entity attacker, float damage) T_Damage = {
 
     if (!targ.takedamage)
         return;
+    if (SpawnProtectedFrom(targ, inflictor, attacker))
+        return;
 
     if (attacker.classname == "player")
         damage = damage * 0.9;
@@ -491,6 +493,8 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
         return;
     }
     if (cease_fire)
+        return;
+    if (SpawnProtectedFrom(targ, inflictor, attacker))
         return;
 
     float fl = 0;
@@ -804,12 +808,57 @@ float SpawnProtectActive(entity p) {
     return p.spawn_protect_until && time <= p.spawn_protect_until;
 }
 
-float SpawnProtectedFrom(entity targ, entity attacker) {
-    if (!SpawnProtectActive(targ))
+// A building's damage is the building's, not its owner's: an engineer
+// respawning does not disarm their sentry, and a sentry is never held off a
+// phased player.  Its bullets already name the sentry as attacker; its
+// rockets name the owner, which is why the inflictor decides this.
+static float SpawnProtect_IsBuilding(entity e) {
+    return e.classname == "building_sentrygun" ||
+           e.classname == "building_sentrygun_base" ||
+           e.classname == "building_dispenser";
+}
+
+// The window ends: the damage exemption goes now, and with it the alpha that
+// marks it.  The pass-through lasts a little longer -- for good for an
+// all-time attacker, and for everyone else until the grace check finds them
+// clear of other players.
+void SpawnProtect_End(entity p) {
+    p.spawn_protect_until = 0;
+    p.alpha = kSpawnPassthroughAlpha;
+    if (p.all_time != ALL_TIME_ATTACK)
+        p.spawn_protect_grace = time + kSpawnProtectGrace;
+}
+
+// Under spawn protection -- the window, not an all-time attacker's permanent
+// pass-through -- damage between the protected player and their own team is
+// dropped, in both directions.  Anything involving an enemy is untouched, so
+// a phased player fights and is fought exactly as anyone else, and world
+// damage still applies.  Their own explosions still hurt and push them, so
+// rocket jumping out of spawn works, and the single shotgun is left alone on
+// purpose, so a teammate can still push a phased player out of the way.
+// Gates every damage path, so knockback is withheld with the damage.
+float SpawnProtectedFrom(entity targ, entity inflictor, entity attacker) {
+    if (targ == attacker)
         return FALSE;
-    if (targ == attacker || attacker.classname != "player")
+    if (targ.classname != "player")
         return FALSE;
-    return targ.team_no == attacker.team_no;
+
+    // Damage from an enemy ends the window on the spot: it is for a clean
+    // spawn, not cover in a fight.  Reached just before the damage lands, and
+    // the grace before going solid still applies.
+    if (SpawnProtectActive(targ) && attacker.team_no &&
+        attacker.team_no != targ.team_no) {
+        SpawnProtect_End(targ);
+        return FALSE;
+    }
+
+    if (SpawnProtect_IsBuilding(inflictor))
+        return FALSE;
+    if (attacker.classname != "player" || targ.team_no != attacker.team_no)
+        return FALSE;
+    if (deathmsg == DMSG_SHOTGUN)
+        return FALSE;
+    return SpawnProtectActive(targ) || SpawnProtectActive(attacker);
 }
 
 void (entity inflictor, entity attacker, float damage,
@@ -828,9 +877,6 @@ void (entity inflictor, entity attacker, float damage,
             continue;
 
         if (!e.takedamage)
-            continue;
-
-        if (SpawnProtectedFrom(e, attacker))
             continue;
 
         float fl = e == attacker ? KF_SELF : 0;

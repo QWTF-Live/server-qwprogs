@@ -2122,8 +2122,9 @@ void () PutClientInServer = {
     // through everyone, while every trace still hits them.  Dimension masks
     // carry it; the fork reports an entity non-solid to a viewer whose
     // movement passes through it, so prediction agrees on both sides.  Not
-    // per-team: enemies pass through too.  Splash from teammates is exempt
-    // (SpawnProtectedFrom) for the window only.
+    // per-team: enemies pass through too.  For the window, damage between
+    // them and their own team is dropped (SpawnProtectedFrom); enemies are
+    // unaffected in both directions.
     self.spawn_protect_until = 0;
     self.spawn_passthrough = FALSE;
     self.dimension_solid = DIM_PLAYER;
@@ -2828,17 +2829,11 @@ float SpawnProtectWouldStick(entity p) {
 void () PlayerPreThink = {
     FO_UpdateClientPing();
 
-    // The window ends: the explosion exemption goes now (that is all
-    // SpawnProtectActive gates on).  All-time attackers keep the pass-through
-    // and the transparency for good.  Everyone else enters the grace check
-    // below, which turns them solid as soon as that would not wedge anyone.
+    // Time, or an enemy close enough that the protection would be cover.
+    // Enemy damage ends it too, from SpawnProtectedFrom.
     if (self.spawn_protect_until &&
-        (time > self.spawn_protect_until || SpawnProtectEnemyNear(self))) {
-        self.spawn_protect_until = 0;
-        self.alpha = kSpawnPassthroughAlpha;   // pass-through, no longer exempt
-        if (self.all_time != ALL_TIME_ATTACK)
-            self.spawn_protect_grace = time + kSpawnProtectGrace;
-    }
+        (time > self.spawn_protect_until || SpawnProtectEnemyNear(self)))
+        SpawnProtect_End(self);
 
     // Guarded on being in play so dying mid-window does not resurrect
     // anything -- PlayerDie has already set SOLID_NOT and cleared the flag.

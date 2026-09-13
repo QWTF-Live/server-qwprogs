@@ -3250,12 +3250,8 @@ void CheckClientAdmin() {
 void ClientsFlagUpdate(entity only);
 
 void () ClientConnect = {
-    if (!infokeyf(self,INFOKEY_P_CSQCACTIVE)) {
-        sprint(self, PRINT_HIGH, "FTE/CSQC is required for this server, please download the latest client package at www.fortressone.org\n");
-        dropclient(self);
-        return;
-    }
-
+    // csqc is required, and the engine has already dropped anyone without it
+    // (sv_csqc_required, set in worldspawn).
     bprint(PRINT_HIGH, self.netname, " entered the game\n");
 
     RW_InitPlayer(self);

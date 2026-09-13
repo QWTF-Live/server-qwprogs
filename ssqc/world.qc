@@ -107,6 +107,14 @@ void () worldspawn = {
     else
         cvar_set("sv_gravity", "800");
 
+    // This mod is csqc-only.  The engine drops a client that finishes connecting
+    // without csqc running, which it knows for certain by then; testing for it in
+    // ClientConnect could not tell a client that cannot run csqc from one that is
+    // merely slower to say so.
+    cvar_set("sv_csqc_required", "1");
+    cvar_set("sv_csqc_requiredmsg",
+             "FTE/CSQC is required for this server, please download the latest client package at www.fortressone.org");
+
     cvar_set("pausable", "0");
     cvar_set("sv_friction", "6");
     cvar_set("sv_waterfriction", "1");

@@ -3337,8 +3337,13 @@ static void Ghost_RunCommand() {
     self.touch = ghost_stash.touch;
     self.solid = SOLID_NOT;
     self.flags |= FL_CLIENT | FL_GODMODE;
-    float held_hit = self.dimension_hit;
-    self.dimension_hit = 0;   // the map only: nothing to touch, nothing touched
+    // Move against the map only: the replay is catching up with where these
+    // commands already took the client, and the players it passes are not where
+    // they were then.  dimension_move governs movement alone, so what the ghost
+    // fires still hits normally -- zeroing dimension_hit, as this did before the
+    // masks split, took its hitscan with it.
+    float held_move = self.dimension_move;
+    self.dimension_move = 0;
 
     runstandardplayerphysics(self);
 
@@ -3354,7 +3359,7 @@ static void Ghost_RunCommand() {
              self.attack_finished, self.client_nextthink, self.client_thinkindex, self.tfstate, FO_CurrentWeapon(), self.impulse);
     rj_trace(" dead=%.0f hp=%.0f ammo=%.0f\n", self.deadflag, self.health, self.currentammo);
 
-    self.dimension_hit = held_hit;
+    self.dimension_move = held_move;
     self.flags &= ~FL_GODMODE;
     copyentity(self, self.ghost);
     Ghost_Neutralise(self.ghost);

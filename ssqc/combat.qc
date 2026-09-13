@@ -411,6 +411,7 @@ void (entity targ, entity inflictor, entity attacker, float damage) T_Damage = {
         else
             targ.velocity = targ.velocity + dir * damage * 8;
 
+        PMD_Event(targ, PMDE_DAMAGE);
         if (((rj > 1) &&
              ((attacker.classname == "player") &&
               (targ.classname == "player")))

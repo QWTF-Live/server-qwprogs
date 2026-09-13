@@ -2841,6 +2841,7 @@ static void CmdClock_Update() {
 
 void () PlayerPreThink = {
     FO_UpdateClientPing();
+    PMD_BeginCommand(self);
     CmdClock_Update();
 
     if (self.rj_trace_until > time)
@@ -3216,6 +3217,9 @@ void PlayerPeriodicThink(float is_player) {
         return;
     self.periodic_think_time = time + 1;
 
+    // per-command prediction journal sent to each player [off]
+    pm_debug = CF_GetSetting("pmd", "pm_debug", "1");
+
     // This will generate extra sends on spec/client transition; but not worth
     // making sure we have a unique *setinfo cookie (or clearing in
     // SetChangeParms).
@@ -3412,6 +3416,7 @@ void () PlayerPostThink = {
     self.al_cmd_prev = self.origin;
     PP_PlayerPostThink();
     PlayerPeriodicThink(TRUE);
+    PMD_EndCommand(self);
 };
 
 void () UpdateAllClientsTeamScores = {

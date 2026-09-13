@@ -612,6 +612,12 @@ noref float(string cmd) CSQC_ConsoleCommand = {
     tokenize_console(cmd);
 
     switch(argv(0)) {
+        case "pmd":
+            if (argv(1) == "reset")
+                PMD_Reset();
+            else
+                PMD_Dump();
+            return TRUE;
         case "+button":
             CommandButton(TRUE, stoi(argv(1)));
             break;

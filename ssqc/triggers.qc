@@ -371,6 +371,7 @@ void () teleport_touch = {
         if (other.flags & FL_ONGROUND)
             other.flags = other.flags - FL_ONGROUND;
         other.velocity = v_forward * 300;
+        PMD_Event(other, PMDE_TELEPORT);
     }
     other.flags = other.flags - (other.flags & FL_ONGROUND);
 };
@@ -582,6 +583,7 @@ void () trigger_push_touch = {
     
     if (push)
     {
+        PMD_Event(other, PMDE_PUSH);
         if (self.target) // this could test for movedir but i want to be explicit, it's a bounce pad
         {
             if (!(self.spawnflags & PUSH_NONOISE))

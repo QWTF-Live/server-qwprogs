@@ -43,6 +43,7 @@ subs.qc
 items.qc
 locfiles.qc
 antilag.qc
+pmdebug.qc
 server-antilag.qc
 combat.qc
 weapons.qc

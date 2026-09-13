@@ -1063,9 +1063,11 @@ void PlayerKnock_Apply() {
     while (k) {
         next = k.knock_next;
         if (time >= k.forward_knock) {
+            vector pre = held_self.velocity;
             self = k;
             Antilag_Knock(k);
             self = held_self;
+            PMD_Knock(held_self, held_self.velocity - pre, k.heat);
         }
         k = next;
     }

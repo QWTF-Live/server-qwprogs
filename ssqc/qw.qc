@@ -22,6 +22,11 @@ enum {
 .float cmd_servertime;
 .float cmd_sequence;
 .float cmd_acked_time;           // server time of the latest snapshot the client had when it generated this command
+.float pmd_events;               // what happened to this player during the command being run (pmdebug.qc)
+.float pmd_last_onground, pmd_last_waterlevel;
+.vector pmd_impulse;             // velocity the events added during this command
+.float pmd_msec;                 // the step the command was run over
+.float pmd_dmg;
 
 // Ghost (tf_config.cmd_time): a copy of the player as of its last command
 // applied alive.  Commands the client generated before it learned of its

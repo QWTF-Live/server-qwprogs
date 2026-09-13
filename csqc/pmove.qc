@@ -445,6 +445,7 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
     }
 
     pm.ent.velocity += knock;
+    PMD_Knock(knock, dmg);
 }
 
 // Can be either by {seq + itime} for predicted projectiles, or by {itime} for
@@ -772,6 +773,17 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
             sh->vel = ent.velocity;
         }
 #endif
+        // Not the newest frame: its nudges are deliberately deferred a frame,
+        // and the cache means this pass can be the last one that touches it,
+        // so recording it would journal a frame with its pushes left out.
+        // The engine's player physics leaves .waterlevel alone, so take it
+        // from the world rather than the entity.
+        if (pm.seq != clientcommandframe) {
+            float wtype;
+            PMD_Record(pm.seq, ent.origin, ent.velocity,
+                       (ent.flags & FL_ONGROUND) ? 1 : 0,
+                       PM_GetWaterLevel(ent.origin, &wtype));
+        }
         pm.seq++;
         pm.interp_t += input_timelength;
     }
@@ -813,12 +825,14 @@ static float ErrorTime() {
 
 static void PM_UpdateError() {
     entity ent = pm.ent;
+    pmd_norecord++;
 
     ent.owner = edict_num(player_localentnum);
     if (CVARF(fopm_noerror) || !game_state.is_alive ||
         (clientcommandframe == servercommandframe + 1)) {
         pm.error = '0 0 0';
         pm.errortime = 0;
+        pmd_norecord--;
         return;
     }
 
@@ -886,6 +900,7 @@ static void PM_UpdateError() {
             pm.errortime = 0;
         }
     }
+    pmd_norecord--;
 }
 
 DEFCVAR_FLOAT(v_deathtilt, 1);

@@ -23,6 +23,7 @@ profile.qc
 ../share/animate.qc
 ../share/mcp_precache.qc						
 weapon_predict.qc
+pmdebug.qc
 pmove.qc
 tfx.qc
 sui_sys.qc

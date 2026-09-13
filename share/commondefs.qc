@@ -254,6 +254,23 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 #define MSG_MENU_CANCEL     32
 #define MSG_MIGRATE_LOGIN   33
 #define MSG_SPAWN_DEBUG     34
+#define MSG_PMDEBUG         35
+
+// What happened to a player during one command, as each side saw it.  The
+// client records its own while predicting; the server records its own and
+// ships them (localinfo pm_debug), and the client lines the two up by input
+// sequence to see which of them accounts for a divergence.  See pmdebug.qc.
+enumflags {
+    PMDE_JUMP,        // left the ground
+    PMDE_LAND,        // arrived on the ground
+    PMDE_WATER,       // waterlevel changed
+    PMDE_KNOCK,       // an explosion push was applied
+    PMDE_DAMAGE,      // damage moved them, explosion or otherwise
+    PMDE_TELEPORT,    // put somewhere else outright
+    PMDE_CONC,        // conc state changed
+    PMDE_SPEED,       // the movement was clamped to maxspeed
+    PMDE_PUSH,        // a trigger set the velocity outright (jump pad)
+};
 
 #define FLAGINFO_HOME       1
 #define FLAGINFO_CARRIED    2

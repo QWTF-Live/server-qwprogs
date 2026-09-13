@@ -609,7 +609,9 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                 targ.immune_to_check = time + damage / 20;
 
                 float moment = Class_ScaleMoment(targ.playerclass, damage);
+                vector pmd_before = targ.velocity;
                 targ.velocity += CalcKnock(inflictor.origin, targ, fl, moment);
+                PMD_Knock(targ, targ.velocity - pmd_before, moment);
                 Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
             }
         }

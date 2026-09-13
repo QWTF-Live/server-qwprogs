@@ -648,7 +648,9 @@ static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
         return;
     float points = dmg - vlen(targ_org - nudge->org) / 2;
 
+    vector before = ent.velocity;
     ent.velocity = (targ_org - nudge->org) * points/20;
+    PMD_Knock(ent.velocity - before, points);
 
     NB_ConcCapAction(ent, pstate_pred.playerclass, &pstate_pred.tfstate,
                      pm.interp_t, &pstate_pred.conc_cap_time, kLaunch);

@@ -402,14 +402,37 @@ float nudge_i(PM_Nudge* n) {
     return -1;
 }
 
+// Does the explosion reach us?  The server casts five rays, to our origin and
+// to four corners of our box, and takes any one of them as reached; a single
+// ray refuses knock the server grants around a pillar or a doorframe, so cast
+// the same five.
+//
+// One difference is left and cannot be closed from here: the server clips
+// against solid brush entities as well as the world, and doors and platforms
+// are not in the client's trace world at all, so an explosion behind one is
+// blocked for the server and clear for us.
+static float PM_ExplosionReaches(vector src, vector targ) {
+    const float MOVE_WORLDONLY = 3;
+    vector corners[5] = { '0 0 0', '15 15 0', '-15 -15 0', '-15 15 0', '15 -15 0' };
+    for (float i = 0; i < 5; i++) {
+        traceline(src, targ + corners[i], MOVE_WORLDONLY, pm.ent);
+        if (trace_fraction == 1)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
     float dmg = nudge->aux;
-    if (vlen(ent.origin - nudge->org) > dmg + 40 - NudgeExplosionEps())
+    // From the box centre, as CalcRadiusDamage measures it and as the radius
+    // search that gathers targets on the server does.  Measuring from the
+    // origin put us four units out, which near the edge of the radius is the
+    // difference between predicting the push and refusing it.
+    vector targ_org = ent.origin + (ent.mins + ent.maxs) * 0.5;
+    if (vlen(targ_org - nudge->org) > dmg + 40 - NudgeExplosionEps())
         return;
 
-    const float MOVE_WORLDONLY = 3;
-    traceline(ent.origin, nudge->org, MOVE_WORLDONLY, pm.ent);
-    if (trace_fraction < 1)  // No knock from occluded explosions
+    if (!PM_ExplosionReaches(nudge->org, ent.origin))
         return;
 
     float flg = KF_BOTH_PLAYER;  // Assumes everything is from a player for now
@@ -528,10 +551,9 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
 static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
     float dmg = nudge->aux;
 
-    if (vlen(ent.origin - nudge->org) > dmg + 40 - NudgeExplosionEps())
-        return;
-
     vector targ_org = ent.origin + (ent.mins + ent.maxs) * 0.5;
+    if (vlen(targ_org - nudge->org) > dmg + 40 - NudgeExplosionEps())
+        return;
     float points = dmg - vlen(targ_org - nudge->org) / 2;
 
     ent.velocity = (targ_org - nudge->org) * points/20;

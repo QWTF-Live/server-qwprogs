@@ -670,6 +670,15 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
         return;
     itime = PM_WorldToCmdTime(itime);
 
+    // A nudge normally stops once the server's state has reached its time, on
+    // the basis that the state then carries the push itself.  The server runs
+    // a fuse in its physics phase, after the command whose clock covers it, so
+    // for a stretch the state has not caught up and the nudge is already gone
+    // -- and the prediction drops a push it had been showing.  Hold it a
+    // couple of server frames longer; the filter the server sends for the
+    // exploding entity is what really retires it.
+    float hold = 2 * SERVER_FRAME_DT;
+
     FO_GrenExp exp;
     if (!FO_GrenGetExp(ent.fpp.gren_type, exp))
         return;
@@ -681,6 +690,9 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
         PM_AddNudgeExplosion(NA_ITIME_EXPLICIT_EXPIRE, 0, itime, ent, dmg);
     else
         PM_AddNudgeBounce(itime, ent, dmg);
+
+    if (ent.nudge)
+        ent.nudge->expire_time = itime + hold;
 }
 
 void PM_AddSimExplosion(float itime, entity ent) {

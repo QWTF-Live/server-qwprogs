@@ -152,13 +152,32 @@ float Proj_CmdBase(entity proj, entity viewer) {
     return (proj.has_cmd_base && slot >= 0) ? proj.proj_cmd_base[slot] : 0;
 }
 
+float RealTime();   // ssqc/antilag.qc: real time even inside the command warp
+
+// Each viewer's own clock at the instant this projectile appeared.
+//
+// Not that viewer's last command clock, which is what this used to record.  A
+// projectile created inside a command warp is created at that command, so the
+// two are the same and nothing changes -- but one created from a think, in the
+// physics phase between commands, is created after that command has already
+// run.  The client then measures its blast from a command boundary in the past
+// while the server measures from the creation instant, and the two pick
+// different commands for the same push: identical due times, releases one and
+// two commands apart, client always early.
+//
+// So record the instant itself, expressed on that viewer's clock.  This is the
+// same conversion the server's own forward_knock makes -- blast_due plus that
+// player's skew -- so the two constructions now agree by definition instead of
+// by coincidence.  It is still sampled once, here, and sent: the client never
+// re-derives it, which is the whole point of carrying a base rather than an
+// offset.
 void Proj_StampViewers(entity proj) {
     proj.has_cmd_base = TRUE;
     entity p = find(world, classname, "player");
     while (p) {
         float slot = PlayerSlot(p);
         if (slot >= 0)
-            proj.proj_cmd_base[slot] = p.cmd_clock;
+            proj.proj_cmd_base[slot] = RealTime() + p.cmd_clock_skew;
         p = find(p, classname, "player");
     }
 }

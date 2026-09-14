@@ -1736,6 +1736,7 @@ static void WP_ExplodeGren() {
     rj_trace("C: gren-held seq=%.0f pt=%.4f heat=%.4f org=%v ccf=%.0f\n",
              (float)pstate_pred.seq, pstate_pred.server_time, explode_at,
              PM_Org(), (float)clientcommandframe);
+    rj_cmd_trace_until_seq = clientcommandframe + 12;
 
     int type_index = (tfstate & TFSTATE_GREN1_PRIMED) ? 0 : 1;
     int gren_type = FO_ClassGren(pstate_pred.playerclass, type_index)->id;
@@ -1768,6 +1769,12 @@ static void W_ThrowGren(float is_throw) {
         return;
 
     if (IsEffectFrame()) {
+        // via matches the server's: 0 is the release itself, 1 is a release
+        // latched during the prime window and spawned when the window opens.
+        rj_trace("C: gren-thrown via=%.0f seq=%.0f pt=%.4f open=%.4f org=%v ccf=%.0f\n",
+                 (float)!is_throw, (float)pstate_pred.seq, pstate_pred.server_time,
+                 pstate_pred.last_prime + 0.8, PM_Org(), (float)clientcommandframe);
+        rj_cmd_trace_until_seq = clientcommandframe + 12;
         entity gren = PP_CreateProjectile(FPP_HANDGRENADE, '0 0 0');
         gren.fpp.gren_type = gren_type;
         FPP_ApplyGrenadeProperties(gren);

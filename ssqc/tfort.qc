@@ -661,10 +661,18 @@ stg_table_entry stg_table[] = {
     { GREN_CALTROP, CanisterTouch,          ScatterCaltrops},
 };
 
-void (entity timer) FO_SpawnThrownGrenade = {
+void (entity timer, float via) FO_SpawnThrownGrenade = {
     local entity user = timer.owner;
     user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
     user.last_throw = time;
+
+    // Which command the throw lands on.  via=0 is the release itself, inside
+    // the command that carried it; via=1 is a release latched during the prime
+    // window and spawned later by the timer's think, in the physics phase
+    // between two commands -- the same place the held grenade materialises.
+    rj_trace("S: gren-thrown t=%.3f via=%.0f seq=%.0f clk=%.4f heat=%.4f org=%v\n",
+             time, via, user.cmd_sequence, user.cmd_clock, timer.heat, user.origin);
+    user.rj_cmd_trace_until = RealTime() + 0.16;
 
     UpdateClientGrenadeThrown(user);
 
@@ -828,7 +836,7 @@ void () FO_GrenadeThink = {
     // We remove the timer if the client throws before expiration.
     if (time < self.heat) {
         if (user.tfstate & TFSTATE_GRENTHROWING) {  // Latched throw case.
-            FO_SpawnThrownGrenade(self);
+            FO_SpawnThrownGrenade(self, 1);   // latched during the prime window
             dremove(self);
         } else {
             // When REWIND_GRENADES is enabled, we slightly time-warp the
@@ -863,7 +871,7 @@ void () FO_ThrowGrenade = {
         // In the first case, we've set THROWING so think will handle.
         // In the second, buckle up.
     } else {
-        FO_SpawnThrownGrenade(timer);
+        FO_SpawnThrownGrenade(timer, 0);   // the release itself
         dremove(timer);
     }
 }

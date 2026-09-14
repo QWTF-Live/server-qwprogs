@@ -68,16 +68,27 @@ enumflags {
 .float s_time;
 .float has_cmd_base;    // this projectile carries a per-viewer explosion clock base
 
-// How far the command chain may wander from the world clock before a
-// correction is announced, and how many commands ahead that correction lands.
-// The lead has to clear everything the client has already predicted: it runs
-// about eight commands ahead of what we have acknowledged, and the round trip
-// is about the same again, so thirty-two leaves ample margin.
-const float CMD_CLOCK_TOL = 0.010;
+// How many commands ahead a correction lands.  It has to clear everything the
+// client has already predicted: it runs about eight commands ahead of what we
+// have acknowledged, and the round trip is about the same again, so thirty-two
+// leaves ample margin.
 const float CMD_CLOCK_LEAD = 32;
 // Past this the chain is not wandering, something stopped: snap rather than
 // wait out the lead with the chain that far wrong.
 const float CMD_CLOCK_SNAP = 0.250;
+
+// How far the chain may sit from the world clock before we correct it.
+//
+// Most of that distance is not error.  A command waits for the next server
+// frame before it is run, so the difference carries a sawtooth a server frame
+// plus a client frame wide -- around thirty milliseconds for a client running
+// slower than the server, a couple for one running far faster.  Correcting
+// inside that floor would chase frame boundaries and feed their jitter into
+// the chain, which is the one thing the chain exists to keep out of the replay.
+// So the threshold tracks the floor rather than naming a number.
+float CmdClockTol(float cmdlen) {
+    return max(0.050, 2 * (SERVER_FRAME_DT + cmdlen));
+}
 
 #ifdef SSQC
 // A clock for explosion prediction, one reading per player, taken when the

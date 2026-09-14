@@ -2855,7 +2855,7 @@ static void CmdClock_Update() {
     // time, so packet bursts walk it forward and sparse patches walk it back.
     // Announce a correction when the walk gets too far out, to land well past
     // anything the client has already predicted.
-    if (!self.cmd_clock_fix_seq && fabs(time - clk) > CMD_CLOCK_TOL) {
+    if (!self.cmd_clock_fix_seq && fabs(time - clk) > CmdClockTol(input_timelength)) {
         self.cmd_clock_fix = time - clk;
         self.cmd_clock_fix_seq = self.cmd_sequence + CMD_CLOCK_LEAD;
     }

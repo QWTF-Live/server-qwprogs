@@ -392,6 +392,13 @@ struct PM_Nudge {
     // the push lands twice.
     float src_cseq;
     float src_fseq;    // fire_seq of that projectile: the handle both copies share
+    // The blast command anchor for our own grenade: the push is due a
+    // KNOCK_LEAD past the clock of the first command to reach it, which is what
+    // the server anchors on too.  Resolved during the replay, because that is
+    // the only place the command clocks are.
+    float cmd_due;
+    float cmd_resolved;
+
     // Command clock of the shot we predicted, for a push we predicted
     // ourselves.  Once the server has run that command its cooldown witnesses
     // whether it fired, without us needing to see the projectile at all.
@@ -539,6 +546,8 @@ static PM_Nudge* find_nudge_slot() {
         n->src = 0;
         n->fire_clk = 0;
         n->fired_seq = 0;
+        n->cmd_due = 0;
+        n->cmd_resolved = 0;
         n->expire_frame = 0;
         n->expire_time = 0;
         n->expire_spawnseq = 0;
@@ -851,10 +860,24 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     // command a fuse lands on is a discrete choice, and two samples of that
     // offset taken a round trip apart differ by a few milliseconds, which near
     // a frame edge is a whole frame of push.
-    if (ent.has_cmd_base)
+    //
+    // Our own grenade is better than that again.  Its blast comes off a
+    // command on the server -- the first whose clock reaches last_prime +
+    // GREN_FUSE, an anchor we hold too -- and the push is a lead past that
+    // command, not a lead past the fuse.  Anchoring on the same command makes
+    // the two numbers identical rather than merely close, so there is no
+    // boundary left for a tie to sit on and no skew drift between the prime
+    // and the creation to carry.  Which command that is can only be answered
+    // during the replay, so the due is carried on the nudge and resolved there.
+    float cmd_due = 0;
+    if (ent.blast_cmd_due && ent.owner == pengine.player_ent)
+        cmd_due = ent.blast_cmd_due;
+    else if (ent.has_cmd_base)
         itime = ent.fpp.cmd_base + max(ent.fpp.expires_at - ent.created_at, 0);
     else
         itime = PM_WorldToCmdTime(itime);
+    if (cmd_due)
+        itime = cmd_due;
     itime += KNOCK_LEAD;   // the same lead the server schedules it with
 
     FO_GrenExp exp;
@@ -876,8 +899,10 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     // A deferred push sends no filter entry, and a nudge that has fired
     // outlives its timer until the server acknowledges the command it fired on,
     // which is the exact condition the margin was approximating.
-    if (ent.nudge)
+    if (ent.nudge) {
         ent.nudge->expire_time = itime;
+        ent.nudge->cmd_due = cmd_due;
+    }
 }
 
 void PM_AddSimExplosion(float itime, entity ent) {
@@ -989,6 +1014,17 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
 
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
+
+        // Anchor on the command the server's blast fires from: the first whose
+        // clock reaches the shared due.  Both sides then hold the same number
+        // to the bit, so reach is exactly KNOCK_LEAD and there is no boundary
+        // for a tie to sit on.  Stable across replays because a command's own
+        // clock is.
+        if (n->cmd_due && !n->cmd_resolved && eitime >= n->cmd_due) {
+            n->itime = eitime + KNOCK_LEAD;
+            n->expire_time = n->itime;
+            n->cmd_resolved = TRUE;
+        }
 
         if (!MatchNudge(n, seq, sitime, eitime, slack))
             continue;

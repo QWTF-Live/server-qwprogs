@@ -1102,14 +1102,51 @@ entity Knock_Defer(entity targ, vector src, float kind) {
     // when the projectile appeared -- fall back to moving the world time
     // across, which is the case still exposed to our clocks drifting apart.
     float base = blast_proj ? Proj_CmdBase(blast_proj, targ) : 0;
-    k.forward_knock = (base ? base + blast_delay : blast_due + targ.cmd_clock_skew) + KNOCK_LEAD;
+
+    // For the holder's own blast, anchor on the command that reaches the due.
+    //
+    // base and blast_delay are sampled at the projectile's creation and the due
+    // is read at the blast, so anything that moves in between -- the skew
+    // wandering, the release overshooting its command -- lands in reach.  It
+    // measured between -3 and +17 ms, and a command of a 770 u/s push
+    // integrated over the replay is seventy units however near the miss was.
+    //
+    // The anchor is the first command whose clock reaches last_prime +
+    // GREN_FUSE (+ 0.1 held), which both sides derive from the same shared
+    // number by identical arithmetic.  reach is then exactly KNOCK_LEAD, the
+    // command the due falls in has not run, and the two sides compute the same
+    // value to the bit -- so there is no boundary for a tie to sit on either.
+    //
+    // Only for the holder: another viewer has no prime to anchor to, and this
+    // clock is not theirs.
+    //
+    // Usually a command fired the blast and we are standing in it, so the
+    // answer is here.  When the think's backstop got there first the chain has
+    // not reached the due yet and the command that will claim it does not
+    // exist -- so carry the due and let PlayerKnock_Apply resolve it on the
+    // command that does, which is exactly what the client does with it.
+    float cmd_due = (blast_proj && blast_proj.owner == targ)
+                        ? blast_proj.blast_cmd_due : 0;
+    if (cmd_due && targ.cmd_clock >= cmd_due)
+        k.forward_knock = targ.cmd_clock + KNOCK_LEAD;
+    else if (cmd_due) {
+        k.knock_cmd_due = cmd_due;
+        k.forward_knock = cmd_due + KNOCK_LEAD;   // provisional
+    } else
+        k.forward_knock = (base ? base + blast_delay
+                                : blast_due + targ.cmd_clock_skew) + KNOCK_LEAD;
 
     // Which anchor this one used, and where the target's chain already was when
     // we queued it.  Those two answer the question the knock lines cannot: a
     // mismatch is a tie only if both sides had the command available, and if
     // cmd_clock is already past forward_knock here then the command the client
     // will choose has run and nothing downstream can reach it.
-    rj_trace("S: knock-defer kind=%.0f anchor=%s fk=%.5f", kind, base ? "base" : "world", k.forward_knock);
+    string anchor = "world";
+    if (cmd_due)
+        anchor = k.knock_cmd_due ? "cmd?" : "cmd";
+    else if (base)
+        anchor = "base";
+    rj_trace("S: knock-defer kind=%.0f anchor=%s fk=%.5f", kind, anchor, k.forward_knock);
     rj_trace(" base=%.5f delay=%.4f due=%.5f skew=%+.2fms", base, blast_delay, blast_due,
              targ.cmd_clock_skew * 1000);
     rj_trace(" at seq=%.0f clk=%.5f reach=%.2fms\n", targ.cmd_sequence, targ.cmd_clock,
@@ -1187,6 +1224,12 @@ void PlayerKnock_Apply() {
     entity held_self = self;
     while (k) {
         next = k.knock_next;
+        // The command the due falls on, named now that we are standing in it.
+        // Same rule the client applies to the same number.
+        if (k.knock_cmd_due && time >= k.knock_cmd_due) {
+            k.forward_knock = time + KNOCK_LEAD;
+            k.knock_cmd_due = 0;
+        }
         if (time >= k.forward_knock) {
             self = k;
             switch (k.knock_kind) {

@@ -2849,6 +2849,7 @@ static void CmdClock_Update() {
     }
     self.cmd_clock = clk;
     self.cmd_clock_last = clk;
+    self.cmd_len = input_timelength;
 
     // The chain is an estimate of the world clock, shared with the client.  It
     // advances by each command's own length while the world advances by real

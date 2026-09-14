@@ -62,7 +62,14 @@ enumflags {
     FOPP_FORWARDKNOCK,
     FOPP_CMDBASE,
     FOPP_KNOCKORG,
+    FOPP_BLASTDUE,
 };
+
+// A held or thrown grenade's blast on its holder's own command clock:
+// last_prime + GREN_FUSE + 0.1, which both sides derive from the same shared
+// number.  The server fires the blast on the first command whose clock reaches
+// it; the client anchors its own push on that same command.
+.float blast_cmd_due;
 
 .float forward_knock;
 // Where the server's copy of this projectile actually went off.  The client
@@ -884,6 +891,11 @@ float PP_SendEntity(entity to_player, float sendmask) {
             sendflags |= FOPP_MOVETYPE;
         if (self.has_cmd_base)
             sendflags |= FOPP_CMDBASE;
+        // A statement about the owner's own command chain, so nobody else is
+        // sent it.  Set at the spawn, which is before the first update, so the
+        // INIT carries it and no later update has to.
+        if (self.blast_cmd_due && to_player == self.owner)
+            sendflags |= FOPP_BLASTDUE;
     }
 
     // Outside the INIT block on purpose.  forward_knock is only set at impact,
@@ -902,7 +914,7 @@ float PP_SendEntity(entity to_player, float sendmask) {
         sendflags |= FOPP_KNOCKORG;
 
     WriteByte(MSG_ENTITY, ENT_PROJECTILE);
-    WriteShort(MSG_ENTITY, sendflags);   // nine flags no longer fit in a byte
+    WriteShort(MSG_ENTITY, sendflags);   // ten flags, long past fitting in a byte
 #else
 void PM_UpdateNudgeSource(entity ent, vector src);
 #define COMMD(_type, _dest, _field) self.##_dest = Read##_type()
@@ -935,6 +947,14 @@ void EntUpdate_Projectile(float isnew) {
         self.has_cmd_base = TRUE;
 #endif
     }
+
+    // Which command our own grenade's blast comes off: the first whose clock
+    // reaches this.  We work the same value out ourselves when we predict the
+    // prime, but the copy that actually pushes us is this one, and it has no
+    // way to re-derive it -- the prime it measures from has been cleared by
+    // the time the grenade is in the air.
+    if (sendflags & FOPP_BLASTDUE)
+        COMM(Float, blast_cmd_due);
 
     if (sendflags & FOPP_POS) {
         COMM(Coord, origin[0]);

@@ -1778,6 +1778,11 @@ static void WP_ExplodeGren() {
     gren.starttime = explode_at;
     gren.phys_time = explode_at;
     gren.fpp.expires_at = explode_at + 0.1;
+    // The blast, on our own clock, from the same anchor the server uses.  Only
+    // for this copy: if it is still ours when the fuse runs out it pushes us
+    // from here, and if the server's has arrived by then that one carries the
+    // same number down the wire.
+    gren.blast_cmd_due = explode_cmd + 0.1;
 
     Phys_Sim(gren, explode_at + 0.1);
 }

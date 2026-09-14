@@ -32,6 +32,7 @@ enum {
 float blast_due;        // world time the blast was due at, 0 when unscheduled
 entity blast_proj;      // the projectile, which carries a base reading per viewer
 float blast_delay;      // how long after that reading the blast is due
+.float knock_cmd_due;   // pending knocks: the due whose command has yet to name itself
 float blast_base;       // the blast's damage before the radius falloff
 entity Knock_Defer(entity targ, vector src, float kind);
 // Engine-provided (fteqw fork): the client's own clock stamp and input frame
@@ -62,6 +63,7 @@ entity Knock_Defer(entity targ, vector src, float kind);
 .float cmd_clock;
 .float cmd_clock_k;              // number of (re)anchors to real time, for the trace
 .float cmd_clock_last;           // for monotonicity
+.float cmd_len;                 // this player's last command length, for scheduling around their chain
 // Stamp clock: the wire stamp chained by msec instead of read raw.  The raw
 // stamp steps by the client's servo'd clock (+-4ms a frame) so the client
 // can't rebuild it from its own frame lengths; this one it can, exactly.
@@ -96,7 +98,6 @@ float remote_time();
 .float primed_gren_type;        // Type of (last) primed grenate
 .entity held_gren;              // players: head of the grenades awaiting a blast
 .entity gren_next;              // those grenades: next one on that list
-.float  blast_cmd_due;          // that grenade: its blast on the holder's clock
 .float primed_gren_exp;         // Expiry of (last) primed grenade
 .float no_grenades_1;           // Number of grenades of type 1 being carried
 .float no_grenades_2;           // Number of grenades of type 2 being carried

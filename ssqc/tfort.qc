@@ -661,6 +661,26 @@ stg_table_entry stg_table[] = {
     { GREN_CALTROP, CanisterTouch,          ScatterCaltrops},
 };
 
+// How long a grenade's own think yields to the command-driven blast.
+//
+// The chain reaches the due at the world instant the think would fire, so
+// without a yield the think wins every time.  One server frame of yield is not
+// enough at any frame rate: the command that claims the blast is the first
+// whose clock reaches the due, which is up to a command length past it, and it
+// then waits for a server frame to run.  So the yield has to cover a command
+// plus a frame, and a frame alone is already short by the difference between
+// SERVER_FRAME_DT and the command length -- 0.013 ms at 13 ms commands, before
+// the wait is counted.  Measured with 13 ms commands throughout: the think beat
+// the claiming command by 1.8 ms and took a held grenade in three, back on the
+// sampled anchor with reach adrift.
+//
+// Costs nothing when a command does claim it, because then the grenade is gone
+// before the think runs.  When none does the holder has stopped sending
+// commands, and the blast is late by this instead of by a frame.
+static float GrenBlastGrace(entity owner) {
+    return SERVER_FRAME_DT + bound(SERVER_FRAME_DT, owner.cmd_len, 0.034);
+}
+
 void (entity timer, float via) FO_SpawnThrownGrenade = {
     local entity user = timer.owner;
     // Before the clears below take it.  A thrown grenade goes off at the same
@@ -707,10 +727,9 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
     }
     proj.angles = vectoangles(proj.velocity);
     proj.think = SUB_Null;
-    // One frame of grace, so the command-driven blast gets first refusal: the
-    // chain reaches the due at the very instant this think would fire, and a
-    // think beats a command boundary every time without it.
-    proj.nextthink = timer.heat + SERVER_FRAME_DT;
+    // Grace, so the command-driven blast gets first refusal.
+    proj.nextthink = timer.heat +
+                     (blast_due_cmd ? GrenBlastGrace(user) : SERVER_FRAME_DT);
     proj.blast_cmd_due = blast_due_cmd;
     proj.gren_next = user.held_gren;
     user.held_gren = proj;
@@ -896,6 +915,8 @@ void PlayerGren_Blast() {
     self = g;
     // In the clock its think would have had, so everything the blast stamps --
     // the due it defers to, the effect it sends -- is the number it always was.
+    // The command we are standing in survives the warp on the holder's own
+    // cmd_clock, which is where Knock_Defer reads it.
     time = g.fpp.expires_at;
     cmd_real_time = 0;
     rj_trace("S: gren-blast t=%.4f cmd=%.4f seq=%.0f\n",
@@ -2499,7 +2520,7 @@ void () TeamFortress_ExplodePerson = {
     proj.angles = vectoangles(proj.velocity);
     proj.think = SUB_Null;
     float expires = time + 0.1;  // Server generated, no client time here.
-    // One frame of grace, so the command-driven blast gets first refusal.
+    // Grace, so the command-driven blast gets first refusal.
     //
     // blast_cmd_due is expires_at plus this player's skew, and the chain
     // reaches that value at world time expires_at -- the very instant this
@@ -2507,11 +2528,8 @@ void () TeamFortress_ExplodePerson = {
     // first command at or past the due runs at expires_at or later and the
     // think beats it: five held grenades in six blew up from here rather than
     // from a command, which is the whole point of the exercise missed.
-    //
-    // Yielding a frame costs up to a command of world time on the blast, the
-    // same order as the lead a push already carries, and only when the command
-    // path is not there to take it first.
-    proj.nextthink = expires + SERVER_FRAME_DT;
+    proj.nextthink = expires +
+                     (blast_due_cmd ? GrenBlastGrace(self.owner) : SERVER_FRAME_DT);
 
     if (self.weapon == GREN_FLARE) {
         sprint(self.owner, PRINT_HIGH, "Flare lit\n");

@@ -341,6 +341,10 @@ void WPP_UpdateEnable(float force) {
     // Set this independently of init above so that it can come up faster.
     if (PM_WantPmove())
         wpp_status |= CSQC_PMOVE;
+    // Asking for the journal rather than having it configured on the server:
+    // one switch, on the side that knows whether the lines are being read.
+    if (CVARF(fopm_debug))
+        wpp_status |= CSQC_PMDEBUG;
     if (CVARF(fopmd_force_pos))
         wpp_status |= CSQC_FORCE_POS;
 

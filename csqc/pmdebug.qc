@@ -3,13 +3,13 @@
 // While predicting, the client records what each input frame did: the inputs
 // it ran, where they left it, and what happened along the way.  The server
 // records the same for the command with that sequence and sends it back
-// (localinfo pm_debug).  When one arrives the two are lined up and anything
+// (it sends them to whoever sets fopm_debug).  When one arrives the two are
+// lined up and anything
 // that disagrees is reported with both sides' events, so a mispredict can be
 // read off rather than guessed at.
 //
-// fopmd_debug 1 reports divergences, 2 reports every matched frame.
+// fopm_debug 1 reports divergences, 2 reports every matched frame.
 
-DEFCVAR_FLOAT(fopmd_debug, 1);
 DEFCVAR_FLOAT(fopmd_poserr, 1);    // units of position before a frame counts
 DEFCVAR_FLOAT(fopmd_velerr, 8);    // units/sec of velocity before a frame counts
 DEFCVAR_FLOAT(fopmd_context, 6);   // frames of run-up printed with a divergence
@@ -202,7 +202,7 @@ void PMD_ServerRecord(float seq, vector pre_org, vector org, vector vel, float o
     e->sv_events = events;
 
     pmd_matched++;
-    if (!pmd_seen) {
+    if (!pmd_seen && CVARF(fopm_debug)) {
         pmd_seen = TRUE;
         printf("pmd: matching server records, from seq %i\n", (int)seq);
     }
@@ -232,9 +232,9 @@ void PMD_ServerRecord(float seq, vector pre_org, vector org, vector vel, float o
                     pmd_cause[i]++;
     }
 
-    if (!CVARF(fopmd_debug))
+    if (!CVARF(fopm_debug))
         return;
-    if (!bad && CVARF(fopmd_debug) < 2)
+    if (!bad && CVARF(fopm_debug) < 2)
         return;
 
     printf("pmd %i %s dpos=%.3f %v dvel=%.2f %v\n", (int)seq,
@@ -289,7 +289,7 @@ void PMD_ServerRecord(float seq, vector pre_org, vector org, vector vel, float o
 
 void PMD_Dump() {
     if (!pmd_matched) {
-        printf("pmd: nothing matched yet (localinfo pm_debug 1 on the server)\n");
+        printf("pmd: nothing matched yet (needs fopm_debug, and a server that sends them)\n");
         return;
     }
     printf("pmd: %i frames, %i missed (%.1f%%), worst %.2fu at seq %i (vel %.1f)\n",

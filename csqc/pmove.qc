@@ -181,7 +181,9 @@ DEFCVAR_FLOAT(fopm_noerror, 0);
 DEFCVAR_FLOAT(fopm_nocache, 0);
 DEFCVAR_FLOAT(fopm_nostep, 0);
 DEFCVAR_FLOAT(fopm_errortime, 0);
-DEFCVAR_FLOAT(fopm_debug, 0);
+// The client half of the trace switch.  Declared with the other pm cvars in
+// pmdebug.qc, which compiles first and needs it too.
+float RJ_On() { return CVARF(fopm_debug); }
 
 // The three the player actually has a reason to touch.  -1 on all of them means
 // "not chosen", and everything is on unless somebody turns it off -- so the
@@ -192,6 +194,12 @@ DEFCVAR_FLOAT(fopm_debug, 0);
 // are: your own explosions move you the instant you fire, somebody else's move
 // you when their blast reaches you, and only the first is worth losing if the
 // prediction is wrong.
+//
+// pm_knock_other is off by default for now.  Your own explosion is yours to
+// predict -- you fired it and you know when; somebody else's arrives on their
+// clock and the prediction is only as good as the copy of their projectile we
+// were sent.  On by default is a decision to make once it has run switched on
+// for a while, not before.
 DEFCVAR_FLOAT(pmove, -1);
 DEFCVAR_FLOAT(pm_knock_self, -1);
 DEFCVAR_FLOAT(pm_knock_other, -1);
@@ -200,7 +208,7 @@ static float TriState(float v, float dflt) { return v < 0 ? dflt : (v ? 1 : 0); 
 
 float PM_WantPmove()  { return TriState(CVARF(pmove), CVARF(fo_pmove) ? 1 : 0); }
 float PM_KnockSelf()  { return TriState(CVARF(pm_knock_self), 1); }
-float PM_KnockOther() { return TriState(CVARF(pm_knock_other), 1); }
+float PM_KnockOther() { return TriState(CVARF(pm_knock_other), 0); }
 
 // Whose explosion this is, and whether they asked to be moved by it.
 //
@@ -252,7 +260,7 @@ static float pm_npush;
 void PM_SetPushVolumes(float n) {
     pm_npush = n > PUSHPRED_MAX ? PUSHPRED_MAX : n;
     printf("pmd: %i push volumes for prediction\n", (int)pm_npush);
-    float verbose = CVARF(fopmd_debug) > 1;
+    float verbose = CVARF(fopm_debug) > 1;
     for (float i = 0; i < n; i++) {
         vector mins, maxs, vel;
         mins_x = readcoord(); mins_y = readcoord(); mins_z = readcoord();

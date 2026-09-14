@@ -196,12 +196,26 @@ const float SERVER_FPS = 77;
 const float SERVER_FRAME_DT = 1/SERVER_FPS;
 const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 
-// Rocket-jump timing trace.  Server lines are prefixed "S:" and bprinted so
-// they land in the client's log next to the client's own "C:" lines.  Flip to
-// 0 to strip.
+#ifdef CSQC
+// The one switch for every message this work prints: 1 reports divergences and
+// the per-command traces, 2 adds every matched frame.  Declared here, with the
+// macro that reads it, because it is wanted before any of the prediction files
+// are compiled.
+DEFCVAR_FLOAT(fopm_debug, 0);
+#endif
+
+// Prediction trace.  Server lines are prefixed "S:" and printed so they land in
+// the log next to the client's own "C:" lines.
+//
+// Off unless asked for, at runtime as well as at compile time: these are
+// per-command messages and a busy moment writes hundreds of lines a second.
+// fopm_debug is the switch, and the only one: the client advertises it and the
+// server prints while any client is asking.  Flip RJ_TRACE to 0 to strip the
+// calls from the build entirely.
+float RJ_On();
 #define RJ_TRACE 1
 #if RJ_TRACE
-#define rj_trace(...) printf(__VA_ARGS__)
+#define rj_trace(...) if (RJ_On()) printf(__VA_ARGS__)
 #else
 #define rj_trace(...)
 #endif
@@ -260,7 +274,7 @@ const float SERVER_FRAME_MS = SERVER_FRAME_DT * 1000.0;
 
 // What happened to a player during one command, as each side saw it.  The
 // client records its own while predicting; the server records its own and
-// ships them (localinfo pm_debug), and the client lines the two up by input
+// ships them to whoever asked, and the client lines the two up by input
 // sequence to see which of them accounts for a divergence.  See pmdebug.qc.
 enumflags {
     PMDE_JUMP,        // left the ground
@@ -361,6 +375,10 @@ enumflags {
     CSQC_PMOVE,
     CSQC_FORCE_POS,
     CSQC_SNIPER_SIGHT,
+    // The client is reading the prediction journal, so send it one.  It is a
+    // per-command message and nobody who is not looking at it should be paying
+    // for it -- and the client is the only side that knows whether anybody is.
+    CSQC_PMDEBUG,
 };
 
 enumflags {

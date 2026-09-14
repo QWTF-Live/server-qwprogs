@@ -3,11 +3,21 @@
 // them along the way, and sends it to that player, who holds the same record
 // from its own prediction and compares.  See csqc/pmdebug.qc.
 //
-// localinfo pm_debug 1, off by default: it is a per-command message.
+// Off unless a client asks.  It is a per-command message, and the client is the
+// only side that knows whether anybody is reading it.
 
-float pm_debug;               // localinfo pm_debug, refreshed in PlayerPeriodicThink
+float pm_debug;   // a client has advertised CSQC_PMDEBUG; refreshed per second
+
+// The server half of the trace switch, and the same question the journal's send
+// asks: is anybody reading this right now.
+float RJ_On() { return pm_debug; }
 
 // Set from wherever the event happens, cleared at the top of each command.
+//
+// Gated on the same question the send is: whether anybody is reading.  Testing
+// only the localinfo meant a journal a client had asked for arrived with its
+// event bits and its impulse empty -- a dump reporting no push on a command
+// that had one, which reads as a prediction bug rather than a gating slip.
 void PMD_Event(entity p, float bit) {
     if (pm_debug)
         p.pmd_events |= bit;
@@ -30,7 +40,9 @@ void PMD_BeginCommand(entity p) {
 
 // From PlayerPostThink, after everything that command does.
 void PMD_EndCommand(entity p) {
-    if (!pm_debug || p.classname != "player")
+    // Sent to whoever asked for it.  This is a message per command per player,
+    // so it goes to the clients reading it and to nobody else.
+    if (p.classname != "player" || !ClientPred_Enabled(p, CSQC_PMDEBUG))
         return;
 
     float onground = (p.flags & FL_ONGROUND) ? 1 : 0;

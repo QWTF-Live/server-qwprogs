@@ -187,6 +187,38 @@ Trials run as separate builds with fixed parameters rather than settings dialled
 on a live server, so a log is never recorded under a value nobody remembers
 setting. `KNOCK_LEAD` is printed on every release for that reason.
 
+Backstops
+---------
+
+Anything scheduled on a player's command clock can only be released while that
+player is sending commands, because naming their command is the whole point of
+the chain and there is no command to name without them. A think fires on the
+server's clock whatever the player does; a release does not.
+
+That is invisible in play -- a command runs in essentially every server frame,
+and the release lands within one -- and it matters the moment the command stream
+stops. Packet loss, a stall, a player disconnecting: nothing is released, and
+`cmd_clock` is not cleared when a player goes quiet, so a schedule waiting on it
+waits forever.
+
+So each of these carries a backstop that fires on the world clock instead:
+
+- A deferred push holds `nextthink = RealTime() + 1` on the knock proxy, which
+  drops it if the owner never runs another command.
+- A held grenade's prime timer waits `GREN_BACKSTOP_WAIT` (0.5 s) past the fuse
+  for `PlayerGren_Apply` to materialise it, polling every
+  `GREN_BACKSTOP_POLL`, and then detonates it itself.
+
+Half a second is sized against what it covers rather than tuned. A holder whose
+commands are running is released within a command or two -- tens of milliseconds
+-- so the backstop never fires for them, and in the traces it never has. What
+has to fit under it is a gap in the command stream, and half a second of silence
+is well past the point where the player has visibly stopped. Longer would leave
+a live grenade on someone mid-disconnect; shorter would start taking grenades
+off players who are merely lagging. It reports itself (`S: gren-backstop`) when
+it does fire, because a backstop that starts carrying normal play is a bug in
+the thing it is backing rather than a number to retune.
+
 Known gaps
 ----------
 

@@ -825,6 +825,28 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
     self.last_prime = time_base;
 }
 
+// A held grenade is materialised by PlayerGren_Apply, which runs inside
+// PlayerPostThink and so only while the holder's commands are being executed.
+// That is what lets both sides name the same command for it.  It also means a
+// holder who stops sending -- packet loss, a stall, lagging out -- releases
+// nothing, and cmd_clock is not cleared when a player goes quiet, so the timer
+// would re-arm forever and the grenade would never go off.
+//
+// So the timer waits this long past the fuse for the release to happen, polling
+// at GREN_BACKSTOP_POLL, and then detonates it itself.  Late, but it detonates.
+//
+// Half a second is chosen against what it is covering, not tuned: a holder
+// whose commands are running is released within a command or two, tens of
+// milliseconds, so this never fires for them -- in the traces it never has.
+// What has to fit under it is a gap in the command stream, and half a second of
+// silence is already far past the point where the player has visibly stopped.
+// Longer would leave a live grenade sitting on someone mid-disconnect; shorter
+// would start stealing grenades from players who are merely lagging.  It is a
+// backstop for a case that should not happen, so it is sized to be obviously
+// out of the way of the case that does.
+const float GREN_BACKSTOP_WAIT = 0.5;
+const float GREN_BACKSTOP_POLL = 0.05;
+
 static float gren_release_fuse;   // RJ_TRACE: the fuse the release fired against
 // Where the holder was when the fuse actually went, rather than where the
 // command that carried it left them.  The grenade falls for 100 ms from here,
@@ -929,10 +951,14 @@ void () FO_GrenadeThink = {
         // hold a grenade that re-armed forever and never went off.
         if (self.weapon != GREN_CALTROP && self.owner.primed_gren_cmd &&
             self.owner.cmd_clock && !self.owner.has_disconnected &&
-            time < self.heat + 0.5) {
-            self.nextthink = time + 0.05;
+            time < self.heat + GREN_BACKSTOP_WAIT) {
+            self.nextthink = time + GREN_BACKSTOP_POLL;
             return;
         }
+        if (self.owner.primed_gren_cmd)
+            rj_trace("S: gren-backstop t=%.4f heat=%.4f late=%.0fms clk=%.4f fuse=%.4f\n",
+                     time, self.heat, (time - self.heat) * 1000,
+                     self.owner.cmd_clock, self.owner.primed_gren_cmd);
         if (self.weapon != GREN_CALTROP)
             TeamFortress_ExplodePerson();
         dremove(self);

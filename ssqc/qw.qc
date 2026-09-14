@@ -30,8 +30,7 @@ enum {
 // weapons.qc.  Returns the held knock so the caller can fill in what its own
 // kind needs, or world when there is nothing to hold it against.
 float blast_due;        // world time the blast was due at, 0 when unscheduled
-float blast_due_cmd;    // the same instant on the primer's command clock, 0 if unstamped
-entity blast_primer;    // who primed it, the one player that stamp belongs to
+entity blast_proj;      // the projectile, which carries a fuse stamp per viewer
 float blast_base;       // the blast's damage before the radius falloff
 entity Knock_Defer(entity targ, vector src, float kind);
 // Engine-provided (fteqw fork): the client's own clock stamp and input frame
@@ -799,7 +798,42 @@ float FO_FlashDimension;
 // precise grenades
 .entity grenade_timer;
 .float last_throw;
-.float prime_cmd_skew;           // primetimer: command clock minus real time when it was primed
+// A fuse named on each viewer's own command clock, one slot per player, filled
+// when the grenade is thrown and never touched again.  Which command a blast
+// lands on is a discrete choice, so the two sides have to arrive at one number
+// rather than two close ones, and the only numbers they hold identically are
+// a player's own commands.  Sent per viewer (PP_SendEntity runs once per
+// client) and read back per victim when the blast goes off.
+const float FO_MAXCLIENTS = 32;
+.float gren_stamp[FO_MAXCLIENTS];
+
+// Slot of a player edict in the above, or -1.
+float PlayerSlot(entity p) {
+    float i = num_for_edict(p) - 1;
+    return (i >= 0 && i < FO_MAXCLIENTS) ? i : -1;
+}
+
+// Take every player's clock once, when the grenade leaves the hand.  The fuse
+// is a duration, so a viewer's stamp is their own clock now plus what is left
+// to run -- no offset between our clock and theirs enters it, which is what
+// stops the two sides drifting apart before it goes off.
+// This viewer's stamp, or 0 if the grenade never carried one for them.
+float Gren_StampFor(entity proj, entity viewer) {
+    float slot = PlayerSlot(viewer);
+    return slot >= 0 ? proj.gren_stamp[slot] : 0;
+}
+
+void Gren_StampViewers(entity proj, float expires_at) {
+    entity p = find(world, classname, "player");
+    while (p) {
+        float slot = PlayerSlot(p);
+        if (slot >= 0) {
+            float skew = (p.cmd_clock && cmd_real_time) ? p.cmd_clock - cmd_real_time : 0;
+            proj.gren_stamp[slot] = expires_at + skew;
+        }
+        p = find(p, classname, "player");
+    }
+}
 .float last_prime;
 .float conc_amp;
 .float conc_finished;

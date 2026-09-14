@@ -778,7 +778,7 @@ void EntUpdate_Projectile(float isnew) {
         // value -- is not a small error near a frame edge, it is a whole
         // frame.  The primer's own clock is a number both sides already hold
         // identically, so for their own grenade neither side converts at all.
-        COMM(Float, fpp.expires_cmd);
+        COMMO(Float, self.fpp.expires_cmd, Gren_StampFor(self, to_player));
     }
 
     if (sendflags & FOPP_POS) {

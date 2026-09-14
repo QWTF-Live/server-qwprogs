@@ -670,14 +670,13 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     if (!PM_Enabled())
         return;
 
-    // Our own grenade carries its fuse on our own command clock, stamped when
-    // we primed it, so take it as it stands.  Which command a fuse lands on is
-    // a discrete choice: an offset applied twice, once here from a copy a
-    // round trip old and once on the server from the live value, is not a
-    // small error near a frame edge but a whole frame of push.  Someone else's
-    // grenade is stamped on their clock, which tells us nothing, so that one
-    // still has to be moved across.
-    if (ent.fpp.expires_cmd && ent.owner_entnum == pengine.player_entnum)
+    // The grenade carries its fuse named on our own command clock, taken when
+    // it was thrown and sent to us alone.  Which command a fuse lands on is a
+    // discrete choice: an offset applied twice, once here from a copy a round
+    // trip old and once on the server from the live value, is not a small
+    // error near a frame edge but a whole frame of push.  So the server hands
+    // us the number rather than the ingredients, and neither side converts.
+    if (ent.fpp.expires_cmd)
         itime = ent.fpp.expires_cmd;
     else
         itime = PM_WorldToCmdTime(itime);

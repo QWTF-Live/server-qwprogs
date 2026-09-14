@@ -94,7 +94,8 @@ float remote_time();
 .float tf_items;                // Another flag for player items
 .float tf_items_flags;          // Flags for the player items
 .float primed_gren_type;        // Type of (last) primed grenate
-.float primed_gren_exp;         // Expiry of (last) primed grenade
+.float primed_gren_exp;         // Expiry of (last) primed grenade, world time
+.float primed_gren_cmd;         // the same instant on this player's command clock
 .float no_grenades_1;           // Number of grenades of type 1 being carried
 .float no_grenades_2;           // Number of grenades of type 2 being carried
 .float cheat_check;             // Time when we'll next check for team cheats

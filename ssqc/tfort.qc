@@ -712,6 +712,7 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
     // think beats a command boundary every time without it.
     proj.nextthink = timer.heat + SERVER_FRAME_DT;
     proj.blast_cmd_due = blast_due_cmd;
+    proj.gren_next = user.held_gren;
     user.held_gren = proj;
 
     int gtype = timer.fpp.gren_type;
@@ -871,16 +872,27 @@ static float gren_release_have_org;
 // grenade's own think is still armed and still correct; this simply gets there
 // first, from inside a command, which is what makes the push reachable.
 void PlayerGren_Blast() {
-    entity g = self.held_gren;
-    if (!g || !g.blast_cmd_due || g.classname != "grenade")
-        return;
-    if (time < g.blast_cmd_due)
+    // A list, not a slot.  Holding one grenade while a thrown one is still in
+    // the air is ordinary play, and both want a blast off a command -- sharing
+    // one field meant the second overwrote the first, one of them lost its
+    // command release, and the two sides exploded different grenades on the
+    // same command: sources twenty-seven units apart and unrelated pushes.
+    entity g = self.held_gren, prev = world;
+    while (g && (!g.blast_cmd_due || g.classname != "grenade" ||
+                 time < g.blast_cmd_due)) {
+        prev = g;
+        g = g.gren_next;
+    }
+    if (!g)
         return;
 
     entity held = self;
     float held_time = time, held_real = cmd_real_time;
 
-    self.held_gren = world;
+    if (prev)
+        prev.gren_next = g.gren_next;
+    else
+        self.held_gren = g.gren_next;
     self = g;
     // In the clock its think would have had, so everything the blast stamps --
     // the due it defers to, the effect it sends -- is the number it always was.
@@ -2531,6 +2543,7 @@ void () TeamFortress_ExplodePerson = {
     // the due is one lead beyond the clock we are standing on, so the command
     // the client picks cannot already have run.
     proj.blast_cmd_due = blast_due_cmd ? blast_due_cmd + 0.1 : 0;
+    proj.gren_next = self.owner.held_gren;
     self.owner.held_gren = proj;
 
     setorigin(proj, gren_release_have_org ? gren_release_org : self.owner.origin);

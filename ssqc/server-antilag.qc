@@ -44,6 +44,7 @@
 
 // Engine fields (fteqw server/progdefs.h).
 .float  pusher_advance;         // players: seconds to report pushers ahead by
+.vector pp_vel_pre;             // players: velocity before this command's move
 .float  pusher_predict_time;    // pushers: predicted start, per-frame offer
 .vector pusher_predict_velocity;
 .float  pusher_predict_endtime;
@@ -152,7 +153,39 @@ static entity PP_MultiFirstDoor(entity trigger) {
     return world;
 }
 
+// Being stopped by a door is hard to catch on purpose, so catch it on its own.
+//
+// A player brought to a hard stop next to a pusher is the signature: the server
+// clips a velocity component the client's copy of that pusher did not, and the
+// client runs on past it.  The suspicion is that the advance is symmetric --
+// a closing door shown early is harmless because the client stops short, but an
+// opening one shown early lets the client through a gap the server has not
+// opened yet, which is what "more open feels like a wall" in antilag.md warns
+// about.  This reports the numbers that decide it: where the pusher actually
+// was, where this player was shown it, and how much speed the stop took.
+static void PP_ReportPusherStop() {
+    float lost = vlen(self.pp_vel_pre) - vlen(self.velocity);
+    if (lost < 200 || self.pp_vel_pre == '0 0 0')
+        return;
+    entity e = findradius(self.origin, 128);
+    while (e) {
+        if (e.movetype == MOVETYPE_PUSH && e.velocity != '0 0 0') {
+            rj_trace("S: pusher-stop seq=%.0f lost=%.0f org=%v vel=%v -> %v\n",
+                     self.cmd_sequence, lost, self.origin, self.pp_vel_pre, self.velocity);
+            rj_trace(" pusher=%s at=%v vel=%v shown=%v adv=%.0fms\n",
+                     e.classname, e.origin, e.velocity,
+                     e.origin + e.velocity * self.pusher_advance,
+                     self.pusher_advance * 1000);
+            self.rj_trace_until = time + 0.4;
+            return;
+        }
+        e = e.chain;
+    }
+}
+
 void PP_PlayerPostThink() {
+    PP_ReportPusherStop();
+
     float adv, start;
     entity trigger, e, who;
 

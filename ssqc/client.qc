@@ -2870,6 +2870,7 @@ void () PlayerPreThink = {
     FO_UpdateClientPing();
     PMD_BeginCommand(self);
     CmdClock_Update();
+    self.pp_vel_pre = self.velocity;   // for the pusher-stop detector
 
     if (self.rj_trace_until > time)
         rj_trace("S: pt t=%.3f org=%v vel=%v og=%.0f\n",

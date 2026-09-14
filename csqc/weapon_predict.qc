@@ -1717,30 +1717,64 @@ static void W_PrimeGren(float index) {
     pstate_pred.primed_gren_exp = held_gren_exp;
 }
 
+// The fuse we have already materialised a grenade for.  Clearing the predict
+// state is not a latch: it is re-derived from the server's every cycle, so the
+// only thing stopping a second spawn was the server's own clear coming back a
+// round trip later -- seven commands at a hundred ping, and a grenade on each.
+static float held_gren_done;
+
 static void WP_ExplodeGren() {
     if (pstate_pred.tfstate & TFSTATE_GREN_MASK_PRIMED == 0)
         return;
 
+    // Two clocks, two jobs.  explode_at is the world instant the grenade goes
+    // off at, and everything it is stamped with measures from there -- its
+    // start, its expiry, and the duration the blast is scheduled by.  Which
+    // command we materialise it on is a separate question and cannot be asked
+    // of a world instant, because our chain sits a per-player offset from one.
+    // last_prime is that same prime on our own clock, so the fuse falls out of
+    // it with nothing sent per grenade.
     float explode_at = pstate_server.primed_gren_exp;
+    float explode_cmd = pstate_server.last_prime + GREN_FUSE;
     float tfstate = pstate_pred.tfstate;
 
-    if (!explode_at || explode_at > pstate_pred.server_time)
+    if (!explode_at || !pstate_server.last_prime ||
+        explode_cmd > pstate_pred.server_time)
         return;
+
+    // Only the frame that acts retires it.  Catching up several commands in one
+    // pass -- after a hitch -- used to clear the primed bit on a command that
+    // was not the effect frame, and the next pass then returned at the top: a
+    // held blast with no prediction behind it at all.
+    if (!IsEffectFrame())
+        return;
+
+    if (held_gren_done == explode_cmd)
+        return;
+    held_gren_done = explode_cmd;
 
     pstate_pred.primed_gren_exp = 0;
     pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
-
-    if (!IsEffectFrame())
-        return;
 
     rj_trace("C: gren-held seq=%.0f pt=%.4f heat=%.4f org=%v ccf=%.0f\n",
              (float)pstate_pred.seq, pstate_pred.server_time, explode_at,
              PM_Org(), (float)clientcommandframe);
     rj_cmd_trace_until_seq = clientcommandframe + 12;
 
+    // The same step back the server takes, from the same two numbers: where
+    // this command left us and how fast we were going.  The grenade falls from
+    // here for a hundred milliseconds, so it has to start where we were when
+    // the fuse went and not where the command ended.
+    float over = bound(0, pstate_pred.server_time - explode_cmd, input_timelength);
+    vector gren_org = PM_Org() - PM_Vel() * over;
+
+    rj_trace("C: gren-held seq=%.0f pt=%.4f fuse=%.4f over=%.2fms org=%v ccf=%.0f\n",
+             (float)pstate_pred.seq, pstate_pred.server_time, explode_cmd, over * 1000,
+             gren_org, (float)clientcommandframe);
+
     int type_index = (tfstate & TFSTATE_GREN1_PRIMED) ? 0 : 1;
     int gren_type = FO_ClassGren(pstate_pred.playerclass, type_index)->id;
-    entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org(), CP_DROP);
+    entity gren = PP_CreateProjectile(FPP_HANDGRENADE, gren_org, CP_DROP);
     gren.fpp.gren_type = gren_type;
     FPP_ApplyGrenadeProperties(gren);
 

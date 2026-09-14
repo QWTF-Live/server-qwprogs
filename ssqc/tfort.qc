@@ -664,6 +664,9 @@ stg_table_entry stg_table[] = {
 void (entity timer, float via) FO_SpawnThrownGrenade = {
     local entity user = timer.owner;
     user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
+    user.primed_gren_exp = 0;
+    user.last_prime = 0;
+    user.grenade_timer = world;
     user.last_throw = time;
 
     // Which command the throw lands on.  via=0 is the release itself, inside
@@ -804,7 +807,7 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
     if (gdesc->id == GREN_CALTROP)
         tGrenade.heat = time_base + 0.5 + 0.5;
     else {
-        tGrenade.heat = time_base + 3 + 0.8;
+        tGrenade.heat = time_base + GREN_FUSE;   // world; last_prime + GREN_FUSE is the same instant on the chain
 
         self.primed_gren_type = gdesc->id;
         self.primed_gren_exp = tGrenade.heat;
@@ -833,6 +836,71 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
     self.last_prime = time_base + (time - RealTime());
 }
 
+// How long the timer waits past the fuse for the release before detonating the
+// grenade itself, and how often it looks.  Half a second is sized against what
+// it covers rather than tuned: a holder whose commands are running is released
+// within a command or two, so this never fires for them, and what has to fit
+// under it is a gap in the command stream.
+const float GREN_BACKSTOP_WAIT = 0.5;
+const float GREN_BACKSTOP_POLL = 0.05;
+
+// A held grenade goes off at last_prime + 3.8 on the holder's own clock -- an
+// anchor both sides hold and neither converts.  Materialising it from the
+// timer's think instead put it on whichever command the server happened to be
+// on when world time reached the fuse, one or two commands from the one the
+// client picks, and the holder's travel between those is the whole of the gap
+// between the two copies.
+//
+// Runs from PlayerPostThink inside the command warp, so `time` here is the
+// command clock the fuse is stamped on.
+static float gren_release_fuse;    // RJ_TRACE
+static vector gren_release_org;
+static float gren_release_have_org;
+
+void PlayerGren_Apply() {
+    entity t = self.grenade_timer;
+    if (!t || !self.last_prime || !self.primed_gren_exp)
+        return;
+    if (time < self.last_prime + GREN_FUSE)
+        return;
+    // Not a timer something else already retired: grenade_timer outlives a few
+    // of those routes and a dangling one reads gren_type 0, which indexes
+    // stg_table below its start and takes the server down.
+    if (t.classname != "primetimer" || !t.fpp.gren_type)
+        return;
+    if (self.tfstate & TFSTATE_GRENTHROWING)
+        return;   // a throw is latched; the throw path owns this timer
+    if (t.weapon == GREN_CALTROP)
+        return;   // caltrops keep their own schedule
+
+    entity held = self;
+    float held_time = time, held_real = cmd_real_time;
+    gren_release_fuse = self.last_prime + GREN_FUSE;
+
+    // Where the holder was when the fuse actually went, not where this command
+    // left them: the grenade falls from here for a hundred milliseconds, so a
+    // command of travel is a real error in the trajectory rather than a label.
+    float over = bound(0, time - gren_release_fuse, input_timelength);
+    gren_release_org = self.origin - self.velocity * over;
+    gren_release_have_org = TRUE;
+
+    // Everything TeamFortress_ExplodePerson stamps comes out of `time` -- the
+    // expiry, created_at, the static projection -- and those have to stay
+    // paired with each other and with the world instant the client measures
+    // from.  Getting one onto the command clock and leaving the rest behind is
+    // what moved the blast two commands the first time this was tried.  So run
+    // it in exactly the clock the think would have.
+    self = t;
+    time = t.heat;
+    cmd_real_time = 0;
+    TeamFortress_ExplodePerson();   // clears the fuse fields and the timer
+    time = held_time;
+    cmd_real_time = held_real;
+    gren_release_have_org = FALSE;
+    self = held;
+    dremove(t);
+}
+
 void () FO_GrenadeThink = {
     local entity user = self.owner;
 
@@ -842,6 +910,9 @@ void () FO_GrenadeThink = {
         // Dropped without exploding, so retire the overhead timer -- teammates
         // would otherwise keep counting down to an explosion that never comes.
         UpdateClientGrenadeThrown(user);
+        user.primed_gren_exp = 0;
+        user.last_prime = 0;
+        user.grenade_timer = world;
         dremove(self);
         return;
     }
@@ -865,6 +936,20 @@ void () FO_GrenadeThink = {
             self.nextthink = expiry;
         }
     } else {
+        // The release owns this for a holder whose commands are running.
+        // Bounded: cmd_clock is not cleared when a holder stops sending, so an
+        // unbounded wait would leave a lagged-out player holding a grenade that
+        // never went off.  It says so if it ever fires, because a backstop
+        // carrying normal play is a bug in the thing it backs.
+        if (self.weapon != GREN_CALTROP && self.owner.last_prime &&
+            self.owner.cmd_clock && !self.owner.has_disconnected &&
+            time < self.heat + GREN_BACKSTOP_WAIT) {
+            self.nextthink = time + GREN_BACKSTOP_POLL;
+            return;
+        }
+        if (self.owner.last_prime)
+            rj_trace("S: gren-backstop t=%.4f heat=%.4f late=%.0fms\n",
+                     time, self.heat, (time - self.heat) * 1000);
         if (self.weapon != GREN_CALTROP)
             TeamFortress_ExplodePerson();
         dremove(self);
@@ -2341,6 +2426,12 @@ void () TeamFortress_ExplodePerson = {
     self.owner.rj_cmd_trace_until = RealTime() + 0.16;
 
     self.owner.tfstate &= ~TFSTATE_GREN_MASK_ALL;
+    // Both routes fire at the same world instant, so which wins is decided by
+    // whether this player's packet arrived before physics -- and both winning
+    // is double damage.  Whoever gets here owns it.
+    self.owner.primed_gren_exp = 0;
+    self.owner.last_prime = 0;
+    self.owner.grenade_timer = world;
     KickPlayer(-2, self.owner);
 
     entity proj = FOProj_Create(FPP_HANDGRENADE);
@@ -2378,7 +2469,7 @@ void () TeamFortress_ExplodePerson = {
     proj.avelocity = gdesc->avelocity;
     proj.touch = ste->touch;
     proj.think = ste->think;
-    setorigin(proj, self.owner.origin);
+    setorigin(proj, gren_release_have_org ? gren_release_org : self.owner.origin);
     FOProj_Finalize(proj);
 
     if ((self.owner.playerclass == PC_SCOUT) && (self.weapon != 10))

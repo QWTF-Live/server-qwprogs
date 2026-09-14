@@ -886,6 +886,11 @@ struct KnockBlast {
     float back;
 };
 
+// How long a primed grenade holds before it goes off.  Both sides add it to the
+// prime -- which last_prime records on the holder's own clock -- so each names
+// the same command for the blast with nothing sent per grenade.
+const float GREN_FUSE = 3 + 0.8;
+
 // Where every stage measures the target from.  Measuring from the origin puts
 // it four units out, which near the edge of the radius is the difference
 // between a push and nothing.

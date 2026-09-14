@@ -1255,15 +1255,6 @@ static void PM_UpdateError() {
     // not carry the same set, the difference between them is not a correction.
     float liveness_moved = pm_prev_update_seq &&
                            PM_NudgeLivenessDiffers(pm_prev_update_seq, pm_prev_update_time);
-    // Filtering this frame is not enough.  The prior we save at the end of it
-    // was built while the nudge was still live, so the frame after -- when both
-    // contexts agree it is gone -- the prior still carries its push and the new
-    // prediction does not.  That was the 93 units that got through unfiltered
-    // right after the 84 this rule caught.  Rebuild the prior from the raw
-    // server state next time, which carries the push because the server applied
-    // it, the same way an added nudge already does.
-    if (liveness_moved)
-        nudges_added = TRUE;
     // 1 a push landed on the command just gone, 2 the two replays applied
     // different pushes, 4 a nudge was live for one of them and expired for the
     // other.  Reported as a set so a trace says which rule earned its keep.

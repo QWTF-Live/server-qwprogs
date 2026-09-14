@@ -145,6 +145,11 @@ enum {
     GREN_NONE,
 };
 
+// The last type fo_grenades has a row for.  Indexing either grenade table is
+// only safe between GREN_FIRST and its own end, and the field being indexed by
+// is an int on an entity that anything can zero or recycle.
+const float GREN_LAST_DESC = GREN_NONE;
+
 struct FO_GrenInfo {
     int id;
     string name;
@@ -269,9 +274,13 @@ FO_ClassGrenades class_grenades[] = {
     { PC_CIVILIAN,  {GREN_NONE,   GREN_NONE} },
 };
 
+// Both ends.  The low guard has been here a while -- a zeroed gren_type indexes
+// at minus a hundred -- but the high end was open, and the enum runs past the
+// table: GREN_MIRVLET, GREN_RED, GREN_PIPE and GREN_NONE are all valid values
+// of the field and none of them has a row here.
 FO_GrenInfo* FO_GrenDesc(float gren_type) {
-    if (gren_type < GREN_FIRST) {
-        printf("proj missing gren_type [%d], tell newby\n", gren_type);
+    if (gren_type < GREN_FIRST || gren_type > GREN_LAST_DESC) {
+        printf("proj bad gren_type [%d], tell newby\n", gren_type);
         gren_type = GREN_FIRST;
     }
     return &fo_grenades[gren_type - GREN_FIRST];

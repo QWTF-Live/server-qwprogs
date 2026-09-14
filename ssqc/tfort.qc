@@ -646,6 +646,9 @@ static struct stg_table_entry {
     float no_expiry;
 };
 
+// Which think and touch each type gets.  Shorter than fo_grenades: it stops at
+// GREN_CALTROP, so MIRVLET, RED, PIPE and NONE are past its end as well as
+// below its start.
 stg_table_entry stg_table[] = {
     { GREN_NORMAL,  NormalGrenadeTouch,     FO_T_GrenExplode},
     { GREN_CONC,    ConcussionGrenadeTouch, FO_T_GrenExplode},
@@ -660,6 +663,21 @@ stg_table_entry stg_table[] = {
     { GREN_FLASH,   FlashGrenadeTouch,      FlashGrenadeExplode},
     { GREN_CALTROP, CanisterTouch,          ScatterCaltrops},
 };
+
+// The only way to reach stg_table.  A grenade's type lives in a field on an
+// entity, and an entity can be recycled, half-initialised or retired out from
+// under whoever is still holding it -- last night's crash was a zeroed
+// gren_type indexing at minus a hundred, and it came back tonight.  So the
+// index is checked rather than assumed, and an out-of-range type is refused
+// rather than quietly turned into a normal grenade: a grenade that should not
+// exist is better not spawned than spawned as something else.
+static stg_table_entry* FO_GrenStg(int gren_type) {
+    if (gren_type < GREN_FIRST || gren_type > GREN_CALTROP) {
+        PRINT_ONCE("bad gren_type [%d] for stg_table, tell newby\n", (float)gren_type);
+        return __NULL__;
+    }
+    return &stg_table[gren_type - GREN_FIRST];
+}
 
 // How long a grenade's own think yields to the command-driven blast.
 //
@@ -733,7 +751,13 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
 
     int gtype = timer.fpp.gren_type;
     FO_GrenInfo* gdesc = FO_GrenDesc(gtype);
-    stg_table_entry* ste = &stg_table[gtype - GREN_FIRST];
+    stg_table_entry* ste = FO_GrenStg(gtype);
+    if (!ste) {
+        // The timer we were handed is not a grenade any more.  Throwing
+        // whatever it has become is worse than throwing nothing.
+        dremove(proj);
+        return;
+    }
 
     proj.fpp.gren_type = gtype;
     if (!ste->no_expiry) {
@@ -965,7 +989,7 @@ void FO_DebugDropOn(entity targ, string kind, float lead) {
     if (kind == "gren") {
         int gtype = GREN_NORMAL;
         FO_GrenInfo* gdesc = FO_GrenDesc(gtype);
-        stg_table_entry* ste = &stg_table[gtype - GREN_FIRST];
+        stg_table_entry* ste = FO_GrenStg(gtype);
 
         proj = FOProj_Create(FPP_HANDGRENADE);
         proj.owner = bot;
@@ -2702,7 +2726,11 @@ void () TeamFortress_ExplodePerson = {
         return;
     }
 
-    stg_table_entry* ste = &stg_table[gtype - GREN_FIRST];
+    stg_table_entry* ste = FO_GrenStg(gtype);
+    if (!ste) {
+        dremove(proj);
+        return;
+    }
 
     proj.fpp.gren_type = gtype;
     proj.fpp.flags |= FPF_NO_REWIND;

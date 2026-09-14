@@ -31,8 +31,34 @@ float shared_crandom(int type) {
 // shared PRNG stream is least able to stay aligned.
 static int death_rng;
 
+// Vary it per server session as well as per life, so the tenth death of a game
+// is not the tenth death of every game.  starttime is already published into
+// serverinfo at worldspawn (ssqc/world.qc) and the client already reads
+// serverinfo, so it costs nothing to send and both sides fold it the same way.
+// It is a fourteen-digit timestamp, well past what a float holds, so fold the
+// characters rather than converting it.
+static int death_salt, death_salt_known;
+
+static int DeathSalt() {
+    if (!death_salt_known) {
+#ifdef SSQC
+        string s = infokey(world, "starttime");
+#else
+        string s = serverkey("starttime");
+#endif
+        // Before it arrives, salt with nothing rather than caching the answer.
+        if (!s || s == "")
+            return 0;
+
+        for (float i = 0; i < strlen(s); i++)
+            death_salt = (death_salt * 31 + str2chr(s, i)) & 65535;
+        death_salt_known = TRUE;
+    }
+    return death_salt;
+}
+
 void DeathRand_Begin(float gen) {
-    death_rng = (((int)gen * 2027) & 65535) | 1;   // zero is a fixed point of the LFSR
+    death_rng = ((((int)gen * 2027) ^ DeathSalt()) & 65535) | 1;   // zero is a fixed point of the LFSR
 }
 
 float DeathRand() {

@@ -618,7 +618,15 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                 } else {
                     // Not held: applied here and now, but through the same
                     // arithmetic, so the two cannot drift apart on the one
-                    // thing the client also computes.
+                    // thing the client also computes.  This is also the path a
+                    // held blast lands on when it comes back round, which is
+                    // how the shooter's own rocket pairs its damage with the
+                    // shared effect: the radius pass is re-run at the due
+                    // command and arrives here with nothing left to defer.
+                    //
+                    // base is the damage the falloff already took down, so it
+                    // is not the blast's own and Knock_Points must not be
+                    // handed this one.  Knock_Velocity does not read it.
                     KnockBlast b;
                     b.type = KNOCK_RADIUS;
                     b.src = inflictor.origin;

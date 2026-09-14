@@ -415,6 +415,11 @@ static float pm_final_pass;
 static float nudge_sig;
 static float nudge_sig_from;   // only commands past this one are in the signature
 static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors until this seq
+// RJ_TRACE: a frame's correction is only worth a line if it is big enough to
+// read; the quiet ones are carried as a count so the denominator survives.
+const static float RJ_ERR_NOTABLE = 0.25;
+const static float RJ_ERR_EVERY = 256;
+static float rj_err_n, rj_err_filt, rj_err_max, rj_err_max_scf;
 // RJ_TRACE: per-frame result of the most recent replay, i.e. what was shown for that frame.
 struct RJ_Shown { float seq; vector org, vel; };
 static const float RJ_NSHOWN = 64;
@@ -1156,11 +1161,29 @@ static void PM_UpdateError() {
     if (filtered)
         err = '0 0 0';
 
-    if (servercommandframe < rj_trace_until_seq)
-        rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f/%.2f",
-                 servercommandframe, clientcommandframe, vlen(err), err, filtered, vlen(raw));
-        rj_trace(" sig=%.0f/%.0f lastnudge=%.0f acc=%.2f\n",
-                 prior_sig, new_sig, pm.last_nudge, vlen(pm.error));
+    // The frames where the two replays agree are the overwhelming majority and
+    // they all say the same thing, so a line each buries the handful that do
+    // not.  Report a frame only when the difference is large enough to be worth
+    // reading, and carry the rest as a count so the denominator is not lost.
+    if (servercommandframe < rj_trace_until_seq) {
+        rj_err_n++;
+        rj_err_filt += !!filtered;
+        if (vlen(raw) > rj_err_max) {
+            rj_err_max = vlen(raw);
+            rj_err_max_scf = servercommandframe;
+        }
+
+        if (vlen(raw) > RJ_ERR_NOTABLE) {
+            rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f/%.2f",
+                     servercommandframe, clientcommandframe, vlen(err), err, filtered, vlen(raw));
+            rj_trace(" sig=%.0f/%.0f lastnudge=%.0f acc=%.2f\n",
+                     prior_sig, new_sig, pm.last_nudge, vlen(pm.error));
+        } else if (rj_err_n >= RJ_ERR_EVERY) {
+            rj_trace("C: err-quiet n=%.0f filtered=%.0f max=%.2f@scf=%.0f\n",
+                     rj_err_n, rj_err_filt, rj_err_max, rj_err_max_scf);
+            rj_err_n = rj_err_filt = rj_err_max = rj_err_max_scf = 0;
+        }
+    }
 
 
     float nerr = vlen(err);

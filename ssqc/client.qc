@@ -2885,10 +2885,14 @@ void () PlayerPreThink = {
                  self.cmd_clock_fix * 1000, self.cmd_clock_fix_seq, self.cmd_clock_k);
     }
 
-    if (self.rj_cmd_trace_until > time)
+    // Both halves are one line; without the braces the tail printed for every
+    // command of every player and made up a third of the log, orphaned from
+    // the head that says which command it belongs to.
+    if (self.rj_cmd_trace_until > time) {
         rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f clk=%.4f msec=%.2f", self.cmd_sequence, self.cmd_servertime, time, self.cmd_clock, input_timelength * 1000);
         rj_trace(" err=%+.1fms fix=%+.1fms@%.0f fixes=%.0f\n", (self.cmd_clock - time) * 1000,
                  self.cmd_clock_fix * 1000, self.cmd_clock_fix_seq, self.cmd_clock_k);
+    }
 
     // Time, or an enemy close enough that the protection would be cover.
     // Enemy damage ends it too, from SpawnProtectedFrom.

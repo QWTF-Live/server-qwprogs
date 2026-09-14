@@ -350,6 +350,22 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
                 ReportMatchResult(kReportEnd);
             }
             return TRUE;
+        case "knockme":
+            // Measurement aid: somebody else's explosion, on demand, with a
+            // warning so it can be met while moving.  "cmd knockme [gren|rocket]
+            // [lead]" -- rocket and 200 ms by default.
+            if (!qwtf_debug) {
+                sprint(self, PRINT_HIGH,
+                       "Debug commands are off. Set localinfo qwtf_debug 1.\n");
+                return TRUE;
+            }
+            if (self.classname != "player" || self.deadflag) {
+                sprint(self, PRINT_HIGH, "knockme: needs a live player\n");
+                return TRUE;
+            }
+            FO_DebugDropOn(self, arg2 == "gren" ? "gren" : "rocket",
+                           arg3 ? bound(0.05, stof(arg3), 2) : 0.2);
+            return TRUE;
         case "spawn_debug":
             if (!qwtf_debug) {
                 sprint(self, PRINT_HIGH,

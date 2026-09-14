@@ -883,6 +883,82 @@ const float GREN_BACKSTOP_POLL = 0.05;
 //
 // Runs from PlayerPostThink inside the command warp, so `time` here is the
 // command clock the fuse is stamped on.
+// Debug: drop an explosion on a player from above, after a warning, so the
+// third-party push path can be exercised on demand instead of waited for.
+//
+// Owned by a stand-in rather than by the player, because the two paths are not
+// the same one.  A player's own blast anchors on their own command and the
+// catch-up never runs -- that case is covered.  What is unmeasured is somebody
+// else's blast, where the due is a converted instant and the victim's chain can
+// have leapt past it, and that needs an owner who is not the victim.
+//
+// Straight down: the horizontal arrangement makes no difference to the clocks,
+// and a vertical drop into open air is the same shot every time.
+void FO_DebugDropOn(entity targ, string kind, float lead) {
+    entity bot = spawn();
+    bot.classname = "knockbot";
+    bot.netname = "debug";
+    bot.team_no = 0;
+    bot.solid = SOLID_NOT;
+    bot.movetype = MOVETYPE_NONE;
+    setorigin(bot, targ.origin + '0 0 8');
+    bot.think = SUB_Remove;
+    bot.nextthink = time + 10;
+
+    // Beside them rather than on their head, so it is the radius push being
+    // measured and not a direct hit as well.
+    vector at = targ.origin + '48 0 0';
+
+    // Warn first.  Both go out now; only the blast waits.
+    sprint(targ, PRINT_HIGH, strcat("knockme: ", kind, " incoming\n"));
+    stuffcmd(targ, "bf\n");
+    targ.rj_cmd_trace_until = RealTime() + lead + 0.4;
+    targ.rj_trace_until = time + lead + 0.4;
+    rj_trace("S: knockme kind=%s t=%.4f lead=%.0fms seq=%.0f clk=%.5f org=%v\n",
+             kind, time, lead * 1000, targ.cmd_sequence, targ.cmd_clock, targ.origin);
+
+    entity proj;
+    if (kind == "gren") {
+        int gtype = GREN_NORMAL;
+        FO_GrenInfo* gdesc = FO_GrenDesc(gtype);
+        stg_table_entry* ste = &stg_table[gtype - GREN_FIRST];
+
+        proj = FOProj_Create(FPP_HANDGRENADE);
+        proj.owner = bot;
+        proj.movetype = MOVETYPE_BOUNCE;
+        proj.solid = SOLID_BBOX;
+        proj.classname = "grenade";
+        proj.velocity = '0 0 -64';
+        proj.fpp.gren_type = gtype;
+        proj.fpp.expires_at = time + lead;
+        proj.skin = gdesc->skin;
+        proj.avelocity = gdesc->avelocity;
+        proj.touch = ste->touch;
+        proj.think = ste->think;
+        proj.nextthink = proj.fpp.expires_at;
+        setmodel(proj, gdesc->model);
+        setorigin(proj, at + '0 0 24');
+    } else {
+        float speed = FPP_Get(FPP_ROCKET)->speed;
+
+        proj = FOProj_Create(FPP_ROCKET);
+        proj.owner = bot;
+        proj.movetype = MOVETYPE_FLYMISSILE;
+        proj.solid = SOLID_BBOX;
+        proj.classname = "proj_rocket";
+        proj.velocity = '0 0 -1' * speed;
+        proj.angles = vectoangles(proj.velocity);
+        proj.touch = T_MissileTouch;
+        proj.voided = 0;
+        proj.weapon = DMSG_ROCKETL;
+        proj.think = SUB_Remove;
+        proj.nextthink = time + 5;
+        // Far enough up that the fall takes the lead we promised.
+        setorigin(proj, at + '0 0 1' * (speed * lead));
+    }
+    FOProj_Finalize(proj);
+}
+
 static float gren_release_fuse;    // RJ_TRACE
 static vector gren_release_org;
 static float gren_release_have_org;

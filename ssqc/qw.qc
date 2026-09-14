@@ -29,6 +29,7 @@ enum {
 // A blast the world schedules, held until the command it was due on; see
 // weapons.qc.  Returns the held knock so the caller can fill in what its own
 // kind needs, or world when there is nothing to hold it against.
+float knock_edge;       // localinfo knock_edge, seconds: see PlayerKnock_Apply
 float blast_due;        // world time the blast was due at, 0 when unscheduled
 entity blast_proj;      // the projectile, which carries a base reading per viewer
 float blast_delay;      // how long after that reading the blast is due

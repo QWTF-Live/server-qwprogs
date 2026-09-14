@@ -1108,9 +1108,9 @@ static void Blast_Knock(entity e) {
         float moment = Class_ScaleMoment(targ.playerclass, points * e.knock_ratio);
         targ.velocity += CalcKnock(e.origin, targ, e.knock_flags, moment);
         PMD_Knock(targ, targ.velocity - before, moment);
-        rj_trace("S: knock t=%.3f seq=%.0f clk=%.5f due=%.5f edge=%+.2fms targ=%s", time,
+        rj_trace("S: knock t=%.3f seq=%.0f clk=%.5f due=%.5f edge=%+.2fms ke=%+.2fms targ=%s", time,
                  targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
-                 (targ.cmd_clock - e.forward_knock) * 1000, targ.netname);
+                 (targ.cmd_clock - e.forward_knock) * 1000, knock_edge * 1000, targ.netname);
         rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", e.origin,
                  targ.origin + (targ.mins + targ.maxs) * 0.5,
                  vlen(targ.origin + (targ.mins + targ.maxs) * 0.5 - e.origin),
@@ -1150,7 +1150,7 @@ void PlayerKnock_Apply() {
     entity held_self = self;
     while (k) {
         next = k.knock_next;
-        if (time >= k.forward_knock) {
+        if (time + knock_edge >= k.forward_knock) {
             self = k;
             switch (k.knock_kind) {
                 case KK_BLAST:  Blast_Knock(k);   break;

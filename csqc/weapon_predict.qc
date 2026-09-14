@@ -57,6 +57,9 @@ inline float WP_Enabled() { return pengine.wp_enabled; }
 inline float WPP_ViewModelMask() { return pengine.view_mask; }
 
 inline float PM_Enabled() { return pengine.pm_enabled; }
+float PM_WantPmove();
+float PM_KnockSelf();
+float PM_KnockOther();
 
 float WP_PlayerClass() {
     return pstate_server.playerclass;
@@ -207,6 +210,8 @@ void WPP_Status() {
             pp_enabled ? "enabled" : "disabled", pp_source);
     printf(" Movement: %s\n",
             PM_Enabled() ? "enabled" : "disabled");
+    printf(" Knock: self %s, others %s\n",
+            PM_KnockSelf() ? "on" : "off", PM_KnockOther() ? "on" : "off");
 
     float avg, variance;
     fill_avg_ping(&avg, &variance);
@@ -325,7 +330,7 @@ void WPP_UpdateEnable(float force) {
     }
 
     // Set this independently of init above so that it can come up faster.
-    if (CVARF(fo_pmove))
+    if (PM_WantPmove())
         wpp_status |= CSQC_PMOVE;
     if (CVARF(fopmd_force_pos))
         wpp_status |= CSQC_FORCE_POS;
@@ -545,7 +550,6 @@ void PredProj_Sound(int proj_type, float vol = 1) {
 
 void PM_ServerUpdate();
 
-DEFCVAR_FLOAT(fo_beta_nudge_explosion, 0);
 
 void WP_ProcessServerUpdate() {
     pstate_server.seq = servercommandframe;
@@ -1345,7 +1349,12 @@ inline float get_phys_time(entity e) {
         // this will offset explosions in the short term).
         static float last_self_time;
         float dt = min(inst_ping_ms, CVARF(wpp_adv_otherp_ms)) / 1000.0;
-        if (PM_Enabled() && (CVARF(fo_beta_nudge_explosion) & 2))
+        // Where somebody else's projectile has got to is simulation, not a
+        // push, so it does not belong to pm_knock_other: turning the knock off
+        // used to move the projectile as well, and a switch about whether an
+        // explosion shoves you has no business deciding where the rocket is
+        // drawn.  Do the work either way; only the push is optional.
+        if (PM_Enabled())
             dt = (clientcommandframe - servercommandframe - 1) * SERVER_FRAME_DT;
         last_self_time = max(last_self_time, time + dt);
         return last_self_time;

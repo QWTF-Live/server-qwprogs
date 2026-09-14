@@ -1272,7 +1272,7 @@ void FOProj_Finalize(entity mis) {
     mis.SendFlags = FOPP_INIT;
 }
 
-// Client-side player movement prediction (fo_pmove): while the client
+// Client-side player movement prediction (pmove): while the client
 // advertises it, send the pmove block.  The server's own copy of the player
 // is sent to that client non-solid (engine), so there is nothing to hide or
 // stage.

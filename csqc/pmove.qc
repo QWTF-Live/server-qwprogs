@@ -168,9 +168,37 @@ DEFCVAR_FLOAT(fo_smartjump, 1);
 DEFCVAR_FLOAT(fopm_noerror, 0);
 DEFCVAR_FLOAT(fopm_nocache, 0);
 DEFCVAR_FLOAT(fopm_nostep, 0);
-DEFCVAR_FLOAT(fopm_nonudge, 0);
 DEFCVAR_FLOAT(fopm_errortime, 0);
 DEFCVAR_FLOAT(fopm_debug, 0);
+
+// The three the player actually has a reason to touch.  -1 on all of them means
+// "not chosen", and everything is on unless somebody turns it off -- so the
+// default is the same whether or not the cvar exists in their config.
+//
+// pmove defers to fo_pmove while that name is still in circulation; setting
+// pmove at all wins.  The two knock switches are independent because the cases
+// are: your own explosions move you the instant you fire, somebody else's move
+// you when their blast reaches you, and only the first is worth losing if the
+// prediction is wrong.
+DEFCVAR_FLOAT(pmove, -1);
+DEFCVAR_FLOAT(pm_knock_self, -1);
+DEFCVAR_FLOAT(pm_knock_other, -1);
+
+static float TriState(float v, float dflt) { return v < 0 ? dflt : (v ? 1 : 0); }
+
+float PM_WantPmove()  { return TriState(CVARF(pmove), CVARF(fo_pmove) ? 1 : 0); }
+float PM_KnockSelf()  { return TriState(CVARF(pm_knock_self), 1); }
+float PM_KnockOther() { return TriState(CVARF(pm_knock_other), 1); }
+
+// Whose explosion this is, and whether they asked to be moved by it.
+//
+// The null check matters: somebody else's projectile carries no owner at all
+// on our side, and before prediction is up player_ent is null too, which would
+// make every one of them ours.
+float PM_KnockAllowed(entity ent) {
+    float mine = pengine.player_ent && ent.owner == pengine.player_ent;
+    return mine ? PM_KnockSelf() : PM_KnockOther();
+}
 
 DEFCVAR_FLOAT(fopm_explosion_eps, -1);
 static float NudgeExplosionEps() {
@@ -677,6 +705,8 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
 // server projectiles.
 static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity ent, float dmg,
                                       vector src = '0 0 0') {
+    if (!PM_KnockAllowed(ent))
+        return 0;
     if (src == '0 0 0')
         src = ent.origin;
     if (vlen(PM_Org() - src) > dmg * 3)  // Fine tune this..
@@ -752,6 +782,8 @@ static void PM_SupersedePredictedNudge(entity sent) {
 }
 
 static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
+    if (!PM_KnockAllowed(ent))
+        return;
     if (vlen(PM_Org() - ent.origin) > dmg * 3)  // Fine tune this..
         return;
 
@@ -909,9 +941,6 @@ void PM_AddSimExplosion(float itime, entity ent) {
     if (!PM_Enabled())
         return;
 
-    if ((CVARF(fo_beta_nudge_explosion) & 2 == 0) &&
-            ent.owner != pengine.player_ent)
-        return;
 
     float dmg = 0;
     switch (ent.fpp.index) {
@@ -1173,7 +1202,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         RunPlayerPhysics();
         PM_PushVolumes(ent, pm_moved_from);
 
-        if (!CVARF(fopm_nonudge) && pm.seq != clientcommandframe) {
+        if (pm.seq != clientcommandframe) {
             float slack = 0;
             PM_ApplyNudges(ent, pm.seq, pm.interp_t, pm.interp_t + step, slack);
 
@@ -1924,7 +1953,7 @@ void PM_InputFrame() {
 // View/Render
 ////////////////////////////////////////////////////////////////////////////////
 
-// The eye actually being rendered from: ours when fo_pmove owns the view, the
+// The eye actually being rendered from: ours when pmove owns the view, the
 // engine's otherwise.  Lets the smoothness metric measure either path.
 // The eye actually being rendered from.
 //

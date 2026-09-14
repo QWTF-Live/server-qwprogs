@@ -644,7 +644,7 @@ noref float(string cmd) CSQC_ConsoleCommand = {
             break;
 
         case "fo_beta_pmove":
-            printf("Please set `fo_pmove 1` instead.\n");
+            printf("Please set `pmove 1` instead.\n");
             break;
 
         case "login":

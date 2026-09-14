@@ -1371,7 +1371,7 @@ typedef struct {
 } fo_cvar_option;
 
 fo_cvar_option FO_OPTIONS[] = {
-    {"fo_pmove", "Movement Prediction", "off;on",
+    {"pmove", "Movement Prediction", "off;on",
      "Predict your own movement locally instead of waiting for the server"},
     {"cg_player_outline", "Player Outlines", "off;auto;shader;glsl",
      "Team-coloured outline around players you can see"},

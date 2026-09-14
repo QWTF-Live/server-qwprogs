@@ -682,6 +682,7 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
         itime = ent.fpp.cmd_base + max(ent.fpp.expires_at - ent.created_at, 0);
     else
         itime = PM_WorldToCmdTime(itime);
+    itime += KNOCK_LEAD;   // the same lead the server schedules it with
 
     // A nudge normally stops once the server's state has reached its time, on
     // the basis that the state then carries the push itself.  The server runs

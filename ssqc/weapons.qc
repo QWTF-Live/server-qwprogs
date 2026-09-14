@@ -1088,7 +1088,7 @@ entity Knock_Defer(entity targ, vector src, float kind) {
     // when the projectile appeared -- fall back to moving the world time
     // across, which is the case still exposed to our clocks drifting apart.
     float base = blast_proj ? Proj_CmdBase(blast_proj, targ) : 0;
-    k.forward_knock = base ? base + blast_delay : blast_due + targ.cmd_clock_skew;
+    k.forward_knock = (base ? base + blast_delay : blast_due + targ.cmd_clock_skew) + KNOCK_LEAD;
     k.knock_next = targ.pending_knock;
     targ.pending_knock = k;
     k.think = T_Knock_Expire;
@@ -1110,7 +1110,7 @@ static void Blast_Knock(entity e) {
         PMD_Knock(targ, targ.velocity - before, moment);
         rj_trace("S: knock t=%.3f seq=%.0f clk=%.5f due=%.5f edge=%+.2fms ke=%+.2fms targ=%s", time,
                  targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
-                 (targ.cmd_clock - e.forward_knock) * 1000, KNOCK_EDGE * 1000, targ.netname);
+                 (targ.cmd_clock - e.forward_knock) * 1000, KNOCK_LEAD * 1000, targ.netname);
         rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", e.origin,
                  targ.origin + (targ.mins + targ.maxs) * 0.5,
                  vlen(targ.origin + (targ.mins + targ.maxs) * 0.5 - e.origin),
@@ -1150,7 +1150,7 @@ void PlayerKnock_Apply() {
     entity held_self = self;
     while (k) {
         next = k.knock_next;
-        if (time + KNOCK_EDGE >= k.forward_knock) {
+        if (time >= k.forward_knock) {
             self = k;
             switch (k.knock_kind) {
                 case KK_BLAST:  Blast_Knock(k);   break;

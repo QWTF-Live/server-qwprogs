@@ -77,14 +77,22 @@ const float CMD_CLOCK_LEAD = 32;
 // wait out the lead with the chain that far wrong.
 const float CMD_CLOCK_SNAP = 0.250;
 
-// Calibration for where a held push falls relative to a command boundary.
-// The two sides accumulate their chains separately, so their idea of where a
-// command ends can sit a fraction of a millisecond apart, and a due time
-// landing in that sliver goes to one command here and the next there.  Shift
-// our comparison by the measured offset to cancel it.  Seconds, signed, and
-// compiled in: trials run as separate builds rather than something to dial at
-// runtime, and the trace prints the value so a log names the build that made it.
-const float KNOCK_EDGE = 0;
+// How much later than its own moment a blast is scheduled for.
+//
+// Holding a push for the command it was due on can only ever delay it.  It
+// cannot release one on a command that has already run, and that is the case
+// we keep losing: the chain sits a few milliseconds ahead of the world clock,
+// so the command whose window covers the due time can run before the fuse has
+// actually gone off.  The client, which predicts the fuse, schedules it on
+// that command regardless, and the server finds the push waiting one command
+// too late.
+//
+// Pushing the due time out past the chain's lead puts it on a command neither
+// side has reached yet.  Both apply the same lead, so they still agree, and
+// the push lands a few milliseconds after the blast, which nobody can see.
+// Compiled in: trials run as separate builds, and the trace prints it so a log
+// names the build that made it.
+const float KNOCK_LEAD = 0.004;
 
 // How far the chain may sit from the world clock before we correct it.
 //

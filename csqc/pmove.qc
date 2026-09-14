@@ -395,6 +395,10 @@ struct PM_Nudge {
     // ourselves.  Once the server has run that command its cooldown witnesses
     // whether it fired, without us needing to see the projectile at all.
     float fire_clk;
+    // The command this nudge pushed on, once it has.  While the server has not
+    // acknowledged that command the push exists only here, so the nudge has to
+    // outlive its own timer until it does.
+    float fired_seq;
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 
@@ -463,10 +467,24 @@ static float nudge_expired(PM_Nudge* n) {
     if (n->expire_frame && n->expire_frame <= pstate_server.seq)
         return TRUE;
 
-    if (n->expire_time && n->expire_time <= pstate_server.server_time)
+    if (n->expire_spawnseq && n->expire_spawnseq != game_state.spawn_gen)
         return TRUE;
 
-    if (n->expire_spawnseq && n->expire_spawnseq != game_state.spawn_gen)
+    // A nudge that has already pushed outlives its own timer until the server
+    // acknowledges the command it pushed on.  Until then the push exists only
+    // here: retiring on a time margin left a frame where the nudge had let go
+    // and the snapshot had not yet arrived, so the view lost the push and got
+    // it back -- 78 units one frame and 93 the next on a grenade jump.  The
+    // margin that was supposed to cover this was two server frames of guessed
+    // time; this is the condition it was guessing at.
+    //
+    // No double push: a replay starts at the command after the last one
+    // acknowledged, so once the server has that command this test stops
+    // holding and the command is no longer replayed anyway.
+    if (n->fired_seq && n->fired_seq > pstate_server.seq)
+        return FALSE;
+
+    if (n->expire_time && n->expire_time <= pstate_server.server_time)
         return TRUE;
 
     // A shot of ours the server has since run.  Firing puts the weapon on
@@ -520,6 +538,7 @@ static PM_Nudge* find_nudge_slot() {
         n->src_no = 0;
         n->src = 0;
         n->fire_clk = 0;
+        n->fired_seq = 0;
         n->expire_frame = 0;
         n->expire_time = 0;
         n->expire_spawnseq = 0;
@@ -973,6 +992,7 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
             continue;
 
         pm.last_nudge = seq;
+        n->fired_seq = seq;
         if (seq > nudge_sig_from)
             nudge_sig += seq * nudges.length + i + 1;
         switch (n->type) {

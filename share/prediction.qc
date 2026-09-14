@@ -77,6 +77,12 @@ enumflags {
 // three eighths of its push.
 .float src_is_player;
 
+// Between a projectile's own clock and the viewer's command chain.  cmd_base is
+// that viewer's chain reading at the instant first_phys_time was taken, so the
+// two are a pair and everything about the flight is a duration from them.
+#define Proj_CmdTime(_e, _phys)  ((_e).fpp.cmd_base + max((_phys) - (_e).first_phys_time, 0))
+#define Proj_PhysTime(_e, _cmd)  ((_e).first_phys_time + ((_cmd) - (_e).fpp.cmd_base))
+
 // The projectile's own clock at the instant it was created, sent with the
 // INIT so both sides hold the same number.  The flight both sides measure is
 // the time from here to the impact.

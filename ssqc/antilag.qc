@@ -46,32 +46,26 @@ void Antilag_CrossCheck(entity p) {
         // command follows from its own clock.
         vector qa, qb;
         if (e.movetype == MOVETYPE_FLYMISSILE && e.velocity != '0 0 0') {
-            qa = e.origin + e.velocity * (t0 - e.phys_time);
-            qb = e.origin + e.velocity * (t1 - e.phys_time);
+            qa = Proj_OrgAt(e, t0);
+            qb = Proj_OrgAt(e, t1);
         } else {
             qa = e.al_prev_origin;
             qb = e.origin;
         }
 
-        vector dQ = qb - qa;
-        if (dQ == '0 0 0')
+        if (qa == qb)
             continue;   // did not move: the command's own sweep covered it
 
-        // MOVE_OTHERONLY meets the projectile where it stands, and the sweep
-        // wants it at the end of the span.
-        vector held_org = e.origin;
-        if (qb != held_org)
-            setorigin(e, qb);
-        other = e;
-        tracebox(p.al_cmd_prev + dQ, p.mins, p.maxs, p.origin, MOVE_OTHERONLY, p);
-        float f = trace_fraction, ss = trace_startsolid;
-        if (qb != held_org)
-            setorigin(e, held_org);
-        if (ss || f >= 1)
+        // The same predicate the client runs, on the same interval, out of the
+        // same function.  A projectile is a point, so this is exactly what the
+        // box trace computed and it needs neither the trace nor moving the
+        // projectile to the end of the span and back to satisfy MOVE_OTHERONLY.
+        float f;
+        if (!Proj_Crosses(qa, qb, p.al_cmd_prev, p.origin, p.mins, p.maxs, &f))
             continue;
 
         trace_fraction = f;
-        vector at = qa + f * dQ;
+        vector at = qa + f * (qb - qa);
         rj_trace("S: cross t=%.3f %s f=%.2f proj=%v->%v", time, FPP_Name(e.fpp.index), trace_fraction, e.al_prev_origin, e.origin);
         // The projectile's own clock, so the client's copy of this rocket can be
         // put beside ours at the same instant.  The two came out ten units

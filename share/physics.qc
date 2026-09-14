@@ -133,6 +133,56 @@ static inline float get_gravity() { return cvar("sv_gravity"); }
 
 #define dot(v1, v2) ((vector)v1 * (vector)v2)
 
+// Where a straight-flying projectile is at time t on its own clock.  Its path
+// is a line, so this needs no simulation and no stepping -- which is what lets
+// both sides ask about an instant neither of them has stepped to.
+vector Proj_OrgAt(entity e, float t) {
+    return e.origin + e.velocity * (t - e.phys_time);
+}
+
+// One axis of a slab test: clip the segment's [t0,t1] to the slab, or miss.
+static float SlabClip(float p, float d, float lo, float hi, float* t0, float* t1) {
+    if (fabs(d) < 0.0001)
+        return p >= lo && p <= hi;
+
+    float a = (lo - p) / d, b = (hi - p) / d;
+    if (a > b) {
+        float t = a; a = b; b = t;
+    }
+    if (a > *t0) *t0 = a;
+    if (b < *t1) *t1 = b;
+    return *t0 <= *t1;
+}
+
+// Where along p0->p1 a segment first enters a box, if it does.
+//
+// Unrolled per axis.  Written as a loop over a vector subscript it compiled and
+// ran and was wrong: every hit came back frac=0.000, which is the answer you get
+// when only the x slab is ever consulted.
+float SegBox(vector p0, vector p1, vector mins, vector maxs, float* frac) {
+    vector d = p1 - p0;
+    float t0 = 0, t1 = 1;
+
+    if (!SlabClip(p0_x, d_x, mins_x, maxs_x, &t0, &t1)) return FALSE;
+    if (!SlabClip(p0_y, d_y, mins_y, maxs_y, &t0, &t1)) return FALSE;
+    if (!SlabClip(p0_z, d_z, mins_z, maxs_z, &t0, &t1)) return FALSE;
+
+    *frac = t0;
+    return TRUE;
+}
+
+// A player and a projectile crossing paths over one command.
+//
+// Both are moving, so neither can be tested against the other standing still:
+// subtract the player's travel and what is left is the projectile's path
+// relative to them, which for two straight segments is exact.  Both sides run
+// this, over the same interval -- one command -- which is the only interval
+// either of them holds both ends of.
+float Proj_Crosses(vector qa, vector qb, vector pa, vector pb,
+                   vector mins, vector maxs, float* frac) {
+    return SegBox(qa - pa, qb - pb, mins, maxs, frac);
+}
+
 float Phys_Push(entity e, vector offset, float dt, float phys_flags) {
     float trace_flags = 0;
 

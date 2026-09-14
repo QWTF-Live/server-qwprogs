@@ -40,99 +40,6 @@ static struct {
 //
 // Power of two, indexed by sequence: a replay rewrites the same entries with
 // the same values, so there is nothing to invalidate.
-static float pm_self_hit_seq;   // RJ_TRACE: arms the report window on a self hit
-
-#define PM_ORG_HIST 64
-static float pm_org_clk[PM_ORG_HIST];
-static vector pm_org_pos[PM_ORG_HIST];
-
-static void PM_RecordOrg(float seq, float clk, vector org) {
-    float i = seq & (PM_ORG_HIST - 1);
-    pm_org_clk[i] = clk;
-    pm_org_pos[i] = org;
-}
-
-static void PM_ForgetOrgs() {
-    for (float i = 0; i < PM_ORG_HIST; i++)
-        pm_org_clk[i] = 0;
-}
-
-// Where we were at clk, interpolated between the commands either side of it.
-//
-// Snapping to the command at or before was a command of staleness -- up to
-// thirteen milliseconds, and five to nineteen units of our travel -- and it
-// showed: walking into a falling rocket, our box did not reach it until a
-// command after it should have, so every self hit came in fourteen
-// milliseconds late and sixteen units further down the rocket's fall.  The
-// server does not snap either; its crossing test lerps us across the command
-// and reports the fraction.
-static float PM_OrgAt(float clk, vector* out) {
-    float lo = 0, hi = 0;
-    vector lo_pos = '0 0 0', hi_pos = '0 0 0';
-
-    for (float i = 0; i < PM_ORG_HIST; i++) {
-        float c = pm_org_clk[i];
-        if (!c)
-            continue;
-        if (c <= clk && c > lo) {
-            lo = c;
-            lo_pos = pm_org_pos[i];
-        }
-        if (c > clk && (!hi || c < hi)) {
-            hi = c;
-            hi_pos = pm_org_pos[i];
-        }
-    }
-
-    if (!lo) {
-        if (!hi)
-            return FALSE;
-        *out = hi_pos;   // before anything we still hold
-        return TRUE;
-    }
-    if (!hi) {
-        *out = lo_pos;   // past the last command we have predicted
-        return TRUE;
-    }
-
-    *out = lo_pos + (hi_pos - lo_pos) * ((clk - lo) / (hi - lo));
-    return TRUE;
-}
-
-// One axis of the slab test: clip the segment's [t0,t1] to the slab, or say it
-// misses.
-static float SlabClip(float p, float d, float lo, float hi, float* t0, float* t1) {
-    if (fabs(d) < 0.0001)
-        return p >= lo && p <= hi;
-
-    float a = (lo - p) / d, b = (hi - p) / d;
-    if (a > b) {
-        float t = a; a = b; b = t;
-    }
-    if (a > *t0) *t0 = a;
-    if (b < *t1) *t1 = b;
-    return *t0 <= *t1;
-}
-
-// Where along p0->p1 the segment first enters the box, if it does.
-//
-// Unrolled per axis.  Written as a loop over a vector subscript it compiled and
-// ran and was wrong: every self hit came back frac=0.000, which is the answer
-// you get when only the x slab is ever consulted -- the segment is inside it
-// from the start, nothing raises t0, and a vertical drop triggers the moment
-// its x overlaps ours rather than when the two actually meet.
-static float SegBox(vector p0, vector p1, vector mins, vector maxs, float* frac) {
-    vector d = p1 - p0;
-    float t0 = 0, t1 = 1;
-
-    if (!SlabClip(p0_x, d_x, mins_x, maxs_x, &t0, &t1)) return FALSE;
-    if (!SlabClip(p0_y, d_y, mins_y, maxs_y, &t0, &t1)) return FALSE;
-    if (!SlabClip(p0_z, d_z, mins_z, maxs_z, &t0, &t1)) return FALSE;
-
-    *frac = t0;
-    return TRUE;
-}
-
 vector PM_Org() { return PM_Enabled() ? pm.ent.origin : pmove_org; }
 vector PM_Vel() { return PM_Enabled() ? pm.ent.velocity : pmove_vel; }
 float PM_onground() { return PM_Enabled() ? pm.ent.flags & FL_ONGROUND : pmove_onground; }
@@ -555,8 +462,6 @@ static float pm_final_pass;
 static float nudge_sig;
 static float nudge_sig_from;   // only commands past this one are in the signature
 static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors until this seq
-// A self hit arms the same window, and is found before this point in the file.
-static void PM_ArmTraceWindow() { rj_trace_until_seq = max(rj_trace_until_seq, pm_self_hit_seq); }
 // RJ_TRACE: a frame's correction is only worth a line if it is big enough to
 // read; the quiet ones are carried as a count so the denominator survives.
 const static float RJ_ERR_NOTABLE = 0.25;
@@ -1137,10 +1042,7 @@ void PM_AddSimExplosion(float itime, entity ent) {
         // inside the victim's own command and the server pushes from there,
         // with no defer and no schedule -- due and clk equal, edge zero.  So
         // the crossing instant lands in the command that owns it by itself.
-        itime = ent.fpp.cmd_base +
-                max(itime - (ent.first_phys_time ? ent.first_phys_time
-                                                 : ent.s_time), 0) +
-                (ent.hit_self ? 0 : KNOCK_LEAD);
+        itime = Proj_CmdTime(ent, itime) + (ent.hit_self ? 0 : KNOCK_LEAD);
         rj_trace("C: sim-other t=%.3f itime=%.4f base=%.4f flight=%.1fms stime=%.4f pt=%.4f ccf=%.0f\n",
                  time, itime, ent.fpp.cmd_base, (itime - KNOCK_LEAD - ent.fpp.cmd_base) * 1000,
                  ent.first_phys_time, ent.phys_time, (float)clientcommandframe);
@@ -1227,22 +1129,18 @@ static void PM_CheckMissileHits(entity ent, vector from_org, float sitime, float
             e.owner != pengine.player_ent && e.has_cmd_base && e.first_phys_time &&
             e.velocity != '0 0 0') {
             // Where the rocket is at this command's two ends, on its own clock.
-            float p0 = e.first_phys_time + (sitime - e.fpp.cmd_base);
-            float p1 = e.first_phys_time + (eitime - e.fpp.cmd_base);
-            vector a = e.origin + e.velocity * (p0 - e.phys_time);
-            vector b = e.origin + e.velocity * (p1 - e.phys_time);
+            float p0 = Proj_PhysTime(e, sitime), p1 = Proj_PhysTime(e, eitime);
+            vector a = Proj_OrgAt(e, p0), b = Proj_OrgAt(e, p1);
 
-            // Both of us are moving, so test the crossing: the rocket's path
-            // less our own travel is where the two actually met.
             float frac;
             if (p1 > e.first_phys_time &&
-                SegBox(a - from_org, b - ent.origin, ent.mins, ent.maxs, &frac)) {
+                Proj_Crosses(a, b, from_org, ent.origin, ent.mins, ent.maxs, &frac)) {
                 vector hit = a + (b - a) * frac;
                 rj_trace("C: self-hit seq=%.0f frac=%.3f span=%.4f->%.4f",
                          (float)pm.seq, frac, sitime, eitime);
                 rj_trace(" rocket=%v->%v us=%v->%v hit=%v pt=%.4f\n",
                          a, b, from_org, ent.origin, hit, p0 + (p1 - p0) * frac);
-                pm_self_hit_seq = pm.seq + 30;
+                rj_trace_until_seq = pm.seq + 30;
 
                 e.voided = TRUE;
                 e.hit_self = TRUE;
@@ -1404,7 +1302,6 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         RunPlayerPhysics();
         PM_PushVolumes(ent, pm_moved_from);
 
-        PM_RecordOrg(pm.seq, pm.interp_t + step, ent.origin);
         PM_CheckMissileHits(ent, pm_moved_from, pm.interp_t, pm.interp_t + step);
 
         if (pm.seq != clientcommandframe) {
@@ -1473,7 +1370,6 @@ static void PM_SetEnabled(float enabled) {
     if (!enabled)
         return;
 
-    PM_ForgetOrgs();
     pm.errortime = pm.steptime = pm.errorspan = 0;
     pm.step_oldz = pm.ent.origin_z;
     PM_LerpReset();
@@ -2037,7 +1933,6 @@ static void PM_HandleRemovedNudges() {
 }
 
 void PM_ServerUpdate() {
-    PM_ArmTraceWindow();
     float was_enabled = PM_Enabled();
     float enabled = (pstate_server.predict_flags & PF_PMOVE) &&
                     game_state.is_player;

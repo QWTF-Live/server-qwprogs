@@ -812,6 +812,14 @@ void PM_AddSimExplosion(float itime, entity ent) {
                  time, ent.fpp.index, itime, ent.forward_knock, ent.s_time, ent.created_seq);
         rj_trace(" svt=%.3f ccf=%.0f org=%v\n", pstate_server.server_time, clientcommandframe, ent.origin);
     }
+    // Our own projectile whose copy has reached us with no push time on it.
+    // Our prediction dates the blast the way the server does, from the fire
+    // command plus the travel; the fallback below dates it from this copy's
+    // physics clock, which is our clock and not the server's.  Trading the
+    // first for the second is how we pushed 90 ms early.  Keep what we have.
+    if (ent.entnum && ent.owner == pengine.player_ent && !ent.forward_knock)
+        return;
+
     // The server's copy of a projectile we predicted ourselves: retire the
     // predicted nudge whatever route this copy then takes.  This used to sit
     // inside the forward_knock branch below, so a copy that arrived before

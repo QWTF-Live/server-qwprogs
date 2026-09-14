@@ -849,11 +849,19 @@ float PP_SendEntity(entity to_player, float sendmask) {
             sendflags |= FOPP_EXPIRY;
         if (FPP_Get(self.fpp.index)->movetype != self.movetype)
             sendflags |= FOPP_MOVETYPE;
-        if (self.forward_knock)
-            sendflags |= FOPP_FORWARDKNOCK;
         if (self.has_cmd_base)
             sendflags |= FOPP_CMDBASE;
     }
+
+    // Outside the INIT block on purpose.  forward_knock is only set at impact,
+    // and a projectile that lived long enough to be sent once before then takes
+    // its last update as a delta, not an INIT -- so the push time only ever
+    // reached the client for a projectile whose first update was also its last.
+    // Without it the client dates the blast from its own physics clock, which
+    // for a shot the server projected 140 ms forward was 90 ms early and 172
+    // u/s of push the server had not applied.
+    if (self.forward_knock)
+        sendflags |= FOPP_FORWARDKNOCK;
 
     WriteByte(MSG_ENTITY, ENT_PROJECTILE);
     WriteByte(MSG_ENTITY, sendflags);

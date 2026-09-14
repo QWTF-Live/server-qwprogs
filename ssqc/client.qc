@@ -3465,6 +3465,27 @@ void () PlayerPostThink = {
     if (!ghosted)
         PlayerGren_Blast();
     self.cmd_clock_skew = cmd_real_time ? time - cmd_real_time : 0;
+
+    // The crossing check has to run before the state for this command goes out.
+    // It ends in self.touch(), which for a direct hit pushes the player, and
+    // sending first meant the pmove block carried the velocity from before that
+    // push while the command's own journal carried it from after.  The client
+    // reconciles against the pmove block, so its replay rebuilt the following
+    // command without a push the server had already applied: the whole of it
+    // came back as a correction one command later, 812 u/s and 93 units in the
+    // trace that found this, twice in one run and both of them direct hits.
+    //
+    // Run in the same clock it always was -- world time, outside the command
+    // warp -- and the warp is restored afterwards for Predict_Update, which
+    // reads cmd_real_time for the skew it has just been handed.
+    float warp_time = time, warp_real = cmd_real_time;
+    time = held_time;
+    cmd_real_time = 0;
+    if (RewindFlagEnabled(REWIND_PROJ_CROSSING))
+        Antilag_CrossCheck(self);
+    time = warp_time;
+    cmd_real_time = warp_real;
+
     Predict_Update(TRUE);
     if (!ghosted)
         Ghost_Snapshot();
@@ -3472,8 +3493,6 @@ void () PlayerPostThink = {
     time = held_time;
     cmd_real_time = 0;
 
-    if (RewindFlagEnabled(REWIND_PROJ_CROSSING))
-        Antilag_CrossCheck(self);
     self.al_cmd_prev = self.origin;
     PP_PlayerPostThink();
     PlayerPeriodicThink(TRUE);

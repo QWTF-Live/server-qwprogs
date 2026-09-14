@@ -553,7 +553,9 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
     float moment = Class_ScaleMoment(WP_PlayerClass(), Damage_Scale(points, b.flags, dsf));
     vector knock = Knock_Velocity(&b, ent, moment);
 
-    if (nudge->trace_seq != pm.seq) {   // replays re-apply at the same seq; report once per seq
+    // Once per seq, and not from the error pass's replays: those are thrown
+    // away, so a line from one describes a push nobody saw.
+    if (nudge->trace_seq != pm.seq && !pmd_norecord) {
         nudge->trace_seq = pm.seq;
         Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime, moment, knock, nudge->src_no);
         rj_trace_until_seq = pm.seq + 30;
@@ -661,7 +663,7 @@ static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
     ent.velocity = Knock_Velocity(&b, ent, points);
     PMD_Knock(ent.velocity - before, points);
 
-    if (nudge->trace_seq != pm.seq) {
+    if (nudge->trace_seq != pm.seq && !pmd_norecord) {
         nudge->trace_seq = pm.seq;
         Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime,
                     points, ent.velocity - before, nudge->src_no);

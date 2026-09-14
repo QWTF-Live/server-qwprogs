@@ -1038,6 +1038,8 @@ static void Knock_Unlink(entity e) {
     e.knock_next = world;
 }
 
+static void Knock_CatchUp(entity targ, vector knock, float back);
+
 static void Antilag_Knock(entity e) {
     entity o = e.owner;
     vector vbefore = o.velocity;
@@ -1060,6 +1062,7 @@ static void Antilag_Knock(entity e) {
         rj_trace("S: knock-extra t=%.3f by=%v wl=%.0f og=%.0f mt=%.0f tfs=%.0f\n",
                  time, unaccounted, o.waterlevel, (float)!!(o.flags & FL_ONGROUND),
                  o.movetype, o.tfstate);
+    Knock_CatchUp(o, o.velocity - vbefore, max(time - e.forward_knock, 0));
     o.rj_trace_until = time + 0.4;
     dremove(e);
 }
@@ -1160,6 +1163,55 @@ entity Knock_Defer(entity targ, vector src, float kind) {
 
 // Re-run at the due command, against the position that command left them in,
 // which is the position the client's own prediction has reached there too.
+// The displacement a push should already have accumulated, when we are
+// applying it later than the command it was due on.
+//
+// The lagged lookup in Knock_Org fixes the *inputs* to a late push -- range,
+// falloff, direction, all measured where the target was at the due command, so
+// the vector is the one the client computed.  It cannot fix *when* the push is
+// applied.  The client added it at the due command and has carried it ever
+// since; we are adding it k commands later to a state that never had it, and
+// from here the two integrate different trajectories.  That gap is the
+// correction the target feels: at 856 u/s and three commands late, a little
+// over thirty units, and it lands on the one player in the blast who can feel
+// it.
+//
+// The exact fix would be to rewind the target to the due command, push, and
+// re-run their commands -- what the client does every frame.  We cannot: those
+// commands are committed, they fired weapons from positions that would move,
+// and other players' antilag has already resolved against that history.  So
+// take the first-order stand-in.  The push vector is already right; all that is
+// missing is the travel, so add it in one traced step.
+//
+// Wrong by what a straight step gets wrong over a few commands -- gravity is
+// additive and cancels, so what is left is air control and friction acting on a
+// boosted velocity rather than an unboosted one.  A few units against the
+// thirty it recovers.
+//
+// behind is the same quantity Knock_Org steps the position back by, so the
+// command this lands on is the command the push was measured at.
+const float KNOCK_CATCHUP_MAX = 96;
+
+static void Knock_CatchUp(entity targ, vector knock, float back) {
+    if (input_timelength <= 0 || back < input_timelength)
+        return;   // inside the command the push was due on: nothing to make up
+    if (targ.movetype != MOVETYPE_WALK)
+        return;   // dead, gibbed, spectating: not a trajectory anyone predicted
+
+    float behind = floor(back / input_timelength) * input_timelength;
+    vector step = knock * behind;
+    if (vlen(step) > KNOCK_CATCHUP_MAX)
+        step = normalize(step) * KNOCK_CATCHUP_MAX;
+
+    tracebox(targ.origin, targ.mins, targ.maxs, targ.origin + step, MOVE_NORMAL, targ);
+    if (trace_startsolid)
+        return;
+
+    rj_trace("S: knock-catchup t=%.4f behind=%.1fms step=%v moved=%.2f frac=%.2f\n",
+             time, behind * 1000, step, vlen(trace_endpos - targ.origin), trace_fraction);
+    setorigin(targ, trace_endpos);
+}
+
 static void Blast_Knock(entity e) {
     entity targ = e.owner;
     KnockBlast b;
@@ -1181,6 +1233,7 @@ static void Blast_Knock(entity e) {
         targ.velocity += knock;
         PMD_Knock(targ, knock, moment);
         Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock, moment, knock, 0, targ.cmd_sequence);
+        Knock_CatchUp(targ, knock, b.back);
     }
     dremove(e);
 }
@@ -1206,6 +1259,7 @@ static void Bounce_Knock(entity e) {
         PMD_Knock(targ, targ.velocity - before, points);
         Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
                     points, targ.velocity - before, 0, targ.cmd_sequence);
+        Knock_CatchUp(targ, targ.velocity - before, b.back);
         NB_ConcCapAction(targ, targ.playerclass, &targ.tfstate,
                          time, &targ.conc_cap_time, kLaunch);
     }

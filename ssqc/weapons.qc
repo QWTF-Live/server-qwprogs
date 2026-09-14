@@ -1451,9 +1451,23 @@ void FO_GrenExplode(entity e) {
     // findradius was picking targets at server-now while Knock_Points measured
     // them at the instant it was due.  Gather and falloff disagreeing about
     // where someone is decides the edge of a radius on the wrong basis.
+    // At the instant the push is measured, not the instant the blast happened.
+    // A victim's push is due at cmd_base + delay + KNOCK_LEAD on their own
+    // chain; cmd_base is the creation instant plus their skew, so that due is
+    // blast + skew + lead and their chain reaches it at world blast + lead --
+    // the skew cancels, and to first order every victim is measured at the same
+    // world instant.  Which makes one rewind the right shape, and makes the
+    // blast instant itself the wrong target by exactly the lead.
+    //
+    // It is first order because a player's skew wanders.  Over a held
+    // grenade's hundred milliseconds that is nothing; over a three second
+    // thrown fuse it is not, and the exact answer there is per-player --
+    // laggedorigin at each victim's own chain instant rather than one rewind
+    // for all of them.
+    float gather_at = blast_due + KNOCK_LEAD;
     float rewound = FALSE;
-    if (RealTime() - blast_due >= SERVER_FRAME_DT) {
-        rewindworld(max(blast_due, RealTime() - LAGHIST_MAX_DT), world);
+    if (RealTime() - gather_at >= SERVER_FRAME_DT) {
+        rewindworld(max(gather_at, RealTime() - LAGHIST_MAX_DT), world);
         rewound = TRUE;
     }
 

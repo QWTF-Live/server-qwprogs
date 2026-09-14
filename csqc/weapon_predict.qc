@@ -1756,9 +1756,6 @@ static void WP_ExplodeGren() {
     pstate_pred.primed_gren_exp = 0;
     pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
 
-    rj_trace("C: gren-held seq=%.0f pt=%.4f heat=%.4f org=%v ccf=%.0f\n",
-             (float)pstate_pred.seq, pstate_pred.server_time, explode_at,
-             PM_Org(), (float)clientcommandframe);
     rj_cmd_trace_until_seq = clientcommandframe + 12;
 
     // The same step back the server takes, from the same two numbers: where

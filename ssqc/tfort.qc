@@ -2420,9 +2420,12 @@ void () TeamFortress_ExplodePerson = {
     // instant and we spawn it from a think, in the physics phase between two
     // commands.  One command of the holder's travel is the whole of the gap
     // between the two copies.
-    rj_trace("S: gren-held t=%.3f seq=%.0f clk=%.4f heat=%.4f org=%v\n",
-             time, self.owner.cmd_sequence, self.owner.cmd_clock, self.heat,
-             self.owner.origin);
+    // org is where it is actually placed -- stepped back to the fuse instant --
+    // so it can be read against the client's line rather than against a
+    // different quantity that happens to look similar.
+    rj_trace("S: gren-held t=%.3f seq=%.0f clk=%.4f fuse=%.4f org=%v\n",
+             time, self.owner.cmd_sequence, self.owner.cmd_clock, gren_release_fuse,
+             gren_release_have_org ? gren_release_org : self.owner.origin);
     self.owner.rj_cmd_trace_until = RealTime() + 0.16;
 
     self.owner.tfstate &= ~TFSTATE_GREN_MASK_ALL;

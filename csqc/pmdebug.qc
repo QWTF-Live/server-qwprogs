@@ -35,6 +35,13 @@ struct PMD_Entry {
     float dmg;           // the damage behind it
     float spawn_gen;     // which life this frame belongs to
     // filled in when the server's record for this sequence arrives
+    // Which replay pass wrote this entry, and what it had fired by then.  Two
+    // entries are only comparable if they came from the same pass: a push
+    // applied at one command shows in the next command's velocity, so an entry
+    // written before that push existed and one written after describe
+    // different worlds without either being wrong.
+    float wrote_ccf, wrote_sig;
+
     float matched, bad, sv_dpos, sv_dvel, sv_events;
 };
 
@@ -86,7 +93,8 @@ void PMD_Knock(vector impulse, float dmg) {
     pmd_dmg = dmg;
 }
 
-void PMD_Record(float seq, vector pre_org, vector org, vector vel, float onground, float waterlevel) {
+void PMD_Record(float seq, vector pre_org, vector org, vector vel, float onground,
+                float waterlevel, float nudge_sig) {
     if (pmd_norecord) {
         pmd_events = 0;
         pmd_impulse = '0 0 0';
@@ -121,6 +129,8 @@ void PMD_Record(float seq, vector pre_org, vector org, vector vel, float ongroun
     e->impulse = pmd_impulse;
     e->dmg = pmd_dmg;
     e->spawn_gen = game_state.spawn_gen;
+    e->wrote_ccf = clientcommandframe;
+    e->wrote_sig = nudge_sig;
     e->matched = e->bad = e->sv_dpos = e->sv_dvel = e->sv_events = 0;
     pmd_events = 0;
     pmd_impulse = '0 0 0';
@@ -247,6 +257,21 @@ void PMD_ServerRecord(float seq, vector pre_org, vector org, vector vel, float o
     if (e->impulse != '0 0 0' || impulse != '0 0 0')
         printf("    push cl=%v dmg=%.1f | sv=%v dmg=%.1f\n",
                e->impulse, e->dmg, impulse, dmg);
+
+    // When this entry was written and what had fired by then, against the same
+    // for the command before it.  A divergence with no event on either side is
+    // either a real mispredict or two entries written in passes that did not
+    // carry the same pushes; these two numbers are the difference.
+    {
+        PMD_Entry* pe = &pmd_journal[(seq - 1 + PMD_NJOURNAL) % PMD_NJOURNAL];
+        if (pe->used && pe->seq == seq - 1)
+            printf("    pass this=[ccf=%i sig=%i] prev=[ccf=%i sig=%i]\n",
+                   (int)e->wrote_ccf, (int)e->wrote_sig,
+                   (int)pe->wrote_ccf, (int)pe->wrote_sig);
+        else
+            printf("    pass this=[ccf=%i sig=%i]\n",
+                   (int)e->wrote_ccf, (int)e->wrote_sig);
+    }
 
     // The run-up, but only at the start of a run of bad frames: once it has
     // gone wrong the following frames are usually the same divergence being

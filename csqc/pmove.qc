@@ -1375,7 +1375,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
             float wtype;
             PMD_Record(pm.seq, pm_moved_from, ent.origin, ent.velocity,
                        (ent.flags & FL_ONGROUND) ? 1 : 0,
-                       PM_GetWaterLevel(ent.origin, &wtype));
+                       PM_GetWaterLevel(ent.origin, &wtype), nudge_sig);
         }
         pm.seq++;
         pm.interp_t += step;

@@ -2843,25 +2843,9 @@ static void CmdClock_Update() {
         // identical.  Snapping the moment we noticed the drift would move
         // commands the client had already predicted.
         clk += self.cmd_clock_fix;
-        self.cmd_clock_net -= self.cmd_clock_fix;   // how far their time ran past ours
         self.cmd_clock_fix = 0;
         self.cmd_clock_fix_seq = 0;
         self.cmd_clock_k += 1;
-    }
-
-    // A healthy client's corrections cancel: the chain walks either side of
-    // real time as commands bunch and thin out.  One that keeps claiming more
-    // or less time than has elapsed pulls them all the same way.
-    if (!self.cmd_clock_net_at) {
-        self.cmd_clock_net_at = time;
-        self.cmd_clock_net_base = self.cmd_clock_net;
-    } else if (time - self.cmd_clock_net_at > CMD_CLOCK_RATE_WINDOW) {
-        float rate = (self.cmd_clock_net - self.cmd_clock_net_base) / (time - self.cmd_clock_net_at);
-        if (fabs(rate) > CMD_CLOCK_RATE_WARN)
-            printf("warning: %s command time runs %+.1f%% against ours\n",
-                   self.netname, rate * 100);
-        self.cmd_clock_net_at = time;
-        self.cmd_clock_net_base = self.cmd_clock_net;
     }
     self.cmd_clock = clk;
     self.cmd_clock_last = clk;

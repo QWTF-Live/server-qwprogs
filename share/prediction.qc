@@ -78,13 +78,6 @@ const float CMD_CLOCK_LEAD = 32;
 // Past this the chain is not wandering, something stopped: snap rather than
 // wait out the lead with the chain that far wrong.
 const float CMD_CLOCK_SNAP = 0.250;
-// Corrections cancel out for a healthy client: the chain walks either side of
-// real time and the pulls average to nothing.  One that claims consistently
-// more or less command time than has elapsed is broken or cheating, and shows
-// up as corrections all pulling the same way.  The walk itself contributes at
-// most one tolerance per window, so a percent is well clear of it.
-const float CMD_CLOCK_RATE_WINDOW = 10;
-const float CMD_CLOCK_RATE_WARN = 0.01;
 
 #ifdef SSQC
 // A clock for explosion prediction, one reading per player, taken when the

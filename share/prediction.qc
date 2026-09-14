@@ -102,10 +102,23 @@ const float CMD_CLOCK_SNAP = 0.250;
 //
 // Pushing the due time out past the chain's lead puts it on a command neither
 // side has reached yet.  Both apply the same lead, so they still agree, and
-// the push lands a few milliseconds after the blast, which nobody can see.
-// Compiled in: trials run as separate builds, and the trace prints it so a log
-// names the build that made it.
-const float KNOCK_LEAD = 0.004;
+// the push lands a little after the blast, which nobody can see.
+//
+// One server frame, derived rather than guessed.  The commands already run in
+// the frame the blast goes off in have chain clocks up to that frame's world
+// time plus this player's skew, and the blast is somewhere inside that frame,
+// so the worst case is exactly a frame.  Any less and the client can pick a
+// command the server has already run and cannot reach: at 0.004 that was six
+// grenades in seven agreeing and the seventh -- the one whose due landed 3.90 ms
+// into its command, inside the same server frame -- one command apart.
+//
+// It does not remove ties at a command boundary, and nothing local can: a
+// continuous due deciding a discrete command is decided by whatever the two
+// sides' arithmetic disagrees by.  Quantising the due only moves the boundaries,
+// it does not reduce the odds.  What removes it is both sides evaluating the
+// same expression from the same sent number, which the stamped path already
+// does -- base plus duration on each side.
+const float KNOCK_LEAD = SERVER_FRAME_DT;
 
 // How far the chain may sit from the world clock before we correct it.
 //

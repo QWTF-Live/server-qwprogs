@@ -481,6 +481,15 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
     local float olddmsg;
     local float no_damage;
     local float original_damage = damage;
+    // The push comes off a fixed number even when the damage does not.  A
+    // direct rocket hit rolls 92 + 20 and the client has to predict the shove
+    // it is about to be given; it cannot predict a roll.  Everything below
+    // still works on the rolled damage -- health, armour, gibs -- and only the
+    // knock is scaled onto the fixed one, by the same route, so the scaling the
+    // client also applies still lands.
+    local float knock_scale = (knock_damage && original_damage)
+                              ? knock_damage / original_damage : 1;
+    knock_damage = 0;
 
 
     if (targ.takedamage == 0)
@@ -613,7 +622,8 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     // scaling off the damage; carry that as a ratio so the due
                     // command can redo the falloff from where it stands and
                     // arrive at the same number by the same route.
-                    held.knock_ratio = original_damage ? damage / original_damage : 1;
+                    held.knock_ratio = (original_damage ? damage / original_damage : 1)
+                                       * knock_scale;
                     held.knock_flags = fl;
                 } else {
                     // Not held: applied here and now, but through the same
@@ -635,7 +645,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     b.slack = 0;
                     b.back = 0;   // applied where the blast was found, so no step back
 
-                    float moment = Class_ScaleMoment(targ.playerclass, damage);
+                    float moment = Class_ScaleMoment(targ.playerclass, damage * knock_scale);
                     vector knock = Knock_Velocity(&b, targ, moment);
                     targ.velocity += knock;
                     PMD_Knock(targ, knock, moment);

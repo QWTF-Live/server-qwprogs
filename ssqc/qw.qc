@@ -34,6 +34,9 @@ entity blast_proj;      // the projectile, which carries a base reading per view
 float blast_delay;      // how long after that reading the blast is due
 .float knock_cmd_due;   // pending knocks: the due whose command has yet to name itself
 float blast_base;       // the blast's damage before the radius falloff
+// Set by a caller whose damage is rolled but whose push must not be: TF_T_Damage
+// computes the shove from this instead, and clears it.  One use, like deathmsg.
+float knock_damage;
 entity Knock_Defer(entity targ, vector src, float kind);
 // Engine-provided (fteqw fork): the client's own clock stamp and input frame
 // number for the command being run, valid from PlayerPreThink through

@@ -824,7 +824,9 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
     if (!points)
         return;
 
-    if (!PM_ExplosionReaches(b.src, ent.origin))
+    // A hit needs no line of sight to itself, and at contact range the trace is
+    // as likely to find the surface behind us as open air.
+    if (b.type != KNOCK_DIRECT && !PM_ExplosionReaches(b.src, ent.origin))
         return;
 
     // The scaling chain the server runs in TF_T_Damage().  Both inputs are our
@@ -858,7 +860,7 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
 // Can be either by {seq + itime} for predicted projectiles, or by {itime} for
 // server projectiles.
 static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity ent, float dmg,
-                                      vector src = '0 0 0') {
+                                      vector src = '0 0 0', float ktype = KNOCK_RADIUS) {
     if (!PM_KnockAllowed(ent))
         return 0;
     if (src == '0 0 0')
@@ -871,7 +873,7 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
         return 0;
 
     n->type = NT_BLAST;
-    n->blast.type = KNOCK_RADIUS;
+    n->blast.type = ktype;
     n->blast.src = src;   // the ent's own position unless the server told us better
     n->blast.base = dmg;
     // Who fired it decides the multiplier, and an entity number classifies
@@ -1112,6 +1114,18 @@ void PM_AddSimExplosion(float itime, entity ent) {
             return;  // Not recognized
     }
 
+    // A rocket that stopped on us is not a blast we are standing near.  The
+    // server excludes a directly hit player from the radius pass entirely --
+    // they are ignore1 to T_RadiusDamage -- and the whole push comes off the
+    // direct damage instead, at a fixed 102.  Predicting the radius falloff
+    // against that was thirty per cent short: mom 75 against 103, 77 against
+    // 96, 76 against 112, with the source and the distance already agreeing.
+    float ktype = KNOCK_RADIUS;
+    if (ent.hit_self) {
+        ktype = KNOCK_DIRECT;
+        dmg = KNOCK_DIRECT_DMG;
+    }
+
     float seq = 0, nat = NA_ITIME;
     if (ent.owner == pengine.player_ent)
     {
@@ -1214,7 +1228,7 @@ void PM_AddSimExplosion(float itime, entity ent) {
     if (ent.entnum && ent.knock_org)
         src = ent.knock_org;
 
-    PM_AddNudgeExplosion(nat, seq, itime, ent, dmg, src);
+    PM_AddNudgeExplosion(nat, seq, itime, ent, dmg, src, ktype);
 }
 
 float MatchNudge(PM_Nudge* n, float seq, float sitime, float eitime, float slack = 0) {

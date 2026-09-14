@@ -200,7 +200,21 @@ string FO_GrenName(float gtype) {
 enum {
     KNOCK_RADIUS,   // adds to velocity
     KNOCK_BOUNCE,   // replaces it: a conc's direction is the whole of the effect
+    KNOCK_DIRECT,   // a hit, not a blast: full damage, no falloff
 };
+
+// What a direct rocket hit shoves with.  The damage it deals is 92 + a roll of
+// 20 and stays that way; the push is this whether the roll is 92 or 112.
+//
+// A blast is something the client can evaluate for itself -- it knows where the
+// explosion was and where it is -- but a die roll is not, and the push was
+// coming out thirty per cent short because the client was predicting a radius
+// blast against a direct hit that is excluded from the radius pass entirely.
+// Predicting the mean would leave it ten per cent out every single time, which
+// at these magnitudes is sixty units a second of correction on the one player
+// who feels it.  Fixing the number costs nothing anyone can see: the damage
+// still varies, only the shove does not.
+const float KNOCK_DIRECT_DMG = 102;
 
 struct FO_GrenExp {
     int type;
@@ -951,12 +965,16 @@ vector Knock_Org(KnockBlast* b, entity targ) {
 // negative.
 float Knock_Points(KnockBlast* b, entity targ) {
     float dist = vlen(Knock_Org(b, targ) - b->src);
-    if (dist > b->base + 40 - b->slack)
+    if (b->type != KNOCK_DIRECT && dist > b->base + 40 - b->slack)
         return 0;
 
-    float points = (b->type == KNOCK_BOUNCE)
-                   ? b->base - dist * 0.5
-                   : CalcRadiusDamage(b->src, targ, b->flags, b->base, Knock_Org(b, targ));
+    float points;
+    if (b->type == KNOCK_DIRECT)
+        points = b->base;   // it hit them; there is no distance to fall off over
+    else if (b->type == KNOCK_BOUNCE)
+        points = b->base - dist * 0.5;
+    else
+        points = CalcRadiusDamage(b->src, targ, b->flags, b->base, Knock_Org(b, targ));
     return points > 0 ? points : 0;
 }
 

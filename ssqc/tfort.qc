@@ -807,51 +807,13 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
         tGrenade.heat = time_base + 3 + 0.8;
 
         self.primed_gren_type = gdesc->id;
-        // The fuse the client predicts from, on the command clock rather than
-        // on world time.  The two run at the same rate but sit an offset apart
-        // that is per-player -- 36 ms for one client in the trace, 3 ms for
-        // another on the same server -- so one world instant names a different
-        // command on each side.  Anchored to this player's own clock at the
-        // prime instead, both sides name one command and neither has to sample
-        // an offset.  heat stays on world time: it drives the timer's think and
-        // the window a throw is legal in, which are not per-player.
-        self.primed_gren_exp = (self.cmd_clock ? self.cmd_clock + (time_base - RealTime())
-                                              : time_base) + 3 + 0.8;
+        self.primed_gren_exp = tGrenade.heat;
         UpdateClientGrenadePrimed(self, gdesc->id, tGrenade.heat);
     }
 
     tGrenade.think = FO_GrenadeThink;
     self.grenade_timer = tGrenade;
     self.last_prime = time_base;
-}
-
-// From PlayerPostThink, inside the command warp, so `time` here is this
-// player's command clock -- the same clock the fuse is stamped on and the same
-// one the client tests against.  Spawning from the timer's think instead put
-// the grenade on whichever command the server happened to be on when *world*
-// time reached the fuse, one or two commands later depending on how far ahead
-// that player's chain runs, and up to 22 units of blast source in the trace.
-static float gren_release_fuse;   // RJ_TRACE: the fuse the release fired against
-
-void PlayerGren_Apply() {
-    entity t = self.grenade_timer;
-    if (!t || !t.heat || !self.primed_gren_exp)
-        return;
-    if (time < self.primed_gren_exp)
-        return;
-    if (self.tfstate & TFSTATE_GRENTHROWING)
-        return;   // a throw is latched; the throw path owns this timer
-    if (t.weapon == GREN_CALTROP)
-        return;   // caltrops keep their own schedule
-
-    entity held = self;
-    gren_release_fuse = self.primed_gren_exp;
-    self.primed_gren_exp = 0;
-    self.grenade_timer = world;
-    self = t;
-    TeamFortress_ExplodePerson();
-    self = held;
-    dremove(t);
 }
 
 void () FO_GrenadeThink = {
@@ -2356,10 +2318,9 @@ void () TeamFortress_ExplodePerson = {
     // instant and we spawn it from a think, in the physics phase between two
     // commands.  One command of the holder's travel is the whole of the gap
     // between the two copies.
-    rj_trace("S: gren-held t=%.4f seq=%.0f clk=%.4f fuse=%.4f heat=%.4f org=%v\n",
-             time, self.owner.cmd_sequence, self.owner.cmd_clock, gren_release_fuse,
-             self.heat, self.owner.origin);
-    gren_release_fuse = 0;
+    rj_trace("S: gren-held t=%.3f seq=%.0f clk=%.4f heat=%.4f org=%v\n",
+             time, self.owner.cmd_sequence, self.owner.cmd_clock, self.heat,
+             self.owner.origin);
     self.owner.rj_cmd_trace_until = RealTime() + 0.16;
 
     self.owner.tfstate &= ~TFSTATE_GREN_MASK_ALL;

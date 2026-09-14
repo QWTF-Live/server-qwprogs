@@ -1210,6 +1210,20 @@ void () FO_GrenadeThink = {
 void () FO_ThrowGrenade = {
     entity timer = self.grenade_timer;
 
+    // The same guard PlayerGren_Apply has, and this path never got it.
+    // grenade_timer outlives several of the routes that retire a timer, and a
+    // dangling one reads gren_type 0 -- which is what has been indexing
+    // stg_table below its start.  The held path was taught to check; the throw
+    // path was not, and a throw is the more common way to get here.
+    //
+    // Cleared as well as refused: a stale handle that stays put is retried on
+    // every throw for the rest of the life.
+    if (!timer || timer.classname != "primetimer" || !timer.fpp.gren_type) {
+        self.grenade_timer = world;
+        self.tfstate &= ~TFSTATE_GREN_MASK_ALL;
+        return;
+    }
+
     float throwtime = time;
     if (RewindFlagEnabled(REWIND_GRENADES))
         throwtime = bounded_remote_time(FO_RewindGrenDt(timer.fpp.gren_type));

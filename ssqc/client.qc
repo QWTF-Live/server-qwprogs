@@ -3260,13 +3260,6 @@ void PlayerPeriodicThink(float is_player) {
     // per-command prediction journal sent to each player [off]
     pm_debug = CF_GetSetting("pmd", "pm_debug", "1");
 
-    // Calibration for where a held push falls relative to a command boundary.
-    // The two sides accumulate their chains separately, so their idea of a
-    // command's end can sit a fraction of a millisecond apart, and a due time
-    // landing in that sliver goes to different commands on each.  Shifting our
-    // comparison by the measured offset cancels it.  Milliseconds, signed,
-    // default nothing until a trace says what the offset actually is.
-    knock_edge = CF_GetSetting("ke", "knock_edge", "0") / 1000;
 
     // This will generate extra sends on spec/client transition; but not worth
     // making sure we have a unique *setinfo cookie (or clearing in

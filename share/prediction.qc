@@ -77,6 +77,15 @@ const float CMD_CLOCK_LEAD = 32;
 // wait out the lead with the chain that far wrong.
 const float CMD_CLOCK_SNAP = 0.250;
 
+// Calibration for where a held push falls relative to a command boundary.
+// The two sides accumulate their chains separately, so their idea of where a
+// command ends can sit a fraction of a millisecond apart, and a due time
+// landing in that sliver goes to one command here and the next there.  Shift
+// our comparison by the measured offset to cancel it.  Seconds, signed, and
+// compiled in: trials run as separate builds rather than something to dial at
+// runtime, and the trace prints the value so a log names the build that made it.
+const float KNOCK_EDGE = 0;
+
 // How far the chain may sit from the world clock before we correct it.
 //
 // Most of that distance is not error.  A command waits for the next server

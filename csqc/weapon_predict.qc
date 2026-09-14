@@ -1767,8 +1767,12 @@ static void GrenDecline(float why) {
 }
 
 static void W_ThrowGren(float is_throw) {
-    if (!RewindFlagEnabled(REWIND_GRENADES) || getstatf(STAT_NOFIRE)) {
-        if (is_throw) GrenDecline(1);   // rewind off, or firing blocked
+    if (!RewindFlagEnabled(REWIND_GRENADES)) {
+        if (is_throw) GrenDecline(1);   // thrown grenades are not predicted at all
+        return;
+    }
+    if (getstatf(STAT_NOFIRE)) {
+        if (is_throw) GrenDecline(5);   // firing blocked
         return;
     }
 

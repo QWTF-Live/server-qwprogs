@@ -905,9 +905,16 @@ void FO_DebugDropOn(entity targ, string kind, float lead) {
     bot.think = SUB_Remove;
     bot.nextthink = time + 10;
 
-    // Beside them rather than on their head, so it is the radius push being
-    // measured and not a direct hit as well.
-    vector at = targ.origin + '48 0 0';
+    // Beside them, and beside where they are going.  A fixed offset closes up
+    // over the lead -- they walk into it -- and the blasts came out as close as
+    // twenty-nine units, which is a direct hit in all but name.  Perpendicular
+    // to their travel holds the gap while they keep moving.
+    vector side = '0 0 0';
+    if (vlen(targ.velocity_x * '1 0 0' + targ.velocity_y * '0 1 0') > 1)
+        side = normalize(targ.velocity_y * '1 0 0' - targ.velocity_x * '0 1 0');
+    else
+        side = '1 0 0';
+    vector at = targ.origin + side * 64;
 
     // Warn first.  Both go out now; only the blast waits.
     sprint(targ, PRINT_HIGH, strcat("knockme: ", kind, " incoming\n"));
@@ -938,6 +945,7 @@ void FO_DebugDropOn(entity targ, string kind, float lead) {
         proj.nextthink = proj.fpp.expires_at;
         setmodel(proj, gdesc->model);
         setorigin(proj, at + '0 0 24');
+        proj.dimension_hit = DIM_ALL & ~DIM_PLAYER;
     } else {
         float speed = FPP_Get(FPP_ROCKET)->speed;
 
@@ -955,7 +963,13 @@ void FO_DebugDropOn(entity targ, string kind, float lead) {
         proj.nextthink = time + 5;
         // Far enough up that the fall takes the lead we promised.
         setorigin(proj, at + '0 0 1' * (speed * lead));
+        proj.dimension_hit = DIM_ALL & ~DIM_PLAYER;
     }
+    // Passes through players, because the client's copy does.  Its simulation
+    // cannot hit networked entities, so a direct hit stops our rocket at the
+    // player while theirs flies on -- two different flights and two different
+    // dues, which is the one thing this is supposed to be measuring.  A tool
+    // that introduces the error it is looking for is no use.
     FOProj_Finalize(proj);
 }
 

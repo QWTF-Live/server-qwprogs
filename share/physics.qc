@@ -144,6 +144,56 @@ static inline float get_gravity() { return cvar("sv_gravity"); }
 
 #define dot(v1, v2) ((vector)v1 * (vector)v2)
 
+#ifdef SSQC
+// A player and a projectile crossing paths inside one physics step.
+//
+// The trace below resolves players at a single instant -- the step's midpoint,
+// via setlaggedtime -- and sweeps the projectile past a box standing still.
+// The player is really moving, so that box is in the wrong place by up to half
+// their travel over the step, and on a corner graze that is the whole of the
+// decision: a rocket in contact scores 102 and one a fraction outside scores
+// the radius falloff at thirty-two units, about 75.  A cliff decided by half a
+// unit of sampling.
+//
+// Two straight segments have an exact answer, and this is it: sweep the player
+// against the projectile in the projectile's own frame of reference, over the
+// projectile's own step.  Antilag_CrossCheck has always computed the right
+// geometry -- it just pairs the player's last command with the projectile's
+// last frame, two intervals that are not the same one.  Same construction here,
+// on the step the projectile is actually taking.
+//
+// Missiles only for now: a grenade bouncing off a player needs a surface normal
+// this does not produce, and its blast point is sent regardless.
+static float Phys_SweepPlayers(entity e, vector offset, float dt, float best,
+                               entity* hit) {
+    float found = FALSE;
+    float reach = vlen(offset) + 128;
+
+    entity p = find(world, classname, "player");
+    while (p) {
+        if (p != e.owner && p.solid == SOLID_SLIDEBOX && p.health > 0 &&
+            vlen(p.origin - e.origin) < reach) {
+            vector a = laggedorigin(p, e.phys_time);
+            vector b = laggedorigin(p, e.phys_time + dt);
+            if (a != '0 0 0' && b != '0 0 0') {
+                // The projectile stands still at its step start and the box
+                // carries the relative motion, which is the same crossing.
+                other = e;
+                tracebox(a, p.mins, p.maxs, b - offset, MOVE_OTHERONLY, p);
+                if (!trace_startsolid && trace_fraction < best) {
+                    best = trace_fraction;
+                    *hit = p;
+                    found = TRUE;
+                }
+            }
+        }
+        p = find(p, classname, "player");
+    }
+
+    return found ? best : -1;
+}
+#endif
+
 float Phys_Push(entity e, vector offset, float dt, float phys_flags) {
     float trace_flags = 0;
 
@@ -157,6 +207,38 @@ float Phys_Push(entity e, vector offset, float dt, float phys_flags) {
     // Note: Networked entities don't currently intersect on CSQC instantiation
     // of this, we fudge this in Phys_Impact from the server side.
     traceline(e.origin, e.origin + offset, trace_flags, e.owner);
+
+#ifdef SSQC
+    // Held aside while the sweep runs its own traces, and put back if it finds
+    // nothing nearer than the world already did.
+    if ((phys_flags & PHYSF_REWIND_PLAYERS) && e.movetype == MOVETYPE_FLYMISSILE) {
+        float w_frac = trace_fraction, w_start = trace_startsolid;
+        vector w_end = trace_endpos, w_plane = trace_plane_normal;
+        entity w_ent = trace_ent;
+
+        entity hit = world;
+        float f = Phys_SweepPlayers(e, offset, dt, w_frac, &hit);
+
+        trace_fraction = w_frac;
+        trace_startsolid = w_start;
+        trace_endpos = w_end;
+        trace_plane_normal = w_plane;
+        trace_ent = w_ent;
+
+        if (f >= 0 && hit) {
+            vector at = laggedorigin(hit, e.phys_time + dt * f);
+            trace_fraction = f;
+            trace_endpos = e.origin + offset * f;
+            trace_ent = hit;
+            trace_startsolid = FALSE;
+            trace_plane_normal = normalize(trace_endpos -
+                                           (at + (hit.mins + hit.maxs) * 0.5));
+            rj_trace("S: sweep t=%.3f fpp=%d f=%.3f pt=%.4f step=%.1fms",
+                     time, (float)e.fpp.index, f, e.phys_time, dt * 1000);
+            rj_trace(" at=%v proj=%v->%v\n", at, e.origin, trace_endpos);
+        }
+    }
+#endif
 
 #ifdef CSQC
     // Except ourselves.  A rocket that hits us is the direct hit whose

@@ -640,8 +640,24 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     PMD_Knock(targ, knock, moment);
                     Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, targ.cmd_clock,
                                 moment, knock, 0, targ.cmd_sequence);
+
+                    // Only on this path.  The filter list tells the client to
+                    // stop nudging for an entity as of the command this update
+                    // acknowledges, which is right when the push lands on the
+                    // command the blast was found on -- this one.  A deferred
+                    // push lands one or two commands later, so the same message
+                    // retires the nudge before it is due: the client let go of
+                    // the push and the snapshot had not yet arrived with it,
+                    // and the view lost it for a frame and got it back.
+                    //
+                    // A deferred nudge needs no telling.  It carries an explicit
+                    // expiry, and since a fired nudge outlives that until the
+                    // server acknowledges the command it pushed on, it already
+                    // retires at exactly the moment the server's state takes
+                    // over -- which is the moment this message is trying, and
+                    // failing, to name.
+                    Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
                 }
-                Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
             }
         }
     }

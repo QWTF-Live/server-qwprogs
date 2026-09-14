@@ -746,7 +746,8 @@ void PM_AddSimExplosion(float itime, entity ent) {
         nat = NA_ITIME_EXPLICIT_EXPIRE;  // Knock forwards are synchronized
         itime = ent.forward_knock;
         PM_SupersedePredictedNudge(ent);
-    } else if (ent.entnum && ent.has_cmd_base && ent.s_time) {
+    } else if (ent.entnum && ent.has_cmd_base && ent.s_time &&
+               ent.owner_entnum != pengine.player_entnum) {
         // Someone else's rocket: our clock when it appeared plus its flight,
         // which both sides measure from the projectile's own start.  Its
         // physics clock cannot be compared across the wire -- the server runs

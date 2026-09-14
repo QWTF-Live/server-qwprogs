@@ -620,8 +620,11 @@ static void PM_SupersedePredictedNudge(entity sent) {
         // Match on the fire command, which both copies carry.  created_seq is
         // not that: a predicted copy takes it from the fire sequence and a
         // networked one from whenever its update happened to be parsed.
-        if (!n->src_fseq || n->src_fseq != sent.fire_seq)
+        if (!n->src_fseq || n->src_fseq != sent.fire_seq) {
+            rj_trace("C: supersede-miss ours=%.0f theirs=%.0f cseq=%.0f/%.0f ent=%.0f\n",
+                     n->src_fseq, sent.fire_seq, n->src_cseq, sent.created_seq, sent.entnum);
             continue;
+        }
         rj_trace("C: nudge-superseded cseq=%.0f nat=%s seq=%.0f itime=%.3f by fk=%.3f\n",
                  n->src_cseq, NAT_tos(n->nat), n->seq, n->itime, sent.forward_knock);
         n->nat = NA_NONE;

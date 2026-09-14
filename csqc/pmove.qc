@@ -382,7 +382,14 @@ struct PM_Nudge {
 
     vector dash_vel;    // NT_DASH: the velocity it assigns
     KnockBlast blast;   // NT_BLAST: what went off, as the server holds it too
-    float src_cseq;    // created_seq of the projectile this came from (predicted and server copies share it)
+    // created_seq of the projectile this came from.  The two copies are meant
+    // to agree: a predicted one takes it from the fire sequence, a networked
+    // one from servercommandframe when its first update is parsed, and that
+    // update normally rides the snapshot acknowledging the fire command.  It
+    // only holds while that is true, so an update that arrives a frame late --
+    // out of PVS, a lost packet -- leaves the predicted nudge unmatched and
+    // the push lands twice.
+    float src_cseq;
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 

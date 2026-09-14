@@ -1418,6 +1418,9 @@ void FO_GrenExplode(entity e) {
     ASSERTF_TRUE(FO_GrenGetExp(e.fpp.gren_type, exp));
 
     deathmsg = exp.deathmsg;
+    // Where it came to rest.  The client's copy bounces on its own and settles
+    // a little apart from ours, and the whole push direction reads from this.
+    e.knock_org = e.origin;
     // The fuse time the client predicted this explosion from, so both sides
     // hang the push on the same command.
     blast_due = e.fpp.expires_at;
@@ -1437,7 +1440,7 @@ void FO_GrenExplode(entity e) {
 
 void FO_T_GrenExplode() {
     FO_GrenExplode(self);
-    dremove(self);
+    dremove_sent(self);   // carries knock_org out before it goes
 }
 
 void () GrenadeExplode = {

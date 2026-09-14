@@ -745,6 +745,23 @@ float PM_WorldToCmdTime(float t) {
     return t + pstate_server.pmove.cmd_clock_skew;
 }
 
+// The server's copy of where a blast we have already scheduled actually went
+// off.  Our grenade came to rest wherever our own bounces put it, which in the
+// last trace was 1.4 units from the server's and 25 u/s of push.
+void PM_UpdateNudgeSource(entity ent, vector src) {
+    for (float i = 0; i < nudges.length; i++) {
+        PM_Nudge* n = &nudges[i];
+        if (n->nat == NA_NONE || n->type != NT_BLAST || n->src != ent)
+            continue;
+        if (n->blast.src == src)
+            continue;
+        rj_trace("C: knock-src ent=%.0f by=%.2f %v -> %v\n", (float)ent.entnum,
+                 vlen(src - n->blast.src), n->blast.src, src);
+        n->blast.src = src;
+        cache_invalidated = TRUE;
+    }
+}
+
 void PM_AddGrenadeExplosion(float itime, entity ent) {
     if (!PM_Enabled())
         return;
@@ -779,7 +796,8 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
 
     PM_Nudge* n;
     if (exp.type == KNOCK_RADIUS)
-        PM_AddNudgeExplosion(NA_ITIME_EXPLICIT_EXPIRE, 0, itime, ent, dmg);
+        PM_AddNudgeExplosion(NA_ITIME_EXPLICIT_EXPIRE, 0, itime, ent, dmg,
+                             ent.knock_org);
     else
         PM_AddNudgeBounce(itime, ent, dmg);
 

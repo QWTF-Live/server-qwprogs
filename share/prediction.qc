@@ -61,6 +61,7 @@ enumflags {
     FOPP_EXPIRY,
     FOPP_FORWARDKNOCK,
     FOPP_CMDBASE,
+    FOPP_KNOCKORG,
 };
 
 .float forward_knock;
@@ -862,16 +863,22 @@ float PP_SendEntity(entity to_player, float sendmask) {
     // u/s of push the server had not applied.
     if (self.forward_knock)
         sendflags |= FOPP_FORWARDKNOCK;
+    // Its own flag rather than riding the push time: a grenade has a blast
+    // point but no push time of its own, its due coming from the fuse both
+    // sides already hold.
+    if (self.knock_org)
+        sendflags |= FOPP_KNOCKORG;
 
     WriteByte(MSG_ENTITY, ENT_PROJECTILE);
-    WriteByte(MSG_ENTITY, sendflags);
+    WriteShort(MSG_ENTITY, sendflags);   // nine flags no longer fit in a byte
 #else
+void PM_UpdateNudgeSource(entity ent, vector src);
 #define COMMD(_type, _dest, _field) self.##_dest = Read##_type()
 #define COMMO(_type, _dest, _src) ##_dest = Read##_type()
 #define COMM(_type, _field) COMMD(_type, _field, _field)
 
 void EntUpdate_Projectile(float isnew) {
-    float sendflags = readbyte();
+    float sendflags = readshort();
 #endif
     if (sendflags & FOPP_INIT) {
         COMM(Byte, fpp.index);
@@ -927,11 +934,19 @@ void EntUpdate_Projectile(float isnew) {
             COMMD(Entity, aiment_num, aiment);
     }
 
-    if (sendflags & FOPP_FORWARDKNOCK) {
+    if (sendflags & FOPP_FORWARDKNOCK)
         COMM(Float, forward_knock);
+
+    if (sendflags & FOPP_KNOCKORG) {
         COMM(Coord, knock_org[0]);
         COMM(Coord, knock_org[1]);
         COMM(Coord, knock_org[2]);
+#ifdef CSQC
+        // A grenade's blast is scheduled when our own simulation reaches the
+        // fuse, from where our copy came to rest; the server's point arrives
+        // afterwards.  Nothing else would ever read it, so move the nudge.
+        PM_UpdateNudgeSource(self, self.knock_org);
+#endif
     }
 
 #ifdef SSQC

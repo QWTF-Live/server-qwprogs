@@ -620,20 +620,25 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
 static void PM_SupersedePredictedNudge(entity sent) {
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
-        if (n->type != NT_BLAST || n->blast.type != KNOCK_RADIUS ||
-            n->src_no != 0 || nudge_expired(n))
-            continue;
-        // Match on the fire command, which both copies carry.  created_seq is
-        // not that: a predicted copy takes it from the fire sequence and a
-        // networked one from whenever its update happened to be parsed.
-        if (!n->src_fseq || n->src_fseq != sent.fire_seq) {
-            rj_trace("C: supersede-miss ours=%.0f theirs=%.0f cseq=%.0f/%.0f ent=%.0f\n",
-                     n->src_fseq, sent.fire_seq, n->src_cseq, sent.created_seq, sent.entnum);
-            continue;
-        }
-        rj_trace("C: nudge-superseded cseq=%.0f nat=%s seq=%.0f itime=%.3f by fk=%.3f\n",
-                 n->src_cseq, NAT_tos(n->nat), n->seq, n->itime, sent.forward_knock);
-        n->nat = NA_NONE;
+        if (n->nat == NA_NONE)
+            continue;   // empty slot: nothing to say about it
+
+        // Every condition evaluated, none short-circuited, so the log says
+        // which one rejected rather than only that something did.  A column
+        // that is always true alongside another is redundant; one that is
+        // never the deciding false is doing nothing.
+        float ok_type = (n->type == NT_BLAST && n->blast.type == KNOCK_RADIUS);
+        float ok_pred = (n->src_no == 0);
+        float ok_live = !nudge_expired(n);
+        float ok_seq  = (n->src_fseq && n->src_fseq == sent.fire_seq);
+
+        rj_trace("C: supersede i=%.0f type=%.0f pred=%.0f live=%.0f seq=%.0f",
+                 i, ok_type, ok_pred, ok_live, ok_seq);
+        rj_trace(" ours=%.0f theirs=%.0f cseq=%.0f/%.0f ent=%.0f\n",
+                 n->src_fseq, sent.fire_seq, n->src_cseq, sent.created_seq, sent.entnum);
+
+        if (ok_type && ok_pred && ok_live && ok_seq)
+            n->nat = NA_NONE;
     }
 }
 

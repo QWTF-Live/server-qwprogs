@@ -1189,7 +1189,19 @@ entity FOProj_Create(int fpp_type) {
 
     prj.fpp.index = fpp_type;
     prj.dimension_seen = DMN_NOFLASH;
+#ifdef SSQC
+    // World time, not the command clock.  It is paired with expires_at, which
+    // is always a world instant, and the blast's delay is the difference: a
+    // projectile created inside the command warp took `time` from the chain and
+    // the subtraction then cancelled the skew out of the due.  A thrown grenade
+    // hit that exactly -- its knock was scheduled on the world clock while its
+    // blast fired on the chain, a skew apart.  A held one escaped it only
+    // because ExplodePerson runs warped to heat with cmd_real_time cleared, so
+    // both sides of the subtraction were world time already.
+    prj.created_at = RealTime();
+#else
     prj.created_at = time;
+#endif
     setmodel(prj, FPP_Get(fpp_type)->model);
     setsize(prj, '0 0 0', '0 0 0');
 

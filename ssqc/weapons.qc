@@ -1103,6 +1103,17 @@ entity Knock_Defer(entity targ, vector src, float kind) {
     // across, which is the case still exposed to our clocks drifting apart.
     float base = blast_proj ? Proj_CmdBase(blast_proj, targ) : 0;
     k.forward_knock = (base ? base + blast_delay : blast_due + targ.cmd_clock_skew) + KNOCK_LEAD;
+
+    // Which anchor this one used, and where the target's chain already was when
+    // we queued it.  Those two answer the question the knock lines cannot: a
+    // mismatch is a tie only if both sides had the command available, and if
+    // cmd_clock is already past forward_knock here then the command the client
+    // will choose has run and nothing downstream can reach it.
+    rj_trace("S: knock-defer kind=%.0f anchor=%s fk=%.5f", kind, base ? "base" : "world", k.forward_knock);
+    rj_trace(" base=%.5f delay=%.4f due=%.5f skew=%+.2fms", base, blast_delay, blast_due,
+             targ.cmd_clock_skew * 1000);
+    rj_trace(" at seq=%.0f clk=%.5f reach=%.2fms\n", targ.cmd_sequence, targ.cmd_clock,
+             (k.forward_knock - targ.cmd_clock) * 1000);
     k.knock_next = targ.pending_knock;
     targ.pending_knock = k;
     k.think = T_Knock_Expire;

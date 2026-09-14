@@ -75,6 +75,9 @@ enumflags {
 // is about the same again, so thirty-two leaves ample margin.
 const float CMD_CLOCK_TOL = 0.010;
 const float CMD_CLOCK_LEAD = 32;
+// Past this the chain is not wandering, something stopped: snap rather than
+// wait out the lead with the chain that far wrong.
+const float CMD_CLOCK_SNAP = 0.250;
 
 #ifdef SSQC
 // A clock for explosion prediction, one reading per player, taken when the

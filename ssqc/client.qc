@@ -2826,8 +2826,15 @@ static void CmdClock_Update() {
         return;
     }
     float clk = self.cmd_clock_last + input_timelength;
-    if (!self.cmd_clock_last) {
-        clk = time;              // first command: start from the world clock
+    if (!self.cmd_clock_last || fabs(time - clk) > CMD_CLOCK_SNAP) {
+        // First command, or the chain is grossly out -- a hitch, a pause, a
+        // spell of sending nothing.  Announcing a correction half a second
+        // ahead is the wrong answer here: it would leave the chain wrong by
+        // that much meanwhile.  Snap, and accept that anything in flight
+        // across it disagrees, which after a gap of this size is nothing.
+        clk = time;
+        self.cmd_clock_fix = 0;
+        self.cmd_clock_fix_seq = 0;
         self.cmd_clock_k += 1;
     } else if (self.cmd_clock_fix_seq && self.cmd_sequence >= self.cmd_clock_fix_seq) {
         // A correction we announced earlier, arriving on the command we said it

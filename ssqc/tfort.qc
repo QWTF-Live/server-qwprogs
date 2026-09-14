@@ -813,7 +813,24 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
 
     tGrenade.think = FO_GrenadeThink;
     self.grenade_timer = tGrenade;
-    self.last_prime = time_base;
+
+    // The prime, on this player's own clock.  It was stored as world time while
+    // the only thing reading it -- the client's throw window -- compares it
+    // against the chain, so that window has been evaluated a skew out of step
+    // on the two sides all along.  Nearly three seconds wide with margins at
+    // both ends, so nothing was visibly wrong, but it is the same category
+    // error as the fuse and this is the same fix.
+    //
+    // Same instant, not the same number: time_base carries the ping correction
+    // that starts the fuse when the player pressed rather than when we saw it,
+    // and dropping that would shorten a high-ping player's grenade.  Inside the
+    // warp `time` is the command clock and RealTime() the world time under it,
+    // so their difference is this player's skew.
+    //
+    // Both sides now hold one anchor for the whole grenade: the creation at
+    // +3.8 and the blast at +3.9 fall out of it with nothing sent per grenade
+    // and no offset sampled at either end.
+    self.last_prime = time_base + (time - RealTime());
 }
 
 void () FO_GrenadeThink = {

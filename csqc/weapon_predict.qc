@@ -2059,6 +2059,9 @@ void InitProjectileEnt(float sendflags) {
 
     self.drawmask = MASK_ENGINE;
     self.predraw = PP_PredrawActive;
+    // Never solid on our side, so findradius would not return it and the
+    // command-driven crossing test saw no projectiles at all.
+    self.flags |= FL_FINDABLE_NONSOLID;
     if (sendflags & FOPP_ANGLES == 0)
         self.angles = vectoangles(self.velocity);
 

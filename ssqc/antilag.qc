@@ -28,22 +28,50 @@ void Antilag_CrossCheck(entity p) {
     if (dP == '0 0 0' || p.solid != SOLID_SLIDEBOX || p.health <= 0)
         return;
 
+    // The span this command covered, which is what the projectile's motion has
+    // to be measured over for the two to be paired at all.
+    float t1 = RealTime(), t0 = t1 - input_timelength;
+
     int count;
     entity* projs = find_list(al_proj, 1, EV_FLOAT, count);
     for (int i = 0; i < count; i++) {
         entity e = projs[i];
         if (e.voided || !e.touch || e.owner == p || e.solid == SOLID_NOT)
             continue;
-        vector dQ = e.origin - e.al_prev_origin;
+        // The projectile's motion over *this command's* span, not over its last
+        // physics frame.  Those are two different intervals and pairing them
+        // was the whole of the granularity: the player's thirteen milliseconds
+        // against whatever the projectile happened to cover since it last ran.
+        // A missile flies straight, so its position at either end of the
+        // command follows from its own clock.
+        vector qa, qb;
+        if (e.movetype == MOVETYPE_FLYMISSILE && e.velocity != '0 0 0') {
+            qa = e.origin + e.velocity * (t0 - e.phys_time);
+            qb = e.origin + e.velocity * (t1 - e.phys_time);
+        } else {
+            qa = e.al_prev_origin;
+            qb = e.origin;
+        }
+
+        vector dQ = qb - qa;
         if (dQ == '0 0 0')
             continue;   // did not move: the command's own sweep covered it
 
+        // MOVE_OTHERONLY meets the projectile where it stands, and the sweep
+        // wants it at the end of the span.
+        vector held_org = e.origin;
+        if (qb != held_org)
+            setorigin(e, qb);
         other = e;
         tracebox(p.al_cmd_prev + dQ, p.mins, p.maxs, p.origin, MOVE_OTHERONLY, p);
-        if (trace_startsolid || trace_fraction >= 1)
+        float f = trace_fraction, ss = trace_startsolid;
+        if (qb != held_org)
+            setorigin(e, held_org);
+        if (ss || f >= 1)
             continue;
 
-        vector at = e.al_prev_origin + trace_fraction * dQ;
+        trace_fraction = f;
+        vector at = qa + f * dQ;
         rj_trace("S: cross t=%.3f %s f=%.2f proj=%v->%v", time, FPP_Name(e.fpp.index), trace_fraction, e.al_prev_origin, e.origin);
         // The projectile's own clock, so the client's copy of this rocket can be
         // put beside ours at the same instant.  The two came out ten units

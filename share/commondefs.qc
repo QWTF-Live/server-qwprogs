@@ -8,7 +8,7 @@ const string kQWTF = "#QWTF.live: ";
 struct FPPState {
     int index;
     float expires_at;
-    float expires_cmd;   // the same instant on the primer's command clock
+    float cmd_base;      // our command clock when this projectile appeared
 
 #ifdef SSQC
     int flags;

@@ -670,14 +670,15 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     if (!PM_Enabled())
         return;
 
-    // The grenade carries its fuse named on our own command clock, taken when
-    // it was thrown and sent to us alone.  Which command a fuse lands on is a
-    // discrete choice: an offset applied twice, once here from a copy a round
-    // trip old and once on the server from the live value, is not a small
-    // error near a frame edge but a whole frame of push.  So the server hands
-    // us the number rather than the ingredients, and neither side converts.
-    if (ent.fpp.expires_cmd)
-        itime = ent.fpp.expires_cmd;
+    // Our own command clock when the grenade appeared, read on the server and
+    // sent to us alone, plus what was left of the fuse.  A base we both hold
+    // identically and a duration we both measure the same way, so neither
+    // side converts a world time with an offset the other cannot see.  Which
+    // command a fuse lands on is a discrete choice, and two samples of that
+    // offset taken a round trip apart differ by a few milliseconds, which near
+    // a frame edge is a whole frame of push.
+    if (ent.has_cmd_base)
+        itime = ent.fpp.cmd_base + max(ent.fpp.expires_at - ent.created_at, 0);
     else
         itime = PM_WorldToCmdTime(itime);
 
@@ -737,6 +738,14 @@ void PM_AddSimExplosion(float itime, entity ent) {
         nat = NA_ITIME_EXPLICIT_EXPIRE;  // Knock forwards are synchronized
         itime = ent.forward_knock;
         PM_SupersedePredictedNudge(ent);
+    } else if (ent.entnum && ent.has_cmd_base && ent.s_time) {
+        // Someone else's rocket: our clock when it appeared plus its flight,
+        // which both sides measure from the projectile's own start.  Its
+        // physics clock cannot be compared across the wire -- the server runs
+        // it on server time and we run ours on interpolation time, on purpose,
+        // so that collisions line up with what we are shown -- but the time it
+        // has been in the air is the same quantity on both sides.
+        itime = ent.fpp.cmd_base + max(itime - ent.s_time, 0);
     } else if (ent.entnum) {
         itime = PM_WorldToCmdTime(itime);   // the server's clock, not ours
     } else if (ent.created_seq && ent.entnum == 0) {

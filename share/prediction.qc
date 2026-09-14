@@ -55,6 +55,7 @@ enumflags {
     FOPP_MOVETYPE,
     FOPP_EXPIRY,
     FOPP_FORWARDKNOCK,
+    FOPP_CMDBASE,
 };
 
 .float forward_knock;
@@ -65,6 +66,52 @@ enumflags {
 .float fire_cmd_time;
 // Physics clock right after the static projection (the clock s_origin was set at).
 .float s_time;
+.float has_cmd_base;    // this projectile carries a per-viewer explosion clock base
+
+#ifdef SSQC
+// A clock for explosion prediction, one reading per player, taken when the
+// projectile is created and never taken again.
+//
+// The command clock serves projectile prediction: it is what the two sides
+// use to agree on when a shot was fired and how far it has flown.  It is not
+// a world clock, and the projectile's own physics clock is not one either --
+// the server runs a projectile on server time while the client runs its own
+// on its interpolation time, deliberately, so that collisions line up with
+// what the player sees.  Neither is a base an explosion can be scheduled from.
+//
+// So take a third reading purely for explosions: each player's command clock
+// at the moment the projectile appears.  Everything after that is a duration,
+// and durations are the one thing both sides measure identically.  A fuse is
+// its remaining run; a rocket is its flight.  No offset between our clock and
+// theirs is ever applied, on either side, so the two cannot arrive at
+// different commands however far their clocks have wandered apart.
+const float FO_MAXCLIENTS = 32;
+.float proj_cmd_base[FO_MAXCLIENTS];
+
+// Slot of a player edict in the above, or -1.
+float PlayerSlot(entity p) {
+    float i = num_for_edict(p) - 1;
+    return (i >= 0 && i < FO_MAXCLIENTS) ? i : -1;
+}
+
+// This viewer's reading, or 0 if the projectile never took one for them.
+float Proj_CmdBase(entity proj, entity viewer) {
+    float slot = PlayerSlot(viewer);
+    return (proj.has_cmd_base && slot >= 0) ? proj.proj_cmd_base[slot] : 0;
+}
+
+void Proj_StampViewers(entity proj) {
+    proj.has_cmd_base = TRUE;
+    entity p = find(world, classname, "player");
+    while (p) {
+        float slot = PlayerSlot(p);
+        if (slot >= 0)
+            proj.proj_cmd_base[slot] = p.cmd_clock;
+        p = find(p, classname, "player");
+    }
+}
+#endif
+
 
 enumflags {
     PF_PMOVE,
@@ -749,6 +796,8 @@ float PP_SendEntity(entity to_player, float sendmask) {
             sendflags |= FOPP_MOVETYPE;
         if (self.forward_knock)
             sendflags |= FOPP_FORWARDKNOCK;
+        if (self.has_cmd_base)
+            sendflags |= FOPP_CMDBASE;
     }
 
     WriteByte(MSG_ENTITY, ENT_PROJECTILE);
@@ -770,15 +819,18 @@ void EntUpdate_Projectile(float isnew) {
 
     if (sendflags & FOPP_AUX)
         COMM(Short, fpp.aux);
-    if (sendflags & FOPP_EXPIRY) {
+    if (sendflags & FOPP_EXPIRY)
         COMM(Float, fpp.expires_at);
-        // Stamped rather than converted.  Which command a fuse lands on is a
-        // discrete choice, so an offset applied twice -- once here from a
-        // copy that is a round trip stale, once on the server from the live
-        // value -- is not a small error near a frame edge, it is a whole
-        // frame.  The primer's own clock is a number both sides already hold
-        // identically, so for their own grenade neither side converts at all.
-        COMMO(Float, self.fpp.expires_cmd, Gren_StampFor(self, to_player));
+
+    // Our own command clock at the moment this projectile appeared, read on
+    // the server and sent to us alone.  Whatever it goes on to do is timed as
+    // a duration from here, by both sides, so neither ever has to convert a
+    // world time with an offset the other cannot see.
+    if (sendflags & FOPP_CMDBASE) {
+        COMMO(Float, self.fpp.cmd_base, Proj_CmdBase(self, to_player));
+#ifdef CSQC
+        self.has_cmd_base = TRUE;
+#endif
     }
 
     if (sendflags & FOPP_POS) {
@@ -1025,6 +1077,11 @@ entity FOProj_Create(int fpp_type) {
 
 void FOProj_Finalize(entity mis) {
     int fpp_type = mis.fpp.index;
+#ifdef SSQC
+    // Only what can push someone: a nail has no explosion to schedule.
+    if (FPP_IsGrenade(fpp_type) || fpp_type == FPP_ROCKET || fpp_type == FPP_INCENDIARY)
+        Proj_StampViewers(mis);
+#endif
     // We explicitly do not use newmis.  Newmis internally implements a fixed
     // 50m forward of physics handling (equivalent to our projection below)
     // which cannot be nicely unwound or accounted for.ammo_shells

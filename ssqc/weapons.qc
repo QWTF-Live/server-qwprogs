@@ -1081,13 +1081,14 @@ entity Knock_Defer(entity targ, vector src, float kind) {
     k.knock_kind = kind;
     k.owner = targ;
     k.heat = blast_base;
-    // The grenade carries a fuse named on this player's own command clock,
-    // taken when it was thrown and sent to them alone, so both of us read the
-    // same number and neither converts anything.  Without one -- a blast the
-    // server raised on its own -- fall back to moving the world time across,
-    // which is the case still exposed to the offset drifting between us.
-    float stamp = blast_proj ? Gren_StampFor(blast_proj, targ) : 0;
-    k.forward_knock = stamp ? stamp : blast_due + targ.cmd_clock_skew;
+    // Their reading of the explosion clock plus how long the blast took to
+    // arrive: a base both of us hold identically and a duration both of us
+    // measure the same way, so neither converts anything.  Without a reading
+    // -- a blast the server raised on its own, or a player who was not here
+    // when the projectile appeared -- fall back to moving the world time
+    // across, which is the case still exposed to our clocks drifting apart.
+    float base = blast_proj ? Proj_CmdBase(blast_proj, targ) : 0;
+    k.forward_knock = base ? base + blast_delay : blast_due + targ.cmd_clock_skew;
     k.knock_next = targ.pending_knock;
     targ.pending_knock = k;
     k.think = T_Knock_Expire;
@@ -1226,7 +1227,20 @@ void () T_MissileTouch = {
     float dmg = (self.owner.classname == "building_sentrygun") ? 150 : 92;
     entity ignore_self = AntilagKnock(self, dmg) ? self.owner : __NULL__;
     vector ovel = self.owner.velocity;
+
+    // Everyone else's push is held for the command their explosion clock
+    // reaches, the same way the shooter's own is.  The flight time is measured
+    // from the projectile's own clock, which both sides run from the same
+    // start, so it is a duration rather than an instant.
+    float impact_at = self.impact_phys_time ? self.impact_phys_time : RealTime();
+    blast_due = impact_at;
+    blast_delay = max(impact_at - self.s_time, 0);
+    blast_proj = self;
+    blast_base = dmg;
     T_RadiusDamage(self, self.owner, dmg, other, ignore_self);
+    blast_due = 0;
+    blast_delay = 0;
+    blast_proj = world;
     {
         rj_trace("S: touch t=%.3f own=%s org=%v deferred=%.0f fwd=%.0fms\n",
                  time, self.owner.classname, self.origin, (float)(ignore_self != __NULL__), self.antilag_ms);
@@ -1381,6 +1395,7 @@ void FO_GrenExplode(entity e) {
     // The fuse time the client predicted this explosion from, so both sides
     // hang the push on the same command.
     blast_due = e.fpp.expires_at;
+    blast_delay = max(e.fpp.expires_at - e.created_at, 0);   // what was left of the fuse
     blast_proj = e;
     blast_base = exp.dmg;
     if (exp.type == kRadiusDamage)
@@ -1388,6 +1403,7 @@ void FO_GrenExplode(entity e) {
     else if (exp.type == kRadiusBounce)
         T_RadiusBounce(self, self.owner, exp.dmg, world);
     blast_due = 0;
+    blast_delay = 0;
     blast_proj = world;
 
     RenderExplosion(e.origin);

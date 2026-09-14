@@ -700,7 +700,6 @@ void (entity timer) FO_SpawnThrownGrenade = {
     proj.fpp.gren_type = gtype;
     if (!ste->no_expiry) {
         proj.fpp.expires_at = timer.heat;
-        Gren_StampViewers(proj, timer.heat);
     }
     proj.skin = gdesc->skin;
     proj.touch = ste->touch;

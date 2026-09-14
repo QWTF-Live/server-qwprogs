@@ -153,6 +153,17 @@ static entity PP_MultiFirstDoor(entity trigger) {
     return world;
 }
 
+// Distance to a brush model has to be measured against its box, not its centre.
+// findradius measures to the centre, so a door wide enough to stand at the edge
+// of is further away than its own size -- two stops into a fast-opening door
+// came back reported as ordinary geometry because of it.
+static float PP_BoxNear(entity e, vector p, float r) {
+    if (p_x < e.absmin_x - r || p_x > e.absmax_x + r) return FALSE;
+    if (p_y < e.absmin_y - r || p_y > e.absmax_y + r) return FALSE;
+    if (p_z < e.absmin_z - r || p_z > e.absmax_z + r) return FALSE;
+    return TRUE;
+}
+
 // Being stopped by a door is hard to catch on purpose, so catch it on its own.
 //
 // A player brought to a hard stop next to a pusher is the signature: the server
@@ -178,9 +189,9 @@ static void PP_ReportPusherStop() {
     // copies are stationary, in different places, and no amount of advance
     // reasoning applies.  A run with a stop above the threshold and no line at
     // all said this needed widening -- vel on the report says which case it is.
-    entity e = findradius(self.origin, 128);
+    entity e = nextent(world);
     while (e) {
-        if (e.movetype == MOVETYPE_PUSH) {
+        if (e.movetype == MOVETYPE_PUSH && PP_BoxNear(e, self.origin, 64)) {
             rj_trace("S: pusher-stop seq=%.0f lost=%.0f org=%v vel=%v -> %v\n",
                      self.cmd_sequence, lost, self.origin, self.pp_vel_pre, self.velocity);
             rj_trace(" pusher=%s at=%v vel=%v shown=%v adv=%.0fms\n",
@@ -190,7 +201,7 @@ static void PP_ReportPusherStop() {
             self.rj_trace_until = time + 0.4;
             return;
         }
-        e = e.chain;
+        e = nextent(e);
     }
 
     // Nothing pusher-shaped nearby: say so, so a stop that is simply world

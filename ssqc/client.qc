@@ -2165,6 +2165,8 @@ void () PutClientInServer = {
     for (int i = 0; i < PRNG_NUM_STATES; i++)
         self.prng_base[i] = 65535 * random();
     self.primed_gren_exp = 0;
+    self.primed_gren_cmd = 0;
+    self.grenade_timer = world;
 
     self.immune_to_check = time + 10;
     SetDimensions(TRUE);

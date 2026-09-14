@@ -664,6 +664,9 @@ stg_table_entry stg_table[] = {
 void (entity timer, float via) FO_SpawnThrownGrenade = {
     local entity user = timer.owner;
     user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
+    user.primed_gren_exp = 0;
+    user.primed_gren_cmd = 0;
+    user.grenade_timer = world;
     user.last_throw = time;
 
     // Which command the throw lands on.  via=0 is the release itself, inside
@@ -841,6 +844,12 @@ void PlayerGren_Apply() {
     entity t = self.grenade_timer;
     if (!t || !self.primed_gren_cmd || time < self.primed_gren_cmd)
         return;
+    // grenade_timer is not cleared by every route that retires the timer, so
+    // it can point at a removed entity whose fields have been zeroed.  Firing
+    // on one of those indexed stg_table at gren_type 0, which is GREN_FIRST
+    // below the start of the table, and took the server down.
+    if (t.classname != "primetimer" || !t.fpp.gren_type)
+        return;
     if (self.tfstate & TFSTATE_GRENTHROWING)
         return;   // a throw is latched; the throw path owns this timer
     if (t.weapon == GREN_CALTROP)
@@ -887,6 +896,9 @@ void () FO_GrenadeThink = {
         // Dropped without exploding, so retire the overhead timer -- teammates
         // would otherwise keep counting down to an explosion that never comes.
         UpdateClientGrenadeThrown(user);
+        user.primed_gren_exp = 0;
+        user.primed_gren_cmd = 0;
+        user.grenade_timer = world;
         dremove(self);
         return;
     }

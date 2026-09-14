@@ -1117,7 +1117,7 @@ static void Blast_Knock(entity e) {
         vector knock = Knock_Velocity(&b, targ, moment);
         targ.velocity += knock;
         PMD_Knock(targ, knock, moment);
-        Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock, moment, knock);
+        Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock, moment, knock, 0);
     }
     dremove(e);
 }
@@ -1141,7 +1141,7 @@ static void Bounce_Knock(entity e) {
         targ.velocity = Knock_Velocity(&b, targ, points);
         PMD_Knock(targ, targ.velocity - before, points);
         Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
-                    points, targ.velocity - before);
+                    points, targ.velocity - before, 0);
         NB_ConcCapAction(targ, targ.playerclass, &targ.tfstate,
                          time, &targ.conc_cap_time, kLaunch);
     }

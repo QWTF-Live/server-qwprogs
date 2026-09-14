@@ -555,7 +555,7 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
 
     if (nudge->trace_seq != pm.seq) {   // replays re-apply at the same seq; report once per seq
         nudge->trace_seq = pm.seq;
-        Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime, moment, knock);
+        Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime, moment, knock, nudge->src_no);
         rj_trace_until_seq = pm.seq + 30;
     }
 
@@ -664,7 +664,7 @@ static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
     if (nudge->trace_seq != pm.seq) {
         nudge->trace_seq = pm.seq;
         Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime,
-                    points, ent.velocity - before);
+                    points, ent.velocity - before, nudge->src_no);
     }
 
     NB_ConcCapAction(ent, pstate_pred.playerclass, &pstate_pred.tfstate,

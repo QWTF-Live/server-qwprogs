@@ -24,6 +24,25 @@ float shared_crandom(int type) {
     return 2 * (shared_prng(type) - 0.5);
 }
 
+// What a death does to the body, keyed to the life it belongs to rather than
+// to a networked stream.  The client already holds that counter as a stat
+// (STAT_SPAWN_GEN), so both sides reach the same numbers with nothing sent and
+// nothing to keep in step across the death itself -- which is the one moment a
+// shared PRNG stream is least able to stay aligned.
+static int death_rng;
+
+void DeathRand_Begin(float gen) {
+    death_rng = (((int)gen * 2027) & 65535) | 1;   // zero is a fixed point of the LFSR
+}
+
+float DeathRand() {
+    return (death_rng = lfsr_prng_raw(death_rng)) / 65535.0;
+}
+
+float DeathCrand() {
+    return 2 * (DeathRand() - 0.5);
+}
+
 #ifdef CSQC
 float WP_GetAmmo(float ammo_type);
 float get_shells() { return WP_GetAmmo(AMMO_SHELLS); }

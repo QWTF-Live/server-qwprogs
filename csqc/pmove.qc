@@ -1124,8 +1124,17 @@ static void PM_UpdateError() {
     entity ent = pm.ent;
     pmd_norecord++;
 
+    // A life boundary, not just a dead player.  Death runs its own physics on
+    // the body -- an upward kick, or a gib velocity outright -- and the frame
+    // that reports it still reads as alive here, so the kick went into the
+    // lerp as a nine-unit correction before the flag caught up.  Nothing
+    // across a boundary is a correction to anything we showed.
+    static float err_spawn_gen;
+    float life_changed = (err_spawn_gen != game_state.spawn_gen);
+    err_spawn_gen = game_state.spawn_gen;
+
     ent.owner = edict_num(player_localentnum);
-    if (CVARF(fopm_noerror) || !game_state.is_alive ||
+    if (CVARF(fopm_noerror) || !game_state.is_alive || life_changed ||
         (clientcommandframe == servercommandframe + 1)) {
         pm.error = '0 0 0';
         pm.errortime = 0;

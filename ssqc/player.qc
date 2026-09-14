@@ -331,9 +331,9 @@ vector(float dm) VelocityForDamage =
 {
     local vector v;
 
-    v_x = 100 * crandom();
-    v_y = 100 * crandom();
-    v_z = 200 + 100 * random();
+    v_x = 100 * DeathCrand();
+    v_y = 100 * DeathCrand();
+    v_z = 200 + 100 * DeathRand();
     if (dm > -50)
         v = v * 0.7;
     else if (dm > -200)
@@ -440,6 +440,7 @@ void () GibPlayer = {
 
 void () PlayerDie = {
     self.spawn_gen += 1;
+    DeathRand_Begin(self.spawn_gen);   // every draw this death makes, from here
     self.last_death = RealTime();   // compared with the engine's cmd_acked_time
 
     local float i;
@@ -483,7 +484,7 @@ void () PlayerDie = {
     self.movetype = MOVETYPE_TOSS;
 
     if (self.velocity_z < 10)
-        self.velocity_z = self.velocity_z + random() * 300;
+        self.velocity_z = self.velocity_z + DeathRand() * 300;
 
     if (self.health < -40) {
         GibPlayer();

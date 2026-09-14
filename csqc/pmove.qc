@@ -618,7 +618,7 @@ static float PM_ExplosionReaches(vector src, vector targ) {
     return FALSE;
 }
 
-static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
+static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
     // Copied field by field: assigning a struct through a pointer is not
     // something to take on trust here.
     KnockBlast b;
@@ -627,6 +627,7 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
     b.base = nudge->blast.base;
     b.flags = nudge->blast.flags;
     b.slack = NudgeExplosionEps();
+    b.back = back;   // measure at the due instant, not the command end
 
     float points = Knock_Points(&b, ent);
     if (!points)
@@ -762,13 +763,14 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     ent.removefunc = PM_RemoveSelfNudges;
 }
 
-static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
+static void PM_NudgeBounce(PM_Nudge* nudge, entity ent, float back) {
     KnockBlast b;
     b.type = nudge->blast.type;
     b.src = nudge->blast.src;
     b.base = nudge->blast.base;
     b.flags = nudge->blast.flags;
     b.slack = NudgeExplosionEps();
+    b.back = back;   // measure at the due instant, not the command end
 
     float points = Knock_Points(&b, ent);
     if (!points)
@@ -999,12 +1001,18 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
             case NT_DASH:
                 PM_NudgeDash(n, ent);
                 break;
-            case NT_BLAST:
+            case NT_BLAST: {
+                // How much of this command had already elapsed when the blast
+                // was due.  Both sides step back by their own copy of it, so a
+                // tie that puts them a command apart costs the timing of the
+                // push and not its direction.
+                float back = max(eitime - n->itime, 0);
                 if (n->blast.type == KNOCK_BOUNCE)
-                    PM_NudgeBounce(n, ent);
+                    PM_NudgeBounce(n, ent, back);
                 else
-                    PM_NudgeExplosion(n, ent);
+                    PM_NudgeExplosion(n, ent, back);
                 break;
+            }
         }
     }
 }

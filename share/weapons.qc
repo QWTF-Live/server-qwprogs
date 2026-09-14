@@ -805,8 +805,10 @@ const float KF_BOTH_PLAYER = KF_SRC_PLAYER | KF_TARG_PLAYER;
 // (centroid vs origin).  For now just preserve what I can only assume is an old
 // terrible mistake.  We undo half of this by ignoring on src as mins/maxs==0.
 
-float CalcRadiusDamage(vector src, entity targ, float flags, float damage) {
-    vector targ_origin = targ.origin + (targ.mins + targ.maxs) * 0.5;  // (*)
+float CalcRadiusDamage(vector src, entity targ, float flags, float damage,
+                       float back = 0) {
+    vector targ_origin = targ.origin + (targ.mins + targ.maxs) * 0.5
+                         - targ.velocity * back;  // (*)
     damage -= vlen(src - targ_origin) / 2;
 
     if (flags & KF_SELF)
@@ -845,12 +847,15 @@ float Damage_Scale(float damage, float kflags, float dsflags) {
     return damage;
 }
 
-vector CalcKnock(vector src, entity targ, float flags, float moment) {
+vector CalcKnock(vector src, entity targ, float flags, float moment,
+                 float back = 0) {
     float mult = 8;
     if (moment < 60 && (flags & (KF_BOTH_PLAYER | KF_SELF) == KF_BOTH_PLAYER))
             mult = 11;
 
-    vector dir = normalize(targ.origin - src);
+    // The raw origin here and the centre in CalcRadiusDamage, as they have
+    // always been; the step back is the only thing added.
+    vector dir = normalize(targ.origin - targ.velocity * back - src);
 
     vector result = dir * moment * mult;
     if (tf_config.rj > 1)
@@ -874,34 +879,55 @@ struct KnockBlast {
     float base;     // its damage before the radius falloff
     float flags;    // KF_*
     float slack;    // extra reach allowed on the gather radius
+    // How far back from the end of the command applying this to measure the
+    // target: clk - due, the part of the command that had already elapsed when
+    // the blast was due.  Zero means the end of the command, which is what this
+    // used to do unconditionally.
+    float back;
 };
 
 // Where every stage measures the target from.  Measuring from the origin puts
 // it four units out, which near the edge of the radius is the difference
 // between a push and nothing.
-vector Knock_Org(entity targ) {
-    return targ.origin + (targ.mins + targ.maxs) * 0.5;
+//
+// And measured at the instant the blast was due, not at the end of the command
+// that happens to carry it.  On a grenade jump the target is standing more or
+// less on the blast, so a few units of travel swings the direction through a
+// large angle and moves them along the falloff at the same time: the two sides
+// once landed a command apart on the same blast and came out with 333 and 80 of
+// upward push.  Stepping both back to the same instant leaves a tie costing
+// only when the push lands, not what it is -- the two step-backs then differ by
+// the curvature over one command, about a tenth of a unit, instead of the whole
+// of the travel.
+//
+// First order on purpose.  The server could ask laggedorigin for an exact
+// answer and the client cannot, and two methods that disagree by a fraction of
+// a unit are worse here than one approximation both sides share exactly: origin
+// and velocity at the end of a command are numbers the traces show them
+// agreeing on to a hundredth of a unit.
+vector Knock_Org(KnockBlast* b, entity targ) {
+    return targ.origin + (targ.mins + targ.maxs) * 0.5 - targ.velocity * b->back;
 }
 
 // Damage after the radius falloff, or nothing when the blast does not reach.
 // Two gates: the radius the server gathers targets in, then the falloff going
 // negative.
 float Knock_Points(KnockBlast* b, entity targ) {
-    float dist = vlen(Knock_Org(targ) - b->src);
+    float dist = vlen(Knock_Org(b, targ) - b->src);
     if (dist > b->base + 40 - b->slack)
         return 0;
 
     float points = (b->type == KNOCK_BOUNCE)
                    ? b->base - dist * 0.5
-                   : CalcRadiusDamage(b->src, targ, b->flags, b->base);
+                   : CalcRadiusDamage(b->src, targ, b->flags, b->base, b->back);
     return points > 0 ? points : 0;
 }
 
 // The velocity it imparts: added for a radius blast, assigned for a bounce.
 vector Knock_Velocity(KnockBlast* b, entity targ, float moment) {
     if (b->type == KNOCK_BOUNCE)
-        return (Knock_Org(targ) - b->src) * (moment / 20);
-    return CalcKnock(b->src, targ, b->flags, moment);
+        return (Knock_Org(b, targ) - b->src) * (moment / 20);
+    return CalcKnock(b->src, targ, b->flags, moment, b->back);
 }
 
 // One line, the same fields in the same order on both sides, so a log can be
@@ -913,7 +939,7 @@ void Knock_Trace(KnockBlast* b, entity targ, float seq, float clk, float due,
 #else
     string side = "C";
 #endif
-    vector at = Knock_Org(targ);
+    vector at = Knock_Org(b, targ);
     // edge is how far into this command the due landed; slack is the smaller of
     // that and what is left of the command.  A due decides a discrete command,
     // so the two sides part company when slack is under whatever their

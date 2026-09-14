@@ -633,6 +633,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     b.base = original_damage;
                     b.flags = fl;
                     b.slack = 0;
+                    b.back = 0;   // applied where the blast was found, so no step back
 
                     float moment = Class_ScaleMoment(targ.playerclass, damage);
                     vector knock = Knock_Velocity(&b, targ, moment);

@@ -1120,6 +1120,7 @@ static void Blast_Knock(entity e) {
     b.base = e.heat;
     b.flags = e.knock_flags;
     b.slack = 0;
+    b.back = max(time - e.forward_knock, 0);   // measure at the due instant
 
     float points = Knock_Points(&b, targ);
     Knock_Unlink(e);
@@ -1147,6 +1148,7 @@ static void Bounce_Knock(entity e) {
     b.base = e.heat;
     b.flags = 0;
     b.slack = 0;
+    b.back = max(time - e.forward_knock, 0);   // measure at the due instant
 
     float points = Knock_Points(&b, targ);
     Knock_Unlink(e);

@@ -222,14 +222,6 @@ struct predict_tf_state {
     int prng_base[PRNG_NUM_STATES];
 
     float no_grenades_1, no_grenades_2, primed_gren_type, primed_gren_exp;
-    // The same fuse twice, deliberately.  primed_gren_exp is the world instant
-    // the grenade goes off at: the fuse, the projectile's expiry, and the
-    // duration the cmd_base path measures all read it, and all of those must
-    // mean the same thing to every viewer.  primed_gren_cmd is that instant on
-    // the holder's own command clock, and its only job is to pick the command
-    // the grenade materialises on -- which cannot come from a world instant,
-    // because the chain sits a per-player offset away from one.
-    float primed_gren_cmd;
 
     float num_filter_ents;
 #ifdef SSQC
@@ -554,7 +546,7 @@ static float Prediction_ChangedMask(entity player, entity src) {
     M1(FOWP_CLASS, playerclass);
     M4(FOWP_IMPULSE, impulse, current_slot.id, queue_slot.id, last_slot.id);
     M2(FOWP_TFSTATE, tfstate, csqc_maxspeed);
-    M2(FOWP_LASTPRIME, last_prime, primed_gren_cmd);
+    M1(FOWP_LASTPRIME, last_prime);
     M4(FOWP_CLASSIC_CONC, conc_state.next, conc_state.mag,
                           conc_state.next_push, conc_state.next_flip);
     M3(FOWP_CONCFINISH, conc_finished, conc_amp, conc_cap_time);
@@ -774,7 +766,6 @@ void TFL_RecvPredictState() {
 
     if (mask & FOWP_LASTPRIME) {
         COMM(Float, last_prime);
-        COMM(Float, primed_gren_cmd);
     }
 
     if (mask & FOWP_CLASSIC_CONC) {

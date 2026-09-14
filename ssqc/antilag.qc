@@ -45,7 +45,12 @@ void Antilag_CrossCheck(entity p) {
 
         vector at = e.al_prev_origin + trace_fraction * dQ;
         rj_trace("S: cross t=%.3f %s f=%.2f proj=%v->%v", time, FPP_Name(e.fpp.index), trace_fraction, e.al_prev_origin, e.origin);
-        rj_trace(" player=%v->%v at=%v\n", p.al_cmd_prev, p.origin, at);
+        // The projectile's own clock, so the client's copy of this rocket can be
+        // put beside ours at the same instant.  The two came out ten units
+        // apart at what should be the same phys time, and from the trace alone
+        // there is no telling a position drift from a mapping error.
+        rj_trace(" player=%v->%v at=%v pt=%.4f first=%.4f st=%.4f\n",
+                 p.al_cmd_prev, p.origin, at, e.phys_time, e.first_phys_time, e.s_time);
         setorigin(e, at);
 
         entity held_self = self;

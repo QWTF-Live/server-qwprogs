@@ -180,7 +180,9 @@ float PM_TraceSelf(entity e, vector from, vector to, float dt, float* frac) {
     float f = *frac;
     rj_trace("C: self-hit t=%.4f at=%.4f dt=%.1fms frac=%.4f", time, t0, dt * 1000, f);
     rj_trace(" seg=%v->%v rel=%v->%v", from, to, from - o0, to - o1);
-    rj_trace(" org=%v->%v hit=%v\n", o0, o1, from + (to - from) * f);
+    rj_trace(" org=%v->%v hit=%v", o0, o1, from + (to - from) * f);
+    rj_trace(" pt=%.4f first=%.4f base=%.4f\n",
+             e.phys_time, e.first_phys_time, e.fpp.cmd_base);
     pm_self_hit_seq = pm.seq + 30;
     return TRUE;
 }

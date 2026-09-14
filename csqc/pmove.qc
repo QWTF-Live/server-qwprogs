@@ -514,7 +514,13 @@ static float PM_ExplosionReaches(vector src, vector targ) {
 }
 
 static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
-    KnockBlast b = nudge->blast;
+    // Copied field by field: assigning a struct through a pointer is not
+    // something to take on trust here.
+    KnockBlast b;
+    b.type = nudge->blast.type;
+    b.src = nudge->blast.src;
+    b.base = nudge->blast.base;
+    b.flags = nudge->blast.flags;
     b.slack = NudgeExplosionEps();
 
     float points = Knock_Points(&b, ent);
@@ -633,7 +639,11 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
 }
 
 static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
-    KnockBlast b = nudge->blast;
+    KnockBlast b;
+    b.type = nudge->blast.type;
+    b.src = nudge->blast.src;
+    b.base = nudge->blast.base;
+    b.flags = nudge->blast.flags;
     b.slack = NudgeExplosionEps();
 
     float points = Knock_Points(&b, ent);

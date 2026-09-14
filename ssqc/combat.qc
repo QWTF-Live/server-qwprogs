@@ -474,7 +474,6 @@ void (entity targ, entity inflictor, entity attacker, float damage) T_Damage = {
 
 void TF_T_Damage(entity targ, entity inflictor, entity attacker,
       float damage, float T_flags, float T_AttackType) {
-    local vector dir;
     local entity oldself;
     local entity te;
     local float save;
@@ -617,14 +616,22 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     held.knock_ratio = original_damage ? damage / original_damage : 1;
                     held.knock_flags = fl;
                 } else {
+                    // Not held: applied here and now, but through the same
+                    // arithmetic, so the two cannot drift apart on the one
+                    // thing the client also computes.
+                    KnockBlast b;
+                    b.type = KNOCK_RADIUS;
+                    b.src = inflictor.origin;
+                    b.base = original_damage;
+                    b.flags = fl;
+                    b.slack = 0;
+
                     float moment = Class_ScaleMoment(targ.playerclass, damage);
-                    vector pmd_before = targ.velocity;
-                    targ.velocity += CalcKnock(inflictor.origin, targ, fl, moment);
-                    PMD_Knock(targ, targ.velocity - pmd_before, moment);
-                    vector pmd_at = targ.origin + (targ.mins + targ.maxs) * 0.5;
-                    rj_trace("S: knock t=%.3f seq=%.0f targ=%s", time, targ.cmd_sequence, targ.netname);
-                    rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", inflictor.origin, pmd_at,
-                             vlen(pmd_at - inflictor.origin), moment, targ.velocity - pmd_before);
+                    vector knock = Knock_Velocity(&b, targ, moment);
+                    targ.velocity += knock;
+                    PMD_Knock(targ, knock, moment);
+                    Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, targ.cmd_clock,
+                                moment, knock);
                 }
                 Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
             }

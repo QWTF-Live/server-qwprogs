@@ -2438,6 +2438,9 @@ void () TeamFortress_AmmoboxTouch = {
 
 void () TeamFortress_ExplodePerson = {
     entity te;
+    // Taken before the trace below clears it.  Reading it further down left
+    // blast_cmd_due at zero and the command-driven blast never ran at all.
+    float blast_due_cmd = gren_release_fuse;
     int gtype = self.fpp.gren_type;
     FO_GrenInfo* gdesc = FO_GrenDesc(gtype);
 
@@ -2505,7 +2508,7 @@ void () TeamFortress_ExplodePerson = {
     // the due in a burst before the entry exists.  Queued from inside a command
     // the due is one lead beyond the clock we are standing on, so the command
     // the client picks cannot already have run.
-    proj.blast_cmd_due = gren_release_fuse ? gren_release_fuse + 0.1 : 0;
+    proj.blast_cmd_due = blast_due_cmd ? blast_due_cmd + 0.1 : 0;
     self.owner.held_gren = proj;
 
     setorigin(proj, gren_release_have_org ? gren_release_org : self.owner.origin);

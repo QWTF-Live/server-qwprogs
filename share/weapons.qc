@@ -805,10 +805,12 @@ const float KF_BOTH_PLAYER = KF_SRC_PLAYER | KF_TARG_PLAYER;
 // (centroid vs origin).  For now just preserve what I can only assume is an old
 // terrible mistake.  We undo half of this by ignoring on src as mins/maxs==0.
 
+// at is the target's centre at the instant this blast is measured at, which for
+// a deferred push is a command edge in the past.  Zero means now.
 float CalcRadiusDamage(vector src, entity targ, float flags, float damage,
-                       float back = 0) {
-    vector targ_origin = targ.origin + (targ.mins + targ.maxs) * 0.5
-                         - targ.velocity * back;  // (*)
+                       vector at = '0 0 0') {
+    vector targ_origin = at != '0 0 0' ? at
+                       : targ.origin + (targ.mins + targ.maxs) * 0.5;  // (*)
     damage -= vlen(src - targ_origin) / 2;
 
     if (flags & KF_SELF)
@@ -847,15 +849,19 @@ float Damage_Scale(float damage, float kflags, float dsflags) {
     return damage;
 }
 
+// The push direction reads the raw origin rather than the centre, as it always
+// has; only the instant it is taken at is new.
 vector CalcKnock(vector src, entity targ, float flags, float moment,
-                 float back = 0) {
+                 vector at = '0 0 0') {
     float mult = 8;
     if (moment < 60 && (flags & (KF_BOTH_PLAYER | KF_SELF) == KF_BOTH_PLAYER))
             mult = 11;
 
     // The raw origin here and the centre in CalcRadiusDamage, as they have
-    // always been; the step back is the only thing added.
-    vector dir = normalize(targ.origin - targ.velocity * back - src);
+    // always been; only the instant they are taken at is new, so back out the
+    // centre offset rather than reading a second position.
+    vector org = at != '0 0 0' ? at - (targ.mins + targ.maxs) * 0.5 : targ.origin;
+    vector dir = normalize(org - src);
 
     vector result = dir * moment * mult;
     if (tf_config.rj > 1)
@@ -905,13 +911,39 @@ const float GREN_FUSE = 3 + 0.8;
 // the curvature over one command, about a tenth of a unit, instead of the whole
 // of the travel.
 //
-// First order on purpose.  The server could ask laggedorigin for an exact
-// answer and the client cannot, and two methods that disagree by a fraction of
-// a unit are worse here than one approximation both sides share exactly: origin
-// and velocity at the end of a command are numbers the traces show them
-// agreeing on to a hundredth of a unit.
+#ifdef SSQC
+float RealTime();   // ssqc/antilag.qc: real time even inside the command warp
+#endif
+
+// The instant is a command edge, not a point inside a command: the push lands
+// at the end of the command whose window covers the due, and that edge is what
+// both sides have a real position for.  The client's replay produces it; the
+// server has it in the rewind log.  Neither has to extrapolate to it.
 vector Knock_Org(KnockBlast* b, entity targ) {
-    return targ.origin + (targ.mins + targ.maxs) * 0.5 - targ.velocity * b->back;
+#ifdef SSQC
+    // Which edge: the first one at or after the due.  back is how far this
+    // command's clock is past it, so while back is inside a command we are
+    // standing on that edge already and targ.origin is it.  Past that we are
+    // late -- a burst carried the chain beyond the due before the knock was
+    // queued -- and the edge the push belongs to is whole commands behind us.
+    // Step back by those commands and read the position out of the rewind log
+    // rather than guessing at it from the present.
+    //
+    // Per player on purpose.  Each victim's edge is their own command, and one
+    // rewind of the world to a single instant cannot be right for all of them
+    // once their clocks have drifted apart.
+    if (b->back >= input_timelength && input_timelength > 0) {
+        float behind = floor(b->back / input_timelength) * input_timelength;
+        vector at = laggedorigin(targ, RealTime() - behind);
+        if (at != '0 0 0')
+            return at + (targ.mins + targ.maxs) * 0.5;
+    }
+    return targ.origin + (targ.mins + targ.maxs) * 0.5;
+#else
+    // The client is standing on the edge it applies the nudge at, so it needs
+    // no lookup and no step: PM_Org() at the end of that command is the edge.
+    return targ.origin + (targ.mins + targ.maxs) * 0.5;
+#endif
 }
 
 // Damage after the radius falloff, or nothing when the blast does not reach.
@@ -924,7 +956,7 @@ float Knock_Points(KnockBlast* b, entity targ) {
 
     float points = (b->type == KNOCK_BOUNCE)
                    ? b->base - dist * 0.5
-                   : CalcRadiusDamage(b->src, targ, b->flags, b->base, b->back);
+                   : CalcRadiusDamage(b->src, targ, b->flags, b->base, Knock_Org(b, targ));
     return points > 0 ? points : 0;
 }
 
@@ -932,7 +964,7 @@ float Knock_Points(KnockBlast* b, entity targ) {
 vector Knock_Velocity(KnockBlast* b, entity targ, float moment) {
     if (b->type == KNOCK_BOUNCE)
         return (Knock_Org(b, targ) - b->src) * (moment / 20);
-    return CalcKnock(b->src, targ, b->flags, moment, b->back);
+    return CalcKnock(b->src, targ, b->flags, moment, Knock_Org(b, targ));
 }
 
 // One line, the same fields in the same order on both sides, so a log can be

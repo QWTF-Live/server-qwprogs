@@ -1441,43 +1441,17 @@ void FO_GrenExplode(entity e) {
     blast_proj = e;
     blast_base = exp.dmg;
 
-    // Gather and reach against the world as it was when the fuse actually went,
-    // the way a projectile blast already does inside its touch: "radius damage
-    // inside the touch goes through findradius, so for a rewound flight put the
-    // players where the trace found them" (share/physics.qc).
-    //
-    // A fuse gets there late -- by however far the release overshot the due,
-    // and by the frame of grace the think now yields to the command path -- so
-    // findradius was picking targets at server-now while Knock_Points measured
-    // them at the instant it was due.  Gather and falloff disagreeing about
-    // where someone is decides the edge of a radius on the wrong basis.
-    // At the instant the push is measured, not the instant the blast happened.
-    // A victim's push is due at cmd_base + delay + KNOCK_LEAD on their own
-    // chain; cmd_base is the creation instant plus their skew, so that due is
-    // blast + skew + lead and their chain reaches it at world blast + lead --
-    // the skew cancels, and to first order every victim is measured at the same
-    // world instant.  Which makes one rewind the right shape, and makes the
-    // blast instant itself the wrong target by exactly the lead.
-    //
-    // It is first order because a player's skew wanders.  Over a held
-    // grenade's hundred milliseconds that is nothing; over a three second
-    // thrown fuse it is not, and the exact answer there is per-player --
-    // laggedorigin at each victim's own chain instant rather than one rewind
-    // for all of them.
-    float gather_at = blast_due + KNOCK_LEAD;
-    float rewound = FALSE;
-    if (RealTime() - gather_at >= SERVER_FRAME_DT) {
-        rewindworld(max(gather_at, RealTime() - LAGHIST_MAX_DT), world);
-        rewound = TRUE;
-    }
-
+    // findradius still gathers at server-now.  Everything measured after the
+    // gather -- falloff, direction, reach -- is taken at each victim's own
+    // command edge instead, per player, which one rewind of the whole world
+    // could only approximate.  What is left is a target near the very edge of
+    // the radius being gathered on a different basis from the one it is then
+    // measured on; the rewind that used to sit here traded that for a single
+    // instant wrong for everyone but the one it was computed from.
     if (exp.type == KNOCK_RADIUS)
         T_RadiusDamage(self, self.owner, exp.dmg, world);
     else if (exp.type == KNOCK_BOUNCE)
         T_RadiusBounce(self, self.owner, exp.dmg, world);
-
-    if (rewound)
-        restoreworld();
 
     blast_due = 0;
     blast_delay = 0;

@@ -914,8 +914,17 @@ void Knock_Trace(KnockBlast* b, entity targ, float seq, float clk, float due,
     string side = "C";
 #endif
     vector at = Knock_Org(targ);
-    rj_trace("%s%.0f: knock f=%.0f seq=%.0f clk=%.5f due=%.5f edge=%+.2fms", side, inst, frame, seq, clk, due,
-             (clk - due) * 1000);
+    // edge is how far into this command the due landed; slack is the smaller of
+    // that and what is left of the command.  A due decides a discrete command,
+    // so the two sides part company when slack is under whatever their
+    // arithmetic disagrees by -- a few hundredths of a millisecond.  Slips are
+    // rare enough to wait a long time for; near misses are not, and the slack
+    // distribution gives the rate without one having to happen.
+    float edge = (clk - due) * 1000;
+    float slack = min(edge, input_timelength * 1000 - edge);
+    rj_trace("%s%.0f: knock f=%.0f seq=%.0f clk=%.5f due=%.5f",
+             side, inst, frame, seq, clk, due);
+    rj_trace(" edge=%+.2fms slack=%.2fms", edge, slack);
     rj_trace(" src=%v at=%v d=%.2f mom=%.1f vel=%v\n", b->src, at, vlen(at - b->src),
              moment, vel);
 }

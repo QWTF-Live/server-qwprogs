@@ -1025,6 +1025,16 @@ void PM_AddSimExplosion(float itime, entity ent) {
     if (ent.entnum && ent.owner == pengine.player_ent && !ent.forward_knock)
         return;
 
+    // -1 is AntilagKnock declining: it built no forward push for this shot, so
+    // the server pushes us through the ordinary radius path instead and this
+    // copy has nothing to schedule.  Taken before the supersede below, because
+    // retiring our prediction and then returning leaves the push to nobody --
+    // the client applies nothing and the server's arrives as a correction.
+    // Measured: dvel 145.5 with the positions agreeing to eight thousandths,
+    // and the whole of it the push we never made.
+    if (ent.forward_knock == -1 && ent.owner == pengine.player_ent)
+        return;
+
     // The server's copy of a projectile we predicted ourselves: retire the
     // predicted nudge whatever route this copy then takes.  This used to sit
     // inside the forward_knock branch below, so a copy that arrived before
@@ -1033,8 +1043,6 @@ void PM_AddSimExplosion(float itime, entity ent) {
         PM_SupersedePredictedNudge(ent);
 
     if (ent.forward_knock && ent.owner == pengine.player_ent) {
-        if (ent.forward_knock == -1)
-            return;
         nat = NA_ITIME_EXPLICIT_EXPIRE;  // Knock forwards are synchronized
         itime = ent.forward_knock;
     } else if (ent.entnum && ent.has_cmd_base && ent.s_time &&

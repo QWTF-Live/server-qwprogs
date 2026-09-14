@@ -77,17 +77,18 @@ enumflags {
 // three eighths of its push.
 .float src_is_player;
 
-// The phys_time of the *first* position update for a projectile -- written on
-// the send by the server and on the read by the client, so both hold the same
-// number.  It is the state the client starts its own copy from, and the flight
-// both sides measure is the time from here to the impact.
+// The projectile's own clock at the instant it was created, sent with the
+// INIT so both sides hold the same number.  The flight both sides measure is
+// the time from here to the impact.
 //
-// First, not last.  Anchoring on the latest update looked equivalent and was
-// not: a rocket that got a second position mid-flight moved our anchor while
-// the client, whose copy had already gone off, kept the first -- 120 ms of
-// disagreement on a due that matches to five decimals the rest of the time,
-// and a catch-up that then stepped 54 units the wrong way.  A later update
-// corrects the flight for both of us without either re-anchoring.
+// At creation, not at the first position update.  cmd_base is stamped at
+// creation, so pairing it with a clock taken when the entity happened to be
+// sent leaves the gap between the two unaccounted -- fifty milliseconds of it
+// in the trace, the static forward projection plus the wait for a snapshot.
+// Both sides used the same pair, so a blast's due still agreed to five
+// decimals and nothing showed; a direct hit does not go through the mapping at
+// all on the server -- it pushes from the command the crossing happened in --
+// and there the two came out 56 ms and 21 units apart.
 .float first_phys_time;
 
 .float blast_cmd_due;
@@ -951,6 +952,7 @@ void EntUpdate_Projectile(float isnew) {
         COMM(Byte, fpp.index);
         COMM(Short, antilag_ms);
         COMM(Float, created_at);
+        COMM(Float, first_phys_time);
         COMM(Float, fire_seq);
         COMMD(Entity, owner_entnum, owner);
     }
@@ -997,13 +999,6 @@ void EntUpdate_Projectile(float isnew) {
         self.s_origin = self.origin;
         self.s_time = self.phys_time;
 #endif
-        // The anchor the flight is measured from, on both sides.  Not s_time:
-        // that is the instant *before* the static projection, and what the
-        // client is sent is the instant after -- ten to fifteen milliseconds
-        // later, so a duration measured between the two ends was short by
-        // exactly that, most of a command on a push matched by command.
-        if (!self.first_phys_time)
-            self.first_phys_time = self.phys_time;
     }
 
     if (sendflags & FOPP_ANGLES) {
@@ -1302,6 +1297,8 @@ void FOProj_Finalize(entity mis) {
     mis.al_prev_origin = mis.origin;   // after the forward: only real frames count as motion
 
     Forward_Projectile(mis.fpp.index, mis);
+    // Paired with cmd_base, which Proj_StampViewers took at this same instant.
+    mis.first_phys_time = mis.phys_time;
 
     mis.SendEntity = PP_SendEntity;
     mis.SendFlags = FOPP_INIT;

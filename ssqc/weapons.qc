@@ -1198,7 +1198,13 @@ static void Knock_CatchUp(entity targ, vector knock, float back) {
     if (targ.movetype != MOVETYPE_WALK)
         return;   // dead, gibbed, spectating: not a trajectory anyone predicted
 
-    float behind = floor(back / input_timelength) * input_timelength;
+    // A few commands, no more.  Past that the two sides are not late with
+    // respect to each other, they disagree about when the push was due, and
+    // stepping the whole way compounds the disagreement instead of closing it:
+    // a rocket whose due was 120 ms out took 54 units in the wrong direction
+    // before the anchor it came from was fixed.  Genuine lateness is a burst,
+    // which is a handful of commands.
+    float behind = min(floor(back / input_timelength), 3) * input_timelength;
     vector step = knock * behind;
     if (vlen(step) > KNOCK_CATCHUP_MAX)
         step = normalize(step) * KNOCK_CATCHUP_MAX;
@@ -1385,7 +1391,13 @@ void () T_MissileTouch = {
     // start, so it is a duration rather than an instant.
     float impact_at = self.impact_phys_time ? self.impact_phys_time : RealTime();
     blast_due = impact_at;
-    blast_delay = max(impact_at - self.s_time, 0);
+    // From where the client starts its copy, not from where we started ours.
+    // s_time is the instant before the static projection; what they were sent
+    // is the instant after, and measuring the flight between the two ends made
+    // our delay ten to fifteen milliseconds longer than theirs -- most of a
+    // command, on a push matched by command.
+    blast_delay = max(impact_at - (self.first_phys_time ? self.first_phys_time
+                                                        : self.s_time), 0);
     blast_proj = self;
     blast_base = dmg;
     T_RadiusDamage(self, self.owner, dmg, other, ignore_self);

@@ -69,6 +69,19 @@ enumflags {
 // last_prime + GREN_FUSE + 0.1, which both sides derive from the same shared
 // number.  The server fires the blast on the first command whose clock reaches
 // it; the client anchors its own push on that same command.
+// The phys_time of the *first* position update for a projectile -- written on
+// the send by the server and on the read by the client, so both hold the same
+// number.  It is the state the client starts its own copy from, and the flight
+// both sides measure is the time from here to the impact.
+//
+// First, not last.  Anchoring on the latest update looked equivalent and was
+// not: a rocket that got a second position mid-flight moved our anchor while
+// the client, whose copy had already gone off, kept the first -- 120 ms of
+// disagreement on a due that matches to five decimals the rest of the time,
+// and a catch-up that then stepped 54 units the wrong way.  A later update
+// corrects the flight for both of us without either re-anchoring.
+.float first_phys_time;
+
 .float blast_cmd_due;
 
 .float forward_knock;
@@ -969,6 +982,13 @@ void EntUpdate_Projectile(float isnew) {
         self.s_origin = self.origin;
         self.s_time = self.phys_time;
 #endif
+        // The anchor the flight is measured from, on both sides.  Not s_time:
+        // that is the instant *before* the static projection, and what the
+        // client is sent is the instant after -- ten to fifteen milliseconds
+        // later, so a duration measured between the two ends was short by
+        // exactly that, most of a command on a push matched by command.
+        if (!self.first_phys_time)
+            self.first_phys_time = self.phys_time;
     }
 
     if (sendflags & FOPP_ANGLES) {

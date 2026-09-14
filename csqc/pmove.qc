@@ -999,10 +999,22 @@ void PM_AddSimExplosion(float itime, entity ent) {
         // itime is on ours, so the subtraction is only a duration to the
         // extent the two clocks agree; measured against the server's own
         // blast_delay it ran 10-20 ms short.
-        itime = ent.fpp.cmd_base + max(itime - ent.s_time, 0) + KNOCK_LEAD;
+        //
+        // And an explicit window, the same one the grenade path uses.  Left on
+        // the open-ended NA_ITIME it was removed unused every single time: the
+        // server's rocket entity goes away at the instant it explodes, which is
+        // before the replay has reached the command the push is due on, and
+        // PM_RemoveSelfNudges only spares a nudge with an explicit window.  Now
+        // that this due is built the same way the grenade's is, it earns the
+        // same treatment -- six rockets, six push@0, against three grenades
+        // that pushed on the right command in the same trace.
+        nat = NA_ITIME_EXPLICIT_EXPIRE;
+        itime = ent.fpp.cmd_base +
+                max(itime - (ent.first_phys_time ? ent.first_phys_time
+                                                 : ent.s_time), 0) + KNOCK_LEAD;
         rj_trace("C: sim-other t=%.3f itime=%.4f base=%.4f flight=%.1fms stime=%.4f pt=%.4f ccf=%.0f\n",
                  time, itime, ent.fpp.cmd_base, (itime - KNOCK_LEAD - ent.fpp.cmd_base) * 1000,
-                 ent.s_time, ent.phys_time, (float)clientcommandframe);
+                 ent.first_phys_time, ent.phys_time, (float)clientcommandframe);
     } else if (ent.entnum) {
         // Same lead, same reason: a push the server scheduled for us.
         itime = PM_WorldToCmdTime(itime) + KNOCK_LEAD;

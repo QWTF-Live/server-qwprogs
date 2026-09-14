@@ -399,6 +399,12 @@ const static float NUDGE_EPS = NUDGE_SEQ * SERVER_FRAME_DT;
 static PM_Nudge nudges[8];
 static float num_nudges, have_active_nudges;
 static float nudges_added;   // since the last error pass; its saved prior state predates them
+// A command is replayed several times a frame -- rendering, the error pass,
+// the graphs -- and only the last one reaching clientcommandframe is what the
+// player is shown.  A trace line from any other pass describes a push that was
+// recomputed and thrown away, which has read as a doubled push three times now.
+// Only the surviving pass talks.
+static float pm_final_pass;
 static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors until this seq
 // RJ_TRACE: per-frame result of the most recent replay, i.e. what was shown for that frame.
 struct RJ_Shown { float seq; vector org, vel; };
@@ -556,7 +562,7 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
 
     // Once per seq, and not from the error pass's replays: those are thrown
     // away, so a line from one describes a push nobody saw.
-    if (nudge->trace_seq != pm.seq && !pmd_norecord) {
+    if (nudge->trace_seq != pm.seq && pm_final_pass) {
         nudge->trace_seq = pm.seq;
         Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime, moment, knock, nudge->src_no);
         rj_trace_until_seq = pm.seq + 30;
@@ -671,7 +677,7 @@ static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
     ent.velocity = Knock_Velocity(&b, ent, points);
     PMD_Knock(ent.velocity - before, points);
 
-    if (nudge->trace_seq != pm.seq && !pmd_norecord) {
+    if (nudge->trace_seq != pm.seq && pm_final_pass) {
         nudge->trace_seq = pm.seq;
         Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime,
                     points, ent.velocity - before, nudge->src_no);
@@ -888,6 +894,7 @@ static void RunDeadMovement(float endframe) {
 //   pmsd.seq --> endframe + 1
 static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     entity ent = pm.ent;
+    pm_final_pass = (endframe == clientcommandframe) && !pmd_norecord;
 
     // This runs several times per frame (rendering, error measurement, debug
     // graphs), so it must be idempotent.  The conc paths below now advance

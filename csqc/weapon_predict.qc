@@ -1754,14 +1754,21 @@ static void WP_ExplodeGren() {
     pstate_pred.primed_gren_exp = 0;
     pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
 
-    rj_trace("C: gren-held seq=%.0f pt=%.4f fuse=%.4f heat=%.4f org=%v ccf=%.0f\n",
-             (float)pstate_pred.seq, pstate_pred.server_time, explode_cmd, explode_at,
-             PM_Org(), (float)clientcommandframe);
+    // The same step back the server takes, from the same two numbers: where
+    // this command left us and how fast we were going.  The grenade falls for
+    // 100 ms from here and its clock is stamped at the fuse, so it has to start
+    // where we were at the fuse and not where the command ended.
+    float over = bound(0, pstate_pred.server_time - explode_cmd, input_timelength);
+    vector gren_org = PM_Org() - PM_Vel() * over;
+
+    rj_trace("C: gren-held seq=%.0f pt=%.4f fuse=%.4f over=%.2fms org=%v ccf=%.0f\n",
+             (float)pstate_pred.seq, pstate_pred.server_time, explode_cmd, over * 1000,
+             gren_org, (float)clientcommandframe);
     rj_cmd_trace_until_seq = clientcommandframe + 12;
 
     int type_index = (tfstate & TFSTATE_GREN1_PRIMED) ? 0 : 1;
     int gren_type = FO_ClassGren(pstate_pred.playerclass, type_index)->id;
-    entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org(), CP_DROP);
+    entity gren = PP_CreateProjectile(FPP_HANDGRENADE, gren_org, CP_DROP);
     gren.fpp.gren_type = gren_type;
     FPP_ApplyGrenadeProperties(gren);
 

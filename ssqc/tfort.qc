@@ -823,6 +823,13 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
 }
 
 static float gren_release_fuse;   // RJ_TRACE: the fuse the release fired against
+// Where the holder was when the fuse actually went, rather than where the
+// command that carried it left them.  The grenade falls for 100 ms from here,
+// so starting it up to a command along the holder's path is a real error in
+// the trajectory, not just a label -- and its physics clock is stamped at the
+// fuse, so the position has to belong to the same instant.
+static vector gren_release_org;
+static float gren_release_have_org;
 
 // From PlayerPostThink, inside the command warp, so `time` here is this
 // player's command clock -- the clock primed_gren_cmd is stamped on and the
@@ -850,12 +857,23 @@ void PlayerGren_Apply() {
     float held_time = time, held_real = cmd_real_time;
     gren_release_fuse = self.primed_gren_cmd;
 
+    // A first-order step back from the end of the command, which both sides can
+    // take from numbers they already agree on to a hundredth of a unit: the
+    // position and velocity this command left the holder with.  Velocity moves
+    // by at most gravity over one command, so the step is good to about a tenth
+    // of a unit -- and identical on both sides, which is what decides whether
+    // the two copies of the grenade fall from the same place.
+    float over = bound(0, time - self.primed_gren_cmd, input_timelength);
+    gren_release_org = self.origin - self.velocity * over;
+    gren_release_have_org = TRUE;
+
     self = t;
     time = t.heat;
     cmd_real_time = 0;     // RealTime() reads heat too, as it would in the think
     TeamFortress_ExplodePerson();   // clears the fuse fields and the timer
     time = held_time;
     cmd_real_time = held_real;
+    gren_release_have_org = FALSE;
     self = held;
     dremove(t);
 }
@@ -2424,7 +2442,7 @@ void () TeamFortress_ExplodePerson = {
     proj.avelocity = gdesc->avelocity;
     proj.touch = ste->touch;
     proj.think = ste->think;
-    setorigin(proj, self.owner.origin);
+    setorigin(proj, gren_release_have_org ? gren_release_org : self.owner.origin);
     FOProj_Finalize(proj);
 
     if ((self.owner.playerclass == PC_SCOUT) && (self.weapon != 10))

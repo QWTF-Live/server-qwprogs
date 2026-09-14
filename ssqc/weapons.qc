@@ -1440,10 +1440,31 @@ void FO_GrenExplode(entity e) {
     blast_delay = max(e.fpp.expires_at - e.created_at, 0);   // what was left of the fuse
     blast_proj = e;
     blast_base = exp.dmg;
+
+    // Gather and reach against the world as it was when the fuse actually went,
+    // the way a projectile blast already does inside its touch: "radius damage
+    // inside the touch goes through findradius, so for a rewound flight put the
+    // players where the trace found them" (share/physics.qc).
+    //
+    // A fuse gets there late -- by however far the release overshot the due,
+    // and by the frame of grace the think now yields to the command path -- so
+    // findradius was picking targets at server-now while Knock_Points measured
+    // them at the instant it was due.  Gather and falloff disagreeing about
+    // where someone is decides the edge of a radius on the wrong basis.
+    float rewound = FALSE;
+    if (RealTime() - blast_due >= SERVER_FRAME_DT) {
+        rewindworld(max(blast_due, RealTime() - LAGHIST_MAX_DT), world);
+        rewound = TRUE;
+    }
+
     if (exp.type == KNOCK_RADIUS)
         T_RadiusDamage(self, self.owner, exp.dmg, world);
     else if (exp.type == KNOCK_BOUNCE)
         T_RadiusBounce(self, self.owner, exp.dmg, world);
+
+    if (rewound)
+        restoreworld();
+
     blast_due = 0;
     blast_delay = 0;
     blast_proj = world;

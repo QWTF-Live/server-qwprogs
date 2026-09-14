@@ -438,6 +438,7 @@ struct PM_Nudge {
     // the only place the command clocks are.
     float cmd_due;
     float cmd_resolved;
+    float was_live;   // RJ_TRACE: to catch the frame a nudge stops being live
 
     // Command clock of the shot we predicted, for a push we predicted
     // ourselves.  Once the server has run that command its cooldown witnesses
@@ -588,6 +589,7 @@ static PM_Nudge* find_nudge_slot() {
         n->fired_seq = 0;
         n->cmd_due = 0;
         n->cmd_resolved = 0;
+        n->was_live = 0;
         n->expire_frame = 0;
         n->expire_time = 0;
         n->expire_spawnseq = 0;
@@ -1971,7 +1973,38 @@ static void PM_HandleRemovedNudges() {
     pstate_server.num_filter_ents = 0;
 }
 
+// RJ_TRACE: which rule retired a nudge that had already pushed.
+//
+// A nudge that fires on a command still being replayed must outlive its own
+// timer, or the next replay rebuilds that command without the push and the
+// whole of it comes back as a correction -- 345 u/s and 25 units in the last
+// trace, with the pass stamp showing the entry written in a replay whose
+// signature had gone from 9252 to nothing.
+//
+// Reported here rather than from nudge_expired, which the error pass calls with
+// pstate_server mutated to a previous update: a trace from inside would
+// describe a moment that never happened.  Expiry depends only on pstate_server,
+// so a server update is the only thing that can change the answer.
+static void PM_ReportNudgeDeaths() {
+    for (float i = 0; i < nudges.length; i++) {
+        PM_Nudge* n = &nudges[i];
+        float live = (n->nat != NA_NONE) && !nudge_expired(n);
+
+        if (n->was_live && !live && n->fired_seq) {
+            rj_trace("C: nudge-died i=%.0f nat=%s fired=%.0f svseq=%.0f",
+                     i, NAT_tos(n->nat), n->fired_seq, (float)pstate_server.seq);
+            rj_trace(" itime=%.4f exp_t=%.4f svt=%.4f exp_f=%.0f gen=%.0f/%.0f ccf=%.0f\n",
+                     n->itime, n->expire_time, pstate_server.server_time,
+                     n->expire_frame, n->expire_spawnseq,
+                     (float)game_state.spawn_gen, (float)clientcommandframe);
+        }
+
+        n->was_live = live;
+    }
+}
+
 void PM_ServerUpdate() {
+    PM_ReportNudgeDeaths();
     float was_enabled = PM_Enabled();
     float enabled = (pstate_server.predict_flags & PF_PMOVE) &&
                     game_state.is_player;

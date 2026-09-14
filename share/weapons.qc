@@ -194,9 +194,12 @@ string FO_GrenName(float gtype) {
   }
 }
 
+// How a blast turns into velocity.  One distinction, named once: what a
+// grenade type explodes into, what a pending blast is, and what the shared
+// evaluator does with it are all the same question.
 enum {
-    kRadiusDamage,
-    kRadiusBounce,
+    KNOCK_RADIUS,   // adds to velocity
+    KNOCK_BOUNCE,   // replaces it: a conc's direction is the whole of the effect
 };
 
 struct FO_GrenExp {
@@ -207,7 +210,7 @@ struct FO_GrenExp {
 };
 
 float FO_GrenGetExp(int gren_type, __out FO_GrenExp exp) {
-    exp.type = kRadiusDamage;
+    exp.type = KNOCK_RADIUS;
     switch (gren_type) {
         case GREN_NORMAL:
             exp.dmg = 180;
@@ -219,7 +222,7 @@ float FO_GrenGetExp(int gren_type, __out FO_GrenExp exp) {
             break;
         case GREN_CONC:
             exp.dmg = 240;
-            exp.type = kRadiusBounce;
+            exp.type = KNOCK_BOUNCE;
             break;
         case GREN_MIRV:
             exp.dmg = 100;
@@ -865,11 +868,6 @@ vector CalcKnock(vector src, entity targ, float flags, float moment) {
 // push, because the two genuinely differ there: we know what armour and team
 // rules actually took off, and the client can only model it from the predict
 // flags it holds.
-enum {
-    KNOCK_RADIUS,   // adds to velocity
-    KNOCK_BOUNCE,   // replaces it: a conc's direction is the whole of the effect
-};
-
 struct KnockBlast {
     float type;
     vector src;     // where it went off

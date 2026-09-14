@@ -1409,9 +1409,9 @@ void FO_GrenExplode(entity e) {
     blast_delay = max(e.fpp.expires_at - e.created_at, 0);   // what was left of the fuse
     blast_proj = e;
     blast_base = exp.dmg;
-    if (exp.type == kRadiusDamage)
+    if (exp.type == KNOCK_RADIUS)
         T_RadiusDamage(self, self.owner, exp.dmg, world);
-    else if (exp.type == kRadiusBounce)
+    else if (exp.type == KNOCK_BOUNCE)
         T_RadiusBounce(self, self.owner, exp.dmg, world);
     blast_due = 0;
     blast_delay = 0;

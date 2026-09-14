@@ -350,8 +350,7 @@ void PM_InputFrame();
 enum {
     NT_EMPTY,
     NT_DASH,
-    NT_EXPLOSION,
-    NT_BOUNCE,
+    NT_BLAST,   // what went off is in the nudge's KnockBlast
 };
 
 enum {
@@ -381,8 +380,8 @@ struct PM_Nudge {
     float nat, seq, itime;
     float expire_frame, expire_time, expire_spawnseq;
 
-    vector org;
-    float aux;
+    vector dash_vel;    // NT_DASH: the velocity it assigns
+    KnockBlast blast;   // NT_BLAST: what went off, as the server holds it too
     float src_cseq;    // created_seq of the projectile this came from (predicted and server copies share it)
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
@@ -472,7 +471,7 @@ static void PM_RemoveSelfNudges() {
 }
 
 static void PM_NudgeDash(PM_Nudge* nudge, entity ent) {
-    ent.velocity = nudge->org;
+    ent.velocity = nudge->dash_vel;
 }
 
 void PM_AddNudgeDash(float cseq) {
@@ -483,8 +482,8 @@ void PM_AddNudgeDash(float cseq) {
     n->nat = NA_SEQ;
     n->seq = cseq;
 
-    n->org = v_forward * 540;
-    n->org.z = 181;
+    n->dash_vel = v_forward * 540;
+    n->dash_vel.z = 181;
 }
 
 float nudge_i(PM_Nudge* n) {
@@ -515,13 +514,7 @@ static float PM_ExplosionReaches(vector src, vector targ) {
 }
 
 static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
-    KnockBlast b;
-    b.type = KNOCK_RADIUS;
-    b.src = nudge->org;
-    b.base = nudge->aux;
-    b.flags = KF_BOTH_PLAYER;   // assumes everything is from a player for now
-    if (nudge->src.owner == pengine.player_ent)
-        b.flags |= KF_SELF;
+    KnockBlast b = nudge->blast;
     b.slack = NudgeExplosionEps();
 
     float points = Knock_Points(&b, ent);
@@ -567,7 +560,13 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     if (!n)
         return 0;
 
-    n->type = NT_EXPLOSION;
+    n->type = NT_BLAST;
+    n->blast.type = KNOCK_RADIUS;
+    n->blast.src = ent.origin;   // we end up mostly using the ent here
+    n->blast.base = dmg;
+    n->blast.flags = KF_BOTH_PLAYER;   // assumes everything is from a player for now
+    if (ent.owner == pengine.player_ent)
+        n->blast.flags |= KF_SELF;
     n->nat = nat;
     n->seq = seq;
     n->itime = itime;
@@ -579,9 +578,6 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     // to false lerps.
     if (ent.owner == pengine.player_ent)
         n->expire_spawnseq = game_state.spawn_gen;
-
-    n->org = ent.origin;  // We end up mostly using the ent here
-    n->aux = dmg;
 
     n->src = ent;
     n->src_no = ent.entnum;
@@ -601,7 +597,8 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
 static void PM_SupersedePredictedNudge(entity sent) {
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
-        if (n->type != NT_EXPLOSION || n->src_no != 0 || nudge_expired(n))
+        if (n->type != NT_BLAST || n->blast.type != KNOCK_RADIUS ||
+            n->src_no != 0 || nudge_expired(n))
             continue;
         if (n->src_cseq != sent.created_seq)
             continue;
@@ -619,13 +616,14 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     if (!n)
         return;
 
-    n->type = NT_BOUNCE;
+    n->type = NT_BLAST;
+    n->blast.type = KNOCK_BOUNCE;
+    n->blast.src = ent.origin;
+    n->blast.base = dmg;
+    n->blast.flags = 0;
     n->nat = NA_ITIME_EXPLICIT_EXPIRE;
     n->expire_time = itime;
     n->itime = itime;
-
-    n->org = ent.origin;
-    n->aux = dmg;
 
     n->src = ent;
     n->src_no = ent.entnum;
@@ -635,11 +633,7 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
 }
 
 static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
-    KnockBlast b;
-    b.type = KNOCK_BOUNCE;
-    b.src = nudge->org;
-    b.base = nudge->aux;
-    b.flags = 0;
+    KnockBlast b = nudge->blast;
     b.slack = NudgeExplosionEps();
 
     float points = Knock_Points(&b, ent);
@@ -702,7 +696,7 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     float dmg = exp.dmg;
 
     PM_Nudge* n;
-    if (exp.type == kRadiusDamage)
+    if (exp.type == KNOCK_RADIUS)
         PM_AddNudgeExplosion(NA_ITIME_EXPLICIT_EXPIRE, 0, itime, ent, dmg);
     else
         PM_AddNudgeBounce(itime, ent, dmg);
@@ -804,11 +798,11 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
             case NT_DASH:
                 PM_NudgeDash(n, ent);
                 break;
-            case NT_EXPLOSION:
-                PM_NudgeExplosion(n, ent);
-                break;
-            case NT_BOUNCE:
-                PM_NudgeBounce(n, ent);
+            case NT_BLAST:
+                if (n->blast.type == KNOCK_BOUNCE)
+                    PM_NudgeBounce(n, ent);
+                else
+                    PM_NudgeExplosion(n, ent);
                 break;
         }
     }

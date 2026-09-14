@@ -1798,10 +1798,19 @@ static void GrenDecline(float why) {
 }
 
 static void W_ThrowGren(float is_throw) {
-    if (!RewindFlagEnabled(REWIND_GRENADES)) {
-        if (is_throw) GrenDecline(1);   // thrown grenades are not predicted at all
-        return;
-    }
+    // Predicting our own throw does not depend on REWIND_GRENADES, and being
+    // gated behind it was costing the thrower a round trip of their own
+    // grenade for nothing.  The flag buys the server rewinding the throw and
+    // crediting it forward by ping, which advances the grenade along its arc
+    // for everyone else and takes their reaction time -- that stays off.  This
+    // changes only when *we* see our own grenade leave our hand; the server
+    // spawns it at the same instant either way, so every other player sees the
+    // identical flight with the identical warning.
+    //
+    // What has to hold instead is that we never predict a throw the server
+    // refuses, or the grenade appears and vanishes.  CanThrowGrenade below is
+    // the same window the server applies, evaluated on the same clock now that
+    // last_prime is on the chain, and it declines a command and a half early.
     if (getstatf(STAT_NOFIRE)) {
         if (is_throw) GrenDecline(5);   // firing blocked
         return;

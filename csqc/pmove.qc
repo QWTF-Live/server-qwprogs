@@ -748,15 +748,36 @@ float PM_WorldToCmdTime(float t) {
 // The server's copy of where a blast we have already scheduled actually went
 // off.  Our grenade came to rest wherever our own bounces put it, which in the
 // last trace was 1.4 units from the server's and 25 u/s of push.
+// Entity numbers are recycled, so "the nudge whose source is this entity" named
+// a nudge from a previous grenade that happened to land in the same slot, and
+// every new grenade dragged that stale source across the map -- two thousand
+// units in the last trace, and sixty-unit corrections into the view.  Name the
+// projectile, not the slot: live, ours, and the same creation.
+const static float KNOCK_SRC_MAX = 64;   // past this it is not the same blast
+
 void PM_UpdateNudgeSource(entity ent, vector src) {
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
-        if (n->nat == NA_NONE || n->type != NT_BLAST || n->src != ent)
+        if (n->nat == NA_NONE || n->type != NT_BLAST)
+            continue;
+        if (n->src != ent || n->src_no != ent.entnum || n->src_cseq != ent.created_seq)
+            continue;
+        if (nudge_expired(n))
             continue;
         if (n->blast.src == src)
             continue;
+
+        // Our copy settles a unit or two from theirs.  Anything further is not
+        // the blast we scheduled, whatever the bookkeeping says, and moving a
+        // push we are already showing is the expensive way to be wrong.
+        float moved = vlen(src - n->blast.src);
+        if (moved > KNOCK_SRC_MAX) {
+            rj_trace("C: knock-src ent=%.0f rejected by=%.2f\n", (float)ent.entnum, moved);
+            continue;
+        }
+
         rj_trace("C: knock-src ent=%.0f by=%.2f %v -> %v\n", (float)ent.entnum,
-                 vlen(src - n->blast.src), n->blast.src, src);
+                 moved, n->blast.src, src);
         n->blast.src = src;
         cache_invalidated = TRUE;
     }

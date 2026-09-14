@@ -945,7 +945,13 @@ void EntUpdate_Projectile(float isnew) {
         // A grenade's blast is scheduled when our own simulation reaches the
         // fuse, from where our copy came to rest; the server's point arrives
         // afterwards.  Nothing else would ever read it, so move the nudge.
-        PM_UpdateNudgeSource(self, self.knock_org);
+        //
+        // Never on an INIT: this entity is then a projectile we have not
+        // scheduled anything for, and created_seq -- the field that tells it
+        // apart from the last projectile in the same recycled slot -- is not
+        // refreshed until InitProjectileEnt runs at the end of this function.
+        if (!(sendflags & FOPP_INIT))
+            PM_UpdateNudgeSource(self, self.knock_org);
 #endif
     }
 

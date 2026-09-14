@@ -666,14 +666,6 @@ void (entity timer) FO_SpawnThrownGrenade = {
     user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
     user.last_throw = time;
 
-    // Which command the throw lands on.  The client crosses the prime window
-    // on the command whose chain clock reaches it; we spawn from a think, in
-    // the physics phase between two commands, and take whichever command runs
-    // next.  One command of the thrower's travel is the whole of the gap
-    // between the two copies of the grenade.
-    rj_trace("S: gren-spawn t=%.3f seq=%.0f clk=%.4f heat=%.4f prime=%.4f\n",
-             time, user.cmd_sequence, user.cmd_clock, timer.heat, user.last_prime);
-
     UpdateClientGrenadeThrown(user);
 
     KickPlayer(-1, user);
@@ -2311,6 +2303,17 @@ void () TeamFortress_ExplodePerson = {
     entity te;
     int gtype = self.fpp.gren_type;
     FO_GrenInfo* gdesc = FO_GrenDesc(gtype);
+
+    // Which command a held grenade materialises on.  Both sides anchor it to
+    // the same instant -- heat, sent to the client as primed_gren_exp -- but
+    // the client spawns it on the command whose chain clock reaches that
+    // instant and we spawn it from a think, in the physics phase between two
+    // commands.  One command of the holder's travel is the whole of the gap
+    // between the two copies.
+    rj_trace("S: gren-held t=%.3f seq=%.0f clk=%.4f heat=%.4f org=%v\n",
+             time, self.owner.cmd_sequence, self.owner.cmd_clock, self.heat,
+             self.owner.origin);
+    self.owner.rj_cmd_trace_until = RealTime() + 0.16;
 
     self.owner.tfstate &= ~TFSTATE_GREN_MASK_ALL;
     KickPlayer(-2, self.owner);

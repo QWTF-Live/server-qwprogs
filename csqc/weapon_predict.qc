@@ -1733,6 +1733,10 @@ static void WP_ExplodeGren() {
     if (!IsEffectFrame())
         return;
 
+    rj_trace("C: gren-held seq=%.0f pt=%.4f heat=%.4f org=%v ccf=%.0f\n",
+             (float)pstate_pred.seq, pstate_pred.server_time, explode_at,
+             PM_Org(), (float)clientcommandframe);
+
     int type_index = (tfstate & TFSTATE_GREN1_PRIMED) ? 0 : 1;
     int gren_type = FO_ClassGren(pstate_pred.playerclass, type_index)->id;
     entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org(), CP_DROP);
@@ -1764,10 +1768,6 @@ static void W_ThrowGren(float is_throw) {
         return;
 
     if (IsEffectFrame()) {
-        rj_trace("C: gren-spawn seq=%.0f pt=%.4f open=%.4f prime=%.4f ccf=%.0f\n",
-                 (float)pstate_pred.seq, pstate_pred.server_time,
-                 pstate_pred.last_prime + 0.8, pstate_pred.last_prime,
-                 (float)clientcommandframe);
         entity gren = PP_CreateProjectile(FPP_HANDGRENADE, '0 0 0');
         gren.fpp.gren_type = gren_type;
         FPP_ApplyGrenadeProperties(gren);

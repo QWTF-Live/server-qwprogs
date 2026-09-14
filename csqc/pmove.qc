@@ -133,60 +133,6 @@ static float SegBox(vector p0, vector p1, vector mins, vector maxs, float* frac)
     return TRUE;
 }
 
-// A rocket of somebody else's, stopping on us the way the server's copy does.
-//
-// Our simulation cannot hit networked entities, so a direct hit on us used to
-// fly straight through: our copy went off somewhere behind us, at a different
-// time, and at the range that leaves, the push direction is not slightly wrong
-// but arbitrary -- a tenth of a unit of offset error swings it a degree at a
-// hundred units and thirty at three.  knock_org repairs the source after the
-// fact and can do nothing for the flight.
-//
-// Our own position is the one quantity we know better than anything else here:
-// it agrees with the server to eight hundredths of a unit.  So this is the
-// collision most worth having, and the only one -- another player's position on
-// our side is advanced by a frame count and is tens of units from theirs, so
-// stopping a rocket there would swap one divergence for another.
-//
-// Which of our positions: the rocket runs on its own clock, and its flight so
-// far laid on the base the server stamped for us is where we were when it got
-// here.  The same conversion the push itself is scheduled by.
-float PM_TraceSelf(entity e, vector from, vector to, float dt, float* frac) {
-    if (!PM_Enabled() || !pengine.player_ent)
-        return FALSE;
-    if (e.owner == pengine.player_ent)
-        return FALSE;   // the server's own trace ignores the owner; so do we
-    if (!e.has_cmd_base || !e.first_phys_time)
-        return FALSE;
-
-    // Both of us are moving, so test the crossing rather than the rocket
-    // against a box standing still.  Subtracting our travel over the step
-    // leaves the rocket's path relative to us, and where that enters the box is
-    // where the two actually met -- which is what the server's own crossing
-    // test computes, lerping both paths across the command and reporting the
-    // fraction.  Against a static box a player walking into a falling rocket is
-    // found a command late, every time.
-    float t0 = e.fpp.cmd_base + max(e.phys_time - e.first_phys_time, 0);
-    vector o0, o1;
-    if (!PM_OrgAt(t0, &o0) || !PM_OrgAt(t0 + dt, &o1))
-        return FALSE;
-
-    if (!SegBox(from - o0, to - o1, pm.ent.mins, pm.ent.maxs, frac))
-        return FALSE;
-
-    // Everything the answer is made of, because reading it back from the hit
-    // point alone left two explanations standing: a slab that clipped wrong,
-    // and a rocket that was not where the server's was to begin with.
-    float f = *frac;
-    rj_trace("C: self-hit t=%.4f at=%.4f dt=%.1fms frac=%.4f", time, t0, dt * 1000, f);
-    rj_trace(" seg=%v->%v rel=%v->%v", from, to, from - o0, to - o1);
-    rj_trace(" org=%v->%v hit=%v", o0, o1, from + (to - from) * f);
-    rj_trace(" pt=%.4f first=%.4f base=%.4f\n",
-             e.phys_time, e.first_phys_time, e.fpp.cmd_base);
-    pm_self_hit_seq = pm.seq + 30;
-    return TRUE;
-}
-
 vector PM_Org() { return PM_Enabled() ? pm.ent.origin : pmove_org; }
 vector PM_Vel() { return PM_Enabled() ? pm.ent.velocity : pmove_vel; }
 float PM_onground() { return PM_Enabled() ? pm.ent.flags & FL_ONGROUND : pmove_onground; }
@@ -1247,6 +1193,67 @@ float MatchNudge(PM_Nudge* n, float seq, float sitime, float eitime, float slack
     }
 }
 
+// A rocket of somebody else's, stopping on us the way the server's copy does.
+//
+// Our simulation cannot hit networked entities, so a direct hit on us used to
+// fly straight through: our copy went off somewhere behind us, at a different
+// time, and at the range that leaves, the push direction is not slightly wrong
+// but arbitrary.  knock_org repairs the source after the fact and can do
+// nothing for the flight.
+//
+// Our own position is the one quantity we know better than anything else here:
+// it agrees with the server to eight hundredths of a unit.  So this is the
+// collision worth having, and the only one -- another player's position on our
+// side is advanced by a frame count and is tens of units from theirs.
+//
+// Driven by the command chain, not by the projectile's simulation.  Hung off
+// the projectile's own steps it asked where we would be up to a hundred
+// milliseconds from now -- that advance is for drawing the rocket ahead of the
+// last snapshot -- and the only honest answer was our newest position, so the
+// sweep degenerated to a static box and reported frac=0.000 with the segment
+// already inside it.  A command is an interval we have actually predicted, at
+// both ends, and the rocket's position at either end follows from its own
+// straight path.
+static void PM_CheckMissileHits(entity ent, vector from_org, float sitime, float eitime) {
+    if (!PM_Enabled() || !pengine.player_ent || !pm_final_pass)
+        return;
+    if (eitime <= sitime)
+        return;
+
+    entity e = findradius(ent.origin, 512);
+    while (e) {
+        entity next = e.chain;
+        if (e.entnum && !e.voided && e.movetype == MOVETYPE_FLYMISSILE &&
+            e.owner != pengine.player_ent && e.has_cmd_base && e.first_phys_time &&
+            e.velocity != '0 0 0') {
+            // Where the rocket is at this command's two ends, on its own clock.
+            float p0 = e.first_phys_time + (sitime - e.fpp.cmd_base);
+            float p1 = e.first_phys_time + (eitime - e.fpp.cmd_base);
+            vector a = e.origin + e.velocity * (p0 - e.phys_time);
+            vector b = e.origin + e.velocity * (p1 - e.phys_time);
+
+            // Both of us are moving, so test the crossing: the rocket's path
+            // less our own travel is where the two actually met.
+            float frac;
+            if (p1 > e.first_phys_time &&
+                SegBox(a - from_org, b - ent.origin, ent.mins, ent.maxs, &frac)) {
+                vector hit = a + (b - a) * frac;
+                rj_trace("C: self-hit seq=%.0f frac=%.3f span=%.4f->%.4f",
+                         (float)pm.seq, frac, sitime, eitime);
+                rj_trace(" rocket=%v->%v us=%v->%v hit=%v pt=%.4f\n",
+                         a, b, from_org, ent.origin, hit, p0 + (p1 - p0) * frac);
+                pm_self_hit_seq = pm.seq + 30;
+
+                e.voided = TRUE;
+                e.hit_self = TRUE;
+                setorigin(e, hit);
+                PM_AddSimExplosion(p0 + (p1 - p0) * frac, e);
+            }
+        }
+        e = next;
+    }
+}
+
 // TODO: This obviously wants to be smarter
 static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, float slack = 0) {
     if (!have_active_nudges)
@@ -1398,6 +1405,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         PM_PushVolumes(ent, pm_moved_from);
 
         PM_RecordOrg(pm.seq, pm.interp_t + step, ent.origin);
+        PM_CheckMissileHits(ent, pm_moved_from, pm.interp_t, pm.interp_t + step);
 
         if (pm.seq != clientcommandframe) {
             float slack = 0;

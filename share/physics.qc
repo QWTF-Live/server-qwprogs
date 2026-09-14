@@ -91,17 +91,6 @@ var float phys_sim_dt;
 
 float get_phys_time(entity);
 void PM_AddSimExplosion(float itime, entity ent);
-float PM_TraceSelf(entity e, vector from, vector to, float dt, float* frac);
-
-// The impact the traceline above cannot see, because our own bbox is not solid
-// to it.  Same two things the ordinary one does for a missile, without the
-// trace_ent it has no entity for.
-static void Phys_ImpactSelf(entity e, float dt) {
-    e.voided = TRUE;
-    e.hit_self = TRUE;   // scheduled like the crossing it is, not like a blast
-    if (!e.phys_sim_voided_at)
-        PM_AddSimExplosion(e.phys_time + dt, e);
-}
 
 static void Phys_Impact(entity e, float dt, float phys_flags) {
     other = trace_ent;
@@ -236,26 +225,6 @@ float Phys_Push(entity e, vector offset, float dt, float phys_flags) {
             rj_trace("S: sweep t=%.3f fpp=%d f=%.3f pt=%.4f step=%.1fms",
                      time, (float)e.fpp.index, f, e.phys_time, dt * 1000);
             rj_trace(" at=%v proj=%v->%v\n", at, e.origin, trace_endpos);
-        }
-    }
-#endif
-
-#ifdef CSQC
-    // Except ourselves.  A rocket that hits us is the direct hit whose
-    // knockback we actually have to predict, and it is the one collision where
-    // our copy of the world is as good as the server's -- so test it by hand
-    // rather than flying through and exploding behind our own back.
-    //
-    // Missiles only: a grenade bouncing off us is a simulation question of its
-    // own, and its blast point comes down the wire anyway.
-    if (e.movetype == MOVETYPE_FLYMISSILE) {
-        float sfrac;
-        if (PM_TraceSelf(e, e.origin, e.origin + offset, dt, &sfrac) &&
-            sfrac < trace_fraction) {
-            e.origin = e.origin + offset * sfrac;
-            setorigin(e, e.origin);
-            Phys_ImpactSelf(e, sfrac * dt);
-            return FALSE;
         }
     }
 #endif

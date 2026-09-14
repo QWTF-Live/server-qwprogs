@@ -2378,10 +2378,7 @@ void () TeamFortress_ExplodePerson = {
     proj.avelocity = gdesc->avelocity;
     proj.touch = ste->touch;
     proj.think = ste->think;
-    // Same constant the client asserts: where a hundred milliseconds of falling
-    // from the holder's origin puts it, without the hundred milliseconds.
-    proj.movetype = MOVETYPE_NONE;
-    setorigin(proj, self.owner.origin + HELD_GREN_DROP);
+    setorigin(proj, self.owner.origin);
     FOProj_Finalize(proj);
 
     if ((self.owner.playerclass == PC_SCOUT) && (self.weapon != 10))

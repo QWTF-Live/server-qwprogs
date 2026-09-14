@@ -886,14 +886,6 @@ struct KnockBlast {
     float back;
 };
 
-// A held grenade is materialised at the holder's origin with no velocity and
-// lives a hundred milliseconds, in which gravity moves it four units down.  It
-// starts twenty-four above their feet, so it never reaches the floor, never
-// leaves their bounding box, and never touches anything: the fall is not
-// observable, only its effect on where the blast is measured from.  Both sides
-// assert the result instead of simulating their way to it.
-const vector HELD_GREN_DROP = '0 0 -4';
-
 // Where every stage measures the target from.  Measuring from the origin puts
 // it four units out, which near the edge of the radius is the difference
 // between a push and nothing.

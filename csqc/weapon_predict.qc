@@ -1740,16 +1740,9 @@ static void WP_ExplodeGren() {
 
     int type_index = (tfstate & TFSTATE_GREN1_PRIMED) ? 0 : 1;
     int gren_type = FO_ClassGren(pstate_pred.playerclass, type_index)->id;
-    // Asserted, not simulated.  It is created at our origin, twenty-four units
-    // above our feet, with no velocity, and falls four in its hundred
-    // milliseconds -- so it never leaves our own bounding box, never touches
-    // anything, and the entire simulation is unobservable except through the
-    // blast source it produces.  Simulating it only gave the two sides
-    // something to disagree about.
-    entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org() + HELD_GREN_DROP, CP_DROP);
+    entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org(), CP_DROP);
     gren.fpp.gren_type = gren_type;
     FPP_ApplyGrenadeProperties(gren);
-    gren.movetype = MOVETYPE_NONE;
 
     gren.starttime = explode_at;
     gren.phys_time = explode_at;

@@ -958,9 +958,25 @@ void PM_AddSimExplosion(float itime, entity ent) {
         // it on server time and we run ours on interpolation time, on purpose,
         // so that collisions line up with what we are shown -- but the time it
         // has been in the air is the same quantity on both sides.
-        itime = ent.fpp.cmd_base + max(itime - ent.s_time, 0);
+        //
+        // Plus the lead, which this branch never carried.  Knock_Defer puts one
+        // on every push it schedules for somebody else's projectile, grenade
+        // and rocket alike, and the grenade path here has always matched it --
+        // so a third-party rocket was a whole server frame early, on top of
+        // whatever the flight measurement below costs.
+        //
+        // RJ_TRACE: the two halves of that flight, because they are not read
+        // off the same clock.  s_time arrives as the server's phys_time and
+        // itime is on ours, so the subtraction is only a duration to the
+        // extent the two clocks agree; measured against the server's own
+        // blast_delay it ran 10-20 ms short.
+        itime = ent.fpp.cmd_base + max(itime - ent.s_time, 0) + KNOCK_LEAD;
+        rj_trace("C: sim-other t=%.3f itime=%.4f base=%.4f flight=%.1fms stime=%.4f pt=%.4f ccf=%.0f\n",
+                 time, itime, ent.fpp.cmd_base, (itime - KNOCK_LEAD - ent.fpp.cmd_base) * 1000,
+                 ent.s_time, ent.phys_time, (float)clientcommandframe);
     } else if (ent.entnum) {
-        itime = PM_WorldToCmdTime(itime);   // the server's clock, not ours
+        // Same lead, same reason: a push the server scheduled for us.
+        itime = PM_WorldToCmdTime(itime) + KNOCK_LEAD;
     } else if (ent.created_seq && ent.entnum == 0) {
         float dtime = 0;
         if (ent.s_time)

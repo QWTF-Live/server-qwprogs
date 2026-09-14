@@ -2477,7 +2477,19 @@ void () TeamFortress_ExplodePerson = {
     proj.angles = vectoangles(proj.velocity);
     proj.think = SUB_Null;
     float expires = time + 0.1;  // Server generated, no client time here.
-    proj.nextthink = expires;
+    // One frame of grace, so the command-driven blast gets first refusal.
+    //
+    // blast_cmd_due is expires_at plus this player's skew, and the chain
+    // reaches that value at world time expires_at -- the very instant this
+    // think fires.  But the chain only moves at command boundaries, so the
+    // first command at or past the due runs at expires_at or later and the
+    // think beats it: five held grenades in six blew up from here rather than
+    // from a command, which is the whole point of the exercise missed.
+    //
+    // Yielding a frame costs up to a command of world time on the blast, the
+    // same order as the lead a push already carries, and only when the command
+    // path is not there to take it first.
+    proj.nextthink = expires + SERVER_FRAME_DT;
 
     if (self.weapon == GREN_FLARE) {
         sprint(self.owner, PRINT_HIGH, "Flare lit\n");

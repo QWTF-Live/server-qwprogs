@@ -609,6 +609,13 @@ static void PM_RemoveSelfNudges() {
 
     PM_Nudge* n = self.nudge;
 
+    // Already retired, by the supersede when the server's copy of this
+    // projectile exploded.  Its replacement is what fired; reporting the empty
+    // slot as push@0 says a push was lost when none was, and under packet loss
+    // it said so thirteen times in one trace.
+    if (n->nat == NA_NONE)
+        return;
+
     // An explicit window retires itself, so nothing here needs to retire it.
     //
     // This used to make an exception of our own predicted copies, on the

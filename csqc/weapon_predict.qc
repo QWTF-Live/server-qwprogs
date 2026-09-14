@@ -1727,11 +1727,16 @@ static void WP_ExplodeGren() {
     if (!explode_at || explode_at > pstate_pred.server_time)
         return;
 
-    pstate_pred.primed_gren_exp = 0;
-    pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
-
+    // Clear it only on the frame that actually spawns.  Catching up several
+    // commands in one pass -- after a hitch -- used to retire the grenade on a
+    // command that was not the effect frame, and the next pass then returned at
+    // the top because the primed bit was gone: a held blast with no prediction
+    // at all behind it.
     if (!IsEffectFrame())
         return;
+
+    pstate_pred.primed_gren_exp = 0;
+    pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
 
     rj_trace("C: gren-held seq=%.0f pt=%.4f heat=%.4f org=%v ccf=%.0f\n",
              (float)pstate_pred.seq, pstate_pred.server_time, explode_at,

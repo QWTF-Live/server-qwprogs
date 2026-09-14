@@ -1041,11 +1041,22 @@ static void Knock_Unlink(entity e) {
 static void Antilag_Knock(entity e) {
     entity o = e.owner;
     vector vbefore = o.velocity;
+    vector pmd_before = o.pmd_impulse;
     Knock_Unlink(e);
     T_RadiusDamage(e, e.owner, e.heat, __NULL__, __NULL__, e.owner);
     rj_trace("S: knock t=%.3f due=%.3f late=%.1fms org=%v vel=%v -> %v og=%.0f\n",
              time, e.forward_knock, (time - e.forward_knock) * 1000, o.origin, vbefore, o.velocity,
              (float)!!(o.flags & FL_ONGROUND));
+    // Everything between these two reads is meant to be the shared evaluator
+    // and nothing else, so the velocity the player ends with is the one we
+    // traced and the client computed.  Once in sixteen pushes it was not: a
+    // blast gained 257 u/s of z that no push accounts for, and that frame was
+    // the only nine-unit view error in the trace.  Say so when it happens.
+    vector unaccounted = o.velocity - vbefore - (o.pmd_impulse - pmd_before);
+    if (vlen(unaccounted) > 1)
+        rj_trace("S: knock-extra t=%.3f by=%v wl=%.0f og=%.0f mt=%.0f tfs=%.0f\n",
+                 time, unaccounted, o.waterlevel, (float)!!(o.flags & FL_ONGROUND),
+                 o.movetype, o.tfstate);
     o.rj_trace_until = time + 0.4;
     dremove(e);
 }

@@ -26,6 +26,7 @@ static struct {
 
     vector error;
     float errortime;
+    float errorspan;   // how long this particular error is being glided over
 
     float step, steptime, step_oldz;
 
@@ -1186,19 +1187,36 @@ static void PM_SetEnabled(float enabled) {
     if (!enabled)
         return;
 
-    pm.errortime = pm.steptime  = 0;
+    pm.errortime = pm.steptime = pm.errorspan = 0;
     pm.step_oldz = pm.ent.origin_z;
     PM_LerpReset();
 }
 
-static float ErrorTime() {
+// How long to glide a correction out over, by how big it is.
+//
+// A flat span trades a rare yank for a constant lag: the errors that actually
+// happen are a tenth of a unit and ought to snap, and stretching those leaves
+// the view permanently behind where the player is.  What wants a glide is the
+// rare large one -- a push landing a command apart from the server's because
+// the two anchors were sampled three and a half seconds apart and the skew
+// drifted a few milliseconds in between.  That residual is not further
+// reducible without re-anchoring the per-viewer path, so it is a thing to
+// absorb rather than chase, and one command of a 770 u/s push integrated over
+// the replay is seventy units however near the miss was.
+//
+// So scale it: small errors keep the old snap, and the span only grows for
+// something worth hiding.  The view trails the true position while it glides
+// and shots come from the eye, so this is paid for in aim -- which is why it
+// buys nothing for the errors that do not need it.
+static float ErrorSpan(vector err) {
     static float kDefault = 25 * MSEC;
-    static float kMax = 50 * MSEC;
+    static float kMax = 150 * MSEC;
+    static float kPerUnit = 2 * MSEC;
 
-    if (!CVARF(fopm_errortime))
-        return kDefault;
+    if (CVARF(fopm_errortime))
+        return min(CVARF(fopm_errortime), kMax);
 
-    return min(CVARF(fopm_errortime), kMax);
+    return bound(kDefault, vlen(err) * kPerUnit, kMax);
 }
 
 static void PM_UpdateError() {
@@ -1219,6 +1237,7 @@ static void PM_UpdateError() {
         (clientcommandframe == servercommandframe + 1)) {
         pm.error = '0 0 0';
         pm.errortime = 0;
+        pm.errorspan = 0;
         pmd_norecord--;
         return;
     }
@@ -1322,15 +1341,19 @@ static void PM_UpdateError() {
     if (nerr > 64) {  // teleport
         pm.error = '0 0 0';
         pm.errortime = 0;
+        pm.errorspan = 0;
     } else { // figure out the error amount, and add it to accumulated lerp
-        pm.error *= max(pm.errortime - time, 0) / ErrorTime();
+        if (pm.errorspan > 0)
+            pm.error *= max(pm.errortime - time, 0) / pm.errorspan;
         pm.error += err;
 
         if (vlen(pm.error) > 1) {
-            pm.errortime = time + ErrorTime();
+            pm.errorspan = ErrorSpan(pm.error);
+            pm.errortime = time + pm.errorspan;
         } else {
             pm.error = '0 0 0';
             pm.errortime = 0;
+            pm.errorspan = 0;
         }
     }
     pmd_norecord--;
@@ -1664,9 +1687,9 @@ static void PM_UpdateLocalMovement() {
     if (!game_state.is_alive && WP_PlayerClass())
         view_angles.z = CVARF(v_deathtilt) * 80;
 
-    // Correct view position over ErrorTime()
-    if (pm.errortime - time > 0)
-        pm.vieworg += (pm.errortime - time) * (1 / ErrorTime()) * pm.error;
+    // Correct view position over the span chosen for this error's size.
+    if (pm.errortime - time > 0 && pm.errorspan > 0)
+        pm.vieworg += (pm.errortime - time) * (1 / pm.errorspan) * pm.error;
 
     if (!CVARF(fopm_nostep))
         pm.vieworg.z += pm.step;

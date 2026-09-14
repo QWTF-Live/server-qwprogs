@@ -857,6 +857,33 @@ static float gren_release_fuse;    // RJ_TRACE
 static vector gren_release_org;
 static float gren_release_have_org;
 
+// The blast of a held grenade, on the command whose clock reaches it.  The
+// grenade's own think is still armed and still correct; this simply gets there
+// first, from inside a command, which is what makes the push reachable.
+void PlayerGren_Blast() {
+    entity g = self.held_gren;
+    if (!g || !g.blast_cmd_due || g.classname != "grenade")
+        return;
+    if (time < g.blast_cmd_due)
+        return;
+
+    entity held = self;
+    float held_time = time, held_real = cmd_real_time;
+
+    self.held_gren = world;
+    self = g;
+    // In the clock its think would have had, so everything the blast stamps --
+    // the due it defers to, the effect it sends -- is the number it always was.
+    time = g.fpp.expires_at;
+    cmd_real_time = 0;
+    rj_trace("S: gren-blast t=%.4f cmd=%.4f seq=%.0f\n",
+             time, g.blast_cmd_due, held.cmd_sequence);
+    FO_T_GrenExplode();
+    time = held_time;
+    cmd_real_time = held_real;
+    self = held;
+}
+
 void PlayerGren_Apply() {
     entity t = self.grenade_timer;
     if (!t || !self.last_prime || !self.primed_gren_exp)
@@ -2472,6 +2499,15 @@ void () TeamFortress_ExplodePerson = {
     proj.avelocity = gdesc->avelocity;
     proj.touch = ste->touch;
     proj.think = ste->think;
+    // The blast, on the holder's own clock.  Its think stays armed as the
+    // backstop, but a command gets there first -- and that is the point: a
+    // knock queued from a think is racing the chain, which can have leapt past
+    // the due in a burst before the entry exists.  Queued from inside a command
+    // the due is one lead beyond the clock we are standing on, so the command
+    // the client picks cannot already have run.
+    proj.blast_cmd_due = gren_release_fuse ? gren_release_fuse + 0.1 : 0;
+    self.owner.held_gren = proj;
+
     setorigin(proj, gren_release_have_org ? gren_release_org : self.owner.origin);
     FOProj_Finalize(proj);
 

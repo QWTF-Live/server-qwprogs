@@ -3422,6 +3422,7 @@ static void Ghost_RunCommand() {
 }
 
 void PlayerGren_Apply();
+void PlayerGren_Blast();
 
 void () PlayerPostThink = {
     // Run the weapon, think and predict-state path on the command clock, so
@@ -3457,6 +3458,11 @@ void () PlayerPostThink = {
     // picks.  The blast still hangs off the world instant both sides agree on.
     if (!ghosted)
         PlayerGren_Apply();
+    // And its blast, for the same reason: queued from inside a command the due
+    // is ahead of the clock we are on, so a burst cannot have carried the chain
+    // past the command the client chose.
+    if (!ghosted)
+        PlayerGren_Blast();
     self.cmd_clock_skew = cmd_real_time ? time - cmd_real_time : 0;
     Predict_Update(TRUE);
     if (!ghosted)

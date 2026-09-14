@@ -3420,6 +3420,8 @@ static void Ghost_RunCommand() {
     setorigin(self, self.origin);   // relink after the copy
 }
 
+void PlayerGren_Apply();
+
 void () PlayerPostThink = {
     // Run the weapon, think and predict-state path on the command clock, so
     // every schedule set here and every comparison against it uses the clock
@@ -3449,6 +3451,12 @@ void () PlayerPostThink = {
     // explodes within its own forward is pushed on this command, not the next.
     if (!ghosted)
         PlayerKnock_Apply();
+    // Same reason and the same clock: a held grenade materialises on the
+    // command whose clock reaches its fuse, which is the command the client
+    // picks.  Only the spawn moves -- the blast still hangs off the world
+    // instant both sides already agree on.
+    if (!ghosted)
+        PlayerGren_Apply();
     self.cmd_clock_skew = cmd_real_time ? time - cmd_real_time : 0;
     Predict_Update(TRUE);
     if (!ghosted)

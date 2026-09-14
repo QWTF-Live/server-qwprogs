@@ -1751,12 +1751,31 @@ static void WP_ExplodeGren() {
     Phys_Sim(gren, explode_at + 0.1);
 }
 
-static void W_ThrowGren(float is_throw) {
-    if (!RewindFlagEnabled(REWIND_GRENADES) || getstatf(STAT_NOFIRE))
+// RJ_TRACE: why a throw we have latched is not being predicted.  A latched
+// throw the server spawned but we did not cost a whole grenade jump in the
+// last trace -- 680 u/s the server pushed and we predicted nothing -- and
+// silence from this path is indistinguishable from never having latched.
+static float gren_decline;
+static void GrenDecline(float why) {
+    if (gren_decline == why)
         return;
+    gren_decline = why;
+    rj_trace("C: gren-decline why=%.0f seq=%.0f pt=%.4f open=%.4f prime=%.4f tfs=%.0f\n",
+             why, (float)pstate_pred.seq, pstate_pred.server_time,
+             pstate_pred.last_prime + 0.8, pstate_pred.last_prime,
+             pstate_pred.tfstate);
+}
 
-    if (pstate_pred.tfstate & TFSTATE_GREN_MASK_PRIMED == 0)
+static void W_ThrowGren(float is_throw) {
+    if (!RewindFlagEnabled(REWIND_GRENADES) || getstatf(STAT_NOFIRE)) {
+        if (is_throw) GrenDecline(1);   // rewind off, or firing blocked
         return;
+    }
+
+    if (pstate_pred.tfstate & TFSTATE_GREN_MASK_PRIMED == 0) {
+        if (is_throw) GrenDecline(2);   // nothing primed to throw
+        return;
+    }
 
     if (is_throw)
         pstate_pred.tfstate |= TFSTATE_GRENTHROWING;
@@ -1765,8 +1784,13 @@ static void W_ThrowGren(float is_throw) {
 
     int type_index = (pstate_pred.tfstate & TFSTATE_GREN1_PRIMED) ? 0 : 1;
     int gren_type = FO_ClassGren(pstate_pred.playerclass, type_index)->id;
-    if (!CanThrowGrenade(gren_type) && !IsClownMode(CLOWN_SPAM_GRENADES))
+    if (!CanThrowGrenade(gren_type) && !IsClownMode(CLOWN_SPAM_GRENADES)) {
+        GrenDecline(3);   // outside the window CanThrowGrenade will predict in
         return;
+    }
+
+    if (!IsEffectFrame())
+        GrenDecline(4);   // in the window, but this replay is not the one that acts
 
     if (IsEffectFrame()) {
         // via matches the server's: 0 is the release itself, 1 is a release
@@ -1775,6 +1799,7 @@ static void W_ThrowGren(float is_throw) {
                  (float)!is_throw, (float)pstate_pred.seq, pstate_pred.server_time,
                  pstate_pred.last_prime + 0.8, PM_Org(), (float)clientcommandframe);
         rj_cmd_trace_until_seq = clientcommandframe + 12;
+        gren_decline = 0;
         entity gren = PP_CreateProjectile(FPP_HANDGRENADE, '0 0 0');
         gren.fpp.gren_type = gren_type;
         FPP_ApplyGrenadeProperties(gren);

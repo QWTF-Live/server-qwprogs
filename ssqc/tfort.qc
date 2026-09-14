@@ -730,9 +730,6 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
     // Grace, so the command-driven blast gets first refusal.
     proj.nextthink = timer.heat +
                      (blast_due_cmd ? GrenBlastGrace(user) : SERVER_FRAME_DT);
-    proj.blast_cmd_due = blast_due_cmd;
-    proj.gren_next = user.held_gren;
-    user.held_gren = proj;
 
     int gtype = timer.fpp.gren_type;
     FO_GrenInfo* gdesc = FO_GrenDesc(gtype);
@@ -741,6 +738,23 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
     proj.fpp.gren_type = gtype;
     if (!ste->no_expiry) {
         proj.fpp.expires_at = timer.heat;
+    }
+
+    // Only a grenade whose fuse ends in an explosion has a blast for a command
+    // to claim.  Set unconditionally, and a thrown caltrop -- which scatters on
+    // its own schedule and carries no expiry at all -- went on the list anyway,
+    // so the command that reached the due warped time to an expiry of zero and
+    // handed a type with no explosion to the shared evaluator.
+    if (ste->no_expiry)
+        blast_due_cmd = 0;
+    proj.blast_cmd_due = blast_due_cmd;
+
+    // On the list only if there is a blast for a command to claim.  The list
+    // exists for nothing else, and anything that goes on it without a due is
+    // never taken off.
+    if (blast_due_cmd) {
+        proj.gren_next = user.held_gren;
+        user.held_gren = proj;
     }
     proj.skin = gdesc->skin;
     proj.touch = ste->touch;
@@ -1006,12 +1020,39 @@ void PlayerGren_Blast() {
     // one field meant the second overwrote the first, one of them lost its
     // command release, and the two sides exploded different grenades on the
     // same command: sources twenty-seven units apart and unrelated pushes.
-    entity g = self.held_gren, prev = world;
-    while (g && (!g.blast_cmd_due || g.classname != "grenade" ||
-                 time < g.blast_cmd_due)) {
+    // Walking the list prunes it.  An entry whose grenade is gone used to be
+    // walked past and left in place, and a removed entity is a slot waiting to
+    // be recycled: when it comes back as a new grenade it is linked at the head
+    // while still linked further down, which is a cycle and a runaway loop for
+    // whoever walks it next.  That is how a leak here takes the server down
+    // rather than merely growing.
+    //
+    // An expiry as well as a due, too: the blast runs in the clock its think
+    // would have had, and a grenade with no expiry has no such clock.
+    entity g = self.held_gren, prev = world, found = world;
+    while (g) {
+        entity next = g.gren_next;
+
+        if (g.classname != "grenade") {
+            if (prev)
+                prev.gren_next = next;
+            else
+                self.held_gren = next;
+            g.gren_next = world;
+            g = next;
+            continue;
+        }
+
+        if (g.blast_cmd_due && g.fpp.expires_at && time >= g.blast_cmd_due) {
+            found = g;
+            break;
+        }
+
         prev = g;
-        g = g.gren_next;
+        g = next;
     }
+
+    g = found;
     if (!g)
         return;
 
@@ -2671,8 +2712,10 @@ void () TeamFortress_ExplodePerson = {
     // the due is one lead beyond the clock we are standing on, so the command
     // the client picks cannot already have run.
     proj.blast_cmd_due = blast_due_cmd ? blast_due_cmd + 0.1 : 0;
-    proj.gren_next = self.owner.held_gren;
-    self.owner.held_gren = proj;
+    if (proj.blast_cmd_due) {
+        proj.gren_next = self.owner.held_gren;
+        self.owner.held_gren = proj;
+    }
 
     setorigin(proj, gren_release_have_org ? gren_release_org : self.owner.origin);
     FOProj_Finalize(proj);

@@ -607,10 +607,23 @@ static void PM_RemoveSelfNudges() {
 
     PM_Nudge* n = self.nudge;
 
-    // We skip the removal of explicit expiry server ents, which have known
-    // cause and effect.  We do not do this for client ents as their removal
-    // means they've been replaced by an equivalent server ent.
-    if (n->nat == NA_ITIME_EXPLICIT_EXPIRE && self.entnum)
+    // An explicit window retires itself, so nothing here needs to retire it.
+    //
+    // This used to make an exception of our own predicted copies, on the
+    // grounds that their removal means the server's equivalent has replaced
+    // them.  It has not, not yet: a predicted rocket reaches its impact before
+    // the server's copy reaches ours, so the nudge exists while the copy that
+    // arrives and cleans it up is still in flight and carries no push time at
+    // all.  The replacement only appears when the impact does, a round trip
+    // later, by which time the command it was due on has been acknowledged and
+    // is no longer replayed.  Measured: itime 15.700 against the server's due
+    // of 15.700 -- the timing was exactly right -- removed push@0, and 107 u/s
+    // of knock lost with the two positions agreeing to a hundredth of a unit.
+    //
+    // Retiring the predicted nudge is PM_SupersedePredictedNudge's job.  It is
+    // keyed on the fire_seq both copies share and runs from the server copy's
+    // own explosion, which is the moment the replacement exists.
+    if (n->nat == NA_ITIME_EXPLICIT_EXPIRE)
         return;
 
     // The removal arrives before the frame with the affect included.  Normally
@@ -779,7 +792,11 @@ static void PM_SupersedePredictedNudge(entity sent) {
         if (n->nat == NA_NONE)
             continue;   // empty slot: nothing to say about it
 
-        float ok_type = (n->type == NT_BLAST && n->blast.type == KNOCK_RADIUS);
+        // Any blast of ours, not only a radius one.  The handle below -- our own
+        // copy, carrying the fire_seq this one also carries -- is what
+        // identifies it; which shape the push takes says nothing about whether
+        // the two are the same shot.
+        float ok_type = (n->type == NT_BLAST);
         float ok_pred = (n->src_no == 0);
         float ok_live = !nudge_expired(n);
         float ok_seq  = (n->src_fseq && n->src_fseq == sent.fire_seq);
@@ -931,6 +948,15 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     if (cmd_due)
         itime = cmd_due;
     itime += KNOCK_LEAD;   // the same lead the server schedules it with
+
+    // The server's copy of a grenade we predicted: retire our own nudge here,
+    // where the replacement is being created, rather than when the copy merely
+    // arrived.  PM_AddSimExplosion has always done this and this path never
+    // did, so with nothing else retiring the predicted one both fired -- the
+    // same held grenade pushing twice, exactly 2x the server's velocity on
+    // every axis with the damage matching to a tenth.
+    if (ent.entnum)
+        PM_SupersedePredictedNudge(ent);
 
     FO_GrenExp exp;
     if (!FO_GrenGetExp(ent.fpp.gren_type, exp))

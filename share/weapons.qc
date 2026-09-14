@@ -855,3 +855,69 @@ vector CalcKnock(vector src, entity targ, float flags, float moment) {
 
     return result;
 }
+
+// A blast waiting to be applied, as both sides hold one: the server on a
+// player's pending_knock list, the client in its nudge array.  Both evaluate it
+// at the same moment, the end of the command it was due on, so the arithmetic
+// that turns it into a velocity lives here once rather than twice.
+//
+// What stays with the caller is the damage scaling between the falloff and the
+// push, because the two genuinely differ there: we know what armour and team
+// rules actually took off, and the client can only model it from the predict
+// flags it holds.
+enum {
+    KNOCK_RADIUS,   // adds to velocity
+    KNOCK_BOUNCE,   // replaces it: a conc's direction is the whole of the effect
+};
+
+struct KnockBlast {
+    float type;
+    vector src;     // where it went off
+    float base;     // its damage before the radius falloff
+    float flags;    // KF_*
+    float slack;    // extra reach allowed on the gather radius
+};
+
+// Where every stage measures the target from.  Measuring from the origin puts
+// it four units out, which near the edge of the radius is the difference
+// between a push and nothing.
+vector Knock_Org(entity targ) {
+    return targ.origin + (targ.mins + targ.maxs) * 0.5;
+}
+
+// Damage after the radius falloff, or nothing when the blast does not reach.
+// Two gates: the radius the server gathers targets in, then the falloff going
+// negative.
+float Knock_Points(KnockBlast* b, entity targ) {
+    float dist = vlen(Knock_Org(targ) - b->src);
+    if (dist > b->base + 40 - b->slack)
+        return 0;
+
+    float points = (b->type == KNOCK_BOUNCE)
+                   ? b->base - dist * 0.5
+                   : CalcRadiusDamage(b->src, targ, b->flags, b->base);
+    return points > 0 ? points : 0;
+}
+
+// The velocity it imparts: added for a radius blast, assigned for a bounce.
+vector Knock_Velocity(KnockBlast* b, entity targ, float moment) {
+    if (b->type == KNOCK_BOUNCE)
+        return (Knock_Org(targ) - b->src) * (moment / 20);
+    return CalcKnock(b->src, targ, b->flags, moment);
+}
+
+// One line, the same fields in the same order on both sides, so a log can be
+// compared by sequence rather than read across two formats.
+void Knock_Trace(KnockBlast* b, entity targ, float seq, float clk, float due,
+                 float moment, vector vel) {
+#ifdef SSQC
+    string side = "S";
+#else
+    string side = "C";
+#endif
+    vector at = Knock_Org(targ);
+    rj_trace("%s: knock seq=%.0f clk=%.5f due=%.5f edge=%+.2fms", side, seq, clk, due,
+             (clk - due) * 1000);
+    rj_trace(" src=%v at=%v d=%.2f mom=%.1f vel=%v\n", b->src, at, vlen(at - b->src),
+             moment, vel);
+}

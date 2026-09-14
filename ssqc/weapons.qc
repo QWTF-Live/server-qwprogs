@@ -1100,21 +1100,24 @@ entity Knock_Defer(entity targ, vector src, float kind) {
 // which is the position the client's own prediction has reached there too.
 static void Blast_Knock(entity e) {
     entity targ = e.owner;
-    vector before = targ.velocity;
-    float points = CalcRadiusDamage(e.origin, targ, e.knock_flags, e.heat);
+    KnockBlast b;
+    b.type = KNOCK_RADIUS;
+    b.src = e.origin;
+    b.base = e.heat;
+    b.flags = e.knock_flags;
+    b.slack = 0;
 
+    float points = Knock_Points(&b, targ);
     Knock_Unlink(e);
-    if (points > 0) {
+    if (points) {
+        // The blast-time pass already took armour and team rules off the
+        // damage; carry that as a ratio so the falloff can be redone from
+        // where this command left them and arrive by the same route.
         float moment = Class_ScaleMoment(targ.playerclass, points * e.knock_ratio);
-        targ.velocity += CalcKnock(e.origin, targ, e.knock_flags, moment);
-        PMD_Knock(targ, targ.velocity - before, moment);
-        rj_trace("S: knock t=%.3f seq=%.0f clk=%.5f due=%.5f edge=%+.2fms ke=%+.2fms targ=%s", time,
-                 targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
-                 (targ.cmd_clock - e.forward_knock) * 1000, KNOCK_LEAD * 1000, targ.netname);
-        rj_trace(" src=%v at=%v d=%.2f mom=%.1f knock=%v\n", e.origin,
-                 targ.origin + (targ.mins + targ.maxs) * 0.5,
-                 vlen(targ.origin + (targ.mins + targ.maxs) * 0.5 - e.origin),
-                 moment, targ.velocity - before);
+        vector knock = Knock_Velocity(&b, targ, moment);
+        targ.velocity += knock;
+        PMD_Knock(targ, knock, moment);
+        Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock, moment, knock);
     }
     dremove(e);
 }
@@ -1124,14 +1127,21 @@ static void Blast_Knock(entity e) {
 // server and the client agree on.
 static void Bounce_Knock(entity e) {
     entity targ = e.owner;
-    vector before = targ.velocity;
-    vector org = targ.origin + (targ.mins + targ.maxs) * 0.5;
-    float points = e.heat - 0.5 * vlen(org - e.origin);
+    KnockBlast b;
+    b.type = KNOCK_BOUNCE;
+    b.src = e.origin;
+    b.base = e.heat;
+    b.flags = 0;
+    b.slack = 0;
 
+    float points = Knock_Points(&b, targ);
     Knock_Unlink(e);
-    if (points > 0) {
-        targ.velocity = (org - e.origin) * (points / 20);
+    if (points) {
+        vector before = targ.velocity;
+        targ.velocity = Knock_Velocity(&b, targ, points);
         PMD_Knock(targ, targ.velocity - before, points);
+        Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
+                    points, targ.velocity - before);
         NB_ConcCapAction(targ, targ.playerclass, &targ.tfstate,
                          time, &targ.conc_cap_time, kLaunch);
     }

@@ -515,54 +515,46 @@ static float PM_ExplosionReaches(vector src, vector targ) {
 }
 
 static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
-    float dmg = nudge->aux;
-    // From the box centre, as CalcRadiusDamage measures it and as the radius
-    // search that gathers targets on the server does.  Measuring from the
-    // origin put us four units out, which near the edge of the radius is the
-    // difference between predicting the push and refusing it.
-    vector targ_org = ent.origin + (ent.mins + ent.maxs) * 0.5;
-    if (vlen(targ_org - nudge->org) > dmg + 40 - NudgeExplosionEps())
-        return;
-
-    if (!PM_ExplosionReaches(nudge->org, ent.origin))
-        return;
-
-    float flg = KF_BOTH_PLAYER;  // Assumes everything is from a player for now
+    KnockBlast b;
+    b.type = KNOCK_RADIUS;
+    b.src = nudge->org;
+    b.base = nudge->aux;
+    b.flags = KF_BOTH_PLAYER;   // assumes everything is from a player for now
     if (nudge->src.owner == pengine.player_ent)
-       flg |= KF_SELF;
+        b.flags |= KF_SELF;
+    b.slack = NudgeExplosionEps();
 
-    dmg = CalcRadiusDamage(nudge->org, ent, flg, dmg);
+    float points = Knock_Points(&b, ent);
+    if (!points)
+        return;
 
-    // Same scaling chain the server runs in TF_T_Damage(), via shared code so
-    // the two can't drift.  Both inputs are our own state: TFSTATE_BURNING is
-    // predicted, and explosion armour arrives as a predict flag because it
-    // comes from pickups rather than playerclass.
+    if (!PM_ExplosionReaches(b.src, ent.origin))
+        return;
+
+    // The scaling chain the server runs in TF_T_Damage().  Both inputs are our
+    // own state: TFSTATE_BURNING is predicted, and explosion armour arrives as
+    // a predict flag because it comes from pickups rather than playerclass.
     //
     // Still unmodelled: KF_QUAD.  That depends on the *attacker's*
-    // super_damage_finished, which we don't have for someone else's grenade --
-    // a quadded thrower still mispredicts by 4x.
+    // super_damage_finished, which we do not have for someone else's grenade,
+    // so a quadded thrower still mispredicts by 4x.
     float dsf = 0;
     if (pstate_pred.tfstate & TFSTATE_BURNING)
         dsf |= DSF_BURNING;
     if (pstate_server.predict_flags & PF_SAVE_EXPLOSION)
         dsf |= DSF_SAVE_EXPLOSION;
 
-    dmg = Damage_Scale(dmg, flg, dsf);
-    dmg = Class_ScaleMoment(WP_PlayerClass(), dmg);
-    vector knock = CalcKnock(nudge->org, ent, flg, dmg);
+    float moment = Class_ScaleMoment(WP_PlayerClass(), Damage_Scale(points, b.flags, dsf));
+    vector knock = Knock_Velocity(&b, ent, moment);
 
     if (nudge->trace_seq != pm.seq) {   // replays re-apply at the same seq; report once per seq
         nudge->trace_seq = pm.seq;
-        rj_trace("C: nudge seq=%.0f win=%.5f..%.5f itime=%.5f edge=%+.2fms nat=%s",
-                 pm.seq, pm.interp_t, pm.interp_t + input_timelength, nudge->itime,
-                 (pm.interp_t + input_timelength - nudge->itime) * 1000, NAT_tos(nudge->nat));
-        rj_trace(" org=%v src=%v d=%.2f dmg=%.1f vel=%v knock=%v\n", ent.origin,
-                 nudge->org, vlen(targ_org - nudge->org), dmg, pm.ent.velocity, knock);
+        Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime, moment, knock);
         rj_trace_until_seq = pm.seq + 30;
     }
 
     pm.ent.velocity += knock;
-    PMD_Knock(knock, dmg);
+    PMD_Knock(knock, moment);
 }
 
 // Can be either by {seq + itime} for predicted projectiles, or by {itime} for
@@ -643,16 +635,26 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
 }
 
 static void PM_NudgeBounce(PM_Nudge* nudge, entity ent) {
-    float dmg = nudge->aux;
+    KnockBlast b;
+    b.type = KNOCK_BOUNCE;
+    b.src = nudge->org;
+    b.base = nudge->aux;
+    b.flags = 0;
+    b.slack = NudgeExplosionEps();
 
-    vector targ_org = ent.origin + (ent.mins + ent.maxs) * 0.5;
-    if (vlen(targ_org - nudge->org) > dmg + 40 - NudgeExplosionEps())
+    float points = Knock_Points(&b, ent);
+    if (!points)
         return;
-    float points = dmg - vlen(targ_org - nudge->org) / 2;
 
     vector before = ent.velocity;
-    ent.velocity = (targ_org - nudge->org) * points/20;
+    ent.velocity = Knock_Velocity(&b, ent, points);
     PMD_Knock(ent.velocity - before, points);
+
+    if (nudge->trace_seq != pm.seq) {
+        nudge->trace_seq = pm.seq;
+        Knock_Trace(&b, ent, pm.seq, pm.interp_t + input_timelength, nudge->itime,
+                    points, ent.velocity - before);
+    }
 
     NB_ConcCapAction(ent, pstate_pred.playerclass, &pstate_pred.tfstate,
                      pm.interp_t, &pstate_pred.conc_cap_time, kLaunch);

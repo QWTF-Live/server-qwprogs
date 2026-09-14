@@ -749,12 +749,18 @@ void PM_AddSimExplosion(float itime, entity ent) {
                  time, ent.fpp.index, itime, ent.forward_knock, ent.s_time, ent.created_seq);
         rj_trace(" svt=%.3f ccf=%.0f org=%v\n", pstate_server.server_time, clientcommandframe, ent.origin);
     }
+    // The server's copy of a projectile we predicted ourselves: retire the
+    // predicted nudge whatever route this copy then takes.  This used to sit
+    // inside the forward_knock branch below, so a copy that arrived before
+    // that field was set left both nudges live and both pushing.
+    if (ent.entnum)
+        PM_SupersedePredictedNudge(ent);
+
     if (ent.forward_knock && ent.owner == pengine.player_ent) {
         if (ent.forward_knock == -1)
             return;
         nat = NA_ITIME_EXPLICIT_EXPIRE;  // Knock forwards are synchronized
         itime = ent.forward_knock;
-        PM_SupersedePredictedNudge(ent);
     } else if (ent.entnum && ent.has_cmd_base && ent.s_time &&
                ent.owner_entnum != pengine.player_entnum) {
         // Someone else's rocket: our clock when it appeared plus its flight,

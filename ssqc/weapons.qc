@@ -1281,8 +1281,23 @@ float AntilagKnock(entity e, float dmg) {
     knock_e.forward_knock = e.forward_knock;
     e.knock_org = e.origin;   // before the visual pullback below
 
-    rj_trace("S: impact t=%.3f org=%v ttime=%.1fms due=%.4f fire=%.4f fwd=%.0fms\n",
+    // The same two columns the grenade path prints, for the same reason: a
+    // mismatch is a tie the client can still win only if the command the due
+    // falls in has not run yet.  This path has never printed them, so its
+    // exposure to a burst is unmeasured -- and it is a different exposure.  A
+    // rocket jump can be fired, flown, detonated and the trajectory bent inside
+    // one round trip, so the due is a command clock the server has not been
+    // sent yet; reach is then simply the travel and nothing can overtake it.
+    // What is worth watching is the impact that lands late in flight, past what
+    // the forward projection covered, where the chain has had time to reach the
+    // due on its own.  ahead says which of the two this was: how far past world
+    // time -- in this player's own clock -- the due sits.
+    rj_trace("S: impact t=%.3f org=%v ttime=%.1fms due=%.4f fire=%.4f fwd=%.0fms",
              time, e.origin, ttime * 1000, e.forward_knock, e.fire_cmd_time, e.antilag_ms);
+    rj_trace(" at seq=%.0f clk=%.5f reach=%.2fms ahead=%.2fms\n",
+             e.owner.cmd_sequence, e.owner.cmd_clock,
+             (e.forward_knock - e.owner.cmd_clock) * 1000,
+             (e.forward_knock - (RealTime() + e.owner.cmd_clock_skew)) * 1000);
     knock_e.knock_next = e.owner.pending_knock;
     e.owner.pending_knock = knock_e;
     knock_e.think = T_Knock_Expire;

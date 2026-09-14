@@ -907,14 +907,14 @@ vector Knock_Velocity(KnockBlast* b, entity targ, float moment) {
 // One line, the same fields in the same order on both sides, so a log can be
 // compared by sequence rather than read across two formats.
 void Knock_Trace(KnockBlast* b, entity targ, float seq, float clk, float due,
-                 float moment, vector vel, float inst) {
+                 float moment, vector vel, float inst, float frame) {
 #ifdef SSQC
     string side = "S";
 #else
     string side = "C";
 #endif
     vector at = Knock_Org(targ);
-    rj_trace("%s%.0f: knock seq=%.0f clk=%.5f due=%.5f edge=%+.2fms", side, inst, seq, clk, due,
+    rj_trace("%s%.0f: knock f=%.0f seq=%.0f clk=%.5f due=%.5f edge=%+.2fms", side, inst, frame, seq, clk, due,
              (clk - due) * 1000);
     rj_trace(" src=%v at=%v d=%.2f mom=%.1f vel=%v\n", b->src, at, vlen(at - b->src),
              moment, vel);

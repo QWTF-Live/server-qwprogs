@@ -639,7 +639,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     targ.velocity += knock;
                     PMD_Knock(targ, knock, moment);
                     Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, targ.cmd_clock,
-                                moment, knock, 0);
+                                moment, knock, 0, targ.cmd_sequence);
                 }
                 Predict_AddFilterEnt(targ, inflictor.filter_ent ?: inflictor);
             }

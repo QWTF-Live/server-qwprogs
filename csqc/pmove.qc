@@ -426,6 +426,39 @@ struct RJ_Shown { float seq; vector org, vel; };
 static const float RJ_NSHOWN = 64;
 static RJ_Shown rj_shown[RJ_NSHOWN];
 
+static float nudge_expired(PM_Nudge* n);
+
+// The two replays the error pass compares judge nudge expiry against different
+// moments -- the prior against the update it was shown for, the new one against
+// this update -- so a nudge can be live for one and expired for the other.  The
+// one that has it carries a whole push the other does not, and integrated over
+// the commands since that was 76 units of a grenade jump in the last trace.
+//
+// The signature cannot see this: it only compares the overlap of the two
+// command ranges, and the push sits below that.  Ask the nudges directly.
+static float PM_NudgeLivenessDiffers(float alt_seq, float alt_time) {
+    float held_seq = pstate_server.seq, held_time = pstate_server.server_time;
+    float differs = FALSE;
+
+    for (float i = 0; i < nudges.length; i++) {
+        PM_Nudge* n = &nudges[i];
+        if (n->nat == NA_NONE)
+            continue;
+
+        float now_live = !nudge_expired(n);
+        pstate_server.seq = alt_seq;
+        pstate_server.server_time = alt_time;
+        float then_live = !nudge_expired(n);
+        pstate_server.seq = held_seq;
+        pstate_server.server_time = held_time;
+
+        if (now_live != then_live)
+            differs = TRUE;
+    }
+
+    return differs;
+}
+
 static float nudge_expired(PM_Nudge* n) {
     if (n->expire_frame && n->expire_frame <= pstate_server.seq)
         return TRUE;
@@ -1220,8 +1253,14 @@ static void PM_UpdateError() {
     // on screen, so feeding that into the lerp is pure judder.  Comparing which
     // pushes each replay applied catches it whatever the reason: if they did
     // not carry the same set, the difference between them is not a correction.
-    float filtered = (pm.last_nudge == clientcommandframe - 1) ||
-                     (prior_sig != new_sig);
+    float liveness_moved = pm_prev_update_seq &&
+                           PM_NudgeLivenessDiffers(pm_prev_update_seq, pm_prev_update_time);
+    // 1 a push landed on the command just gone, 2 the two replays applied
+    // different pushes, 4 a nudge was live for one of them and expired for the
+    // other.  Reported as a set so a trace says which rule earned its keep.
+    float filtered = (pm.last_nudge == clientcommandframe - 1) |
+                     ((prior_sig != new_sig) * 2) |
+                     (liveness_moved * 4);
     err -= ent.origin;
     vector raw = err;
     if (filtered)

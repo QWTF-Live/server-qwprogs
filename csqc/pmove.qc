@@ -503,9 +503,8 @@ static float nudge_expired(PM_Nudge* n) {
         pstate_server.attack_finished <= n->fire_clk) {
         if (pm_final_pass && rj_unfired_seq != n->src_fseq) {
             rj_unfired_seq = n->src_fseq;
-            rj_trace("C: unfired fseq=%.0f fire=%.4f af=%.4f/%.4f acked=%.0f\n",
-                     n->src_fseq, n->fire_clk, pstate_pred.attack_finished,
-                     pstate_server.attack_finished, (float)pstate_server.seq);
+            rj_trace("C: unfired fseq=%.0f fire=%.4f af=%.4f\n",
+                     n->src_fseq, n->fire_clk, pstate_server.attack_finished);
         }
         return TRUE;
     }
@@ -720,22 +719,25 @@ static void PM_SupersedePredictedNudge(entity sent) {
         if (n->nat == NA_NONE)
             continue;   // empty slot: nothing to say about it
 
-        // Every condition evaluated, none short-circuited, so the log says
-        // which one rejected rather than only that something did.  A column
-        // that is always true alongside another is redundant; one that is
-        // never the deciding false is doing nothing.
         float ok_type = (n->type == NT_BLAST && n->blast.type == KNOCK_RADIUS);
         float ok_pred = (n->src_no == 0);
         float ok_live = !nudge_expired(n);
         float ok_seq  = (n->src_fseq && n->src_fseq == sent.fire_seq);
 
-        rj_trace("C: supersede i=%.0f type=%.0f pred=%.0f live=%.0f seq=%.0f",
-                 i, ok_type, ok_pred, ok_live, ok_seq);
-        rj_trace(" ours=%.0f theirs=%.0f cseq=%.0f/%.0f ent=%.0f\n",
-                 n->src_fseq, sent.fire_seq, n->src_cseq, sent.created_seq, sent.entnum);
-
-        if (ok_type && ok_pred && ok_live && ok_seq)
+        if (ok_type && ok_pred && ok_live && ok_seq) {
             n->nat = NA_NONE;
+            continue;
+        }
+
+        // Only the near miss speaks.  Every condition used to print for every
+        // slot, which answered the question it was added for -- the four are
+        // not redundant and none is dead -- and then went on costing a line per
+        // slot per supersede.  A predicted blast of ours that this copy did not
+        // claim is the case worth seeing: it means one of us has the wrong
+        // handle, and both pushes stay live.
+        if (ok_type && ok_pred && ok_live)
+            rj_trace("C: supersede-miss i=%.0f ours=%.0f theirs=%.0f ent=%.0f\n",
+                     i, n->src_fseq, sent.fire_seq, sent.entnum);
     }
 }
 
@@ -854,15 +856,6 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
         itime = PM_WorldToCmdTime(itime);
     itime += KNOCK_LEAD;   // the same lead the server schedules it with
 
-    // A nudge normally stops once the server's state has reached its time, on
-    // the basis that the state then carries the push itself.  The server runs
-    // a fuse in its physics phase, after the command whose clock covers it, so
-    // for a stretch the state has not caught up and the nudge is already gone
-    // -- and the prediction drops a push it had been showing.  Hold it a
-    // couple of server frames longer; the filter the server sends for the
-    // exploding entity is what really retires it.
-    float hold = 2 * SERVER_FRAME_DT;
-
     FO_GrenExp exp;
     if (!FO_GrenGetExp(ent.fpp.gren_type, exp))
         return;
@@ -876,8 +869,14 @@ void PM_AddGrenadeExplosion(float itime, entity ent) {
     else
         PM_AddNudgeBounce(itime, ent, dmg);
 
+    // No margin on top of the expiry.  It used to hold a couple of server
+    // frames because the state had not caught up with the push yet, and named
+    // the server's filter entry as what really retired it -- both untrue now.
+    // A deferred push sends no filter entry, and a nudge that has fired
+    // outlives its timer until the server acknowledges the command it fired on,
+    // which is the exact condition the margin was approximating.
     if (ent.nudge)
-        ent.nudge->expire_time = itime + hold;
+        ent.nudge->expire_time = itime;
 }
 
 void PM_AddSimExplosion(float itime, entity ent) {
@@ -1696,6 +1695,16 @@ void PM_SyncTo(float seq) {
     PM_Sounds(jumping, jump_frame, landing, pm.last_vel_z);
 }
 
+// The server's way of saying it has taken an entity's effect over: stop nudging
+// for it as of the command this update acknowledges.
+//
+// Only an immediate push sends one now.  A deferred push used to, and retired
+// the nudge as of the command the blast was *found* on rather than the one the
+// push lands on -- a command or two early, which showed as the client dropping
+// a push and picking it up again a frame later.  A deferred nudge needs no
+// telling: it carries an explicit expiry and outlives it until the server
+// acknowledges the command it fired on, which is the moment this message was
+// trying to name.
 static void PM_HandleRemovedNudges() {
     if (!pstate_server.num_filter_ents)
         return;

@@ -740,12 +740,13 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
         proj.fpp.expires_at = timer.heat;
     }
 
-    // Only a grenade whose fuse ends in an explosion has a blast for a command
-    // to claim.  Set unconditionally, and a thrown caltrop -- which scatters on
-    // its own schedule and carries no expiry at all -- went on the list anyway,
-    // so the command that reached the due warped time to an expiry of zero and
-    // handed a type with no explosion to the shared evaluator.
-    if (ste->no_expiry)
+    // Only a grenade whose fuse ends in FO_T_GrenExplode has a blast for a
+    // command to claim, because that is the function PlayerGren_Blast calls.
+    // Every other type in stg_table has its own think -- flash, nail, shock,
+    // burst, mirv, napalm, flare, gas, EMP, caltrop -- and running the shared
+    // blast for one of those hands FO_GrenGetExp a type it has no entry for
+    // and takes the server down.  Observed on staging with a flash grenade.
+    if (ste->think != FO_T_GrenExplode)
         blast_due_cmd = 0;
     proj.blast_cmd_due = blast_due_cmd;
 
@@ -1027,8 +1028,12 @@ void PlayerGren_Blast() {
     // whoever walks it next.  That is how a leak here takes the server down
     // rather than merely growing.
     //
-    // An expiry as well as a due, too: the blast runs in the clock its think
-    // would have had, and a grenade with no expiry has no such clock.
+    // An expiry as well as a due, and a think this blast can actually stand in
+    // for.  The blast runs FO_T_GrenExplode in the clock the think would have
+    // had; a grenade with no expiry has no such clock, and one whose think is
+    // something else entirely -- a flash, a nail, a caltrop -- has no business
+    // being exploded by the shared evaluator, which has no entry for its type
+    // and asserts.
     entity g = self.held_gren, prev = world, found = world;
     while (g) {
         entity next = g.gren_next;
@@ -1043,7 +1048,8 @@ void PlayerGren_Blast() {
             continue;
         }
 
-        if (g.blast_cmd_due && g.fpp.expires_at && time >= g.blast_cmd_due) {
+        if (g.blast_cmd_due && g.fpp.expires_at &&
+            g.think == FO_T_GrenExplode && time >= g.blast_cmd_due) {
             found = g;
             break;
         }
@@ -2711,6 +2717,11 @@ void () TeamFortress_ExplodePerson = {
     // the due in a burst before the entry exists.  Queued from inside a command
     // the due is one lead beyond the clock we are standing on, so the command
     // the client picks cannot already have run.
+    // Same rule as the thrown path: the command-driven blast runs
+    // FO_T_GrenExplode, so only a grenade whose own think is that may be
+    // claimed by it.
+    if (ste->think != FO_T_GrenExplode)
+        blast_due_cmd = 0;
     proj.blast_cmd_due = blast_due_cmd ? blast_due_cmd + 0.1 : 0;
     if (proj.blast_cmd_due) {
         proj.gren_next = self.owner.held_gren;

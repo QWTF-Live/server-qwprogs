@@ -1717,6 +1717,13 @@ static void W_PrimeGren(float index) {
     pstate_pred.primed_gren_exp = held_gren_exp;
 }
 
+// The fuse we have already materialised a grenade for.  Clearing the predict
+// state is not a latch: it is re-derived from the server's every cycle, so the
+// only thing that stopped a second spawn was the server's own clear coming
+// back a round trip later -- seven commands at the ping in the trace, and a
+// grenade on every one of them.
+static float held_gren_done;
+
 static void WP_ExplodeGren() {
     if (pstate_pred.tfstate & TFSTATE_GREN_MASK_PRIMED == 0)
         return;
@@ -1727,11 +1734,19 @@ static void WP_ExplodeGren() {
     if (!explode_at || explode_at > pstate_pred.server_time)
         return;
 
-    pstate_pred.primed_gren_exp = 0;
-    pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
-
+    // Only the frame that acts retires it.  Catching up several commands in
+    // one pass -- after a hitch -- used to clear the primed bit on a command
+    // that was not the effect frame, and the next pass then returned at the
+    // top: a held blast with no prediction behind it at all.
     if (!IsEffectFrame())
         return;
+
+    if (held_gren_done == explode_at)
+        return;
+    held_gren_done = explode_at;
+
+    pstate_pred.primed_gren_exp = 0;
+    pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;
 
     rj_trace("C: gren-held seq=%.0f pt=%.4f heat=%.4f org=%v ccf=%.0f\n",
              (float)pstate_pred.seq, pstate_pred.server_time, explode_at,

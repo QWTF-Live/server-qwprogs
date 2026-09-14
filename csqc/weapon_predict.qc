@@ -1519,6 +1519,7 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
   entity proj = spawn();
   proj.owner_entnum = player_localentnum;
   proj.owner = pengine.player_ent;
+  proj.src_is_player = TRUE;   // ours, so it always is
   proj.origin = org;
   FPP_Init(fpp_type, proj);
 

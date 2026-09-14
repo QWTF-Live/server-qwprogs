@@ -720,7 +720,13 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     n->blast.type = KNOCK_RADIUS;
     n->blast.src = src;   // the ent's own position unless the server told us better
     n->blast.base = dmg;
-    n->blast.flags = KF_BOTH_PLAYER;   // assumes everything is from a player for now
+    // Who fired it decides the multiplier, and an entity number classifies
+    // nothing -- the server tells us.  Assuming a player was right for every
+    // case anyone had looked at and wrong for a sentry gun, whose rocket we
+    // predicted at eleven eighths of the push it actually lands.
+    n->blast.flags = KF_TARG_PLAYER;
+    if (ent.src_is_player)
+        n->blast.flags |= KF_SRC_PLAYER;
     if (ent.owner == pengine.player_ent)
         n->blast.flags |= KF_SELF;
     n->nat = nat;

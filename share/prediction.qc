@@ -63,12 +63,20 @@ enumflags {
     FOPP_CMDBASE,
     FOPP_KNOCKORG,
     FOPP_BLASTDUE,
+    FOPP_SRCPLAYER,
 };
 
 // A held or thrown grenade's blast on its holder's own command clock:
 // last_prime + GREN_FUSE + 0.1, which both sides derive from the same shared
 // number.  The server fires the blast on the first command whose clock reaches
 // it; the client anchors its own push on that same command.
+// Whether this projectile's owner is a player, which decides the knock
+// multiplier: 8 normally, 11 for a player-on-player blast under 60 moment.  The
+// client cannot tell from the owner it is sent -- an entity number classifies
+// nothing -- and assuming a player over-predicted a sentry gun's rocket by
+// three eighths of its push.
+.float src_is_player;
+
 // The phys_time of the *first* position update for a projectile -- written on
 // the send by the server and on the read by the client, so both hold the same
 // number.  It is the state the client starts its own copy from, and the flight
@@ -909,6 +917,8 @@ float PP_SendEntity(entity to_player, float sendmask) {
         // INIT carries it and no later update has to.
         if (self.blast_cmd_due && to_player == self.owner)
             sendflags |= FOPP_BLASTDUE;
+        if (self.owner.classname == "player")
+            sendflags |= FOPP_SRCPLAYER;
     }
 
     // Outside the INIT block on purpose.  forward_knock is only set at impact,
@@ -944,6 +954,11 @@ void EntUpdate_Projectile(float isnew) {
         COMM(Float, fire_seq);
         COMMD(Entity, owner_entnum, owner);
     }
+
+#ifdef CSQC
+    if (sendflags & FOPP_INIT)
+        self.src_is_player = (sendflags & FOPP_SRCPLAYER) ? TRUE : FALSE;
+#endif
 
     if (sendflags & FOPP_AUX)
         COMM(Short, fpp.aux);

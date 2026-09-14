@@ -164,6 +164,12 @@ static entity PP_MultiFirstDoor(entity trigger) {
 // about.  This reports the numbers that decide it: where the pusher actually
 // was, where this player was shown it, and how much speed the stop took.
 static void PP_ReportPusherStop() {
+    // Two bars.  Near a pusher, anything that stops a player hard is worth a
+    // line, because a pusher being within reach of a hard stop is itself rare.
+    // Away from one it is not: walking into a wall at 240 costs the whole of
+    // it, twice in a two-minute run, correctly predicted both times.  So the
+    // no-pusher case only speaks for a loss no ordinary movement reaches --
+    // the event worth catching took 1048.
     float lost = vlen(self.pp_vel_pre) - vlen(self.velocity);
     if (lost < 200 || self.pp_vel_pre == '0 0 0')
         return;
@@ -189,6 +195,9 @@ static void PP_ReportPusherStop() {
 
     // Nothing pusher-shaped nearby: say so, so a stop that is simply world
     // geometry is not mistaken for a missing report.
+    if (lost < 600)
+        return;
+
     rj_trace("S: hard-stop seq=%.0f lost=%.0f org=%v vel=%v -> %v og=%.0f\n",
              self.cmd_sequence, lost, self.origin, self.pp_vel_pre, self.velocity,
              (float)!!(self.flags & FL_ONGROUND));

@@ -1764,6 +1764,10 @@ static void W_ThrowGren(float is_throw) {
         return;
 
     if (IsEffectFrame()) {
+        rj_trace("C: gren-spawn seq=%.0f pt=%.4f open=%.4f prime=%.4f ccf=%.0f\n",
+                 (float)pstate_pred.seq, pstate_pred.server_time,
+                 pstate_pred.last_prime + 0.8, pstate_pred.last_prime,
+                 (float)clientcommandframe);
         entity gren = PP_CreateProjectile(FPP_HANDGRENADE, '0 0 0');
         gren.fpp.gren_type = gren_type;
         FPP_ApplyGrenadeProperties(gren);

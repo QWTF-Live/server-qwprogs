@@ -666,6 +666,14 @@ void (entity timer) FO_SpawnThrownGrenade = {
     user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
     user.last_throw = time;
 
+    // Which command the throw lands on.  The client crosses the prime window
+    // on the command whose chain clock reaches it; we spawn from a think, in
+    // the physics phase between two commands, and take whichever command runs
+    // next.  One command of the thrower's travel is the whole of the gap
+    // between the two copies of the grenade.
+    rj_trace("S: gren-spawn t=%.3f seq=%.0f clk=%.4f heat=%.4f prime=%.4f\n",
+             time, user.cmd_sequence, user.cmd_clock, timer.heat, user.last_prime);
+
     UpdateClientGrenadeThrown(user);
 
     KickPlayer(-1, user);

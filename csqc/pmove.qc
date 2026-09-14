@@ -40,6 +40,11 @@ static struct {
 //
 // Power of two, indexed by sequence: a replay rewrites the same entries with
 // the same values, so there is nothing to invalidate.
+// The chain clock at the end of the last command we have predicted.  What a
+// projectile of somebody else's should be advanced to: our own copy of the
+// world has reached exactly here and no further.
+float PM_CmdClock() { return pm.interp_t; }
+
 vector PM_Org() { return PM_Enabled() ? pm.ent.origin : pmove_org; }
 vector PM_Vel() { return PM_Enabled() ? pm.ent.velocity : pmove_vel; }
 float PM_onground() { return PM_Enabled() ? pm.ent.flags & FL_ONGROUND : pmove_onground; }

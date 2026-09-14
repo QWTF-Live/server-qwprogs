@@ -8,8 +8,6 @@ DEFCVAR_FLOAT(fopmd_force_pos, 0);
 
 DEFCVAR_FLOAT(fo_client_sniper_sight, 1);
 
-DEFCVAR_FLOAT(wpp_adv_selfp_ms, 0);
-DEFCVAR_FLOAT(wpp_adv_otherp_ms, 0);
 
 DEFCVAR_FLOAT(r_drawviewmodel, 1);
 DEFCVAR_FLOAT(fo_reloadalpha, 0);
@@ -57,6 +55,7 @@ inline float WP_Enabled() { return pengine.wp_enabled; }
 inline float WPP_ViewModelMask() { return pengine.view_mask; }
 
 inline float PM_Enabled() { return pengine.pm_enabled; }
+float PM_CmdClock();
 float PM_WantPmove();
 float PM_KnockSelf();
 float PM_KnockOther();
@@ -80,7 +79,12 @@ inline float server_time() {
 }
 
 DEFCVAR_FLOAT(cl_predict_players, 1);
-DEFCVAR_FLOAT(cl_predict_players_latency, 0.9);
+// Engine cvars, read rather than defined: cl_ents.c interpolates other players
+// by these, and this file reproduces the same offset so our projectiles fly in
+// step with where those players are actually drawn.  The defaults here are
+// never used -- the cvars always exist -- so they have to match the engine's or
+// they are a lie about what the code does.
+DEFCVAR_FLOAT(cl_predict_players_latency, 1.0);
 DEFCVAR_FLOAT(cl_predict_players_nudge, 0.02);
 DEFCVAR_FLOAT(cl_predict_players_frac, 0.9);
 
@@ -100,11 +104,16 @@ static void update_interp_time_dt() {
     // Maybe prefer smoothed value here?
     pred_time_dt = inst_ping_t;
 
-    if (CVARF(cl_predict_players_latency) <= 1)
-        pred_time_dt *= 1 - CVARF(cl_predict_players_latency);
+    // Clamped, not skipped.  Above 1 the guard dropped the term altogether --
+    // no latency push at all -- where the setting is asking for the most of it.
+    pred_time_dt *= 1 - bound(0, CVARF(cl_predict_players_latency), 1);
     pred_time_dt *= CVARF(cl_predict_players_frac);
 
-    pred_time_dt += CVARF(wpp_adv_selfp_ms) + CVARF(cl_predict_players_nudge);
+    // cl_predict_players_nudge only.  wpp_adv_selfp_ms sat beside it adding a
+    // number named in milliseconds straight into a value in seconds -- a
+    // thousandfold out the moment anybody set it, and harmless only because
+    // nobody had.
+    pred_time_dt += CVARF(cl_predict_players_nudge);
     pred_time_dt = min(pred_time_dt, inst_ping_t);
 }
 
@@ -1343,20 +1352,24 @@ inline float get_phys_time(entity e) {
         // collisions feel correct.
         return interp_time();
     } else {
-        // Entities from other players.. we have choice.  For now, advance them
-        // up to wpp_adv_otherp_ms (bounded at ping, which is true position for
-        // hitting the client.. what they likely care about most... although
-        // this will offset explosions in the short term).
+        // Somebody else's projectile, advanced to the command we have predicted
+        // to -- one frame past it, so anything it sets off exists before the
+        // replay reaches the command that consumes it.
+        //
+        // This used to be two estimates of the same quantity: a ping-derived
+        // advance capped by a cvar, and a count of frames outstanding.  Both
+        // stood in for "how far ahead of the last snapshot has our copy of the
+        // world got", which is not a quantity to guess at any more -- cmd_base
+        // and first_phys_time are a pair, so the projectile's own clock and our
+        // command chain convert into each other exactly.
         static float last_self_time;
-        float dt = min(inst_ping_ms, CVARF(wpp_adv_otherp_ms)) / 1000.0;
-        // Where somebody else's projectile has got to is simulation, not a
-        // push, so it does not belong to pm_knock_other: turning the knock off
-        // used to move the projectile as well, and a switch about whether an
-        // explosion shoves you has no business deciding where the rocket is
-        // drawn.  Do the work either way; only the push is optional.
-        if (PM_Enabled())
-            dt = (clientcommandframe - servercommandframe - 1) * SERVER_FRAME_DT;
-        last_self_time = max(last_self_time, time + dt);
+        float at;
+        if (PM_Enabled() && e.has_cmd_base && e.first_phys_time)
+            at = Proj_PhysTime(e, PM_CmdClock() + SERVER_FRAME_DT);
+        else
+            at = time + (clientcommandframe - servercommandframe - 1) * SERVER_FRAME_DT;
+
+        last_self_time = max(last_self_time, at);
         return last_self_time;
     }
 }

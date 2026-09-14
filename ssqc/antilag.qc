@@ -49,8 +49,13 @@ void Antilag_CrossCheck(entity p) {
         // put beside ours at the same instant.  The two came out ten units
         // apart at what should be the same phys time, and from the trace alone
         // there is no telling a position drift from a mapping error.
-        rj_trace(" player=%v->%v at=%v pt=%.4f first=%.4f st=%.4f\n",
+        rj_trace(" player=%v->%v at=%v pt=%.4f first=%.4f st=%.4f",
                  p.al_cmd_prev, p.origin, at, e.phys_time, e.first_phys_time, e.s_time);
+        // Why the step sweep did not get here first.  It runs only for a
+        // missile whose flight is rewinding players, and this line firing at
+        // all means it did not.
+        rj_trace(" mt=%.0f travel=%.0f\n", e.movetype,
+                 (float)!!RewindFlagEnabled(REWIND_PROJ_TRAVEL));
         setorigin(e, at);
 
         entity held_self = self;

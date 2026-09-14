@@ -405,6 +405,11 @@ static float nudges_added;   // since the last error pass; its saved prior state
 // recomputed and thrown away, which has read as a doubled push three times now.
 // Only the surviving pass talks.
 static float pm_final_pass;
+// Which pushes a replay actually applied, as seq/slot pairs folded together.
+// The error pass compares two replays; if they did not carry the same pushes
+// the difference between them is not a correction the player ever saw.
+static float nudge_sig;
+static float nudge_sig_from;   // only commands past this one are in the signature
 static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors until this seq
 // RJ_TRACE: per-frame result of the most recent replay, i.e. what was shown for that frame.
 struct RJ_Shown { float seq; vector org, vel; };
@@ -839,6 +844,8 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
             continue;
 
         pm.last_nudge = seq;
+        if (seq > nudge_sig_from)
+            nudge_sig += seq * nudges.length + i + 1;
         switch (n->type) {
             case NT_DASH:
                 PM_NudgeDash(n, ent);
@@ -900,6 +907,7 @@ static void RunDeadMovement(float endframe) {
 static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     entity ent = pm.ent;
     pm_final_pass = (endframe == clientcommandframe) && !pmd_norecord;
+    nudge_sig = 0;
 
     // This runs several times per frame (rendering, error measurement, debug
     // graphs), so it must be idempotent.  The conc paths below now advance
@@ -1074,7 +1082,11 @@ static void PM_UpdateError() {
         pstate_server.server_time = pm_prev_update_time;
         have_active_nudges = TRUE;
     }
+    // Commands at or below the prior's own start are already integrated into it,
+    // so the new prediction replaying them is not a difference between the two.
+    nudge_sig_from = last.server_seq;
     PM_RunMovement(&last, clientcommandframe);
+    float prior_sig = nudge_sig;
     pstate_server.seq = held_seq;
     pstate_server.server_time = held_time;
     have_active_nudges = held_active;
@@ -1082,21 +1094,36 @@ static void PM_UpdateError() {
 
     // Repeat with updated state.
     PM_RunMovement(SimPMSD(), clientcommandframe - 2);
+    float new_sig = nudge_sig;
     PM_SavePMS(&last);  // Save at -2 to replay nudges going into -1
     PM_RunMovement(SimPMSD(), clientcommandframe);
+    new_sig += nudge_sig;
+    nudge_sig_from = 0;
 
     // New nudges can result in small errors on replay due to timeshift, we
     // could backdate all the nudges and recompute the world but as a first
     // simpler pass let's just filter them out.
-    float filtered = (pm.last_nudge == clientcommandframe - 1);
+    //
+    // The frame test only catches a push that landed on the command just gone.
+    // It misses the handover, where the server's copy of a projectile arrives
+    // several commands after we predicted its blast and replaces the nudge in
+    // place: the two replays then straddle the swap and disagree by a whole
+    // command of knock velocity, four units at a typical rocket.  Nothing moved
+    // on screen, so feeding that into the lerp is pure judder.  Comparing which
+    // pushes each replay applied catches it whatever the reason: if they did
+    // not carry the same set, the difference between them is not a correction.
+    float filtered = (pm.last_nudge == clientcommandframe - 1) ||
+                     (prior_sig != new_sig);
     if (filtered)
         err = '0 0 0';
     else
         err -= ent.origin;
 
     if (servercommandframe < rj_trace_until_seq)
-        rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f lastnudge=%.0f acc=%.2f\n",
-                 servercommandframe, clientcommandframe, vlen(err), err, filtered, pm.last_nudge, vlen(pm.error));
+        rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f",
+                 servercommandframe, clientcommandframe, vlen(err), err, filtered);
+        rj_trace(" sig=%.0f/%.0f lastnudge=%.0f acc=%.2f\n",
+                 prior_sig, new_sig, pm.last_nudge, vlen(pm.error));
 
 
     float nerr = vlen(err);

@@ -391,6 +391,10 @@ struct PM_Nudge {
     // the push lands twice.
     float src_cseq;
     float src_fseq;    // fire_seq of that projectile: the handle both copies share
+    // Command clock of the shot we predicted, for a push we predicted
+    // ourselves.  Once the server has run that command its cooldown witnesses
+    // whether it fired, without us needing to see the projectile at all.
+    float fire_clk;
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 
@@ -426,6 +430,20 @@ static float nudge_expired(PM_Nudge* n) {
     if (n->expire_spawnseq && n->expire_spawnseq != game_state.spawn_gen)
         return TRUE;
 
+    // A shot of ours the server has since run.  Firing puts the weapon on
+    // cooldown past the command that fired it, so if the server's cooldown has
+    // not moved, the attack never happened and neither did the push.  The
+    // projectile itself is no witness here: it can be out of our view, or gone
+    // before it was ever sent.
+    if (n->fire_clk && !n->src_no && n->src_fseq &&
+        pstate_server.seq >= n->src_fseq &&
+        pstate_server.attack_finished <= n->fire_clk) {
+        if (pm_final_pass)
+            rj_trace("C: unfired fseq=%.0f fire=%.4f af=%.4f acked=%.0f\n",
+                     n->src_fseq, n->fire_clk, pstate_server.attack_finished, (float)pstate_server.seq);
+        return TRUE;
+    }
+
     switch (n->nat) {
         case NA_NONE: return TRUE;
         case NA_SEQ: return n->seq + NUDGE_SEQ <= pstate_server.seq;
@@ -453,6 +471,7 @@ static PM_Nudge* find_nudge_slot() {
         n->nat = NA_NONE;
         n->src_no = 0;
         n->src = 0;
+        n->fire_clk = 0;
         n->expire_frame = 0;
         n->expire_time = 0;
         n->expire_spawnseq = 0;
@@ -579,8 +598,11 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
 
 // Can be either by {seq + itime} for predicted projectiles, or by {itime} for
 // server projectiles.
-static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity ent, float dmg) {
-    if (vlen(PM_Org() - ent.origin) > dmg * 3)  // Fine tune this..
+static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity ent, float dmg,
+                                      vector src = '0 0 0') {
+    if (src == '0 0 0')
+        src = ent.origin;
+    if (vlen(PM_Org() - src) > dmg * 3)  // Fine tune this..
         return 0;
 
     PM_Nudge* n = find_nudge_slot();
@@ -589,7 +611,7 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
 
     n->type = NT_BLAST;
     n->blast.type = KNOCK_RADIUS;
-    n->blast.src = ent.origin;   // we end up mostly using the ent here
+    n->blast.src = src;   // the ent's own position unless the server told us better
     n->blast.base = dmg;
     n->blast.flags = KF_BOTH_PLAYER;   // assumes everything is from a player for now
     if (ent.owner == pengine.player_ent)
@@ -610,6 +632,8 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     n->src_no = ent.entnum;
     n->src_cseq = ent.created_seq;
     n->src_fseq = ent.fire_seq;
+    if (!ent.entnum && ent.owner == pengine.player_ent)
+        n->fire_clk = ent.fire_cmd_time;
 
     ent.nudge = n;
     ent.removefunc = PM_RemoveSelfNudges;
@@ -815,7 +839,17 @@ void PM_AddSimExplosion(float itime, entity ent) {
         }
     }
 
-    PM_AddNudgeExplosion(nat, seq, itime, ent, dmg);
+    // Our simulation of the flight cannot hit networked entities, so a rocket
+    // the server stopped against a player or a brush model flew on in our copy
+    // and our blast is measured from further down the path.  Point-blank that
+    // is most of the push: the last trace had the two sources eleven units
+    // apart and the velocities ninety-five apart.  When the server's copy
+    // reaches us it brings the point it actually went off at; take it.
+    vector src = '0 0 0';
+    if (ent.entnum && ent.knock_org)
+        src = ent.knock_org;
+
+    PM_AddNudgeExplosion(nat, seq, itime, ent, dmg, src);
 }
 
 float MatchNudge(PM_Nudge* n, float seq, float sitime, float eitime, float slack = 0) {

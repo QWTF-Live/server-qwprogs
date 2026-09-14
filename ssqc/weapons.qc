@@ -1209,6 +1209,7 @@ float AntilagKnock(entity e, float dmg) {
     else
         e.forward_knock = e.fire_cmd_time;   // on the fire command itself
     knock_e.forward_knock = e.forward_knock;
+    e.knock_org = e.origin;   // before the visual pullback below
 
     rj_trace("S: impact t=%.3f org=%v ttime=%.1fms due=%.4f fire=%.4f fwd=%.0fms\n",
              time, e.origin, ttime * 1000, e.forward_knock, e.fire_cmd_time, e.antilag_ms);

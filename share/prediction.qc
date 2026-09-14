@@ -64,6 +64,13 @@ enumflags {
 };
 
 .float forward_knock;
+// Where the server's copy of this projectile actually went off.  The client
+// simulates the flight itself and its trace does not hit networked entities
+// (share/physics.qc), so a projectile the server stopped against a player or a
+// brush model carries on in our copy and the blast is measured from the wrong
+// place.  Sent with the push time so the copy that supersedes our prediction
+// can push from the real point.
+.vector knock_org;
 // Command clock of the firing command (server: warped `time` at fire; client:
 // pstate_pred.server_time at the fire frame -- the same number).  The
 // shooter's own push from this projectile is due at fire_cmd_time plus the
@@ -912,8 +919,12 @@ void EntUpdate_Projectile(float isnew) {
             COMMD(Entity, aiment_num, aiment);
     }
 
-    if (sendflags & FOPP_FORWARDKNOCK)
+    if (sendflags & FOPP_FORWARDKNOCK) {
         COMM(Float, forward_knock);
+        COMM(Coord, knock_org[0]);
+        COMM(Coord, knock_org[1]);
+        COMM(Coord, knock_org[2]);
+    }
 
 #ifdef SSQC
     return TRUE;

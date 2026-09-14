@@ -29,7 +29,9 @@ enum {
 // A blast the world schedules, held until the command it was due on; see
 // weapons.qc.  Returns the held knock so the caller can fill in what its own
 // kind needs, or world when there is nothing to hold it against.
-float blast_due;        // command clock the blast was due on, 0 when unscheduled
+float blast_due;        // world time the blast was due at, 0 when unscheduled
+float blast_due_cmd;    // the same instant on the primer's command clock, 0 if unstamped
+entity blast_primer;    // who primed it, the one player that stamp belongs to
 float blast_base;       // the blast's damage before the radius falloff
 entity Knock_Defer(entity targ, vector src, float kind);
 // Engine-provided (fteqw fork): the client's own clock stamp and input frame
@@ -797,6 +799,7 @@ float FO_FlashDimension;
 // precise grenades
 .entity grenade_timer;
 .float last_throw;
+.float prime_cmd_skew;           // primetimer: command clock minus real time when it was primed
 .float last_prime;
 .float conc_amp;
 .float conc_finished;

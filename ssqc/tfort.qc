@@ -698,8 +698,10 @@ void (entity timer) FO_SpawnThrownGrenade = {
     stg_table_entry* ste = &stg_table[gtype - GREN_FIRST];
 
     proj.fpp.gren_type = gtype;
-    if (!ste->no_expiry)
+    if (!ste->no_expiry) {
         proj.fpp.expires_at = timer.heat;
+        proj.fpp.expires_cmd = timer.heat + timer.prime_cmd_skew;
+    }
     proj.skin = gdesc->skin;
     proj.touch = ste->touch;
     proj.think = ste->think;
@@ -791,6 +793,13 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
         tGrenade.impulse = TF_GRENADE_2;
 
     float time_base = max(remote_time(), self.last_throw);
+    // The same instant named on this player's own command clock, so their
+    // prediction and ours pick the same command out of the fuse without
+    // either having to convert it.  Taken here, where both clocks are in
+    // hand, rather than left for each side to work out later.
+    float cmd_skew = (self.cmd_clock && cmd_real_time) ? self.cmd_clock - cmd_real_time : 0;
+    tGrenade.prime_cmd_skew = cmd_skew;
+
     tGrenade.nextthink = time_base + 0.8;
     if (gdesc->id == GREN_CALTROP)
         tGrenade.heat = time_base + 0.5 + 0.5;

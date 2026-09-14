@@ -770,8 +770,16 @@ void EntUpdate_Projectile(float isnew) {
 
     if (sendflags & FOPP_AUX)
         COMM(Short, fpp.aux);
-    if (sendflags & FOPP_EXPIRY)
+    if (sendflags & FOPP_EXPIRY) {
         COMM(Float, fpp.expires_at);
+        // Stamped rather than converted.  Which command a fuse lands on is a
+        // discrete choice, so an offset applied twice -- once here from a
+        // copy that is a round trip stale, once on the server from the live
+        // value -- is not a small error near a frame edge, it is a whole
+        // frame.  The primer's own clock is a number both sides already hold
+        // identically, so for their own grenade neither side converts at all.
+        COMM(Float, fpp.expires_cmd);
+    }
 
     if (sendflags & FOPP_POS) {
         COMM(Coord, origin[0]);

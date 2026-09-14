@@ -1081,7 +1081,14 @@ entity Knock_Defer(entity targ, vector src, float kind) {
     k.knock_kind = kind;
     k.owner = targ;
     k.heat = blast_base;
-    k.forward_knock = blast_due + targ.cmd_clock_skew;
+    // Their own grenade came with the fuse already named on their command
+    // clock, so use it as it stands: the client reads the same number and
+    // neither of us converts anything.  Anyone else's is stamped on the
+    // primer's clock, which is no use here, so move the world time across --
+    // the one case still exposed to the offset drifting between us.
+    k.forward_knock = (blast_due_cmd && targ == blast_primer)
+                      ? blast_due_cmd
+                      : blast_due + targ.cmd_clock_skew;
     k.knock_next = targ.pending_knock;
     targ.pending_knock = k;
     k.think = T_Knock_Expire;
@@ -1375,12 +1382,16 @@ void FO_GrenExplode(entity e) {
     // The fuse time the client predicted this explosion from, so both sides
     // hang the push on the same command.
     blast_due = e.fpp.expires_at;
+    blast_due_cmd = e.fpp.expires_cmd;
+    blast_primer = e.owner;
     blast_base = exp.dmg;
     if (exp.type == kRadiusDamage)
         T_RadiusDamage(self, self.owner, exp.dmg, world);
     else if (exp.type == kRadiusBounce)
         T_RadiusBounce(self, self.owner, exp.dmg, world);
     blast_due = 0;
+    blast_due_cmd = 0;
+    blast_primer = world;
 
     RenderExplosion(e.origin);
 }

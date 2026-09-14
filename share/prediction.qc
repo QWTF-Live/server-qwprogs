@@ -5,6 +5,11 @@
 // Below apply to both CSQC & SSQC ents
 .float antilag_ms;
 .float created_at;
+// The command that fired this, on the owner's own sequence.  Carried rather
+// than inferred: it is the only handle a predicted copy and the server's copy
+// of the same projectile genuinely share, and matching them is what keeps a
+// blast from being scheduled twice.
+.float fire_seq;
 
 string wp_version = "v1.1";
 
@@ -857,6 +862,7 @@ void EntUpdate_Projectile(float isnew) {
         COMM(Byte, fpp.index);
         COMM(Short, antilag_ms);
         COMM(Float, created_at);
+        COMM(Float, fire_seq);
         COMMD(Entity, owner_entnum, owner);
     }
 
@@ -1121,6 +1127,9 @@ entity FOProj_Create(int fpp_type) {
 void FOProj_Finalize(entity mis) {
     int fpp_type = mis.fpp.index;
 #ifdef SSQC
+    // Set here rather than at spawn, where the owner is not attached yet.
+    mis.fire_seq = mis.owner.cmd_sequence;
+
     // Only what can push someone: a nail has no explosion to schedule.
     if (FPP_IsGrenade(fpp_type) || fpp_type == FPP_ROCKET || fpp_type == FPP_INCENDIARY)
         Proj_StampViewers(mis);

@@ -1555,6 +1555,7 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
 
   proj.s_origin = proj.origin;
   proj.created_seq = pstate_pred.seq;
+  proj.fire_seq = pstate_pred.seq;   // what the server's copy will carry back
 
   // Trail starts at 0.05, we, split physics calcs longer than this.
   float sdt2 = max(static_dt - 0.05, 0);

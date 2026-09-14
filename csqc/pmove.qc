@@ -390,6 +390,7 @@ struct PM_Nudge {
     // out of PVS, a lost packet -- leaves the predicted nudge unmatched and
     // the push lands twice.
     float src_cseq;
+    float src_fseq;    // fire_seq of that projectile: the handle both copies share
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 
@@ -597,6 +598,7 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     n->src = ent;
     n->src_no = ent.entnum;
     n->src_cseq = ent.created_seq;
+    n->src_fseq = ent.fire_seq;
 
     ent.nudge = n;
     ent.removefunc = PM_RemoveSelfNudges;
@@ -615,7 +617,10 @@ static void PM_SupersedePredictedNudge(entity sent) {
         if (n->type != NT_BLAST || n->blast.type != KNOCK_RADIUS ||
             n->src_no != 0 || nudge_expired(n))
             continue;
-        if (n->src_cseq != sent.created_seq)
+        // Match on the fire command, which both copies carry.  created_seq is
+        // not that: a predicted copy takes it from the fire sequence and a
+        // networked one from whenever its update happened to be parsed.
+        if (!n->src_fseq || n->src_fseq != sent.fire_seq)
             continue;
         rj_trace("C: nudge-superseded cseq=%.0f nat=%s seq=%.0f itime=%.3f by fk=%.3f\n",
                  n->src_cseq, NAT_tos(n->nat), n->seq, n->itime, sent.forward_knock);

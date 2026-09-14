@@ -68,6 +68,14 @@ enumflags {
 .float s_time;
 .float has_cmd_base;    // this projectile carries a per-viewer explosion clock base
 
+// How far the command chain may wander from the world clock before a
+// correction is announced, and how many commands ahead that correction lands.
+// The lead has to clear everything the client has already predicted: it runs
+// about eight commands ahead of what we have acknowledged, and the round trip
+// is about the same again, so thirty-two leaves ample margin.
+const float CMD_CLOCK_TOL = 0.010;
+const float CMD_CLOCK_LEAD = 32;
+
 #ifdef SSQC
 // A clock for explosion prediction, one reading per player, taken when the
 // projectile is created and never taken again.
@@ -200,6 +208,8 @@ struct predict_tf_state {
         // Sits anywhere up to the clock's re-anchor threshold, so it is worth
         // tens of milliseconds and shows up as a knock landing frames early.
         float cmd_clock_skew;
+    float cmd_clock_fix;
+    float cmd_clock_fix_seq;
     } pmove;
 
 #ifdef CSQC
@@ -666,6 +676,8 @@ void TFL_RecvPredictState() {
         COMM_PM(Short, velocity[2]);
         COMM_PM(Float, cmd_stamp_clock);
         COMM_PM(Float, cmd_clock_skew);
+        COMM_PM(Float, cmd_clock_fix);
+        COMM_PM(Float, cmd_clock_fix_seq);
     }
 
     if (mask & FOWP_FILTER_ENTS) {

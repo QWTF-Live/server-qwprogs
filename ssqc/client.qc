@@ -2826,12 +2826,32 @@ static void CmdClock_Update() {
         return;
     }
     float clk = self.cmd_clock_last + input_timelength;
-    if (!self.cmd_clock_last || fabs(time - clk) > 0.05) {
-        clk = time;
-        self.cmd_clock_k += 1;   // count of (re)anchors, for the trace
+    if (!self.cmd_clock_last) {
+        clk = time;              // first command: start from the world clock
+        self.cmd_clock_k += 1;
+    } else if (self.cmd_clock_fix_seq && self.cmd_sequence >= self.cmd_clock_fix_seq) {
+        // A correction we announced earlier, arriving on the command we said it
+        // would.  The client was told before it generated this command, so it
+        // folds the same amount into the same place and the two chains stay
+        // identical.  Snapping the moment we noticed the drift would move
+        // commands the client had already predicted.
+        clk += self.cmd_clock_fix;
+        self.cmd_clock_fix = 0;
+        self.cmd_clock_fix_seq = 0;
+        self.cmd_clock_k += 1;
     }
     self.cmd_clock = clk;
     self.cmd_clock_last = clk;
+
+    // The chain is an estimate of the world clock, shared with the client.  It
+    // advances by each command's own length while the world advances by real
+    // time, so packet bursts walk it forward and sparse patches walk it back.
+    // Announce a correction when the walk gets too far out, to land well past
+    // anything the client has already predicted.
+    if (!self.cmd_clock_fix_seq && fabs(time - clk) > CMD_CLOCK_TOL) {
+        self.cmd_clock_fix = time - clk;
+        self.cmd_clock_fix_seq = self.cmd_sequence + CMD_CLOCK_LEAD;
+    }
 
     float sclk = self.cmd_stamp_clock + input_timelength;
     if (!self.cmd_stamp_clock || self.cmd_servertime <= 0 || fabs(self.cmd_servertime - sclk) > 0.05)
@@ -2848,7 +2868,9 @@ void () PlayerPreThink = {
         rj_trace("S: pt t=%.3f org=%v vel=%v og=%.0f\n",
                  time, self.origin, self.velocity, (float)!!(self.flags & FL_ONGROUND));
     if (self.rj_cmd_trace_until > time)
-        rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f clk=%.4f msec=%.2f anchors=%.0f\n", self.cmd_sequence, self.cmd_servertime, time, self.cmd_clock, input_timelength * 1000, self.cmd_clock_k);
+        rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f clk=%.4f msec=%.2f", self.cmd_sequence, self.cmd_servertime, time, self.cmd_clock, input_timelength * 1000);
+        rj_trace(" err=%+.1fms fix=%+.1fms@%.0f fixes=%.0f\n", (self.cmd_clock - time) * 1000,
+                 self.cmd_clock_fix * 1000, self.cmd_clock_fix_seq, self.cmd_clock_k);
 
     // Time, or an enemy close enough that the protection would be cover.
     // Enemy damage ends it too, from SpawnProtectedFrom.

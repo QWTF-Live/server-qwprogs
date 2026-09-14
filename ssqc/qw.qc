@@ -70,6 +70,8 @@ entity Knock_Defer(entity targ, vector src, float kind);
 .float cmd_stamp_clock;
 float cmd_real_time;             // real `time` while the warp is active, else 0
 .float cmd_clock_skew;           // cmd_clock - real time, sent so the client can place world-time events
+.float cmd_clock_fix;            // correction to fold into the chain, announced before it applies
+.float cmd_clock_fix_seq;        // the command it applies from, far enough ahead that the client has heard
 .float last_remote_time;         // For monoticity of remote_time()
 
 .void() client_think;            // client-time relative think

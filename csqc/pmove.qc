@@ -893,6 +893,15 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         if (!getinputstate(pm.seq))
             break;
 
+        // The chain is an estimate of the world clock, and the server corrects
+        // it as it wanders.  A correction is announced before the command it
+        // applies to, so we fold the same amount into the same place and our
+        // chain stays identical to theirs.
+        float step = input_timelength;
+        if (pstate_server.pmove.cmd_clock_fix_seq &&
+            pm.seq == pstate_server.pmove.cmd_clock_fix_seq)
+            step += pstate_server.pmove.cmd_clock_fix;
+
         pm.ent.pmove_flags &= ~PMF_JUMP_HELD;  // Auto-bunny.
         // We have to apply this on the leading edge since INPUT_FRAME
         // modifications do not occur until the frame is finalized.
@@ -905,14 +914,14 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
 
         if (!CVARF(fopm_nonudge) && pm.seq != clientcommandframe) {
             float slack = 0;
-            PM_ApplyNudges(ent, pm.seq, pm.interp_t, pm.interp_t + input_timelength, slack);
+            PM_ApplyNudges(ent, pm.seq, pm.interp_t, pm.interp_t + step, slack);
 
             if (pstate_pred.tfstate & TFSTATE_CONC) {
                 if (pointcontents(ent.origin) == CONTENT_WATER)
                     ent.flags |= FL_INWATER;  // pmove doesn't usually maintain this.
                                               //
                 if (!Conc_Update(&pstate_pred.conc_state, pm.ent,
-                        pm.interp_t + input_timelength, pm.interp_t)) {
+                        pm.interp_t + step, pm.interp_t)) {
                     if ((ent.pmove_flags & PMF_JUMP_HELD))
                         Conc_Jump(&pstate_pred.conc_state, ent);
                 }
@@ -946,7 +955,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
                        PM_GetWaterLevel(ent.origin, &wtype));
         }
         pm.seq++;
-        pm.interp_t += input_timelength;
+        pm.interp_t += step;
     }
 
     // Add in anything that was applied after (for low packet rate protocols)

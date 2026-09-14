@@ -420,6 +420,7 @@ static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors unt
 const static float RJ_ERR_NOTABLE = 0.25;
 const static float RJ_ERR_EVERY = 256;
 static float rj_err_n, rj_err_filt, rj_err_max, rj_err_max_scf;
+static float rj_unfired_seq;   // RJ_TRACE: last shot reported as never fired
 // RJ_TRACE: per-frame result of the most recent replay, i.e. what was shown for that frame.
 struct RJ_Shown { float seq; vector org, vel; };
 static const float RJ_NSHOWN = 64;
@@ -440,12 +441,21 @@ static float nudge_expired(PM_Nudge* n) {
     // not moved, the attack never happened and neither did the push.  The
     // projectile itself is no witness here: it can be out of our view, or gone
     // before it was ever sent.
+    // Only where a cooldown is a witness at all.  A hand grenade does not set
+    // one, so a bare "the server's attack_finished is behind this shot" retired
+    // every predicted grenade blast in the trace.  Ask instead whether our own
+    // prediction put the weapon on cooldown for this shot and the server's did
+    // not: silence from a weapon that was never going to speak proves nothing.
     if (n->fire_clk && !n->src_no && n->src_fseq &&
         pstate_server.seq >= n->src_fseq &&
+        pstate_pred.attack_finished > n->fire_clk &&
         pstate_server.attack_finished <= n->fire_clk) {
-        if (pm_final_pass)
-            rj_trace("C: unfired fseq=%.0f fire=%.4f af=%.4f acked=%.0f\n",
-                     n->src_fseq, n->fire_clk, pstate_server.attack_finished, (float)pstate_server.seq);
+        if (pm_final_pass && rj_unfired_seq != n->src_fseq) {
+            rj_unfired_seq = n->src_fseq;
+            rj_trace("C: unfired fseq=%.0f fire=%.4f af=%.4f/%.4f acked=%.0f\n",
+                     n->src_fseq, n->fire_clk, pstate_pred.attack_finished,
+                     pstate_server.attack_finished, (float)pstate_server.seq);
+        }
         return TRUE;
     }
 
@@ -1168,17 +1178,17 @@ static void PM_UpdateError() {
     if (servercommandframe < rj_trace_until_seq) {
         rj_err_n++;
         rj_err_filt += !!filtered;
-        if (vlen(raw) > rj_err_max) {
-            rj_err_max = vlen(raw);
-            rj_err_max_scf = servercommandframe;
-        }
-
         if (vlen(raw) > RJ_ERR_NOTABLE) {
             rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f/%.2f",
                      servercommandframe, clientcommandframe, vlen(err), err, filtered, vlen(raw));
             rj_trace(" sig=%.0f/%.0f lastnudge=%.0f acc=%.2f\n",
                      prior_sig, new_sig, pm.last_nudge, vlen(pm.error));
-        } else if (rj_err_n >= RJ_ERR_EVERY) {
+        } else if (vlen(raw) > rj_err_max) {
+            rj_err_max = vlen(raw);      // the largest we did not report
+            rj_err_max_scf = servercommandframe;
+        }
+
+        if (rj_err_n >= RJ_ERR_EVERY) {
             rj_trace("C: err-quiet n=%.0f filtered=%.0f max=%.2f@scf=%.0f\n",
                      rj_err_n, rj_err_filt, rj_err_max, rj_err_max_scf);
             rj_err_n = rj_err_filt = rj_err_max = rj_err_max_scf = 0;

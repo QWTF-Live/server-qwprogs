@@ -81,6 +81,9 @@ DEFCVAR_FLOAT(fo_phys_debug, 0);
 .entity groundentity;
 .float aiment_num;
 .float voided;
+// This projectile stopped on us, so its push is a crossing inside our own
+// command rather than a blast the server had to schedule ahead of one.
+.float hit_self;
 
 .float phys_sim_last;
 .float phys_sim_voided_at;
@@ -88,6 +91,17 @@ var float phys_sim_dt;
 
 float get_phys_time(entity);
 void PM_AddSimExplosion(float itime, entity ent);
+float PM_TraceSelf(entity e, vector from, vector to, float dt, float* frac);
+
+// The impact the traceline above cannot see, because our own bbox is not solid
+// to it.  Same two things the ordinary one does for a missile, without the
+// trace_ent it has no entity for.
+static void Phys_ImpactSelf(entity e, float dt) {
+    e.voided = TRUE;
+    e.hit_self = TRUE;   // scheduled like the crossing it is, not like a blast
+    if (!e.phys_sim_voided_at)
+        PM_AddSimExplosion(e.phys_time + dt, e);
+}
 
 static void Phys_Impact(entity e, float dt, float phys_flags) {
     other = trace_ent;
@@ -143,6 +157,26 @@ float Phys_Push(entity e, vector offset, float dt, float phys_flags) {
     // Note: Networked entities don't currently intersect on CSQC instantiation
     // of this, we fudge this in Phys_Impact from the server side.
     traceline(e.origin, e.origin + offset, trace_flags, e.owner);
+
+#ifdef CSQC
+    // Except ourselves.  A rocket that hits us is the direct hit whose
+    // knockback we actually have to predict, and it is the one collision where
+    // our copy of the world is as good as the server's -- so test it by hand
+    // rather than flying through and exploding behind our own back.
+    //
+    // Missiles only: a grenade bouncing off us is a simulation question of its
+    // own, and its blast point comes down the wire anyway.
+    if (e.movetype == MOVETYPE_FLYMISSILE) {
+        float sfrac;
+        if (PM_TraceSelf(e, e.origin, e.origin + offset, dt, &sfrac) &&
+            sfrac < trace_fraction) {
+            e.origin = e.origin + offset * sfrac;
+            setorigin(e, e.origin);
+            Phys_ImpactSelf(e, sfrac * dt);
+            return FALSE;
+        }
+    }
+#endif
 
     if ((phys_flags & PHYSF_FAIL_STARTSOLID) && trace_startsolid)
         return FALSE;

@@ -2874,6 +2874,17 @@ void () PlayerPreThink = {
     if (self.rj_trace_until > time)
         rj_trace("S: pt t=%.3f org=%v vel=%v og=%.0f\n",
                  time, self.origin, self.velocity, (float)!!(self.flags & FL_ONGROUND));
+    // A low-rate sample of how far the chain sits from the world clock, always
+    // on.  The dense per-command lines only run in bursts around firing, which
+    // is no use for watching drift, and a line per command is far too much from
+    // a client running at several hundred frames a second.
+    if (RealTime() >= self.cmd_clock_sample_at) {
+        self.cmd_clock_sample_at = RealTime() + 0.5;
+        rj_trace("S: clk seq=%.0f err=%+.1fms msec=%.2f fix=%+.1fms@%.0f fixes=%.0f\n",
+                 self.cmd_sequence, (self.cmd_clock - time) * 1000, input_timelength * 1000,
+                 self.cmd_clock_fix * 1000, self.cmd_clock_fix_seq, self.cmd_clock_k);
+    }
+
     if (self.rj_cmd_trace_until > time)
         rj_trace("S: cmd seq=%.0f st=%.3f t=%.3f clk=%.4f msec=%.2f", self.cmd_sequence, self.cmd_servertime, time, self.cmd_clock, input_timelength * 1000);
         rj_trace(" err=%+.1fms fix=%+.1fms@%.0f fixes=%.0f\n", (self.cmd_clock - time) * 1000,

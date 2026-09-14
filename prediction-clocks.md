@@ -15,54 +15,54 @@ trip later and the view lurches.
 
 Two things have to match.
 
-**Which command the push lands on.** This is a discrete choice, so there is no
-such thing as a small error in it. Being four milliseconds out is not four
-milliseconds of push in the wrong place, it is a whole command, which at typical
-speeds is around twelve units of position.
+**Which command the push lands on.** This is a discrete choice. Getting it wrong
+costs one command of velocity, so the damage scales with the frame length: about
+twelve units at 17 ms, under two at 2 ms. The odds of getting it wrong scale the
+other way, rising as frames get shorter, so the two effects largely cancel and a
+fast client is not worse off.
 
 **Which position the blast is measured from.** Range, line of sight, damage
 falloff and the push direction all read from the player's position. Measuring
 from two different positions gives two different pushes.
 
-The three clocks
-----------------
+The two clocks
+--------------
 
-### Command clock
+### The client frame clock
 
-Per player, server-side, built in `CmdClock_Update` (ssqc/client.qc). Each
-command's clock value is the previous one plus that command's `input_timelength`.
-It is re-anchored to real server time only when the two have drifted more than
-50 ms apart.
+Per player. Where a shot started, in position, angles and time together. It
+exists because the player acted on a frame corresponding to a past world
+instant, and reconstructing that frame is the whole of lag compensation. Built
+server-side in `CmdClock_Update` (ssqc/client.qc) by chaining each command's
+`input_timelength` onto the last; the client rebuilds the identical chain from
+the value echoed in its predict state, extended with the same frame lengths.
 
-The client rebuilds the identical chain: it takes the value echoed in its
-predict state for the last acknowledged command and extends it with the same
-frame lengths. Because both sides chain the same numbers, a given command has
-the same clock value on each, exactly. That is what makes it the right handle
-for anything tied to a command.
+Because both sides chain the same numbers, a command has the same clock value on
+each. That is what makes it the handle for anything tied to a command.
 
-It is not a world clock. In traces it sits tens of milliseconds away from real
-server time and wanders, which is discussed under [Why it wanders](#why-it-wanders).
+It is consumed on the server, at the moment a projectile is created, to turn the
+shooter's frame into an absolute instant. Nothing downstream is expressed in it.
 
-### Projectile physics clock
-
-Per projectile, and deliberately not shared. The server runs a projectile on
-real server time, which is why it can hand `phys_time` straight to the engine's
-`rewindworld`. The client runs its own projectiles on `interp_time()` so they
-collide in line with what the player is shown, and runs other players'
-projectiles further ahead still, by up to the ping, so they sit where they will
-be when they arrive. The comment on `get_phys_time` (csqc/weapon_predict.qc)
-says outright that this "will offset explosions in the short term".
-
-Its absolute value means something different on each side. The elapsed time a
-projectile has been in the air is the same quantity everywhere, and that is the
-only way this clock is allowed to cross to the others.
-
-### Absolute server time
+### The world clock
 
 Real time on the server, reachable as `RealTime()` or `cmd_real_time` inside the
-command warp. Every world event has an absolute instant, and that instant is the
-same fact for everybody. A grenade's fuse (`fpp.expires_at`) and a rocket's
-impact (`impact_phys_time`) are both stamped here.
+command warp. Every world event has an absolute instant and that instant is the
+same fact for everybody: a grenade's fuse (`fpp.expires_at`), a rocket's impact
+(`impact_phys_time`).
+
+### What is not a third clock
+
+A projectile's physics clock looks like one but is not. On the server it *is*
+world time, which is why it can be handed straight to `rewindworld`. On the
+client it is world time plus a display offset: `interp_time()` for your own
+projectiles, and up to a ping further ahead for other players', chosen so they
+collide where the player is being shown them. The comment on `get_phys_time`
+(csqc/weapon_predict.qc) says outright that this "will offset explosions in the
+short term".
+
+So its absolute value means something different on each side. Elapsed flight
+time is the same quantity everywhere, and that is the only way it may cross to
+the other clocks.
 
 How a push is scheduled
 -----------------------
@@ -82,15 +82,32 @@ after that frame's move.
 
 Three kinds are held:
 
-- `KK_SELF_PROJ` — the shooter's own push from their own projectile. The
-  original case, and the one that always agreed.
+- `KK_SELF_PROJ` — the shooter's own push from their own projectile.
 - `KK_BLAST` — one target's push from a world blast, a grenade or a rocket.
-- `KK_BOUNCE` — one target's conc launch. Held separately because a conc
-  assigns velocity outright rather than adding to it, so its direction is the
-  whole of the effect.
+- `KK_BOUNCE` — one target's conc launch, held separately because a conc assigns
+  velocity outright rather than adding to it, so its direction is the whole of
+  the effect.
 
 Health damage is not held. It lands where the blast found you. Only the push
 moves, which is what the client is predicting.
+
+### Schedule it past the chain's lead
+
+Holding can only ever delay a push. It cannot release one on a command that has
+already run, and that is the case that kept costing us. The chain sits a few
+milliseconds ahead of the world clock, so the command whose window covers the
+due time can run *before* the fuse actually goes off. The client, which predicts
+the fuse, schedules there regardless, and the server finds the push waiting one
+command too late.
+
+The trace caught it cleanly. The server released on command 2061 with the due
+time 13.11 ms inside it; frames were 13 ms, so its clock for 2060 was already
+0.11 ms past the due time and it would have released there had the push existed.
+
+So both sides add `KNOCK_LEAD` to the due time, landing it on a command neither
+has reached. They add the same amount, so they still agree on which command, and
+the push arrives a few milliseconds after the blast, which is under what anyone
+can perceive.
 
 ### Measure it from where the command left you
 
@@ -103,107 +120,72 @@ Neither looks anything up.
 
 For the shooter's own projectile the due time is `fire_cmd_time` plus the
 projectile's travel, computed in `AntilagKnock`. Both sides hold the fire
-command's clock identically, so nothing is converted and the two agree to a
-fraction of a unit. A projectile that reaches what it hit inside the frame it
-was fired lands on the fire command itself; the client mirrors the same
-threshold of one server frame.
+command's clock identically, so nothing is converted and the knocks come out
+matching to every digit the trace prints. A projectile that reaches what it hit
+inside the frame it was fired lands on the fire command itself; the client
+mirrors the same threshold of one server frame.
 
-For everyone else's blast the due time is on the victim's command clock, and
-the absolute instant has to be brought onto it. That crossing is the hard part.
-See the next section.
+For everyone else's blast, each projectile that can push someone takes one
+reading of every player's command clock when it is created
+(`Proj_StampViewers`, share/prediction.qc) and sends each player only their own,
+under `FOPP_CMDBASE`. Everything after that is elapsed time. Neither side
+converts an absolute instant, so neither can be caught holding a stale sample of
+an offset that moves.
 
-Why it wanders
---------------
+The chain against the world clock
+---------------------------------
 
-The command clock does not run fast. Measured within a single anchor epoch:
+The chain is not a world clock and does not try to be. The gap between them is
+mostly not error:
 
-| span | clock error |
-| --- | --- |
-| 405 commands over 13.20 s | −1.6 ms |
-| 292 commands over 9.16 s | −0.3 ms |
-| 90 commands over 10.32 s | −2.8 ms |
-| 131 commands over 2.42 s | **+16.1 ms** |
+- **A quantisation floor.** A command waits for the next server frame before it
+  runs, so the gap carries a sawtooth a server frame plus a command length wide.
+  Measured, the error sat at +1.3 ms with 12–13 ms commands and +5 ms with
+  16–17 ms commands, moving with the command length as the floor predicts.
+- **Not a rate error.** The client's own timestamp tracked real server time to
+  1.0 ms over 32.7 seconds, three thousandths of a percent.
 
-Three stretches of ten seconds or more hold to under 0.03 percent, then one
-gains 16 ms in under two and a half seconds. It is not a rate error and not the
-client's crystal. It wanders in bursts, because the chain advances by each
-command's own length while the server's clock advances once per frame. A burst
-of queued commands walks the offset forward, a sparse patch walks it back, and
-the 50 ms guard clamps the walk.
+`CmdClockTol` therefore sizes the correction threshold to the floor rather than
+naming a number, floored at 50 ms. Correcting inside the floor would chase frame
+boundaries and feed their jitter into the chain, which is the one thing the chain
+exists to keep out of the replay.
 
-So the offset between the command clock and absolute time is a random walk with
-a hard reset, not a drift. Two samples of it taken a round trip apart differ by
-a few milliseconds, and near a frame edge a few milliseconds is a whole command.
+When a correction is needed it is **announced before the command it applies to**,
+`CMD_CLOCK_LEAD` commands ahead, so the client folds the same amount into the
+same place and the two chains stay identical. Snapping the moment the server
+noticed would move commands the client had already predicted. Above
+`CMD_CLOCK_SNAP` the chain is not wandering, something stopped, and it snaps
+instead: after a gap that size there is nothing in flight to disagree about.
 
-Current mitigation, and why it is temporary
--------------------------------------------
-
-Each projectile that can push someone takes one reading of every player's
-command clock when it is created (`Proj_StampViewers`, share/prediction.qc) and
-sends each player only their own, under `FOPP_CMDBASE`. Everything after that is
-elapsed time: what is left of a fuse, or how long a rocket has been in the air.
-Neither side converts an absolute instant, so neither can be caught holding a
-stale sample of the offset.
-
-This is a workaround for the clock having a step in it, not part of the intended
-design. It has two known weaknesses:
-
-- A re-anchor during the projectile's life moves what the frozen reading means
-  in real terms, by up to 50 ms. Both sides stay in agreement, so prediction
-  stays exact, but the push can land noticeably after the explosion is drawn.
-- It costs a per-viewer array on every projectile that can knock, and it only
-  covers projectiles. Anything the server raises on its own falls back to
-  converting with the live offset.
-
-The intended design
--------------------
-
-The command clock's job is to work out when a player actually primed or fired,
-on their own timeline. That is lag compensation and it belongs server-side. Its
-output is an instant, and that instant is then stamped in absolute server time,
-once, for everyone including the player who caused it. Nothing downstream is
-expressed in anyone's command clock.
-
-For that to work the client has to turn an absolute instant into one of its own
-commands, and get the same answer the server does. That holds if and only if the
-two chains produce identical values for every command. Today they can differ,
-because the server snaps its chain at a moment the client has not heard about
-yet.
-
-So the keystone is **publishing chain corrections ahead of the commands they
-apply to**, in the form "from sequence N onward the chain shifts by this much",
-sent far enough in advance that the client always has it before it predicts
-those frames. The client leads by around eight commands and the round trip is
-about the same, so naming a sequence thirty or so ahead leaves ample margin. The
-server then commits to what it published rather than recomputing.
-
-With that in place:
-
-- The two chains are provably identical, so an absolute stamp converts the same
-  way on both sides.
-- The correction threshold can be tightened well below 50 ms, so the chain
-  tracks absolute time closely instead of wandering.
-- The per-viewer reading comes out, and explosions schedule against the absolute
-  expiry with nothing carried per projectile.
-
-This changes a clock that projectile fire timing and the replay windows already
-depend on, so it wants landing deliberately rather than folded into other work.
+The engine already detects a client whose claimed command time genuinely runs
+against real time. `SV_RunCmd` accumulates each client's msec, compares it
+against elapsed scaled by `sv_cheatpc`, warns, and drops them after two strikes.
 
 Measuring it
 ------------
 
-`localinfo pm_debug 1` turns on the prediction journal. For each command the
-server records where it left the player and what happened along the way, and
-sends it to that player, who holds the same record from its own prediction and
-reports divergences with the frames leading up to them. The client half is
-csqc/pmdebug.qc, the server half ssqc/pmdebug.qc.
+`localinfo pm_debug 1` turns on the prediction journal, on by default. For each
+command the server records where it left the player and what happened along the
+way and sends it to that player, who holds the same record from its own
+prediction and reports divergences with the frames leading up to them. The
+client half is csqc/pmdebug.qc, the server half ssqc/pmdebug.qc.
 
-Progress across the work described here, on comparable runs:
+Read the position column, not the count. The count measures how often the two
+sides disagree for a single frame; because the client re-predicts from the
+server's state every snapshot, a one-command velocity disagreement is corrected
+before it integrates into a move. The position column is what a player feels.
+
+Progress across the work described here:
 
 | | frames | missed | worst position |
 | --- | --- | --- | --- |
 | before | 1900 | 10 (0.5%) | 13.60 u |
-| after | 2131 | 2 (0.1%) | 0.01 u |
+| after the deferral and the stamp | 2131 | 2 (0.1%) | 0.01 u |
+| at 12–13 ms commands | 1888 | 4 (0.2%) | 0.01 u |
+
+Trials run as separate builds with fixed parameters rather than settings dialled
+on a live server, so a log is never recorded under a value nobody remembers
+setting. `KNOCK_LEAD` is printed on every release for that reason.
 
 Known gaps
 ----------

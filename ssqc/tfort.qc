@@ -663,6 +663,11 @@ stg_table_entry stg_table[] = {
 
 void (entity timer, float via) FO_SpawnThrownGrenade = {
     local entity user = timer.owner;
+    // Before the clears below take it.  A thrown grenade goes off at the same
+    // instant a held one would -- heat, which is last_prime + GREN_FUSE on the
+    // thrower's own clock -- so its blast can come off a command the same way.
+    float blast_due_cmd = user.last_prime ? user.last_prime + GREN_FUSE : 0;
+
     user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
     user.primed_gren_exp = 0;
     user.last_prime = 0;
@@ -702,7 +707,12 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
     }
     proj.angles = vectoangles(proj.velocity);
     proj.think = SUB_Null;
-    proj.nextthink = timer.heat;
+    // One frame of grace, so the command-driven blast gets first refusal: the
+    // chain reaches the due at the very instant this think would fire, and a
+    // think beats a command boundary every time without it.
+    proj.nextthink = timer.heat + SERVER_FRAME_DT;
+    proj.blast_cmd_due = blast_due_cmd;
+    user.held_gren = proj;
 
     int gtype = timer.fpp.gren_type;
     FO_GrenInfo* gdesc = FO_GrenDesc(gtype);

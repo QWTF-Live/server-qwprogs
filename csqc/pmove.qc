@@ -553,8 +553,9 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent) {
 
     if (nudge->trace_seq != pm.seq) {   // replays re-apply at the same seq; report once per seq
         nudge->trace_seq = pm.seq;
-        rj_trace("C: nudge seq=%.0f win=%.3f..%.3f itime=%.3f nat=%s",
-                 pm.seq, pm.interp_t, pm.interp_t + input_timelength, nudge->itime, NAT_tos(nudge->nat));
+        rj_trace("C: nudge seq=%.0f win=%.5f..%.5f itime=%.5f edge=%+.2fms nat=%s",
+                 pm.seq, pm.interp_t, pm.interp_t + input_timelength, nudge->itime,
+                 (pm.interp_t + input_timelength - nudge->itime) * 1000, NAT_tos(nudge->nat));
         rj_trace(" org=%v src=%v d=%.2f dmg=%.1f vel=%v knock=%v\n", ent.origin,
                  nudge->org, vlen(targ_org - nudge->org), dmg, pm.ent.velocity, knock);
         rj_trace_until_seq = pm.seq + 30;

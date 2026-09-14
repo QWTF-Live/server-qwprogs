@@ -167,9 +167,14 @@ static void PP_ReportPusherStop() {
     float lost = vlen(self.pp_vel_pre) - vlen(self.velocity);
     if (lost < 200 || self.pp_vel_pre == '0 0 0')
         return;
+    // Any pusher, not only a moving one.  A door that has finished moving is
+    // still a problem if the client's copy of it is a snapshot behind: both
+    // copies are stationary, in different places, and no amount of advance
+    // reasoning applies.  A run with a stop above the threshold and no line at
+    // all said this needed widening -- vel on the report says which case it is.
     entity e = findradius(self.origin, 128);
     while (e) {
-        if (e.movetype == MOVETYPE_PUSH && e.velocity != '0 0 0') {
+        if (e.movetype == MOVETYPE_PUSH) {
             rj_trace("S: pusher-stop seq=%.0f lost=%.0f org=%v vel=%v -> %v\n",
                      self.cmd_sequence, lost, self.origin, self.pp_vel_pre, self.velocity);
             rj_trace(" pusher=%s at=%v vel=%v shown=%v adv=%.0fms\n",
@@ -181,6 +186,12 @@ static void PP_ReportPusherStop() {
         }
         e = e.chain;
     }
+
+    // Nothing pusher-shaped nearby: say so, so a stop that is simply world
+    // geometry is not mistaken for a missing report.
+    rj_trace("S: hard-stop seq=%.0f lost=%.0f org=%v vel=%v -> %v og=%.0f\n",
+             self.cmd_sequence, lost, self.origin, self.pp_vel_pre, self.velocity,
+             (float)!!(self.flags & FL_ONGROUND));
 }
 
 void PP_PlayerPostThink() {

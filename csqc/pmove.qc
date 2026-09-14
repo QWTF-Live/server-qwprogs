@@ -1082,9 +1082,12 @@ static void PM_UpdateError() {
         pstate_server.server_time = pm_prev_update_time;
         have_active_nudges = TRUE;
     }
-    // Commands at or below the prior's own start are already integrated into it,
-    // so the new prediction replaying them is not a difference between the two.
-    nudge_sig_from = last.server_seq;
+    // Commands before the prior's own start are already integrated into it, so
+    // the new prediction replaying them is not a difference between the two.
+    // That start is the command the prior state was saved at, not the server
+    // frame it descends from; the two are several commands apart and using the
+    // latter counted every push the server had not acknowledged yet.
+    nudge_sig_from = last.seq - 1;
     PM_RunMovement(&last, clientcommandframe);
     float prior_sig = nudge_sig;
     pstate_server.seq = held_seq;
@@ -1114,14 +1117,14 @@ static void PM_UpdateError() {
     // not carry the same set, the difference between them is not a correction.
     float filtered = (pm.last_nudge == clientcommandframe - 1) ||
                      (prior_sig != new_sig);
+    err -= ent.origin;
+    vector raw = err;
     if (filtered)
         err = '0 0 0';
-    else
-        err -= ent.origin;
 
     if (servercommandframe < rj_trace_until_seq)
-        rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f",
-                 servercommandframe, clientcommandframe, vlen(err), err, filtered);
+        rj_trace("C: err scf=%.0f ccf=%.0f err=%.2f %v filtered=%.0f/%.2f",
+                 servercommandframe, clientcommandframe, vlen(err), err, filtered, vlen(raw));
         rj_trace(" sig=%.0f/%.0f lastnudge=%.0f acc=%.2f\n",
                  prior_sig, new_sig, pm.last_nudge, vlen(pm.error));
 

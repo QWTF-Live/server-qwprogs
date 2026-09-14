@@ -1347,7 +1347,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
         // from the world rather than the entity.
         if (pm.seq != clientcommandframe) {
             float wtype;
-            PMD_Record(pm.seq, ent.origin, ent.velocity,
+            PMD_Record(pm.seq, pm_moved_from, ent.origin, ent.velocity,
                        (ent.flags & FL_ONGROUND) ? 1 : 0,
                        PM_GetWaterLevel(ent.origin, &wtype));
         }

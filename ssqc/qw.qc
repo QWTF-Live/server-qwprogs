@@ -33,6 +33,7 @@ float blast_due;        // world time the blast was due at, 0 when unscheduled
 entity blast_proj;      // the projectile, which carries a base reading per viewer
 float blast_delay;      // how long after that reading the blast is due
 .float knock_cmd_due;   // pending knocks: the due whose command has yet to name itself
+.vector pmd_pre_org;    // pm_debug: the origin a command's move starts from
 float blast_base;       // the blast's damage before the radius falloff
 // Set by a caller whose damage is rolled but whose push must not be: TF_T_Damage
 // computes the shove from this instead, and clears it.  One use, like deathmsg.

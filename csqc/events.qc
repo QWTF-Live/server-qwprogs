@@ -421,14 +421,15 @@ void() CSQC_Parse_Event = {
             break;
         case MSG_PMDEBUG: {
             float pseq = readfloat();
-            vector porg, pvel;
+            vector ppre, porg, pvel;
+            ppre_x = readcoord(); ppre_y = readcoord(); ppre_z = readcoord();
             porg_x = readcoord(); porg_y = readcoord(); porg_z = readcoord();
             pvel_x = readcoord(); pvel_y = readcoord(); pvel_z = readcoord();
             float pog = readbyte(), pwl = readbyte(), pev = readfloat();
             vector pimp;
             pimp_x = readcoord(); pimp_y = readcoord(); pimp_z = readcoord();
             float pdmg = readfloat(), pgen = readfloat(), pmsec = readfloat();
-            PMD_ServerRecord(pseq, porg, pvel, pog, pwl, pev, pimp, pdmg, pgen, pmsec);
+            PMD_ServerRecord(pseq, ppre, porg, pvel, pog, pwl, pev, pimp, pdmg, pgen, pmsec);
             break;
         }
         case MSG_SOUND:

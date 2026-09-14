@@ -25,6 +25,7 @@ static const float PMD_NJOURNAL = 64;
 struct PMD_Entry {
     float used;   // a zeroed entry would otherwise answer for sequence 0
     float seq;
+    vector pre_org;   // where this command's move started
     vector org, vel;
     float onground, waterlevel;
     float buttons, msec;
@@ -85,7 +86,7 @@ void PMD_Knock(vector impulse, float dmg) {
     pmd_dmg = dmg;
 }
 
-void PMD_Record(float seq, vector org, vector vel, float onground, float waterlevel) {
+void PMD_Record(float seq, vector pre_org, vector org, vector vel, float onground, float waterlevel) {
     if (pmd_norecord) {
         pmd_events = 0;
         pmd_impulse = '0 0 0';
@@ -108,6 +109,7 @@ void PMD_Record(float seq, vector org, vector vel, float onground, float waterle
     PMD_Entry* e = &pmd_journal[seq % PMD_NJOURNAL];
     e->used = TRUE;
     e->seq = seq;
+    e->pre_org = pre_org;
     e->org = org;
     e->vel = vel;
     e->onground = onground;
@@ -151,7 +153,7 @@ void PMD_Reset() {
 }
 
 // One of the server's records has arrived.
-void PMD_ServerRecord(float seq, vector org, vector vel, float onground,
+void PMD_ServerRecord(float seq, vector pre_org, vector org, vector vel, float onground,
                       float waterlevel, float events, vector impulse, float dmg,
                       float spawn_gen, float msec) {
     PMD_Entry* e = &pmd_journal[seq % PMD_NJOURNAL];
@@ -231,6 +233,15 @@ void PMD_ServerRecord(float seq, vector org, vector vel, float onground,
            e->org, e->vel, (int)e->onground, (int)e->waterlevel, PMD_EventNames(e->events));
     printf("    sv org=%v vel=%v og=%i wl=%i ev=%s\n",
            org, vel, (int)onground, (int)waterlevel, PMD_EventNames(events));
+    // Where the move started against where it ended.  A divergence already
+    // present on the way in is carried state -- onground, groundentity, a
+    // previous frame's snap; one that appears only on the way out is this
+    // command's own trace resolving differently.
+    {
+        vector dpre = e->pre_org - pre_org;
+        printf("    pre cl=%v sv=%v dpre=%.3f %v\n",
+               e->pre_org, pre_org, vlen(dpre), dpre);
+    }
     if (fabs(dmsec) > 0.001)
         printf("    step cl=%.4fms sv=%.4fms d=%.4f\n", e->msec, msec, dmsec);
     if (e->impulse != '0 0 0' || impulse != '0 0 0')

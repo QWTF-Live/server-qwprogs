@@ -24,6 +24,8 @@ void PMD_Knock(entity p, vector impulse, float dmg) {
 
 void PMD_BeginCommand(entity p) {
     p.pmd_msec = input_timelength * 1000;   // the step this command is run over
+    p.pmd_pre_org = p.origin;   // where the move starts, so a divergence can be
+                                // placed before it or inside it
 }
 
 // From PlayerPostThink, after everything that command does.
@@ -49,6 +51,9 @@ void PMD_EndCommand(entity p) {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_PMDEBUG);
     WriteFloat(MSG_MULTICAST, p.cmd_sequence);
+    WriteCoord(MSG_MULTICAST, p.pmd_pre_org_x);
+    WriteCoord(MSG_MULTICAST, p.pmd_pre_org_y);
+    WriteCoord(MSG_MULTICAST, p.pmd_pre_org_z);
     WriteCoord(MSG_MULTICAST, p.origin_x);
     WriteCoord(MSG_MULTICAST, p.origin_y);
     WriteCoord(MSG_MULTICAST, p.origin_z);

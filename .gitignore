@@ -10,3 +10,6 @@ fteqcc64
 # vim swap files
 *.sw[a-p]
 *.swo
+
+# running notes, local reference only
+prediction.md

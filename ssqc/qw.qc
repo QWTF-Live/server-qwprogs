@@ -774,27 +774,6 @@ string login_salt;
 //Logging fields
 float gametime;
 float logfilehandle;
-
-// The name that handle was opened with, kept alive for as long as the engine
-// might look at it again.
-//
-// FTE holds the filename pointer for the life of the handle and reads it back
-// at close, when COM_WriteFile hashes it -- and a name built with strcat is a
-// temp string, recycled long before a match ends.  The stats writer opens at
-// match start and closes at match end, so by then the pointer is whatever the
-// temp pool has since put there: SIGSEGV in Hash_GetInsensitiveBucket, off the
-// end of PF_fclose_i, with the JSON already written.
-string logfilename;
-
-// Zone a name for the handle about to be opened, releasing the previous one.
-// Safe because every caller closes the old handle immediately before opening
-// the new one; the name outlives its handle rather than the other way round.
-string LogFile_Name(string name) {
-    if (logfilename)
-        strunzone(logfilename);
-    logfilename = strzone(name);
-    return logfilename;
-}
 float canlog;
 .float classtime;
 .float goalrunningtime;

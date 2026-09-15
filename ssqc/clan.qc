@@ -322,7 +322,7 @@ void () PreMatch_Think = {
 
                 str = strcat(mvd_name, ".json");
                 fclose(logfilehandle);
-                logfilehandle = fopen(LogFile_Name(str), FILE_WRITE);
+                logfilehandle = fopen(str, FILE_WRITE);
             }
         } else if (self.cnt2 == 1) {
             InitAllStatuses(world);

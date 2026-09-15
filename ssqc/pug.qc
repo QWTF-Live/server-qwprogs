@@ -165,22 +165,27 @@ static struct {
 // Flat because fteqcc has no 2D arrays: index is role * kPugNumClasses + pc,
 // with role 0 none, 1 attack, 2 defence.
 
+// row by pointer, not by value.  QuakeC has eight parameter slots
+// (MAX_PARMS) and a PugClassBalance is six floats, so passing one alongside
+// role and armor_slot filled the call exactly to the limit.  Built here that
+// is fine; built by the compiler the dats ship from it is not, and the
+// argument evaluation read an array with an uninitialised index.
 static void PugApplyRow(Team_Role* role, float armor_slot,
-                        PugClassBalance row) {
+                        PugClassBalance* row) {
     // Class 0 is the inert row an otherwise-empty override table carries, and
     // anything out of range would index past the role tables below.
-    if (row.pc < 1 || row.pc >= kPugNumClasses)
+    if (row->pc < 1 || row->pc >= kPugNumClasses)
         return;
 
-    if (row.gren1 >= 0)
-        role->gren1_limits[row.pc] = row.gren1;
-    if (row.gren2 >= 0)
-        role->gren2_limits[row.pc] = row.gren2;
-    if (row.class_limit >= 0)
-        role->class_limits[row.pc] = row.class_limit;
+    if (row->gren1 >= 0)
+        role->gren1_limits[row->pc] = row->gren1;
+    if (row->gren2 >= 0)
+        role->gren2_limits[row->pc] = row->gren2;
+    if (row->class_limit >= 0)
+        role->class_limits[row->pc] = row->class_limit;
 
-    pug.armor[armor_slot * kPugNumClasses + row.pc] = row.armor;
-    pug.rockets[armor_slot * kPugNumClasses + row.pc] = row.rockets;
+    pug.armor[armor_slot * kPugNumClasses + row->pc] = row->armor;
+    pug.rockets[armor_slot * kPugNumClasses + row->pc] = row->rockets;
 }
 
 void Pug_SetupBalance() {
@@ -203,16 +208,16 @@ void Pug_SetupBalance() {
     // Baseline into every role, so a class plays the same whichever side it
     // is on unless an override below says otherwise.
     for (i = 0; i < pug_balance.length; i++) {
-        PugApplyRow(&Role_None,    0, pug_balance[i]);
-        PugApplyRow(&Role_Attack,  1, pug_balance[i]);
-        PugApplyRow(&Role_Defence, 2, pug_balance[i]);
+        PugApplyRow(&Role_None,    0, &pug_balance[i]);
+        PugApplyRow(&Role_Attack,  1, &pug_balance[i]);
+        PugApplyRow(&Role_Defence, 2, &pug_balance[i]);
     }
 
     for (i = 0; i < pug_balance_o_override.length; i++)
-        PugApplyRow(&Role_Attack, 1, pug_balance_o_override[i]);
+        PugApplyRow(&Role_Attack, 1, &pug_balance_o_override[i]);
 
     for (i = 0; i < pug_balance_d_override.length; i++)
-        PugApplyRow(&Role_Defence, 2, pug_balance_d_override[i]);
+        PugApplyRow(&Role_Defence, 2, &pug_balance_d_override[i]);
 
     PC_PYRO_AIRBLAST_COOLDOWN = 10;
     PC_ENGINEER_GRENADE_TYPE_2_RANGE = 200;

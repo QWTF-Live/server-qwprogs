@@ -828,7 +828,13 @@ void TFL_RecvPredictState() {
 
     if (mask & FOWP_TFSTATE) {
         COMM(Float, tfstate);
-        COMM(Short, csqc_maxspeed);
+        // Not a Short.  TeamFortress_SetSpeed halves for tranq and for a slow
+        // goal and scales by leg damage in tenths, so an odd intermediate
+        // lands on a half: a tranquilised hwguy with one leg hit is 103.5, a
+        // slowed scout 202.5.  Truncating that put the client's movement cap
+        // half a unit under the server's, on the one value this whole
+        // subsystem exists to keep the two agreeing about.
+        COMM(Float, csqc_maxspeed);
     }
 
     if (mask & FOWP_LASTPRIME) {
@@ -843,7 +849,11 @@ void TFL_RecvPredictState() {
     }
 
     if (mask & FOWP_CONCFINISH) {
-        COMM(Byte, conc_amp);
+        // base_amp * the class multiplier: 1.5 for a scout, 0.75 for a hwguy,
+        // and base_amp is the foc_amp localinfo.  So it is fractional at the
+        // default (110 * 0.75 = 82.5) and leaves a byte entirely once foc_amp
+        // is raised past 170.
+        COMM(Float, conc_amp);
         COMM(Float, conc_finished);
         COMM(Float, conc_cap_time);
     }

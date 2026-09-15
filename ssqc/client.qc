@@ -2193,7 +2193,9 @@ void () PutClientInServer = {
     te = find(world, classname, "primetimer");
     while (te != world) {
         if (te.owner == self) {
-            dremove(te);
+            // Not a bare removal: this left grenade_timer pointing at the
+            // removed timer, and last_prime set, for the new life to find.
+            FO_RetireGrenTimer(te);
             had_primetimer = TRUE;
         }
         te = find(te, classname, "primetimer");

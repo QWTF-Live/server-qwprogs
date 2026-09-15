@@ -56,16 +56,21 @@ void RemovePrimedGrenades(entity player) {
     ents = find_list(classname, "primetimer", EV_STRING, count);
     for (int i = 0; i < count; i++)
         if (ents[i].owner == player) {
-            dremove(ents[i]);
+            FO_RetireGrenTimer(ents[i]);
             removed = TRUE;
         }
 
-    player.tfstate &= ~(TFSTATE_GREN1_PRIMED | TFSTATE_GREN2_PRIMED);
+    // The whole mask, not the two primed bits.  GRENTHROWING outlived this
+    // sweep, and it is a refusal, not a state: TeamFortress_ThrowGrenade and
+    // PlayerGren_Apply both return the moment they see it, so a player who had
+    // latched a throw when the sweep ran could prime again and never throw
+    // again -- every grenade sat in their hand until the backstop blew it up,
+    // which is the one path that clears the mask.
+    player.tfstate &= ~TFSTATE_GREN_MASK_ALL;
 
     // Destroyed without detonating, so retire the overhead timer teammates
-    // are showing.  This is the death path (PlayerDie -> RemovePrimeTimers),
-    // and without it the count runs on over the corpse to an explosion that
-    // never comes.
+    // are showing.  Not only the death path: a class change and the teamplay
+    // strip both come through here with the player still alive and playing.
     if (removed)
         UpdateClientGrenadeThrown(player);
 }
@@ -699,6 +704,29 @@ static float GrenBlastGrace(entity owner) {
     return SERVER_FRAME_DT + bound(SERVER_FRAME_DT, owner.cmd_len, 0.034);
 }
 
+// Everything the player carries while a grenade is primed.  Both the throw and
+// the refusal in FO_ThrowGrenade drop all of it, so the two cannot clear
+// different halves: primed_gren_exp is what the client's HUD reads, and a throw
+// that clears tfstate without it leaves the grenade drawn in hand forever.
+void FO_ClearPrimedGren(entity user) {
+    user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
+    user.primed_gren_exp = 0;
+    user.last_prime = 0;
+    user.grenade_timer = world;
+}
+
+// Dropping a timer and retiring the prime that owns it are one operation.  They
+// used to be separate, and the routes that did only half of it left
+// grenade_timer pointing at a removed entity with PRIMED still set -- which is
+// how the throw path came to be handed a timer that is not a grenade any more.
+// Paths that cleared the player first land here with grenade_timer already
+// world, so this is a plain removal for them.
+void FO_RetireGrenTimer(entity timer) {
+    if (timer.owner.grenade_timer == timer)
+        FO_ClearPrimedGren(timer.owner);
+    dremove(timer);
+}
+
 void (entity timer, float via) FO_SpawnThrownGrenade = {
     local entity user = timer.owner;
     // Before the clears below take it.  A thrown grenade goes off at the same
@@ -706,10 +734,7 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
     // thrower's own clock -- so its blast can come off a command the same way.
     float blast_due_cmd = user.last_prime ? user.last_prime + GREN_FUSE : 0;
 
-    user.tfstate &= ~TFSTATE_GREN_MASK_ALL;
-    user.primed_gren_exp = 0;
-    user.last_prime = 0;
-    user.grenade_timer = world;
+    FO_ClearPrimedGren(user);
     user.last_throw = time;
 
     // Which command the throw lands on.  via=0 is the release itself, inside
@@ -1149,7 +1174,7 @@ void PlayerGren_Apply() {
     cmd_real_time = held_real;
     gren_release_have_org = FALSE;
     self = held;
-    dremove(t);
+    FO_RetireGrenTimer(t);
 }
 
 void () FO_GrenadeThink = {
@@ -1161,10 +1186,7 @@ void () FO_GrenadeThink = {
         // Dropped without exploding, so retire the overhead timer -- teammates
         // would otherwise keep counting down to an explosion that never comes.
         UpdateClientGrenadeThrown(user);
-        user.primed_gren_exp = 0;
-        user.last_prime = 0;
-        user.grenade_timer = world;
-        dremove(self);
+        FO_RetireGrenTimer(self);
         return;
     }
 
@@ -1176,7 +1198,7 @@ void () FO_GrenadeThink = {
     if (time < self.heat) {
         if (user.tfstate & TFSTATE_GRENTHROWING) {  // Latched throw case.
             FO_SpawnThrownGrenade(self, 1);   // latched during the prime window
-            dremove(self);
+            FO_RetireGrenTimer(self);
         } else {
             // When REWIND_GRENADES is enabled, we slightly time-warp the
             // spawned grenade to open up the timing window on being able to
@@ -1203,7 +1225,7 @@ void () FO_GrenadeThink = {
                      time, self.heat, (time - self.heat) * 1000);
         if (self.weapon != GREN_CALTROP)
             TeamFortress_ExplodePerson();
-        dremove(self);
+        FO_RetireGrenTimer(self);
     }
 }
 
@@ -1219,8 +1241,15 @@ void () FO_ThrowGrenade = {
     // Cleared as well as refused: a stale handle that stays put is retried on
     // every throw for the rest of the life.
     if (!timer || timer.classname != "primetimer" || !timer.fpp.gren_type) {
-        self.grenade_timer = world;
-        self.tfstate &= ~TFSTATE_GREN_MASK_ALL;
+        // Refusing the throw is right -- we have no idea what this is any more
+        // -- but the refusal has to look like a throw to the player, or the
+        // prime is never retired: tfstate alone left primed_gren_exp set, so
+        // the HUD went on drawing the grenade and the overhead timer went on
+        // counting, and the next prime was refused because PRIMED was stale.
+        PRINT_ONCE("gren throw on a dead timer: player[%s] cls[%s] type[%d], tell newby\n",
+                   self.netname, timer.classname, (float)timer.fpp.gren_type);
+        FO_ClearPrimedGren(self);
+        UpdateClientGrenadeThrown(self);
         return;
     }
 
@@ -1239,7 +1268,7 @@ void () FO_ThrowGrenade = {
         // In the second, buckle up.
     } else {
         FO_SpawnThrownGrenade(timer, 0);   // the release itself
-        dremove(timer);
+        FO_RetireGrenTimer(timer);
     }
 }
 

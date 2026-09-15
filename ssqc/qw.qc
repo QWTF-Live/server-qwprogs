@@ -809,6 +809,10 @@ float FO_FlashDimension;
 
 // precise grenades
 .entity grenade_timer;
+// Removing a prime timer and retiring the prime that owns it are one thing.
+// Defined in tfort.qc; declared here with the field, because every route that
+// drops a timer has to go through it.
+void FO_RetireGrenTimer(entity timer);
 .float last_throw;
 .float last_prime;
 .float conc_amp;

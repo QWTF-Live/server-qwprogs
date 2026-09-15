@@ -2229,8 +2229,10 @@ static void WP_GrenadeTimers() {
             if (CVARF(fo_grentimer_debug) & 2)
                 printf("gt update local: delta=%0.3f\n", server_exp - srv.raw_expiry());
 
-            // Previous local
-            if (!srv.test_flag(FL_GT_LOCAL))
+            // Previous local.  Behind the same switch as the line above it:
+            // this is a diagnostic, and a prime the server never retires
+            // repeats it into the player's console for the rest of the life.
+            if (!srv.test_flag(FL_GT_LOCAL) && (CVARF(fo_grentimer_debug) & 2))
                 printf("Warning: local grenade mismatch! %0.3f %0.3f\n", server_exp, srv.raw_expiry());
             srv.clear_flag(FL_GT_LOCAL);
             // Sound sync below not yet working well.

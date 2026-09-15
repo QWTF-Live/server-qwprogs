@@ -280,7 +280,10 @@ FO_ClassGrenades class_grenades[] = {
 // of the field and none of them has a row here.
 FO_GrenInfo* FO_GrenDesc(float gren_type) {
     if (gren_type < GREN_FIRST || gren_type > GREN_LAST_DESC) {
-        printf("proj bad gren_type [%d], tell newby\n", gren_type);
+        // Once.  Whatever hands this a bad type hands it the same bad type on
+        // every frame the projectile lives, and a per-call print buries the
+        // console it is trying to report into.
+        PRINT_ONCE("proj bad gren_type [%d], tell newby\n", gren_type);
         gren_type = GREN_FIRST;
     }
     return &fo_grenades[gren_type - GREN_FIRST];

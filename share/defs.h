@@ -510,7 +510,7 @@ struct Slot { int id; };
 #define TF_DISPLAYLOCATION          106 // Displays current location and angles (for developers)
 #define TF_SHOWTF                   107 // Displays server settings and mod version
 #define TF_SHOWLEGALCLASSES         108 // Show what classes are allowed by current map
-#define TF_SHOW_IDS                 109 // Show ids of connected players
+// unused                           109
 // unused                           110
 #define TF_CHANGECLASS              111 // Bring up class selection menu
 #define TF_CHANGEPC_SCOUT           112 // Change class to Scout
@@ -1553,7 +1553,6 @@ TFAlias client_aliases[] = {
     {"showscores",              TF_TEAM_SCORES},
     {"flaginfo",                FLAG_INFO},
     {"maphelp",                 TF_HELP_MAP},
-    {"showids",                 TF_SHOW_IDS},
     {"id",                      TF_ID},
     {"idteam",                  TF_ID_TEAM},
     {"idenemy",                 TF_ID_ENEMY},

@@ -64,8 +64,6 @@ void (float tno, float scoretoadd) TeamFortress_TeamIncreaseScore;
 float (entity pe, float tno, float skipclasscheck) TeamFortress_TeamSet_Options;
 float (float tno) TeamFortress_TeamGetLives;
 void () InitReverseCap;
-float () RejoinWithTfId;
-void () CreateTfIdAndJoin;
 entity (entity e)TeamFortress_GetPracticeSpawn;
 void () NextLevel;
 
@@ -206,7 +204,6 @@ void InitPrematch()
     localcmd ("serverinfo status Standby\n");
     
     clan_scores_dumped = 0;
-    game_locked = 0;
     cb_prematch = 1;
     local entity pm_message = spawn();
     pm_message.owner = world;
@@ -214,7 +211,6 @@ void InitPrematch()
     pm_message.think = PreMatch_Message;
     pm_message.nextthink = 1;
     
-    game_locked = CF_GetSetting("lg", "locked_game", "off");
     UpdateClientPrematch(self, !cb_prematch);
     UpdateClientMOTD(self);
 }
@@ -1394,19 +1390,6 @@ void () RemovePlayerOwnedEnts = {
         te = find(te, classname, "countdown_timer");
     }
     RemoveGrenades();
-    if (clanbattle && (self.tf_id != 0)) {
-        te = spawn();
-        te.classname = "ghost";
-        te.tf_id = self.tf_id;
-        te.team_no = self.team_no;
-        te.frags = self.frags;
-        te.real_frags = self.real_frags;
-        te.netname = self.netname;
-        te.playerclass = self.playerclass;
-        if (self.tfstate & TFSTATE_RANDOMPC) {
-            te.tfstate = TFSTATE_RANDOMPC;
-        }
-    }
     RemoveDeadBody(self);
 }
 
@@ -3319,9 +3302,9 @@ static entity ghost_stash;   // the player's own state while the ghost runs a co
 
 // Storage only: never linked, thought, touched, run or sent.
 //
-// Not "ghost": that classname already means a disconnected clan-battle team
-// member (see ClientDisconnect and the listing in clan.qc), and a stash is a
-// copy of a live player, so it carried their tf_id and team_no into that list.
+// Its own classname, not a generic one.  A stash is a whole copy of a live
+// player, so it answers every find() the player would; anything sweeping the
+// name it is wearing frees it under us.
 #define GHOST_CLASSNAME "predghost"
 
 static void Ghost_Neutralise(entity e) {
@@ -3590,16 +3573,6 @@ void () ClientConnect = {
         GotoNextMap();
     }
 
-    if (clanbattle && (self.has_disconnected != 1)) {
-        string st = infokey(self, "tf_id");
-        self.tf_id = stof(st);
-
-        if ((st != string_null) && (self.tf_id != 0))
-            RejoinWithTfId();
-        else
-            CreateTfIdAndJoin();
-    }
-
     InitAllStatuses(self);
     ClientsFlagUpdate(self);
     UpdateClientMOTD(self);
@@ -3614,50 +3587,6 @@ void () ClientConnect = {
     if (cb_prematch)
         sprint(self, PRINT_HIGH, "Currently in \sprematch\s time\n");
 };
-
-float () RejoinWithTfId = {
-    local entity te;
-    sprint(self, PRINT_HIGH, "Welcome back!\n");
-    te = find(world, classname, "ghost");
-    while (te) {
-        if (te.tf_id == self.tf_id) {
-            TeamFortress_TeamSet_Options(self, te.team_no, TRUE);
-            UpdateAllClientsTeamScores();
-
-            self.frags = te.frags;
-            self.real_frags = te.real_frags;
-            if (!(toggleflags & TFLAG_TEAMFRAGS) &&
-                !(toggleflags & TFLAG_FULLTEAMSCORE)) {
-                self.frags = self.real_frags;
-            }
-            self.playerclass = te.playerclass;
-            self.nextpc = te.playerclass;
-            self.tfstate = te.tfstate;
-            dremove(te);
-            te = world;
-            return 1;
-        } else
-            te = find(te, classname, "ghost");
-    }
-    return 0;
-}
-
-void () CreateTfIdAndJoin = {
-    local string st;
-    if (game_locked && (!cb_prematch)) {
-        sprint(self, PRINT_HIGH,
-               "Closed server. Clan battle in progress.\n");
-        KickCheater(self);
-        return;
-    }
-    last_id = last_id + 20 + random() * 10;
-    self.tf_id = rint(random() * 10 + last_id);
-    st = ftos(self.tf_id);
-    stuffcmd(self, "setinfo tf_id ");
-    stuffcmd(self, st);
-    stuffcmd(self, "\n");
-    sprint(self, PRINT_HIGH, "Your battle ID is ", st, "\n");
-}
 
 void (entity pl) ResetAndRespawnPlayer = {
     if(pl.team_no && pl.playerclass) {

@@ -518,12 +518,10 @@ float org_game;
 float v_break;
 float v_ready;
 .float allowvote;
-float game_locked;
 float team1frags;
 float team2frags;
 float team3frags;
 float team4frags;
-float last_id;
 float quadmode;
 float pugmode;      // ssqc/pug.qc
 float quad_winner;
@@ -558,7 +556,6 @@ float vote_total_votes;
 float vote_style;
 float vote_threshold;
 
-.float tf_id;
 
 float exec_map_cfgs;
 float spy_off;

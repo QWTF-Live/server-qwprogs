@@ -818,47 +818,6 @@ void () DumpClanScores = {
     }
 };
 
-void () TeamFortress_ShowIDs = {
-    local entity te;
-    local float got_one;
-    local string st;
-
-    if (self.team_no == 0) {
-        sprint(self, PRINT_HIGH, "You are not in a team\n");
-        return;
-    }
-    got_one = 0;
-    sprint(self, PRINT_HIGH, "Existing team member IDs:\n");
-
-    te = find(world, classname, "player");
-    while (te) {
-        if (te.team_no == self.team_no) {
-            got_one = 1;
-            st = ftos(te.tf_id);
-            sprint(self, PRINT_HIGH, te.netname, " : ", st, "\n");
-        }
-        te = find(te, classname, "player");
-    }
-
-    if (!got_one)
-        sprint(self, PRINT_HIGH, "None\n");
-    got_one = 0;
-    sprint(self, PRINT_HIGH, "Disconnected team member IDs:\n");
-
-    te = find(world, classname, "ghost");
-    while (te) {
-        if (te.team_no == self.team_no) {
-            got_one = 1;
-            st = ftos(te.tf_id);
-            sprint(self, 2, st, "\n");
-        }
-        te = find(te, classname, "ghost");
-    }
-
-    if (!got_one)
-        sprint(self, PRINT_HIGH, "None\n");
-};
-
 void () CenterPrint_Players_NotReady = {
     string players_not_ready;
     entity te;

@@ -19,7 +19,6 @@ void () DropGoalItems;
 
 void () TeamFortress_DisplayLegalClasses;
 
-void () TeamFortress_ShowIDs;
 void () TeamFortress_ShowTF;
 
 void TeamFortress_PrimeGrenade(float inp, float is_player);
@@ -2589,8 +2588,6 @@ void ExecImpulseCommand(int impulse, int arg = 0) {
             CF_Identify(self, 2); break;
         case TF_ID_ENEMY:
             CF_Identify(self, 3); break;
-        case TF_SHOW_IDS:
-            TeamFortress_ShowIDs(); break;
         case TF_DROPFLAG:
             DropGoalItems(); break;
         case TF_DISCARD:

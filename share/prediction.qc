@@ -911,6 +911,9 @@ void TFL_RecvPredictState() {
 #undef COMM
 #undef COMM_PM
 #undef GETF
+#ifndef SSQC
+#undef cmd_stamp_clock   // scoped like the rest: 20-odd csqc files follow this one
+#endif
 
 #ifdef SSQC
 #define COMM(_type, _field) Write##_type(MSG_ENTITY, self.##_field)

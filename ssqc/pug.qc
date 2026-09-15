@@ -1153,7 +1153,7 @@ static void Pug_StartRecording() {
 
     if (logfilehandle > 0)
         fclose(logfilehandle);
-    logfilehandle = fopen(strcat(mvd_name, ".json"), FILE_WRITE);
+    logfilehandle = fopen(LogFile_Name(strcat(mvd_name, ".json")), FILE_WRITE);
 }
 
 void Pug_StartCountdown() {

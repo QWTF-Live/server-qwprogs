@@ -65,11 +65,14 @@ void LogEventPlayerStart(entity player) {
         {KV_S, "type", "playerStart"},
         {KV_S, "player", getEntityNameOrLogin(player)},
         {KV_I, "playerClass", ftos(player.playerclass)},
+        {KV_I, "playerTeam", ftos(player.team_no)},
     };
 
     string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");
     logevent(event);
 }
+
+string JSON_Escape(string s);
 
 void () LogEventGameStart = {
     if (canlog == 0)
@@ -84,7 +87,15 @@ void () LogEventGameStart = {
         player = find (player, classname, "player");
     }
 
+    // version first, and on the opening event, because it says how to read
+    // everything after it.  A log without one predates the normalisation and
+    // still needs the reader's fixups; see TFL_LOG_VERSION in
+    // share/commondefs.qc, and note it is not tfl_ver -- that one is for
+    // interpreting a game, this one for reading a document.
+    //
+    // "time" was in here twice, identically -- a duplicate key in one object.
     KeyVal kvs[] = {
+        {KV_S, "version", TFL_LOG_VERSION},
         {KV_I, "time", gametime_string},
         {KV_S, "type", "gameStart"},
         {KV_S, "wall_time", ISOTimemillis()},
@@ -92,12 +103,11 @@ void () LogEventGameStart = {
         {KV_I, "numPlayers", ftos(numplayers)},
         {KV_I, "numTeams", ftos(number_of_teams)},
         {KV_S, "demo", cvar_string("server_demo")},
-        {KV_I, "time", gametime_string},
         {KV_S, "gameToken", game_token},
-        {KV_S, "server_name", infokey(world, "hostname")},
-        {KV_S, "server_address", cvar_string("sv_serverip")},
-        {KV_S, "region", infokey(world, "tfl_region")},
-        {KV_S, "shard", infokey(world, "shard")},
+        {KV_S, "server_name", JSON_Escape(infokey(world, "hostname"))},
+        {KV_S, "server_address", JSON_Escape(cvar_string("sv_serverip"))},
+        {KV_S, "region", JSON_Escape(infokey(world, "tfl_region"))},
+        {KV_S, "shard", JSON_Escape(infokey(world, "shard"))},
         {KV_S, "mvd", MvdName(TRUE)},
     };
 
@@ -132,7 +142,7 @@ void (entity player, float previous, float next, float timeplayed) LogEventChang
         {KV_S, "player", getEntityNameOrLogin(player)},
         {KV_I, "playerClass", ftos(previous)},
         {KV_I, "nextClass", ftos(next)},
-        {KV_I, "team", ftos(player.team_no)},
+        {KV_I, "playerTeam", ftos(player.team_no)},
         {KV_I, "timePlayed", ftos(timeplayed)},
     };
 
@@ -158,6 +168,34 @@ void (entity attacker, entity target, string afflictionType) LogAffliction = {
         else
             attacker.teamafflicted = attacker.teamafflicted + 1;
     }
+}
+
+// A building as a target.  It has no netname and no class, so the log said
+// target "" with targetClass 0 and a reader had to work out from the team and
+// a nearby event that this was somebody's sentry.  Name it, give it the
+// owner's class, and say whose it is.
+static string EventTargetName(entity target) {
+    if (target.classname == "building_sentrygun")
+        return "sentry";
+    if (target.classname == "building_dispenser")
+        return "dispenser";
+    return getEntityNameOrLogin(target);
+}
+
+// Only a building has one; empty for a player, rather than whatever real_owner
+// happens to hold on an entity that has no owner.
+static string EventTargetOwner(entity target) {
+    if (target.classname == "building_sentrygun" ||
+        target.classname == "building_dispenser")
+        return getEntityNameOrLogin(target.real_owner);
+    return "";
+}
+
+static float EventTargetClass(entity target) {
+    if (target.classname == "building_sentrygun" ||
+        target.classname == "building_dispenser")
+        return PC_ENGINEER;
+    return target.playerclass;
 }
 
 // The player behind an attack.  A sentry or a dispenser acts for whoever built
@@ -217,7 +255,16 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
             inflictorId = "superspike";
 
         if (inflictorId == "worldspawn") {
-            attackername = "world";
+            // The gas cloud is not an entity, so it passes world as the
+            // inflictor while the attacker is the spy who threw it:
+            //   TF_T_Damage(te, world, self.owner, 10, ...)
+            // Blanking the name on the inflictor alone threw that away and
+            // left the spy's team behind, which is what a reader then had to
+            // search a spy out of.  Only say world when nobody is behind it.
+            if (deathmsg == DMSG_GREN_GAS)
+                inflictorId = "gas";
+            if (ea.classname != "player")
+                attackername = "world";
         } else if (inflictorId == "building_sentrygun") {
             if (damageKind == "damageTeam")
                 return;
@@ -233,9 +280,10 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
         {KV_S, "player", attackername},
         {KV_I, "playerClass", ftos(ea.playerclass)},
         {KV_I, "playerTeam", ftos(ea.team_no)},
-        {KV_S, "target", getEntityNameOrLogin(target)},
-        {KV_I, "targetClass", ftos(target.playerclass)},
+        {KV_S, "target", EventTargetName(target)},
+        {KV_I, "targetClass", ftos(EventTargetClass(target))},
         {KV_I, "targetTeam", ftos(target.team_no)},
+        {KV_S, "targetOwner", EventTargetOwner(target)},
         {KV_S, "inflictor", inflictorId},
         {KV_I, "damage", ftos(truedam)},
     };
@@ -274,7 +322,7 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
 
     entity ea = EventAttacker(attacker);
     attackername = getEntityNameOrLogin(ea);
-    targetname = getEntityNameOrLogin(target);
+    targetname = EventTargetName(target);
     if (attacker == target)
         killKind = "self";
     else if (attacker.team_no == target.team_no)
@@ -293,8 +341,14 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
             inflictorId = "superspike";
         }
 
-        if (inflictorId == "worldspawn")
-            attackername = "world";
+        if (inflictorId == "worldspawn") {
+            // As in LogEventDamage: gas is a player's kill logged with world
+            // as the inflictor.
+            if (deathmsg == DMSG_GREN_GAS)
+                inflictorId = "gas";
+            if (ea.classname != "player")
+                attackername = "world";
+        }
         else if (inflictorId == "grenade" && inflictor.fpp.gren_type >= GREN_FIRST)
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
     }
@@ -307,8 +361,9 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
         {KV_I, "playerClass", ftos(ea.playerclass)},
         {KV_I, "playerTeam", ftos(ea.team_no)},
         {KV_S, "target", targetname},
-        {KV_I, "targetClass", ftos(target.playerclass)},
+        {KV_I, "targetClass", ftos(EventTargetClass(target))},
         {KV_I, "targetTeam", ftos(target.team_no)},
+        {KV_S, "targetOwner", EventTargetOwner(target)},
         {KV_S, "inflictor", inflictorId},
     };
 
@@ -394,6 +449,7 @@ void (entity attacker) LogEventAttack = {
         {KV_S, "type", "attack"},
         {KV_S, "player", getEntityNameOrLogin(attacker)},
         {KV_I, "playerClass", ftos(attacker.playerclass)},
+        {KV_I, "playerTeam", ftos(attacker.team_no)},
         {KV_S, "inflictor", GetWeaponName(FO_PlayerCurrentWeapon(attacker))},
     };
 

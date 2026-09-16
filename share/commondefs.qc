@@ -432,6 +432,14 @@ enum {
 #define TFL_VER_INFOKEY "tfl_ver"
 #define TFL_VER 1
 
+// Separate from the above, and do not conflate them.  tfl_ver rides serverinfo
+// and answers "how do I interpret this game", for a client or an mvd.  This one
+// rides the opening event of the stats log and answers "how do I read this
+// document", for the log parser -- which has read the key "version" since
+// before tfl_ver existed.  The two version different things and move
+// independently.
+#define TFL_LOG_VERSION "v1"
+
 #define TFL_VER_SHORTSCOREKEYS 1   // scoreboard stats moved to the short names
 
 // v1 name, then the name it replaced.

@@ -60,7 +60,7 @@ static string JSON_Array(int n, string* arr) {
 //
 // Output is pure printable ASCII, so it is always valid UTF-8 and therefore
 // always a valid JSON string; anything else becomes a \uXXXX escape.
-static string JSON_Escape(string s) {
+string JSON_Escape(string s) {
     float n = strlen(s);
 
     // Fast path: most names need nothing, and the loop below costs a tempstring

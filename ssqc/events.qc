@@ -174,6 +174,16 @@ void (entity attacker, entity target, string afflictionType) LogAffliction = {
     }
 }
 
+// Damage the map did.  A door, a plat, a goal or a teledeath is logged against
+// whoever triggered it -- walked into the trigger, took the goal -- but it is
+// the map that hurt them, and the triggering player's class and team describe
+// the wrong person entirely.  Say world, and let the class and team come off
+// world with it.
+static float EventIsEnvironmental(string inflictor_class) {
+    return inflictor_class == "info_tfgoal" || inflictor_class == "door" ||
+           inflictor_class == "plat" || inflictor_class == "teledeath";
+}
+
 // A building as a target.  It has no netname and no class, so the log said
 // target "" with targetClass 0 and a reader had to work out from the team and
 // a nearby event that this was somebody's sentry.  Name it, give it the
@@ -258,7 +268,10 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
         else if ((inflictor.classname == "spike") && (attacker.playerclass == 5))
             inflictorId = "superspike";
 
-        if (inflictorId == "worldspawn") {
+        if (EventIsEnvironmental(inflictorId)) {
+            ea = world;
+            attackername = "world";
+        } else if (inflictorId == "worldspawn") {
             // The gas cloud is not an entity, so it passes world as the
             // inflictor while the attacker is the spy who threw it:
             //   TF_T_Damage(te, world, self.owner, 10, ...)
@@ -345,7 +358,11 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
             inflictorId = "superspike";
         }
 
-        if (inflictorId == "worldspawn") {
+        if (EventIsEnvironmental(inflictorId)) {
+            ea = world;
+            attackername = "world";
+        }
+        else if (inflictorId == "worldspawn") {
             // As in LogEventDamage: gas is a player's kill logged with world
             // as the inflictor.
             if (deathmsg == DMSG_GREN_GAS)

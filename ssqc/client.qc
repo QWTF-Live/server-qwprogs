@@ -2000,11 +2000,14 @@ void (entity p) SetVoteParams = {
 
 void (entity player, string field, float fieldval) CheckSetInfoKey =
 {
-    float val;
-    val = infokeyf(player, field);
+    // Whole numbers.  Every one of these is drawn as an integer, and damage
+    // after armour is not: ftos gives nine significant digits, so "sdg" was
+    // carrying "987.600037" rather than "988" -- eleven bytes instead of four,
+    // on the key that changes most often in a fight.
+    fieldval = rint(fieldval);
 
     // TODO - this isn't needed on later versions of fte, we can spam set the value
-    if (val != fieldval)
+    if (infokeyf(player, field) != fieldval)
         forceinfokey(player, field, ftos(fieldval));
 };
 
@@ -2033,20 +2036,20 @@ void (entity player) UpdateScoreboardInfo = {
     if (apparent == 0)
         apparent = player.team_no;
 
-    CheckSetInfoKey(player, "tno", apparent);
+    CheckSetInfoKey(player, SBK_TEAM_APPARENT, apparent);
 
-    CheckSetInfoKey(player, "afflicted", player.afflicted - player.base_afflicted);
-    CheckSetInfoKey(player, "teamafflicted", player.teamafflicted - player.base_teamafflicted);
-    CheckSetInfoKey(player, "damagegiven", player.damagegiven - player.base_damagegiven);
-    CheckSetInfoKey(player, "damagetaken", player.damagetaken - player.base_damagetaken);
-    CheckSetInfoKey(player, "kills", player.kills - player.base_kills);
-    CheckSetInfoKey(player, "teamkills", player.sbteamkills - player.base_sbteamkills);
-    CheckSetInfoKey(player, "deaths", player.deaths - player.base_deaths);
-    CheckSetInfoKey(player, "caps", player.caps - player.base_caps);
-    CheckSetInfoKey(player, "touches", player.touches - player.base_touches);
-    CheckSetInfoKey(player, "team_no", player.team_no);
-    CheckSetInfoKey(player, "playerclass", player.playerclass);
-    CheckSetInfoKey(player, "ready", player.stat_flags & PLAYER_READY);
+    CheckSetInfoKey(player, SBK_AFFLICTED, player.afflicted - player.base_afflicted);
+    CheckSetInfoKey(player, SBK_TEAMAFFLICTED, player.teamafflicted - player.base_teamafflicted);
+    CheckSetInfoKey(player, SBK_DAMAGEGIVEN, player.damagegiven - player.base_damagegiven);
+    CheckSetInfoKey(player, SBK_DAMAGETAKEN, player.damagetaken - player.base_damagetaken);
+    CheckSetInfoKey(player, SBK_KILLS, player.kills - player.base_kills);
+    CheckSetInfoKey(player, SBK_TEAMKILLS, player.sbteamkills - player.base_sbteamkills);
+    CheckSetInfoKey(player, SBK_DEATHS, player.deaths - player.base_deaths);
+    CheckSetInfoKey(player, SBK_CAPS, player.caps - player.base_caps);
+    CheckSetInfoKey(player, SBK_TOUCHES, player.touches - player.base_touches);
+    CheckSetInfoKey(player, SBK_TEAM, player.team_no);
+    CheckSetInfoKey(player, SBK_CLASS, player.playerclass);
+    CheckSetInfoKey(player, SBK_READY, player.stat_flags & PLAYER_READY);
 };
 
 void (float all_dimensions) SetDimensions = {

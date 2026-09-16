@@ -409,3 +409,26 @@ enum {
 #define PERIODIC(_p) \
     static float _next; \
     if (time > _next && (_next = time + _p))
+
+// Scoreboard stats, published as player userinfo by UpdateScoreboardInfo and
+// read back by the scoreboard in status.qc.  Named here so the two sides
+// cannot drift.
+//
+// Three characters each, and an s prefix to stay clear of the client settings
+// that share this namespace (ad, cfpi, hg, owi, zf and friends).  The name is
+// most of the message: a change is sent as svc_setinfo with the key and the
+// value in full, to every client and into the mvd, so "teamafflicted" cost
+// thirteen bytes per recipient per change where "sta" costs three.
+#define SBK_TEAM_APPARENT "stn"   // team as others see it; a spy's disguise
+#define SBK_AFFLICTED     "saf"
+#define SBK_TEAMAFFLICTED "sta"
+#define SBK_DAMAGEGIVEN   "sdg"
+#define SBK_DAMAGETAKEN   "sdt"
+#define SBK_KILLS         "skl"
+#define SBK_TEAMKILLS     "stk"
+#define SBK_DEATHS        "sde"
+#define SBK_CAPS          "scp"
+#define SBK_TOUCHES       "sto"
+#define SBK_TEAM          "stm"
+#define SBK_CLASS         "spc"
+#define SBK_READY         "srd"

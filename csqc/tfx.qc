@@ -56,15 +56,15 @@ static float TeamNo(entity player) {
     // exist in CSQC.  Player indices are 0-based, entity numbers 1-based.
     float slot = player.entnum - 1;
 
-    // "tno" is forced by the server (UpdateScoreboardInfo) and republished
+    // SBK_TEAM_APPARENT is forced by the server (UpdateScoreboardInfo) and republished
     // every second, so it cannot drift.  bottomcolor can, because it is the
     // player's own colour: configs and binds re-set it, and the resync in
     // TeamFortress_TeamSet only notices on its next pass, so in between they
     // read as the wrong team -- wrong outline, and enemy grenade timers.
     //
-    // tno carries the *apparent* team, so a disguised spy still reads as the
+    // It carries the *apparent* team, so a disguised spy still reads as the
     // side they are pretending to be.
-    string tno = getplayerkeyvalue(slot, "tno");
+    string tno = getplayerkeyvalue(slot, SBK_TEAM_APPARENT);
     if (tno != "") {
         switch (stof(tno)) {
             case 1: return TeamBlue;

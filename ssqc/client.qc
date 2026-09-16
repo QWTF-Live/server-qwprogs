@@ -3321,23 +3321,13 @@ static void Ghost_Neutralise(entity e) {
     e.SendEntity = __NULL__;
 }
 
-// A stash we may copy onto.  An edict freed under us reads empty and copying
-// onto it is fatal; one already reused reads as whatever took it, and copying
-// onto that would be worse than the crash.  Either way we want a fresh one.
-static entity Ghost_Stash(entity e) {
-    if (e && e.classname == GHOST_CLASSNAME)
-        return e;
-    if (e)
-        PRINT_ONCE("ghost stash lost, cls[%s] -- tell newby\n", e.classname);
-    return spawn();
-}
-
 // End of every command applied alive.
 static void Ghost_Snapshot() {
     if (!tf_config.cmd_time || !self.cmd_acked_time ||
         self.deadflag || self.health <= 0 || self.playerclass == 0)
         return;
-    self.ghost = Ghost_Stash(self.ghost);
+    if (!self.ghost)
+        self.ghost = spawn();
     copyentity(self, self.ghost);
     Ghost_Neutralise(self.ghost);
     self.ghost_time = RealTime();
@@ -3347,8 +3337,8 @@ static void Ghost_Snapshot() {
 static float Ghost_Window() {
     if (!tf_config.cmd_time || !self.cmd_acked_time)
         return FALSE;
-    if (!self.ghost || self.ghost.classname != GHOST_CLASSNAME)
-        return FALSE;   // never taken, or gone from under us: run the command live
+    if (!self.ghost)
+        return FALSE;   // no snapshot taken yet: run the command live
     if (self.ghost_time > self.last_death)   // the ghost is from a later life
         return FALSE;
     float lockout = CF_GetSetting("gls", "ghost_lockout_snapshots", "1") * input_timelength;
@@ -3388,7 +3378,8 @@ static void Ghost_Carry(entity from, entity to) {
 // Run the current command as the ghost: the player entity takes on the ghost's
 // state for the duration, so the fire is owned by the real player.
 static void Ghost_RunCommand() {
-    ghost_stash = Ghost_Stash(ghost_stash);
+    if (!ghost_stash)
+        ghost_stash = spawn();
     copyentity(self, ghost_stash);
     copyentity(self.ghost, self);
     Ghost_Carry(ghost_stash, self);
@@ -3425,24 +3416,16 @@ static void Ghost_RunCommand() {
 
     self.dimension_move = held_move;
     self.flags &= ~FL_GODMODE;
-    // Re-checked rather than trusted: the replay above ran game code, and both
-    // stashes were reachable to it.
-    self.ghost = Ghost_Stash(self.ghost);
     copyentity(self, self.ghost);
     Ghost_Neutralise(self.ghost);
 
+    // The stash carries the player's own classname until the Neutralise below,
+    // so nothing here may be conditional on it holding GHOST_CLASSNAME.
     entity knocks = self.pending_knock;
-    if (ghost_stash.classname == GHOST_CLASSNAME) {
-        copyentity(ghost_stash, self);
-        self.pending_knock = knocks;
-        Ghost_Neutralise(ghost_stash);
-        setorigin(self, self.origin);   // relink after the copy
-    } else {
-        // Nothing to restore from.  Wearing the ghost for one more command is
-        // wrong, but copying from a free edict is fatal and inventing a
-        // recovery here would be guesswork.
-        PRINT_ONCE("ghost restore lost -- tell newby\n");
-    }
+    copyentity(ghost_stash, self);
+    self.pending_knock = knocks;
+    Ghost_Neutralise(ghost_stash);
+    setorigin(self, self.origin);   // relink after the copy
 }
 
 void PlayerGren_Apply();

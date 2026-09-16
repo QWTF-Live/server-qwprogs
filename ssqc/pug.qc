@@ -863,8 +863,7 @@ static void Pug_LogMatchEnd() {
     // otherwise come back with the old teams still locked in.
     TFL_ClearAutoTeam();
 
-    if (logfilehandle > 0)
-        fclose(logfilehandle);
+    Log_Close();
     canlog = 0;
 }
 
@@ -1164,8 +1163,7 @@ static void Pug_StartRecording() {
     GenerateMvdName();
     localcmd(sprintf("record %s\n", MvdName(FALSE)));
 
-    if (logfilehandle > 0)
-        fclose(logfilehandle);
+    Log_Close();
     logfilehandle = fopen(strcat(mvd_name, ".json"), FILE_WRITE);
 }
 

@@ -771,6 +771,16 @@ string login_salt;
 //Logging fields
 float gametime;
 float logfilehandle;
+
+// Closing it clears it.  Every site guarded on "> 0" but none reset the handle,
+// so the first close won and the next one along reported "PF_fclose: File is
+// not open" -- the match end closed it and the intermission think closed it
+// again five seconds later.
+void Log_Close() {
+    if (logfilehandle > 0)
+        fclose(logfilehandle);
+    logfilehandle = 0;
+}
 float canlog;
 .float classtime;
 .float goalrunningtime;

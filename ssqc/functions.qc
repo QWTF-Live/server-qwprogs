@@ -161,8 +161,7 @@ void () MapEndSequence = {
 	// localinfo survives a restart, so a re-run of the same map would come
 	// back with the old teams still locked in.
 	TFL_ClearAutoTeam();
-	if (logfilehandle > 0)
-		fclose(logfilehandle);
+	Log_Close();
 	canlog = 0;
 
 	maprestarttimer = spawn();

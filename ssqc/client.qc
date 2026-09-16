@@ -1155,8 +1155,7 @@ void () IntermissionThink = {
         return;
     if ((!self.button0 && !self.button1) && !self.button2)
         return;
-    if (logfilehandle > 0)
-        fclose(logfilehandle);
+    Log_Close();
     dprint("Intermission think\n");
     GotoNextMap();
 };

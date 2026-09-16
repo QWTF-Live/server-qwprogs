@@ -147,7 +147,13 @@ void () MapEndSequence = {
 	player = find (world, classname, "player");	
 	while (player) 
 	{
-		if (player.playerclass != 0 && self.has_disconnected != 1) {
+		// player, not self.  self at map end is whoever happened to be current
+		// -- the admin who typed the command, or a player in the intermission
+		// path -- so one entity's flag decided the record for everybody: either
+		// nobody was flushed at all, or players who had already logged a
+		// disconnect stint got a mapEnd one on top and their time counted
+		// twice.  Pug_LogMatchEnd has the same loop written correctly.
+		if (player.playerclass != 0 && player.has_disconnected != 1) {
 			local float timeplayed = gametime - player.classtime;
 			LogEventChangeClass(player, player.playerclass, 0, timeplayed, CC_MAP_END);
 			player.classtime = gametime;

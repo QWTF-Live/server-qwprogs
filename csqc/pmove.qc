@@ -207,6 +207,20 @@ DEFCVAR_FLOAT(pm_knock_other, -1);
 static float TriState(float v, float dflt) { return v < 0 ? dflt : (v ? 1 : 0); }
 
 float PM_WantPmove()  { return TriState(CVARF(pmove), CVARF(fo_pmove) ? 1 : 0); }
+
+// pmove 2: predict a rocket that hits us as the radius blast it used to be
+// predicted as.  Players who learned the jump before the self-collision landed
+// are timing against the old arc -- a push about thirty per cent short, from a
+// source our own simulation put somewhere past us, corrected upward mid-flight.
+//
+// This is deliberately the wrong quantity.  It is the old code path rather than
+// a new approximation of it: the collision simply does not run, so the rocket
+// flies through us exactly as it did before and the explosion is predicted
+// wherever our own copy of it ends up.  The server is unaffected -- it still
+// pushes the full direct hit -- so this trades a correct prediction for a
+// familiar one, and the correction it brings back is the one the whole
+// self-collision exists to remove.  For people to land on, not to keep.
+float PM_LegacySelfHit() { return CVARF(pmove) == 2; }
 float PM_KnockSelf()  { return TriState(CVARF(pm_knock_self), 1); }
 float PM_KnockOther() { return TriState(CVARF(pm_knock_other), 0); }
 
@@ -1175,6 +1189,8 @@ float MatchNudge(PM_Nudge* n, float seq, float sitime, float eitime, float slack
 static void PM_CheckMissileHits(entity ent, vector from_org, float sitime, float eitime) {
     if (!PM_Enabled() || !pengine.player_ent || !pm_final_pass)
         return;
+    if (PM_LegacySelfHit())
+        return;   // the rocket passes through us, as it did before
     if (eitime <= sitime)
         return;
 

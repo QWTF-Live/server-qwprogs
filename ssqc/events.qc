@@ -160,11 +160,22 @@ void (entity attacker, entity target, string afflictionType) LogAffliction = {
     }
 }
 
+// The player behind an attack.  A sentry or a dispenser acts for whoever built
+// it, and every field describing the attacker has to say so -- not just the
+// name.  The log resolved the name alone, and only for sentries, so sentry
+// damage and kills reported playerClass 0 (a building has no class) and a
+// dispenser going off reported the building itself.  The stat blocks below
+// already resolved both; this is the same rule in one place.
+static entity EventAttacker(entity attacker) {
+    if (attacker.classname == "building_sentrygun" ||
+        attacker.classname == "building_dispenser")
+        return attacker.real_owner;
+    return attacker;
+}
+
 void (entity attacker, entity target, entity inflictor, float damage, float truedam) LogEventDamage = {
     if (!cb_prematch) {
-        entity realattacker = attacker;
-        if (attacker.classname == "building_sentrygun" || attacker.classname == "building_dispenser")
-            realattacker = attacker.real_owner;
+        entity realattacker = EventAttacker(attacker);
 
         if (realattacker.team_no != target.team_no) {
             if (realattacker != target && realattacker != target.real_owner) {
@@ -185,7 +196,8 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
     string targetname;
     string inflictorId;
 
-    attackername = getEntityNameOrLogin(attacker);
+    entity ea = EventAttacker(attacker);
+    attackername = getEntityNameOrLogin(ea);
     targetname = getEntityNameOrLogin(target);
     if (attacker == target)
         damageKind = "self";
@@ -207,7 +219,6 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
         if (inflictorId == "worldspawn") {
             attackername = "world";
         } else if (inflictorId == "building_sentrygun") {
-            attackername = getEntityNameOrLogin(attacker.real_owner);
             if (damageKind == "damageTeam")
                 return;
         }
@@ -220,8 +231,8 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
         {KV_S, "type", "damageDone"},
         {KV_S, "kind", damageKind},
         {KV_S, "player", attackername},
-        {KV_I, "playerClass", ftos(attacker.playerclass)},
-        {KV_I, "playerTeam", ftos(attacker.team_no)},
+        {KV_I, "playerClass", ftos(ea.playerclass)},
+        {KV_I, "playerTeam", ftos(ea.team_no)},
         {KV_S, "target", getEntityNameOrLogin(target)},
         {KV_I, "targetClass", ftos(target.playerclass)},
         {KV_I, "targetTeam", ftos(target.team_no)},
@@ -235,9 +246,7 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
 
 void (entity attacker, entity target, entity inflictor) LogEventKill = {
     if (!cb_prematch) {
-        entity realattacker = attacker;
-        if (attacker.classname == "building_sentrygun" || attacker.classname == "building_dispenser")
-            realattacker = attacker.real_owner;
+        entity realattacker = EventAttacker(attacker);
 
         if (realattacker.classname == "player" && (target.classname == "player" || target.classname == "building_sentrygun")) {
             if (realattacker != target && realattacker != target.real_owner)
@@ -263,7 +272,8 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
     string targetname;
     string inflictorId;
 
-    attackername = getEntityNameOrLogin(attacker);
+    entity ea = EventAttacker(attacker);
+    attackername = getEntityNameOrLogin(ea);
     targetname = getEntityNameOrLogin(target);
     if (attacker == target)
         killKind = "self";
@@ -285,8 +295,6 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
 
         if (inflictorId == "worldspawn")
             attackername = "world";
-        else if (inflictorId == "building_sentrygun")
-            attackername = getEntityNameOrLogin(attacker.real_owner);
         else if (inflictorId == "grenade" && inflictor.fpp.gren_type >= GREN_FIRST)
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
     }
@@ -296,8 +304,8 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
         {KV_S, "type", "kill"},
         {KV_S, "kind", killKind},
         {KV_S, "player", attackername},
-        {KV_I, "playerClass", ftos(attacker.playerclass)},
-        {KV_I, "playerTeam", ftos(attacker.team_no)},
+        {KV_I, "playerClass", ftos(ea.playerclass)},
+        {KV_I, "playerTeam", ftos(ea.team_no)},
         {KV_S, "target", targetname},
         {KV_I, "targetClass", ftos(target.playerclass)},
         {KV_I, "targetTeam", ftos(target.team_no)},

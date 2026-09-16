@@ -121,6 +121,12 @@ static float CurrentRound() {
 
 static string JSON_RoundStats(float kills, float deaths, float dmgg,
                               float dmgt, float caps, float touches) {
+    // Whole numbers, as the scoreboard publishes them.  Damage after armour is
+    // fractional and ftos gives nine significant digits, so these read
+    // 987.600037 while the scoreboard beside them said 988.
+    dmgg = rint(dmgg);
+    dmgt = rint(dmgt);
+
     KeyVal kvs[] = {
         {KV_I, "kills", ftos(kills)},
         {KV_I, "deaths", ftos(deaths)},
@@ -395,9 +401,11 @@ void ReportMatchResult(int report_type) {
         if (p.all_time != ALL_TIME_COLOUR || p.team_no < 1 || p.team_no > 2)
             continue;
 
+        // Escaped like the scoreboard's copy of the same value.  These come
+        // from outside the server and a lone quote breaks the document.
         KeyVal pvs[] = {
-            {KV_S, "username", p.tfl_username},
-            {KV_S, "fo_token", infokey(p, "_fo_token")},
+            {KV_S, "username", JSON_Escape(p.tfl_username)},
+            {KV_S, "fo_token", JSON_Escape(infokey(p, "_fo_token"))},
             {KV_I, "pc", ftos(p.playerclass)},
         };
 
@@ -436,10 +444,10 @@ void ReportMatchResult(int report_type) {
     }
 
     KeyVal fvs[] = {
-        {KV_S, "server_name", infokey(world, "hostname")},
-        {KV_S, "server_address", cvar_string("sv_serverip")},
-        {KV_S, "region", infokey(world, "tfl_region")},
-        {KV_S, "shard", infokey(world, "shard")},
+        {KV_S, "server_name", JSON_Escape(infokey(world, "hostname"))},
+        {KV_S, "server_address", JSON_Escape(cvar_string("sv_serverip"))},
+        {KV_S, "region", JSON_Escape(infokey(world, "tfl_region"))},
+        {KV_S, "shard", JSON_Escape(infokey(world, "shard"))},
         {KV_S, "game_token", game_token},
         {KV_S, "report_type", rtype_string},
         {KV_S, "map", mapname},
@@ -451,8 +459,6 @@ void ReportMatchResult(int report_type) {
 
     string req = JSON_Wrap(fvs.length, fvs);
     dprint("Reporting to qwtf-live: ", req, "\n");
-
-    string req = JSON_Wrap(fvs.length, fvs);
     uri_post(GetEndpoint("report"), TFL_RESULT, "application/json", req);
 }
 

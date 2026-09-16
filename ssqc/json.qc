@@ -119,6 +119,13 @@ static float CurrentRound() {
     return (rounds == 1) ? 2 : 1;
 }
 
+// Times to the millisecond.  ftos gives nine significant digits and the tail of
+// those is float noise, not precision -- and rounding through the float first
+// is worse, since 261.109 is not representable and comes back 261.109985.
+static string JSON_Time(float t) {
+    return sprintf("%.3f", t);
+}
+
 static string JSON_RoundStats(float kills, float deaths, float dmgg,
                               float dmgt, float caps, float touches) {
     // Whole numbers, as the scoreboard publishes them.  Damage after armour is
@@ -334,10 +341,10 @@ void AnnounceEvent(string event, entity player = __NULL__) {
 
     KeyVal kvs[] = {
         {KV_S, "type", event},
-        {KV_I, "time", ftos(time)},
-        {KV_I, "round_start", ftos(round_start_time)},
-        {KV_S, "team1score", ftos(team1score)},
-        {KV_S, "team2score", ftos(team2score)}
+        {KV_I, "time", JSON_Time(time)},
+        {KV_I, "round_start", JSON_Time(round_start_time)},
+        {KV_I, "team1score", ftos(team1score)},
+        {KV_I, "team2score", ftos(team2score)}
      };
 
     string data = strcat("{ \"event\": ", JSON_Wrap(kvs.length, kvs));
@@ -404,7 +411,7 @@ void ReportMatchResult(int report_type) {
         // Escaped like the scoreboard's copy of the same value.  These come
         // from outside the server and a lone quote breaks the document.
         KeyVal pvs[] = {
-            {KV_S, "username", JSON_Escape(p.tfl_username)},
+            {KV_S, "login", JSON_Escape(p.tfl_username)},
             {KV_S, "fo_token", JSON_Escape(infokey(p, "_fo_token"))},
             {KV_I, "pc", ftos(p.playerclass)},
         };
@@ -453,8 +460,8 @@ void ReportMatchResult(int report_type) {
         {KV_S, "map", mapname},
         {KV_I, "teams", JSON_Array(2, teams)},
         {KV_S, "mvd", MvdName(TRUE)},
-        {KV_I, "round_start", ftos(round_start_time)},
-        {KV_I, "round_end", ftos(time)},
+        {KV_I, "round_start", JSON_Time(round_start_time)},
+        {KV_I, "round_end", JSON_Time(time)},
     };
 
     string req = JSON_Wrap(fvs.length, fvs);

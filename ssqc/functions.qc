@@ -149,7 +149,7 @@ void () MapEndSequence = {
 	{
 		if (player.playerclass != 0 && self.has_disconnected != 1) {
 			local float timeplayed = gametime - player.classtime;
-			LogEventChangeClass(player, player.playerclass, 0, timeplayed);
+			LogEventChangeClass(player, player.playerclass, 0, timeplayed, CC_MAP_END);
 			player.classtime = gametime;
 		}
 		player = find (player, classname, "player");

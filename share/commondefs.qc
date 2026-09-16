@@ -440,6 +440,16 @@ enum {
 // independently.
 #define TFL_LOG_VERSION "v1"
 
+// Why a changeClass record was written.  The record's real job is the
+// timePlayed interval, and what closed it changes how a reader should treat
+// that: a stint ended by a round or map boundary ran to exactly that boundary,
+// where one ended by a disconnect ran to whenever they went.  Without this a
+// reader has to approximate the boundary cases from the last event it saw.
+#define CC_CHANGE     "change"      // picked a different class
+#define CC_DISCONNECT "disconnect"  // left the game
+#define CC_MAP_END    "mapEnd"      // map ending, everyone closed out
+#define CC_MATCH_END  "matchEnd"    // match ending, everyone closed out
+
 #define TFL_VER_SHORTSCOREKEYS 1   // scoreboard stats moved to the short names
 
 // v1 name, then the name it replaced.

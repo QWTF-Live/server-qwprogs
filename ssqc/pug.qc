@@ -98,7 +98,7 @@ void LogEventRoundStart();
 void ReportMatchResult(int report_type);
 void TFL_ClearAutoTeam();
 void () UpdateAllClientsTeamScores;
-void (entity pl, float from, float to, float held) LogEventChangeClass;
+void (entity pl, float from, float to, float held, string reason) LogEventChangeClass;
 void () LogEventTeamScores;
 void () LogEventGameEnd;
 void () LogEventGameStart;
@@ -851,7 +851,7 @@ static void Pug_LogMatchEnd() {
     for (int i = 0; i < count; i++) {
         entity p = players[i];
         if (p.playerclass != 0 && p.has_disconnected != 1) {
-            LogEventChangeClass(p, p.playerclass, 0, gametime - p.classtime);
+            LogEventChangeClass(p, p.playerclass, 0, gametime - p.classtime, CC_MATCH_END);
             p.classtime = gametime;
         }
     }

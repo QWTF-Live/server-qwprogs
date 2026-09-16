@@ -809,7 +809,7 @@ void () DumpClanScores = {
 
         if (te.playerclass != 0) {
             local float timeplayed = gametime - te.classtime;
-            LogEventChangeClass(te, te.playerclass, 0, timeplayed);
+            LogEventChangeClass(te, te.playerclass, 0, timeplayed, CC_MATCH_END);
             te.classtime = gametime;
         }
 

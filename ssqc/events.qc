@@ -128,7 +128,7 @@ void LogEventRoundStart() {
     logevent(event);
 }
 
-void (entity player, float previous, float next, float timeplayed) LogEventChangeClass = {
+void (entity player, float previous, float next, float timeplayed, string reason) LogEventChangeClass = {
     if (canlog == 0)
         return;
     if (isPlayerValid(player) == FALSE)
@@ -144,6 +144,10 @@ void (entity player, float previous, float next, float timeplayed) LogEventChang
         {KV_I, "nextClass", ftos(next)},
         {KV_I, "playerTeam", ftos(player.team_no)},
         {KV_I, "timePlayed", ftos(timeplayed)},
+        // What closed the stint.  nextClass is 0 for all of these but change,
+        // which is honest -- there is no next class -- but says nothing about
+        // whether the interval ran to a boundary or to a disconnect.
+        {KV_S, "reason", reason},
     };
 
     string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");

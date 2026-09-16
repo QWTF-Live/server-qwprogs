@@ -2205,7 +2205,7 @@ void () PutClientInServer = {
         if(self.nextpc != self.playerclass) {
             if (self.playerclass != 0) {
                 local float timeplayed = gametime - self.classtime;
-                LogEventChangeClass(self, self.playerclass, self.nextpc, timeplayed);
+                LogEventChangeClass(self, self.playerclass, self.nextpc, timeplayed, CC_CHANGE);
                 self.classtime = gametime;
             }
             self.playerclass = self.nextpc;
@@ -3625,7 +3625,7 @@ void () ClientDisconnect = {
     st = ftos(fr);
 
     local float timeplayed = gametime - self.classtime;
-    LogEventChangeClass(self, self.playerclass, 0, timeplayed);
+    LogEventChangeClass(self, self.playerclass, 0, timeplayed, CC_DISCONNECT);
     self.classtime = gametime;
 
     bprint(PRINT_HIGH, self.netname, " left the game with ", st,

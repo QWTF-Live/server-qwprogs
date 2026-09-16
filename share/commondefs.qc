@@ -419,6 +419,22 @@ enum {
 // most of the message: a change is sent as svc_setinfo with the key and the
 // value in full, to every client and into the mvd, so "teamafflicted" cost
 // thirteen bytes per recipient per change where "sta" costs three.
+// tfl_ver: one number for everything that changes how a demo has to be read.
+//
+// Serverinfo is recorded, so a demo carries the tfl_ver of the server that
+// wrote it, and a reader -- our own scoreboard, or anything else parsing an
+// mvd -- compares against the version a given change landed in rather than
+// guessing.  Absent means older than 1.
+//
+// Bump TFL_VER for any change that alters what a reader has to do, and add a
+// TFL_VER_* naming the version it landed in, so the comparison reads as what
+// it is.  Never renumber one that has shipped.
+#define TFL_VER_INFOKEY "tfl_ver"
+#define TFL_VER 1
+
+#define TFL_VER_SHORTSCOREKEYS 1   // scoreboard stats moved to the short names
+
+// v1 name, then the name it replaced.
 #define SBK_TEAM_APPARENT "stn"   // team as others see it; a spy's disguise
 #define SBK_AFFLICTED     "saf"
 #define SBK_TEAMAFFLICTED "sta"
@@ -432,3 +448,24 @@ enum {
 #define SBK_TEAM          "stm"
 #define SBK_CLASS         "spc"
 #define SBK_READY         "srd"
+
+#define SBK0_TEAM_APPARENT "tno"
+#define SBK0_AFFLICTED     "afflicted"
+#define SBK0_TEAMAFFLICTED "teamafflicted"
+#define SBK0_DAMAGEGIVEN   "damagegiven"
+#define SBK0_DAMAGETAKEN   "damagetaken"
+#define SBK0_KILLS         "kills"
+#define SBK0_TEAMKILLS     "teamkills"
+#define SBK0_DEATHS        "deaths"
+#define SBK0_CAPS          "caps"
+#define SBK0_TOUCHES       "touches"
+#define SBK0_TEAM          "team_no"
+#define SBK0_CLASS         "playerclass"
+#define SBK0_READY         "ready"
+
+#ifndef SSQC
+// Reading side: pick by the tfl_ver the server or the demo reports.  Refreshed
+// per frame in main.qc.
+float sb_keys_legacy;
+#define SBKEY(_n) (sb_keys_legacy ? SBK0_##_n : SBK_##_n)
+#endif

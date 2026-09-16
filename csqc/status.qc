@@ -962,7 +962,7 @@ void drawShowScoresPanel(PanelID panelid, string text) {
             continue;
 
         int orig_team_no, sbl_team_no;
-        orig_team_no = sbl_team_no = getplayerkeyfloat(i, SBK_TEAM);
+        orig_team_no = sbl_team_no = getplayerkeyfloat(i, SBKEY(TEAM));
         switch (sbl_team_no) {
             case 1: case 2: case 3: case 4:
                 sbl_team_no -= 1;  // Maps to SC enum
@@ -990,20 +990,20 @@ void drawShowScoresPanel(PanelID panelid, string text) {
         sbl->name = name;
         sbl->ping = ping;
         sbl->pl = getplayerkeyfloat(i, INFOKEY_P_PACKETLOSS);
-        float class = getplayerkeyfloat(i, SBK_CLASS);
+        float class = getplayerkeyfloat(i, SBKEY(CLASS));
         sbl->classtext = ClassToString(class);
         sbl->score = getplayerkeyfloat(i, INFOKEY_P_FRAGS);
-        sbl->caps = getplayerkeyfloat(i, SBK_CAPS);
-        sbl->touches = getplayerkeyfloat(i, SBK_TOUCHES);
-        sbl->kills = getplayerkeyfloat(i, SBK_KILLS);
-        sbl->teamkills = getplayerkeyfloat(i, SBK_TEAMKILLS);
-        sbl->deaths = getplayerkeyfloat(i, SBK_DEATHS);
-        sbl->afflicted = getplayerkeyfloat(i, SBK_AFFLICTED);
-        sbl->teamafflicted = getplayerkeyfloat(i, SBK_TEAMAFFLICTED);
-        sbl->damagegiven = getplayerkeyfloat(i, SBK_DAMAGEGIVEN);
-        sbl->damagetaken = getplayerkeyfloat(i, SBK_DAMAGETAKEN);
+        sbl->caps = getplayerkeyfloat(i, SBKEY(CAPS));
+        sbl->touches = getplayerkeyfloat(i, SBKEY(TOUCHES));
+        sbl->kills = getplayerkeyfloat(i, SBKEY(KILLS));
+        sbl->teamkills = getplayerkeyfloat(i, SBKEY(TEAMKILLS));
+        sbl->deaths = getplayerkeyfloat(i, SBKEY(DEATHS));
+        sbl->afflicted = getplayerkeyfloat(i, SBKEY(AFFLICTED));
+        sbl->teamafflicted = getplayerkeyfloat(i, SBKEY(TEAMAFFLICTED));
+        sbl->damagegiven = getplayerkeyfloat(i, SBKEY(DAMAGEGIVEN));
+        sbl->damagetaken = getplayerkeyfloat(i, SBKEY(DAMAGETAKEN));
         sbl->team_no = orig_team_no;
-        sbl->ready = getplayerkeyfloat(i, SBK_READY);
+        sbl->ready = getplayerkeyfloat(i, SBKEY(READY));
         sbl->chat = getplayerkeyfloat(i, "chat");
 
         if (sbl_team_no == SCT_SPECS) {

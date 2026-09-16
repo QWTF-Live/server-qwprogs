@@ -64,7 +64,7 @@ static float TeamNo(entity player) {
     //
     // It carries the *apparent* team, so a disguised spy still reads as the
     // side they are pretending to be.
-    string tno = getplayerkeyvalue(slot, SBK_TEAM_APPARENT);
+    string tno = getplayerkeyvalue(slot, SBKEY(TEAM_APPARENT));
     if (tno != "") {
         switch (stof(tno)) {
             case 1: return TeamBlue;

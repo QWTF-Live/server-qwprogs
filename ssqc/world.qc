@@ -94,6 +94,10 @@ void WorldSpawnPost()
 }
 
 void () worldspawn = {
+    // The mod version a reader needs to interpret this demo.  Set before
+    // anything records, so it is in the serverinfo every demo carries.
+    localcmd("serverinfo ", TFL_VER_INFOKEY, " ", ftos(TFL_VER), "\n");
+
     round_end_time = 0;
 
     vote_started = -1;

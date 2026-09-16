@@ -1181,6 +1181,13 @@ void _Sync_ServerCommandFrame() {
     game_state.spawn_gen = getstatf(STAT_SPAWN_GEN);
 
     game_state.is_ceasefire = serverkeyfloat("pausestate");
+
+    // Which names the scoreboard stats are published under here.  A demo
+    // recorded before the rename reports no tfl_ver at all and carries the
+    // long ones, so it renders as it always did rather than as a row of
+    // zeroes.  Per frame rather than per scoreboard draw: the team colours
+    // read it too, and they are drawn whether or not the scoreboard is open.
+    sb_keys_legacy = serverkeyfloat(TFL_VER_INFOKEY, 0) < TFL_VER_SHORTSCOREKEYS;
     WP_ServerFrame();
 
     // Use an undocumented ezquake compat feature to figure out whether we

@@ -218,16 +218,16 @@ string () GetPlayersName
 void GenerateMvdName() {
     local float i;
     local string tmp;
-    local entity t;
     local string str;
 
-    str = "";
+    // Unconditional.  This used to key off a "prematch" entity existing, which
+    // only clan and quad spawn (clan.qc's prematch timer) -- pug runs its own
+    // state machine and never has one, so every pug demo and stats file came
+    // out as "_[map]_blue_vs_red" with the date missing and collided with the
+    // next game on the same map.  Both callers are a match starting with
+    // serverdemo on, so there is nothing for the entity to distinguish.
+    str = strftime(TRUE, "%Y-%m-%d-%H-%M-%S");
     i = 0;
-    t = find (world, classname, "prematch");
-    if (t != world)
-    {
-        str = strftime(TRUE, "%Y-%m-%d-%H-%M-%S");
-    }
     str = strcat(str, "_[");
     str = strcat(str, mapname);
     str = strcat(str, "]_");
@@ -321,7 +321,7 @@ void () PreMatch_Think = {
                 localcmd(sprintf("record %s\n", MvdName(FALSE)));
 
                 str = strcat(mvd_name, ".json");
-                fclose(logfilehandle);
+                Log_Close();
                 logfilehandle = fopen(str, FILE_WRITE);
             }
         } else if (self.cnt2 == 1) {
@@ -447,8 +447,7 @@ void () StopTimer =
 
     if (infokey(world, "serverdemo") != string_null) {
         localcmd("cancel\n");
-        if (logfilehandle > 0)
-            fclose(logfilehandle);
+        Log_Close();
     }
     if (cb_prematch) {
         t = find(world, classname, "prematch");

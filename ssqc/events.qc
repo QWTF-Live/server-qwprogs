@@ -415,7 +415,7 @@ void (entity player) LogEventGoal = {
     KeyVal kvs[] = {
         {KV_I, "time", gametime_string},
         {KV_S, "type", "goal"},
-        {KV_I, "team", ftos(player.team_no)},
+        {KV_I, "playerTeam", ftos(player.team_no)},
         {KV_S, "player", getEntityNameOrLogin(player)},
         {KV_I, "playerClass", ftos(player.playerclass)},
     };
@@ -434,7 +434,7 @@ void (entity player) LogEventPickupGoal = {
     KeyVal kvs[] = {
         {KV_I, "time", gametime_string},
         {KV_S, "type", "pickup"},
-        {KV_S, "team", ftos(player.team_no)},
+        {KV_I, "playerTeam", ftos(player.team_no)},
         {KV_S, "player", getEntityNameOrLogin(player)},
         {KV_I, "playerClass", ftos(player.playerclass)},
     };
@@ -451,7 +451,7 @@ void (entity player, float timecarried) LogEventFumble = {
     KeyVal kvs[] = {
         {KV_I, "time", gametime_string},
         {KV_S, "type", "fumble"},
-        {KV_I, "team", ftos(player.team_no)},
+        {KV_I, "playerTeam", ftos(player.team_no)},
         {KV_S, "player", getEntityNameOrLogin(player)},
         {KV_I, "playerClass", ftos(player.playerclass)},
         {KV_I, "timeCarried", ftos(timecarried)},

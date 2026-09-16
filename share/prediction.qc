@@ -14,7 +14,6 @@
 string wp_version = "v1.1";
 
 enumflags {
-    FOWP_CTIME,
     FOWP_IMPULSE,
     FOWP_TFSTATE,
     FOWP_LASTPRIME,
@@ -276,7 +275,6 @@ struct predict_tf_state {
     float special_next;
 
     float server_time;
-    float client_ping;
     float weaponframe;
 
     float attack_finished;
@@ -591,7 +589,7 @@ float* self_clip_fired(Slot slot) { return &pstate_pred.clip_fired[SlotIndex(slo
 .float predict_flags;
 
 static float Prediction_ChangedMask(entity player, entity src) {
-    float mask = FOWP_CTIME;
+    float mask = 0;
 
     // Maintained on src, because that is what the delta below transmits.  Each
     // player sets this in their own Predict_Update pass, so a spectator's pass
@@ -602,7 +600,6 @@ static float Prediction_ChangedMask(entity player, entity src) {
         src.predict_flags &= ~PF_SAVE_EXPLOSION;
 
     player.predict_state.server_time = time;
-    player.predict_state.client_ping = src.client_ping;
 
     if (player.predict_flags & (PF_PMOVE | PF_POS))
         mask |= FOWP_PMOVE;
@@ -773,10 +770,14 @@ void TFL_RecvPredictState() {
         COMM(Short, effects);
     }
 
-    if (mask & FOWP_CTIME) {
-        COMM(Float, server_time);
-        COMM(Short, client_ping);
-    }
+    // Sent every update, so said plainly rather than behind a mask bit that was
+    // always set.  The command clock belongs out here and not in the pmove
+    // block: a predicted projectile anchors its start on it and the server
+    // anchors its copy on the same number for everybody, so a client with pmove
+    // off saw a zero anchor and fell back to a time-based start the server was
+    // no longer using.
+    COMM(Float, server_time);
+    COMM_PM(Float, cmd_stamp_clock);
 
     if (mask & FOWP_PMOVE) {
         COMM_PM(Coord, origin[0]);
@@ -785,7 +786,8 @@ void TFL_RecvPredictState() {
         COMM_PM(Short, velocity[0]);
         COMM_PM(Short, velocity[1]);
         COMM_PM(Short, velocity[2]);
-        COMM_PM(Float, cmd_stamp_clock);
+        // cmd_stamp_clock is sent unconditionally above; the rest of these
+        // really are movement prediction and stay here.
         COMM_PM(Float, cmd_clock_skew);
         COMM_PM(Float, cmd_clock_fix);
         COMM_PM(Float, cmd_clock_fix_seq);

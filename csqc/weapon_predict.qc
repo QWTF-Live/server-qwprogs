@@ -224,8 +224,8 @@ void WPP_Status() {
 
     float avg, variance;
     fill_avg_ping(&avg, &variance);
-    printf(" inst_ping = %d client_ping = %d avg_ping = %d var = %d\n",
-            inst_ping_ms, pstate_server.client_ping, avg, variance);
+    printf(" inst_ping = %d avg_ping = %d var = %d\n",
+            inst_ping_ms, avg, variance);
     if (tf_config.min_ping_ms)
         printf(" client_delay_packets = %d\n", client_delay_packets);
     printf(" maxspeed = %d\n", pstate_server.csqc_maxspeed);
@@ -492,6 +492,11 @@ void UpdateMinPing() {
     DelayPacketState.minv = target;
     next_minv_update = next_ping_update + 1;  // Limit modulation
 }
+
+// Our own ping, straight from the engine.  The server reads the same key for
+// us (FO_UpdateClientPing) and used to send it back in the predict state; there
+// is no reason to spend the wire on a number we can already read.
+float WP_PingMs() { return inst_ping_ms; }
 
 void WP_UpdatePings() {
     inst_ping_ms = getplayerkeyfloat(player_localnum, INFOKEY_P_PING);

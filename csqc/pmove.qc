@@ -208,18 +208,19 @@ static float TriState(float v, float dflt) { return v < 0 ? dflt : (v ? 1 : 0); 
 
 float PM_WantPmove()  { return TriState(CVARF(pmove), CVARF(fo_pmove) ? 1 : 0); }
 
-// pmove 2: predict a rocket that hits us as the radius blast it used to be
-// predicted as.  Players who learned the jump before the self-collision landed
-// are timing against the old arc -- a push about thirty per cent short, from a
-// source our own simulation put somewhere past us, corrected upward mid-flight.
+// pmove 2: score a rocket that hits us through the radius falloff, the way it
+// was scored before KNOCK_DIRECT, for players timing against the old arc.
 //
-// This is deliberately the wrong quantity.  It is the old code path rather than
-// a new approximation of it: the collision simply does not run, so the rocket
-// flies through us exactly as it did before and the explosion is predicted
-// wherever our own copy of it ends up.  The server is unaffected -- it still
-// pushes the full direct hit -- so this trades a correct prediction for a
-// familiar one, and the correction it brings back is the one the whole
-// self-collision exists to remove.  For people to land on, not to keep.
+// Only the scoring.  The crossing still runs, so the blast keeps the position
+// and the instant we fixed -- what changes is 92 through the falloff instead of
+// a flat 102, about ten per cent short of what the server applies, corrected
+// upward mid-flight.
+//
+// Not the whole of the old behaviour: that also had the source wrong, because
+// our copy of the rocket flew past us to whatever was behind and the blast was
+// measured from there, which is where the thirty per cent came from.  knock_org
+// repairs the source from the server now and nothing here undoes that.  So this
+// is the old formula at the right place, not the old push.
 float PM_LegacySelfHit() { return CVARF(pmove) == 2; }
 float PM_KnockSelf()  { return TriState(CVARF(pm_knock_self), 1); }
 float PM_KnockOther() { return TriState(CVARF(pm_knock_other), 0); }
@@ -1036,7 +1037,7 @@ void PM_AddSimExplosion(float itime, entity ent) {
     // against that was thirty per cent short: mom 75 against 103, 77 against
     // 96, 76 against 112, with the source and the distance already agreeing.
     float ktype = KNOCK_RADIUS;
-    if (ent.hit_self) {
+    if (ent.hit_self && !PM_LegacySelfHit()) {
         ktype = KNOCK_DIRECT;
         dmg = KNOCK_DIRECT_DMG;
     }
@@ -1189,8 +1190,6 @@ float MatchNudge(PM_Nudge* n, float seq, float sitime, float eitime, float slack
 static void PM_CheckMissileHits(entity ent, vector from_org, float sitime, float eitime) {
     if (!PM_Enabled() || !pengine.player_ent || !pm_final_pass)
         return;
-    if (PM_LegacySelfHit())
-        return;   // the rocket passes through us, as it did before
     if (eitime <= sitime)
         return;
 

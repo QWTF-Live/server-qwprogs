@@ -529,8 +529,8 @@ void () LogEventTeamScores = {
         {KV_I, "numTeams", ftos(number_of_teams)},
         {KV_I, "team1Score", ftos(team1score)},
         {KV_I, "team2Score", ftos(team2score)},
-        {KV_I, "team3Score", ftos(team2score)},
-        {KV_I, "team4Score", ftos(team2score)},
+        {KV_I, "team3Score", ftos(team3score)},
+        {KV_I, "team4Score", ftos(team4score)},
     };
 
     string event = strcat(JSON_Wrap(kvs.length, kvs), ",\n");

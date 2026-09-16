@@ -881,6 +881,8 @@ static void Pug_EnterPhase(float state, float duration) {
     Pug_PublishClock();
 }
 
+static void Pug_ClearReady();
+
 void Pug_BeginRound(float round_no) {
     pug.round = round_no;
 
@@ -889,6 +891,12 @@ void Pug_BeginRound(float round_no) {
     round_over = 0;
     cease_fire = 0;
     cs_paused = 0;
+
+    // Ready means nothing once the round is running, and the scoreboard draws
+    // its R straight off the "ready" userinfo, which follows PLAYER_READY.
+    // Nothing cleared it, so every player kept the icon for the whole match --
+    // clan mode has ResetBreakAndReady for this and pug had no equivalent.
+    Pug_ClearReady();
 
     Pug_ResetWorld();
     Pug_ApplyRoles(round_no);
@@ -1181,6 +1189,14 @@ void Pug_StartCountdown() {
 
     bprint(2, "All players ready, starting match\n");
     localcmd("localinfo clown 0\n");   // Disable any clown settings.
+}
+
+static void Pug_ClearReady() {
+    int count;
+    entity* players = find_list(classname, "player", EV_STRING, count);
+    for (int i = 0; i < count; i++)
+        players[i].stat_flags &= ~PLAYER_READY;
+    pug.ready = 0;
 }
 
 // Returns TRUE when everyone is ready and the countdown has been started.

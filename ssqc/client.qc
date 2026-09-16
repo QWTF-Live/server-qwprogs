@@ -2505,6 +2505,16 @@ void () NextLevel = {
 };
 
 void () CheckRules = {
+    // Pug mode runs its own match clock -- Pug_Think against pug.deadline, set
+    // relative to when the round actually began -- and ends the match itself.
+    // The engine timelimit is absolute from map load, and Pug_BeginRound sets
+    // it for the scoreboard, so leaving this armed ended the level partway
+    // through round 1: the round began 261 seconds after the map did, so a ten
+    // minute timelimit fired 339 seconds in.  Quad and clan never saw it
+    // because they set localinfo clan on and take the branch below.
+    if (pugmode)
+        return;
+
     if (!clanbattle)
     {
         if ((timelimit && (time >= timelimit)))

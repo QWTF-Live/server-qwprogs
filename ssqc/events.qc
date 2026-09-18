@@ -174,6 +174,17 @@ void (entity attacker, entity target, string afflictionType) LogAffliction = {
     }
 }
 
+// Nobody we can name did it.  A flame outlives the pyro who lit it, so the burn
+// tick still fires with an attacker that has since disconnected or been freed,
+// and getEntityNameOrLogin gives "" with no class and no team.  That is not a
+// player; it is the same nobody the map is, so say world.
+//
+// Two such events in a 12304-event log were enough to make the whole match
+// unreadable, a reader having no way to attribute them either.
+static float EventNameless(string attackername) {
+    return attackername == "";
+}
+
 // Damage the map did.  A door, a plat, a goal or a teledeath is logged against
 // whoever triggered it -- walked into the trigger, took the goal -- but it is
 // the map that hurt them, and the triggering player's class and team describe
@@ -290,6 +301,13 @@ void (entity attacker, entity target, entity inflictor, float damage, float true
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
     }
 
+    // Outside the chain above: an attacker can be nameless whatever the
+    // inflictor was, a player's own weapon included.
+    if (EventNameless(attackername)) {
+        ea = world;
+        attackername = "world";
+    }
+
     KeyVal kvs[] = {
         {KV_I, "time", gametime_string},
         {KV_S, "type", "damageDone"},
@@ -372,6 +390,12 @@ void (entity attacker, entity target, entity inflictor) LogEventKill = {
         }
         else if (inflictorId == "grenade" && inflictor.fpp.gren_type >= GREN_FIRST)
             inflictorId = FO_GrenDesc(inflictor.fpp.gren_type)->logname;
+    }
+
+    // As above: nameless whatever the inflictor was.
+    if (EventNameless(attackername)) {
+        ea = world;
+        attackername = "world";
     }
 
     KeyVal kvs[] = {

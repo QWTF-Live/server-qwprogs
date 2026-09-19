@@ -938,6 +938,12 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
     // +3.8 and the blast at +3.9 fall out of it with nothing sent per grenade
     // and no offset sampled at either end.
     self.last_prime = time_base + (time - RealTime());
+
+    // heat, expressed on that same clock, for the throw window: the refusal in
+    // FO_ThrowGrenade is judged inside the command warp, where `time` is the
+    // chain, and testing the world instant there refused a skew early -- the
+    // same category error as above, on the reading side.
+    tGrenade.blast_cmd_due = tGrenade.heat + (self.last_prime - time_base);
 }
 
 // How long the timer waits past the fuse for the release before detonating the
@@ -1263,11 +1269,21 @@ void () FO_ThrowGrenade = {
         return;
     }
 
+    // The late edge, on the clock the test runs on.  `time` here is the
+    // thrower's chain, and heat is a world instant; comparing them directly
+    // refused up to a couple of commands the client -- which tests chain
+    // against chain in CanThrowGrenade -- still predicts, so a late throw
+    // showed the grenade leaving the hand and then blowing up in it.
+    // blast_cmd_due is heat on the chain, stamped at the prime.  The rewind
+    // path's throwtime is world time and keeps heat.
     float throwtime = time;
-    if (RewindFlagEnabled(REWIND_GRENADES))
+    float late_edge = timer.blast_cmd_due ? timer.blast_cmd_due : timer.heat;
+    if (RewindFlagEnabled(REWIND_GRENADES)) {
         throwtime = bounded_remote_time(FO_RewindGrenDt(timer.fpp.gren_type));
+        late_edge = timer.heat;
+    }
 
-    if ((timer.nextthink < timer.heat || throwtime > timer.heat - 0.1) &&
+    if ((timer.nextthink < timer.heat || throwtime > late_edge - 0.1) &&
         !IsClownMode(CLOWN_SPAM_GRENADES)) {
         // We do not allow throwing within the 0.8s, or the last 0.1s.
         // The former is a priming time, the latter is so that client side

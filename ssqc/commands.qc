@@ -1458,6 +1458,24 @@ void (string cmd) SV_ParseClientCommand = {
     /* tokenize(cmd); */
     tokenizebyseparator(cmd, " ");
 
+    // ptrack passes through first: the engine's handler writes goalentity --
+    // the target on success, world on a refusal -- so its verdict is readable
+    // right here.  A spectator's track of a player who is still connecting is
+    // refused ("cannot track - player not spawned yet") while the slot already
+    // looks trackable on every client, because userinfo broadcasts at connect;
+    // the refusal then left the spectator's cam pending on a slot the server
+    // had silently dropped.  Latch the ask instead, and ClientConnect finishes
+    // it when the target spawns.
+    if (argv(0) == "ptrack" && self.classname == "observer") {
+        float targslot = argv(1) == "" ? -1 : stof(argv(1));
+        clientcommand(self, cmd);
+        if (targslot >= 0 && targslot < 32 && !self.goalentity)
+            self.pending_track = targslot + 1;
+        else
+            self.pending_track = 0;   // tracked, untracked, or nonsense
+        return;
+    }
+
     isProcessed = ParseCmds(cmd, argv(0), argv(1), argv(2));
 
     if (!isProcessed)

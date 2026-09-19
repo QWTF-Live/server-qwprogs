@@ -814,6 +814,10 @@ float canlog;
 float FO_FlashDimension;
 .float old_dimension_seen;
 
+// Spectator track the engine refused because the target was still connecting
+// (slot+1, latched in SV_ParseClientCommand, completed at their ClientConnect).
+.float pending_track;
+
 // precise grenades
 .entity grenade_timer;
 // Removing a prime timer and retiring the prime that owns it are one thing.

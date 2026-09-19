@@ -3561,6 +3561,23 @@ void () ClientConnect = {
     TeamFortress_ExecMapScript(self);
     self.has_disconnected = 0;
 
+    // Complete any spectator track that was refused while this player was
+    // still connecting (latched in SV_ParseClientCommand): the slot looked
+    // trackable on the spectator's client the moment our userinfo broadcast,
+    // but the engine refuses ptrack until the target is spawned, which a
+    // map or csprogs download can hold off for a long time.  track-by-userid:
+    // a digits-only argument falls through Cam_TrackPlayer's nick search to
+    // its userid match.
+    float myslot = num_for_edict(self) - 1;
+    entity spec = find(world, classname, "observer");
+    while (spec) {
+        if (spec.pending_track == myslot + 1) {
+            spec.pending_track = 0;
+            stuffcmd(spec, sprintf("track %d\n", infokeyf(self, INFOKEY_P_USERID)));
+        }
+        spec = find(spec, classname, "observer");
+    }
+
     CheckClientAdmin();
 
     if (intermission_running) {

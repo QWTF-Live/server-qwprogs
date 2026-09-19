@@ -1533,7 +1533,10 @@ enumflags {
 };
 
 entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
-  PredProj_Sound(fpp_type);
+  // Not for a drop: CP_DROP is a held grenade materialising in hand at the
+  // end of its fuse, and the type's sound is the throw.
+  if (!(cp_flags & CP_DROP))
+      PredProj_Sound(fpp_type);
 
   if (!PP_Enabled())
       return __NULL__;

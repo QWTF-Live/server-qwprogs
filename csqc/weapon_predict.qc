@@ -2229,7 +2229,23 @@ static void WP_GrenadeTimers() {
     }
 
     float server_exp = pstate_server.primed_gren_exp;
+
+    // Retired -- thrown, blown, or dropped.  Nothing to match and nothing to
+    // create: reaching ParseGrenPrimed below with 0 spawned a timer with a
+    // zero expiry on every throw, which then owned Match(0) and GetLast for
+    // the rest of the map.  The THROWN dimming already happened on the frame
+    // the throw was predicted, while server_exp still carried the prime.
+    if (!server_exp) {
+        last_server_exp = 0;
+        return;
+    }
+
     CsGrenTimer srv = CsGrenTimer::Match(server_exp, 25*MSEC);
+    // A miss with our own predicted timer running is a stamp a jitter apart,
+    // not a second grenade: creating a sibling here left two countdowns
+    // sounding at once, and the local one never dimmed on the throw.
+    if (srv == world)
+        srv = CsGrenTimer::MatchLocal();
 
     if (server_exp != last_server_exp) {
         last_server_exp = server_exp;

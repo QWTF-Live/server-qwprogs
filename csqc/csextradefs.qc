@@ -740,10 +740,12 @@ class CsGrenTimer {
     nonvirtual void() StartSound;
 
     nonvirtual void(float offset, float adj_sound) adj_sync {
+      // The raw expiry is the key Match() finds this timer by from here on,
+      // so it takes the server's value whether or not a sound is running.
+      raw_expires_at_ += offset;
+
       if (!playing_)
           return;
-
-      raw_expires_at_ += offset;
       if (adj_sound) {  // Not yet working well
           expires_at_ += offset;
           StartSound();
@@ -767,6 +769,16 @@ class CsGrenTimer {
         next_index_ = (next_index_ + 1) % grentimers.length;
         last_ = grentimers[next_index_];
         return last_;
+    };
+
+    // The running timer our own prediction created, if any.  Only one grenade
+    // can be primed, so when the server describes a prime and the proximity
+    // match misses, this is still the timer it is describing.
+    static CsGrenTimer() MatchLocal {
+        for (float i = 0; i < grentimers.length; i++)
+            if (grentimers[i].active() && grentimers[i].test_flag(FL_GT_LOCAL))
+                return grentimers[i];
+        return world;
     };
 
     static CsGrenTimer(float exp, float eps) Match {
@@ -939,3 +951,6 @@ struct {
 struct {
     string login_token;
 } Config;
+
+// events.qc: the bot harness's polylines, drawn before renderscene
+void BotLines_Draw();

@@ -760,9 +760,19 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
         else
             return;
     } else if (user.v_angle_x) {
-        proj.velocity =
-            v_forward * 600 + v_up * 200 + crandom() * v_right * 10 +
-            crandom() * v_up * 10;
+        // The client predicts this throw, so the jitter comes from the shared
+        // PRNG in the same order PP_CreateProjectile draws it -- up, then
+        // right; the expression W_FireGrenade already uses.  crandom() here
+        // made the two arcs disagree and, worse, left the client's PRNG_WEAP
+        // stream two draws ahead of ours on every throw.  Drawn from the
+        // thrower's stream explicitly: the latched release lands here from the
+        // timer's think, where self is the timer.
+        entity held_prng = self;
+        self = user;
+        proj.velocity = (v_forward * 600) +
+            (200 + shared_crandom(PRNG_WEAP) * 10) * v_up +
+            (shared_crandom(PRNG_WEAP) * 10 * v_right);
+        self = held_prng;
     } else {
         proj.velocity = aim(user, 10000);
         proj.velocity = proj.velocity * 600;

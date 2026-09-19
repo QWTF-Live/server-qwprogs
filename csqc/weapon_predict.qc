@@ -1881,7 +1881,13 @@ static void W_ThrowGren(float is_throw) {
                  pstate_pred.last_prime + 0.8, PM_Org(), (float)clientcommandframe);
         rj_cmd_trace_until_seq = clientcommandframe + 12;
         gren_decline = 0;
-        entity gren = PP_CreateProjectile(FPP_HANDGRENADE, '0 0 0');
+        // Where the server spawns it: the thrower's origin on this command
+        // (FO_SpawnThrownGrenade does setorigin(proj, user.origin)).  This
+        // spawned at '0 0 0' -- dead code while the REWIND_GRENADES gate stood,
+        // and never audited when the gate came off, so the predicted grenade
+        // flew from the map origin and the server's copy, a player-position
+        // away, could not claim it.
+        entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org());
         gren.fpp.gren_type = gren_type;
         FPP_ApplyGrenadeProperties(gren);
     }

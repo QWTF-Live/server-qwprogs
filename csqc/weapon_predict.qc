@@ -2324,7 +2324,18 @@ static void WP_UpdatePredict() {
 
         pstate_pred.seq = pframe;
         float chain_len = input_timelength;
+        // server_time is the chain (the server stamps it inside the command
+        // warp), and the server folds an announced correction into the command
+        // it named -- as the movement replay does in PM_RunMovement.  This
+        // rebuilt the chain by command length alone, so every cooldown, throw
+        // window and fire anchor here sat a correction's worth (at least the
+        // CmdClockTol floor, 50 ms) from the server's for an RTT after each
+        // one.  The stamp clock below is the server's real time echoed back
+        // and is not corrected; it never was.
         pstate_pred.server_time += chain_len;
+        if (pstate_server.pmove.cmd_clock_fix_seq &&
+            pframe == pstate_server.pmove.cmd_clock_fix_seq)
+            pstate_pred.server_time += pstate_server.pmove.cmd_clock_fix;
         pstate_pred.pmove.cmd_servertime += chain_len;
         if (pframe == eframe && pframe < rj_cmd_trace_until_seq)
             rj_trace("C: pf seq=%i pt=%.4f echo=%.4f scf=%.0f len=%.2fms\n", pframe, pstate_pred.server_time, pstate_server.server_time, servercommandframe, input_timelength * 1000);

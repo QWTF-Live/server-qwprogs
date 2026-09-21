@@ -650,7 +650,15 @@ float WP_CheckAmmo(FO_WeapInfo* wi) {
 void WP_DeactivateBuildingPreview();
 
 void WP_ChangeWeapon(Slot slot) {
-    if (!WP_CheckAmmo(SlotWI(slot)))
+    // W_ChangeWeaponSlot's refusals: no ammo at all, unless melee -- not
+    // "less than a shot", which kept us on the old weapon while the server
+    // switched -- and the slot already held, which touched nothing there and
+    // here rewrote last_slot to the current one.
+    FO_WeapInfo* wi = SlotWI(slot);
+    if (wi->ammo_type != AMMO_NONE && WP_GetAmmo(wi->ammo_type) == 0 &&
+        !IsSlotMelee(slot))
+        return;
+    if (IsSameSlot(slot, pstate_pred.current_slot))
         return;
 
     pstate_pred.last_slot = pstate_pred.current_slot;

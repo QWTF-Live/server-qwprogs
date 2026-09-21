@@ -484,11 +484,13 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
     // The push comes off a fixed number even when the damage does not.  A
     // direct rocket hit rolls 92 + 20 and the client has to predict the shove
     // it is about to be given; it cannot predict a roll.  Everything below
-    // still works on the rolled damage -- health, armour, gibs -- and only the
-    // knock is scaled onto the fixed one, by the same route, so the scaling the
-    // client also applies still lands.
-    local float knock_scale = (knock_damage && original_damage)
-                              ? knock_damage / original_damage : 1;
+    // still works on the rolled damage -- health, armour, gibs -- and the
+    // knock runs down the same chain beside it from the fixed base, step for
+    // step.  Not as a ratio applied afterwards: the armour steps floor, and a
+    // floor taken on the roll then rescaled is not the floor taken on the
+    // base, so the shove was still a function of the roll for an armoured
+    // target -- 22.29 against the client's 23 on a 42.
+    local float knock_dmg = knock_damage ? knock_damage : damage;
     knock_damage = 0;
 
 
@@ -522,8 +524,9 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
     // Burn amp, source scale and quad -- shared with the client's knockback
     // nudge so the two agree.  The armour step is applied further down, once
     // T_AttackType is known.
-    damage = Damage_Scale(damage, fl,
-                          (targ.tfstate & TFSTATE_BURNING) ? DSF_BURNING : 0);
+    float dsf = (targ.tfstate & TFSTATE_BURNING) ? DSF_BURNING : 0;
+    damage = Damage_Scale(damage, fl, dsf);
+    knock_dmg = Damage_Scale(knock_dmg, fl, dsf);
 
     if (fl & KF_SRC_PLAYER) {
         if ((fl & KF_TARG_PLAYER == 0)
@@ -548,20 +551,35 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
 
     damage_attacker = attacker;
 
-    if (teamplay & (TEAMPLAY_LESSSCOREHELP | TEAMPLAY_LESSPLAYERSHELP))
-        damage = TeamEqualiseDamage(targ, attacker, damage);
+    if (teamplay & (TEAMPLAY_LESSSCOREHELP | TEAMPLAY_LESSPLAYERSHELP)) {
+        // Not modelled by the client.  A factor, so it is carried as one.
+        float equalised = TeamEqualiseDamage(targ, attacker, damage);
+        if (damage)
+            knock_dmg *= equalised / damage;
+        damage = equalised;
+    }
 
     if ((targ.armorclass != 0) && (T_AttackType != 0)) {
-        if ((targ.armorclass & AT_SAVESHOT) && (T_AttackType & TF_TD_SHOT))
+        if ((targ.armorclass & AT_SAVESHOT) && (T_AttackType & TF_TD_SHOT)) {
             damage = floor(damage * 0.5);
-        if ((targ.armorclass & AT_SAVENAIL) && (T_AttackType & TF_TD_NAIL))
+            knock_dmg = floor(knock_dmg * 0.5);
+        }
+        if ((targ.armorclass & AT_SAVENAIL) && (T_AttackType & TF_TD_NAIL)) {
             damage = floor(damage * 0.5);
-        if ((targ.armorclass & AT_SAVEEXPLOSION) && (T_AttackType & TF_TD_EXPLOSION))
+            knock_dmg = floor(knock_dmg * 0.5);
+        }
+        if ((targ.armorclass & AT_SAVEEXPLOSION) && (T_AttackType & TF_TD_EXPLOSION)) {
             damage = Damage_Scale(damage, 0, DSF_SAVE_EXPLOSION);
-        if ((targ.armorclass & AT_SAVEELECTRICITY) && (T_AttackType & TF_TD_ELECTRICITY))
+            knock_dmg = Damage_Scale(knock_dmg, 0, DSF_SAVE_EXPLOSION);
+        }
+        if ((targ.armorclass & AT_SAVEELECTRICITY) && (T_AttackType & TF_TD_ELECTRICITY)) {
             damage = floor(damage * 0.5);
-        if ((targ.armorclass & AT_SAVEFIRE) && (T_AttackType & TF_TD_FIRE))
+            knock_dmg = floor(knock_dmg * 0.5);
+        }
+        if ((targ.armorclass & AT_SAVEFIRE) && (T_AttackType & TF_TD_FIRE)) {
             damage = floor(damage * 0.5);
+            knock_dmg = floor(knock_dmg * 0.5);
+        }
     }
 
     if (T_flags & TF_TD_IGNOREARMOR) {
@@ -622,8 +640,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     // scaling off the damage; carry that as a ratio so the due
                     // command can redo the falloff from where it stands and
                     // arrive at the same number by the same route.
-                    held.knock_ratio = (original_damage ? damage / original_damage : 1)
-                                       * knock_scale;
+                    held.knock_ratio = original_damage ? knock_dmg / original_damage : 1;
                     held.knock_flags = fl;
                 } else {
                     // Not held: applied here and now, but through the same
@@ -645,7 +662,7 @@ void TF_T_Damage(entity targ, entity inflictor, entity attacker,
                     b.slack = 0;
                     b.back = 0;   // applied where the blast was found, so no step back
 
-                    float moment = Class_ScaleMoment(targ.playerclass, damage * knock_scale);
+                    float moment = Class_ScaleMoment(targ.playerclass, knock_dmg);
                     vector knock = Knock_Velocity(&b, targ, moment);
                     targ.velocity += knock;
                     PMD_Knock(targ, knock, moment);

@@ -97,6 +97,14 @@ static void Phys_Impact(entity e, float dt, float phys_flags) {
     if (other.solid == SOLID_NOT)
         return;
 
+    // As the server's copy of this function: a projectile that ends in the
+    // sky is gone, with no blast.  Ours went off against the sky brush and
+    // scheduled a push the server never made.
+    if (pointcontents(e.origin) == CONTENT_SKY) {
+        e.voided = TRUE;
+        return;
+    }
+
     if (e.movetype == MOVETYPE_FLYMISSILE) {
         e.voided = TRUE;
         if (!e.phys_sim_voided_at)  // want only one of sim or !sim

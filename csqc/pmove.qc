@@ -955,6 +955,11 @@ static void PM_SupersedePredictedNudge(entity sent) {
 
         if (ok_type && ok_pred && ok_live && ok_seq) {
             n->nat = NA_NONE;
+            // The cache may carry this push; a replay resumed from it kept
+            // it until the next snapshot reseeded.  The replacement's own
+            // allocation invalidates too, but not when it is then refused.
+            cache_invalidated = TRUE;
+            nudges_added = TRUE;
             continue;
         }
 

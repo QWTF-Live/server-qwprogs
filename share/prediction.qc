@@ -32,6 +32,7 @@ enumflags {
     FOWP_RNG2,
     FOWP_PREDICT_FLAGS,
     FOWP_CONCFINISH,
+    FOWP_CLOCKFIX,
 
     // Below this not force-refreshed.  Both are fine without it:
     //   PMOVE is remasked every frame while PF_PMOVE is set, so it self-heals.
@@ -49,7 +50,13 @@ const float FOWP_FIRST_PERIODIC = FOWP_IMPULSE;
 // a single dropped update left them stale indefinitely.  conc_finished drives
 // when PredictConc() clears TFSTATE_CONC, so the effect would end at the wrong
 // time on the client and never correct itself.  Costs 9 bytes once per cycle.
-const float FOWP_LAST_PERIODIC = FOWP_CONCFINISH;
+// FOWP_CLOCKFIX is a level too: an announced correction and the command it
+// lands on, cleared once applied.  It used to ride inside the PMOVE block, so
+// a client with movement prediction off -- the default -- never saw it and
+// crossed every correction on command lengths alone, while its weapon replay
+// (WP_UpdatePredict) folds the same amount the server does.  Eight bytes,
+// only when it changes plus once a cycle.
+const float FOWP_LAST_PERIODIC = FOWP_CLOCKFIX;
 
 enumflags {
     FOPP_INIT,
@@ -607,6 +614,15 @@ static float Prediction_ChangedMask(entity player, entity src) {
     if (player == src && player.predict_state.num_filter_ents > 0)
         mask |= FOWP_FILTER_ENTS;
 
+    // The correction is an entity field with no top-level twin in the predict
+    // state, so it is compared by hand against the pmove shadow.
+    if (player.predict_state.pmove.cmd_clock_fix != src.cmd_clock_fix ||
+        player.predict_state.pmove.cmd_clock_fix_seq != src.cmd_clock_fix_seq) {
+        mask |= FOWP_CLOCKFIX;
+        player.predict_state.pmove.cmd_clock_fix = src.cmd_clock_fix;
+        player.predict_state.pmove.cmd_clock_fix_seq = src.cmd_clock_fix_seq;
+    }
+
     M1(FOWP_CLASS, playerclass);
     M4(FOWP_IMPULSE, impulse, current_slot.id, queue_slot.id, last_slot.id);
     M2(FOWP_TFSTATE, tfstate, csqc_maxspeed);
@@ -779,6 +795,13 @@ void TFL_RecvPredictState() {
     COMM(Float, server_time);
     COMM_PM(Float, cmd_stamp_clock);
 
+    // Outside the PMOVE block: the weapon replay folds it whether or not
+    // movement is predicted (FOWP_CLOCKFIX, above).
+    if (mask & FOWP_CLOCKFIX) {
+        COMM_PM(Float, cmd_clock_fix);
+        COMM_PM(Float, cmd_clock_fix_seq);
+    }
+
     if (mask & FOWP_PMOVE) {
         COMM_PM(Coord, origin[0]);
         COMM_PM(Coord, origin[1]);
@@ -786,11 +809,9 @@ void TFL_RecvPredictState() {
         COMM_PM(Short, velocity[0]);
         COMM_PM(Short, velocity[1]);
         COMM_PM(Short, velocity[2]);
-        // cmd_stamp_clock is sent unconditionally above; the rest of these
-        // really are movement prediction and stay here.
+        // cmd_stamp_clock and the correction are sent above; this one really
+        // is movement prediction and stays here.
         COMM_PM(Float, cmd_clock_skew);
-        COMM_PM(Float, cmd_clock_fix);
-        COMM_PM(Float, cmd_clock_fix_seq);
     }
 
     if (mask & FOWP_FILTER_ENTS) {

@@ -820,8 +820,16 @@ void (entity inflictor, entity attacker, float bounce,
 
                         NB_ConcCapAction(head, head.playerclass, &head.tfstate,
                                          time, &head.conc_cap_time, kLaunch);
+
+                        // Only when the launch is applied here, as the damage
+                        // path does (T_Damage): the filter retires the client's
+                        // nudge as of the command this update acknowledges,
+                        // and a deferred launch lands a command or two later.
+                        // Sent unconditionally, a snapshot between detonation
+                        // and launch expired the nudge before the velocity
+                        // carrying the launch had left the server.
+                        Predict_AddFilterEnt(head, inflictor);
                     }
-                    Predict_AddFilterEnt(head, inflictor);
 
                     if (head.classname != "player") {
                         if (head.flags & FL_ONGROUND)

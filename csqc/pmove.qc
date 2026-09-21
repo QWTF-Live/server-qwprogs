@@ -471,6 +471,12 @@ struct PM_Nudge {
     // acknowledged that command the push exists only here, so the nudge has to
     // outlive its own timer until it does.
     float fired_seq;
+    // The replay pass this nudge last fired in.  A window is matched by the
+    // command clock, and a backward clock correction (cmd_clock_fix < 0)
+    // folded into one command can carry the clock back past a due the pass
+    // already fired on, so the next command's window contains it again.  The
+    // server consumes its queued push once; so must a pass.
+    float fired_pass;
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 
@@ -478,6 +484,7 @@ const static float NUDGE_SEQ = 3;
 const static float NUDGE_EPS = NUDGE_SEQ * SERVER_FRAME_DT;
 static PM_Nudge nudges[8];
 static float num_nudges, have_active_nudges;
+static float pm_pass_id;   // bumped per PM_RunMovement, never zero
 static float nudges_added;   // since the last error pass; its saved prior state predates them
 // A command is replayed several times a frame -- rendering, the error pass,
 // the graphs -- and only the last one reaching clientcommandframe is what the
@@ -616,6 +623,7 @@ static PM_Nudge* find_nudge_slot() {
         n->expire_frame = 0;
         n->expire_time = 0;
         n->expire_spawnseq = 0;
+        n->fired_pass = 0;
         return n;
     }
 
@@ -1242,11 +1250,14 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
             n->cmd_resolved = TRUE;
         }
 
+        if (n->fired_pass && n->fired_pass == pm_pass_id)
+            continue;   // once per pass, whatever the clock does after
         if (!MatchNudge(n, seq, sitime, eitime, slack))
             continue;
 
         pm.last_nudge = seq;
         n->fired_seq = seq;
+        n->fired_pass = pm_pass_id;
         if (seq > nudge_sig_from)
             nudge_sig += seq * nudges.length + i + 1;
         switch (n->type) {
@@ -1317,6 +1328,7 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     entity ent = pm.ent;
     pm_final_pass = (endframe == clientcommandframe) && !pmd_norecord;
     nudge_sig = 0;
+    pm_pass_id += 1;
 
     // This runs several times per frame (rendering, error measurement, debug
     // graphs), so it must be idempotent.  The conc paths below now advance

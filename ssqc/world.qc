@@ -351,7 +351,7 @@ void () worldspawn = {
 
     globalstat(STAT_ROUND_END, EV_FLOAT, "round_end_time");
     globalstat(STAT_PAUSED, EV_FLOAT, "cs_paused");
-    globalstat(STAT_NOFIRE, EV_FLOAT, "no_fire_mode");
+    globalstat(STAT_NOFIRE, EV_FLOAT, "stat_nofire");
     globalstat(STAT_TEAMNO_ATTACK, EV_FLOAT, "team_no_attack");
     globalstat(STAT_ORG_GAME, EV_FLOAT, "org_game");
 
@@ -498,6 +498,7 @@ void AddToBodyQueue(entity ent) {
 
 void () StartFrame = {
     SpawnProtect_Pulse();
+    stat_nofire = no_fire_mode || cease_fire;
 
     teamplay = cvar("teamplay");
     timelimit = cvar("timelimit") * 60;

@@ -539,6 +539,11 @@ float duelmode;
 float duel_reset_delay;
 float duel_reset_timer;
 float no_fire_mode;
+// What the client is told (STAT_NOFIRE): no_fire_mode or a cease-fire, kept
+// in step from StartFrame.  W_WeaponFrame refuses to fire under both, and the
+// client only knew about the first, so it predicted shots through a cease-fire
+// that the server never made.
+float stat_nofire;
 float duel_all_grens;
 float duel_no_packs;
 float duel_spawn_guard;

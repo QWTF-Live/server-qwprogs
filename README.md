@@ -37,7 +37,7 @@ New commands
 
 * `localinfo cmd_time 1` run weapon timing on the client's per-command clock (default on; needs the fteqw fork)
 * `localinfo ghost_lockout_snapshots 1` commands generated against the last N snapshots before a death are not replayed for the dead player
-* `localinfo pusher_buffer 25`, `localinfo pusher_max 200`, `localinfo pusher_share 1` per-client door/pusher advance, ms: closing doors are shown ping plus buffer ahead, opening doors where they are (see antilag.md)
+* `localinfo pusher_buffer 25`, `localinfo pusher_max 200` per-client door/pusher advance, ms: closing doors are shown ping plus buffer ahead, opening doors where they are; a door a player's own path will open is shown opening from that moment, to that player (see antilag.md)
   
 Client commands, default shown:
   

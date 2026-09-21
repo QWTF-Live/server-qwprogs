@@ -24,14 +24,20 @@
 // a player who veers off simply stops offering.
 //
 // localinfo:
-//   pusher_buffer (pb)  ms subtracted from ping, default 25.  Late-biased on
-//                       purpose: a door shown slightly less open than reality
-//                       is harmless, one shown more open feels like a wall.
-//                       Everyone above 25ms feels like 25ms.
+//   pusher_buffer (pb)  ms added to ping, default 25.  Only pushers whose
+//                       motion makes them more obstructive are advanced (an
+//                       opening door is held, doors.qc), so the margin for
+//                       ping jitter belongs on that side: a closing door shown
+//                       a little further along is an edge the server lets the
+//                       player through, shown short it is a gap it closes.
 //   pusher_max (pm)     ping cap in ms, default 200.
-//   pusher_share (ps)   1 (default): every client sees the predicted start
-//                       through their own advance.  0: only the player whose
-//                       path produced it.
+//
+// The rule behind all of it: only what a player's own path will make happen
+// may be shown early.  That is timing-correct by construction and cannot
+// stick; anything shown early to someone whose commands do not cause it can
+// only stick.  So the predicted start goes to the players whose path triggers
+// the door and to nobody else (PP_Offer), and a door somebody else opens
+// reaches a bystander a round trip late, which is the safe direction.
 //
 // A closing door is predicted too: door_go_up sends it back up from wherever
 // it is when the trigger fires, so the offer carries the velocity SUB_CalcMove
@@ -50,13 +56,14 @@
 .float  pusher_predict_endtime;
 .entity pusher_predict_client;  // world = every client
 .float  pusher_noadvance;       // pushers: hold the real motion where it is (an opening door)
+.int    pusher_predict_clientmask;  // pushers: slot bits of the players shown the offer
 
 void () door_trigger_touch;
 void () door_use;
 void () multi_touch;
 float (entity Goal, entity AP) Activated;
 
-float pp_buffer, pp_max, pp_share;
+float pp_buffer, pp_max;
 float pp_next_refresh;
 
 
@@ -66,18 +73,33 @@ static void PP_RefreshSettings() {
     pp_next_refresh = time + 1;
     pp_buffer = CF_GetSetting("pb", "pusher_buffer", "25");
     pp_max = CF_GetSetting("pm", "pusher_max", "200");
-    pp_share = CF_GetSetting("ps", "pusher_share", "1");
 }
 
-// Earliest offer of the frame wins.  The earliest real trigger is the one that
-// will actually happen, so a later prediction must not overwrite it.
+// Earliest offer of the frame wins the timing: the earliest real trigger is
+// the one that will actually happen, so a later prediction must not overwrite
+// it.  Every offerer is shown it, and nobody else.  A player's own path makes
+// the start right by construction -- the field fires when they enter it and
+// the door is beyond -- so two players heading for one door both see the
+// earlier start, which is when it really opens if either path holds.  Shown to
+// a bystander it is a gap the server has not opened for the commands they are
+// standing there with, and they walk into it: the one stick a prediction can
+// manufacture on its own, and why the offer is no longer shared.
 static void PP_Offer(entity door, float start, vector vel, float end, entity who) {
-    if (door.pusher_predict_time && start >= door.pusher_predict_time)
+    float slot = num_for_edict(who) - 1;
+    if (slot < 0 || slot >= 32)
         return;
+    int bit = 1 << (int)slot;
+
+    if (door.pusher_predict_time) {
+        door.pusher_predict_clientmask |= bit;
+        if (start >= door.pusher_predict_time)
+            return;
+    } else
+        door.pusher_predict_clientmask = bit;   // first offer this frame
     door.pusher_predict_time = start;
     door.pusher_predict_velocity = vel;
     door.pusher_predict_endtime = end;
-    door.pusher_predict_client = who;
+    door.pusher_predict_client = who;   // an engine without the mask: this player alone
 }
 
 // door_go_up does something visible for a door that is closed and at rest, or
@@ -253,7 +275,7 @@ void PP_PlayerPostThink() {
     start = time + trace_fraction * adv;
     if (trace_startsolid && trace_ent == trigger)
         start = time;   // already inside the volume: the real touch is happening now
-    who = pp_share ? world : self;
+    who = self;
 
     if (trigger.touch == door_trigger_touch) {
         if (!PP_FieldWouldFire(trigger, self))

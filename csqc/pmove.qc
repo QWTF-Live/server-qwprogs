@@ -763,7 +763,28 @@ static float PM_ExplosionReaches(vector src, vector targ) {
     return FALSE;
 }
 
+// The gates TF_T_Damage applies before it pushes (combat.qc): a frozen player
+// -- TFSTATE_CANT_MOVE: planting or disarming a detpack, building, feigning,
+// a cease-fire spawn, an admin freeze -- one not walking (dead, feigning with
+// movetype none, noclip), and a cease-fire.  A conc launch has no such test on
+// the server, but TeamFortress_SetSpeed zeroes a frozen player's velocity on
+// every command, so the launch never moves them either.  All three inputs are
+// replicated; refusing here is a round trip of a push the server never made,
+// and a snap back when its state arrived without it.
+static float PM_PushAllowed() {
+    if (pstate_pred.tfstate & TFSTATE_CANT_MOVE)
+        return FALSE;
+    if (pstate_server.movetype != MOVETYPE_WALK)
+        return FALSE;
+    if (game_state.is_ceasefire)
+        return FALSE;
+    return TRUE;
+}
+
 static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
+    if (!PM_PushAllowed())
+        return;
+
     // Copied field by field: assigning a struct through a pointer is not
     // something to take on trust here.
     KnockBlast b;
@@ -969,6 +990,9 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
 }
 
 static void PM_NudgeBounce(PM_Nudge* nudge, entity ent, float back) {
+    if (!PM_PushAllowed())
+        return;
+
     KnockBlast b;
     b.type = nudge->blast.type;
     b.src = nudge->blast.src;

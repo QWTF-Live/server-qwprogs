@@ -975,6 +975,50 @@ static void PM_SupersedePredictedNudge(entity sent) {
     }
 }
 
+// The server's due and blast point for a projectile we predicted, put on the
+// predicted nudge while it is still ours to move.  The copy's own nudge
+// replaces it only when our sim reaches PM_AddSimExplosion for the copy, and
+// on a flight longer than the forward projection that has already happened
+// -- before these fields existed -- and does not happen again.  So a rocket
+// the server stopped on a player, a door or a pusher, none of which our sim
+// can hit, pushed from our sim's wall on our sim's clock for a round trip.
+//
+// Identity is the supersede's.  The point is not sanity-checked by distance as
+// PM_UpdateNudgeSource's is, because disagreeing on it is the whole case.
+// Run before InitProjectileEnt on an INIT, so it goes by the owner's number.
+void PM_ReanchorPredictedNudge(entity sent) {
+    if (pengine.player_entnum <= 0 || sent.owner_entnum != pengine.player_entnum)
+        return;
+    if (sent.forward_knock == -1)
+        return;   // AntilagKnock declined: the server pushes through the radius path
+
+    for (float i = 0; i < nudges.length; i++) {
+        PM_Nudge* n = &nudges[i];
+        if (n->nat != NA_ITIME_EXPLICIT_EXPIRE || n->type != NT_BLAST || n->src_no)
+            continue;
+        if (!n->src_fseq || n->src_fseq != sent.fire_seq || n->src_fpp != sent.fpp.index)
+            continue;
+        if (nudge_expired(n))
+            continue;
+
+        float moved = FALSE;
+        if (sent.forward_knock > 0 && n->itime != sent.forward_knock) {
+            rj_trace("C: reanchor i=%.0f due %.4f -> %.4f\n", i, n->itime, sent.forward_knock);
+            n->itime = n->expire_time = sent.forward_knock;
+            moved = TRUE;
+        }
+        if (sent.knock_org && sent.knock_org != n->blast.src) {
+            rj_trace("C: reanchor i=%.0f src %v -> %v\n", i, n->blast.src, sent.knock_org);
+            n->blast.src = sent.knock_org;
+            moved = TRUE;
+        }
+        if (moved) {
+            cache_invalidated = TRUE;
+            nudges_added = TRUE;
+        }
+    }
+}
+
 static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     if (!PM_KnockAllowed(ent))
         return;

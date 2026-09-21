@@ -990,6 +990,7 @@ float PP_SendEntity(entity to_player, float sendmask) {
     WriteShort(MSG_ENTITY, sendflags);   // ten flags, long past fitting in a byte
 #else
 void PM_UpdateNudgeSource(entity ent, vector src);
+void PM_ReanchorPredictedNudge(entity sent);
 #define COMMD(_type, _dest, _field) self.##_dest = Read##_type()
 #define COMMO(_type, _dest, _src) ##_dest = Read##_type()
 #define COMM(_type, _field) COMMD(_type, _field, _field)
@@ -1085,6 +1086,16 @@ void EntUpdate_Projectile(float isnew) {
             PM_UpdateNudgeSource(self, self.knock_org);
 #endif
     }
+
+#ifdef CSQC
+    // The server's due and blast point for a projectile we predicted, applied
+    // to the predicted nudge (PM_ReanchorPredictedNudge).  The copy's own
+    // nudge replaces it only when our sim reaches PM_AddSimExplosion for the
+    // copy, and on a flight longer than the forward projection that has
+    // already happened -- before these fields existed -- and never again.
+    if (sendflags & (FOPP_FORWARDKNOCK | FOPP_KNOCKORG))
+        PM_ReanchorPredictedNudge(self);
+#endif
 
 #ifdef SSQC
     return TRUE;

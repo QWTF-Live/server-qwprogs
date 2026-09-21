@@ -1351,6 +1351,21 @@ static void PM_CheckMissileHits(entity ent, vector from_org, float sitime, float
                 e.voided = TRUE;
                 e.hit_self = TRUE;
                 setorigin(e, hit);
+                // The sim may already have scheduled this rocket's blast
+                // against the wall behind us: Phys_Sim restores voided after a
+                // sim impact, so the entity was still tested here.  A rocket
+                // that stopped on us never reaches that wall, and nothing else
+                // retired that nudge -- both fired until the server's filter
+                // took them at the ack, a point-blank wall blast on top of the
+                // hit for a round trip.
+                PM_Nudge* wn = e.nudge;
+                if (wn && wn->src == e && wn->src_no == e.entnum &&
+                    wn->src_cseq == e.created_seq && !nudge_expired(wn)) {
+                    rj_trace("C: self-hit retires sim nudge itime=%.4f\n", wn->itime);
+                    wn->nat = NA_NONE;
+                    cache_invalidated = TRUE;
+                    nudges_added = TRUE;
+                }
                 PM_AddSimExplosion(p0 + (p1 - p0) * frac, e);
             }
         }

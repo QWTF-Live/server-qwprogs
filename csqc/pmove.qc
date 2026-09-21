@@ -832,6 +832,15 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
 // the error pass's prior replay (which judges expiry as of the previous
 // update) doesn't apply both.
 static void PM_SupersedePredictedNudge(entity sent) {
+    // Only our own copy can claim a nudge we predicted: fire_seq is the
+    // owner's command counter, so somebody else's projectile can carry the
+    // same number, and both call sites run before the knock-eligibility
+    // check, so this happened with pm_knock_other off too.  The null guard is
+    // the one PM_KnockAllowed explains -- before prediction is up player_ent
+    // is null, and a copy with no owner would match it.
+    if (!pengine.player_ent || sent.owner != pengine.player_ent)
+        return;
+
     for (float i = 0; i < nudges.length; i++) {
         PM_Nudge* n = &nudges[i];
         if (n->nat == NA_NONE)

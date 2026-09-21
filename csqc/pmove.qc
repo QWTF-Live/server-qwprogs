@@ -887,9 +887,9 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
 
     // This is slightly imprecise, since you could throw a grenade then spawn
     // and jump on it, but it's more right than wrong; and the wrong cases lead
-    // to false lerps.
-    if (ent.owner == pengine.player_ent)
-        n->expire_spawnseq = game_state.spawn_gen;
+    // to false lerps.  Everyone's blast, not only ours: a push due after our
+    // death is not owed to the next life whoever fired it.
+    n->expire_spawnseq = game_state.spawn_gen;
 
     n->src = ent;
     n->src_no = ent.entnum;
@@ -1006,6 +1006,7 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     n->src_team = ent.owner_entnum > 0 ? TeamNoSlot(ent.owner_entnum - 1) : 0;
     if (!ent.entnum && ent.owner == pengine.player_ent)
         n->fire_clk = ent.fire_cmd_time;
+    n->expire_spawnseq = game_state.spawn_gen;   // this life's, as a blast's
 
     ent.nudge = n;
     ent.removefunc = PM_RemoveSelfNudges;

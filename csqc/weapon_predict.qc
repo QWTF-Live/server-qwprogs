@@ -59,8 +59,6 @@ float PM_CmdClock();
 float PM_WantPmove();
 float PM_KnockSelf();
 float PM_KnockOther();
-float PM_KnockSelf();
-float PM_KnockOther();
 
 float WP_PlayerClass() {
     return pstate_server.playerclass;

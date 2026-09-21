@@ -169,7 +169,7 @@ void Forward_Projectile(int fpp_type, entity proj) {
         proj.owner.rj_cmd_trace_until = RealTime() + 0.16;
         rj_trace(" cmdt=%.0f ctime=%.3f age=%.0fms seq=%.0f clk=%.4f",
                  tf_config.cmd_time, proj.owner.cmd_servertime, (RealTime() - proj.owner.cmd_servertime) * 1000, proj.owner.cmd_sequence, proj.owner.cmd_clock);
-        rj_trace(" cnt=%.4f af=%.4f\n", proj.owner.client_nextthink, proj.owner.attack_finished);
+        rj_trace(" cnt=%.4f af=%.4f pl=%v\n", proj.owner.client_nextthink, proj.owner.attack_finished, proj.owner.origin);
         rj_trace(" sorg=%v porg=%v pvel=%v\n", proj.s_origin, proj.owner.origin, proj.owner.velocity);
     }
 }

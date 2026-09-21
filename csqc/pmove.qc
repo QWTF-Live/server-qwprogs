@@ -620,7 +620,8 @@ static PM_Nudge* find_nudge_slot() {
     have_active_nudges = TRUE;
 
     for (float i = 0; i < nudges.length; i++) {
-        PM_Nudge* n = &nudges[(num_nudges++) % nudges.length];
+        float slot = (num_nudges++) % nudges.length;
+        PM_Nudge* n = &nudges[slot];
 
         if (!nudge_expired(n))
             continue;
@@ -645,8 +646,11 @@ static PM_Nudge* find_nudge_slot() {
         n->src_fpp = 0;
         n->fire_clk = 0;
         // A new push is in no state yet.  The cache is invalidated above; this
-        // is the running copy, for a replay already in progress.
-        pm.nudge_fired[i] = 0;
+        // is the running copy, for a replay already in progress.  The ring
+        // slot's marker, not the search counter's: clearing by the counter
+        // took another live nudge's marker off and left this slot's stale one
+        // on, so that one pushed twice and this one not at all.
+        pm.nudge_fired[slot] = 0;
         return n;
     }
 

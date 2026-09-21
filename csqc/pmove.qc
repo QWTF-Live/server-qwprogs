@@ -935,6 +935,23 @@ static void PM_SupersedePredictedNudge(entity sent) {
         float ok_live = !nudge_expired(n);
         float ok_seq  = (n->src_fseq && n->src_fseq == sent.fire_seq &&
                          n->src_fpp == sent.fpp.index);
+        // A hand grenade of ours is known without the stamp.  Only one can be
+        // primed at a time, so a live predicted hand-grenade nudge is the held
+        // grenade; a held copy of ours -- one materialised a tenth before its
+        // fuse -- is that grenade's whatever command it carries.  It carries
+        // the wrong one whenever the think backstop claimed the blast: that
+        // stamps the last command that ran, by construction before the one
+        // that would have claimed the due, so the stamps never matched and the
+        // predicted nudge outlived its replacement -- a 2x jump until the ack.
+        // A thrown copy is told apart by its life, most of a fuse rather than
+        // a tenth; one that carries the blast command names the grenade by it.
+        if (!ok_seq && n->src_fpp == FPP_HANDGRENADE &&
+            sent.fpp.index == FPP_HANDGRENADE) {
+            if (sent.blast_cmd_due)
+                ok_seq = n->cmd_due && fabs(n->cmd_due - sent.blast_cmd_due) < 0.001;
+            else
+                ok_seq = sent.fpp.expires_at - sent.created_at < 0.5;
+        }
 
         if (ok_type && ok_pred && ok_live && ok_seq) {
             n->nat = NA_NONE;

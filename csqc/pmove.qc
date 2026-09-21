@@ -472,6 +472,11 @@ struct PM_Nudge {
     // the push lands twice.
     float src_cseq;
     float src_fseq;    // fire_seq of that projectile: the handle both copies share
+    // Its type, because owner plus fire_seq is not yet one projectile: a held
+    // grenade materialising and a rocket firing on the same command both carry
+    // that command's number, and the first server copy to arrive retired both
+    // pushes.
+    float src_fpp;
     // The blast command anchor for our own grenade: the push is due a
     // KNOCK_LEAD past the clock of the first command to reach it, which is what
     // the server anchors on too.  Resolved during the replay, because that is
@@ -637,6 +642,7 @@ static PM_Nudge* find_nudge_slot() {
         // a constructor that did not write them then matched the wrong copy.
         n->src_cseq = 0;
         n->src_fseq = 0;
+        n->src_fpp = 0;
         n->fire_clk = 0;
         // A new push is in no state yet.  The cache is invalidated above; this
         // is the running copy, for a replay already in progress.
@@ -829,6 +835,7 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     n->src_no = ent.entnum;
     n->src_cseq = ent.created_seq;
     n->src_fseq = ent.fire_seq;
+    n->src_fpp = ent.fpp.index;
     if (!ent.entnum && ent.owner == pengine.player_ent)
         n->fire_clk = ent.fire_cmd_time;
 
@@ -865,7 +872,8 @@ static void PM_SupersedePredictedNudge(entity sent) {
         float ok_type = (n->type == NT_BLAST);
         float ok_pred = (n->src_no == 0);
         float ok_live = !nudge_expired(n);
-        float ok_seq  = (n->src_fseq && n->src_fseq == sent.fire_seq);
+        float ok_seq  = (n->src_fseq && n->src_fseq == sent.fire_seq &&
+                         n->src_fpp == sent.fpp.index);
 
         if (ok_type && ok_pred && ok_live && ok_seq) {
             n->nat = NA_NONE;
@@ -911,6 +919,7 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     n->src_no = ent.entnum;
     n->src_cseq = ent.created_seq;
     n->src_fseq = ent.fire_seq;
+    n->src_fpp = ent.fpp.index;
     if (!ent.entnum && ent.owner == pengine.player_ent)
         n->fire_clk = ent.fire_cmd_time;
 

@@ -51,11 +51,10 @@ static EntHash* EntGet(int ent_num) {
     return he;
 }
 
-static float TeamNo(entity player) {
-    // getplayerkeyvalue, not infokey: infokey is an SSQC builtin and does not
-    // exist in CSQC.  Player indices are 0-based, entity numbers 1-based.
-    float slot = player.entnum - 1;
-
+// By player slot, for callers that hold an entity number rather than the
+// player entity itself (a projectile's owner_entnum, whose player may be out
+// of view): pmove.qc asks whose fire is about to hit us.
+float TeamNoSlot(float slot) {
     // SBK_TEAM_APPARENT is forced by the server (UpdateScoreboardInfo) and republished
     // every second, so it cannot drift.  bottomcolor can, because it is the
     // player's own colour: configs and binds re-set it, and the resync in
@@ -89,6 +88,12 @@ static float TeamNo(entity player) {
         case 4: return TeamRed;
     }
     return TeamNone;
+}
+
+static float TeamNo(entity player) {
+    // getplayerkeyvalue, not infokey: infokey is an SSQC builtin and does not
+    // exist in CSQC.  Player indices are 0-based, entity numbers 1-based.
+    return TeamNoSlot(player.entnum - 1);
 }
 
 static inline float AttackingTeamNo() { return getstatf(STAT_TEAMNO_ATTACK); }

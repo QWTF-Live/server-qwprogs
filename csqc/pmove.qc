@@ -238,6 +238,8 @@ float PM_LegacySelfHit() { return CVARF(pmove) == 2; }
 float PM_KnockSelf()  { return TriState(CVARF(pm_knock_self), 1); }
 float PM_KnockOther() { return TriState(CVARF(pm_knock_other), 0); }
 
+float TeamNoSlot(float slot);   // csqc/tfx.qc
+
 // Whose explosion this is, and whether they asked to be moved by it.
 //
 // The null check matters: somebody else's projectile carries no owner at all
@@ -477,6 +479,10 @@ struct PM_Nudge {
     // that command's number, and the first server copy to arrive retired both
     // pushes.
     float src_fpp;
+    // Whose projectile, as a team: SetOnFire refuses a teammate's fire under
+    // teamplay bit 16, and that decides whether a direct incendiary hit lands
+    // burning.  Read at creation, since the shooter need not be in view.
+    float src_team;
     // The blast command anchor for our own grenade: the push is due a
     // KNOCK_LEAD past the clock of the first command to reach it, which is what
     // the server anchors on too.  Resolved during the replay, because that is
@@ -653,6 +659,7 @@ static PM_Nudge* find_nudge_slot() {
         n->src_cseq = 0;
         n->src_fseq = 0;
         n->src_fpp = 0;
+        n->src_team = 0;
         n->fire_clk = 0;
         // A new push is in no state yet.  The cache is invalidated above; this
         // is the running copy, for a replay already in progress.  The ring
@@ -793,10 +800,14 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
         // after SetOnFire has lit the target, so the burn amp is already on
         // when it lands even if we were not burning a moment ago -- unless
         // SetOnFire declined, which it does for fire armour with value left
-        // in it, and in prematch.
+        // in it, in prematch, and for a teammate's fire under teamplay bit
+        // 16.  The team is the apparent one, the only one we have, so a
+        // disguised enemy spy's fire still reads as friendly here.
         if (nudge->src_fpp == FPP_INCENDIARY) {
             float fire_armour = pstate_server.predict_flags & PF_SAVE_FIRE;
-            if (!(fire_armour && getstatf(STAT_ARMOR) > 0) && !prematch)
+            float mate = (serverkeyfloat("teamplay") & 16) && team_no > 0 &&
+                         nudge->src_team == team_no;
+            if (!(fire_armour && getstatf(STAT_ARMOR) > 0) && !prematch && !mate)
                 dsf |= DSF_BURNING;
             if (fire_armour)
                 dsf |= DSF_SAVE_FIRE;
@@ -864,6 +875,7 @@ static PM_Nudge* PM_AddNudgeExplosion(float nat, float seq, float itime, entity 
     n->src_cseq = ent.created_seq;
     n->src_fseq = ent.fire_seq;
     n->src_fpp = ent.fpp.index;
+    n->src_team = ent.owner_entnum > 0 ? TeamNoSlot(ent.owner_entnum - 1) : 0;
     if (!ent.entnum && ent.owner == pengine.player_ent)
         n->fire_clk = ent.fire_cmd_time;
 
@@ -948,6 +960,7 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     n->src_cseq = ent.created_seq;
     n->src_fseq = ent.fire_seq;
     n->src_fpp = ent.fpp.index;
+    n->src_team = ent.owner_entnum > 0 ? TeamNoSlot(ent.owner_entnum - 1) : 0;
     if (!ent.entnum && ent.owner == pengine.player_ent)
         n->fire_clk = ent.fire_cmd_time;
 

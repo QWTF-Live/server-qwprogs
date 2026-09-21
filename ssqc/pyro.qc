@@ -559,8 +559,7 @@ void () T_IncendiaryTouch = {
     damg = 42 + random() * 20;
 
     if (other.health) {
-        if (CF_GetSetting("pdf", "pyro_direct_fix", "on") &&
-            other.solid != SOLID_BSP)
+        if (other.solid != SOLID_BSP)
             SetOnFire(other, self.owner, self.origin, 30);
         deathmsg = DMSG_FLAME;
         // Hurt them for the roll, shove them for the constant (T_MissileTouch).

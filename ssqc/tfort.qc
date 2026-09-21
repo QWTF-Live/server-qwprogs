@@ -1189,6 +1189,10 @@ void PlayerGren_Apply() {
     time = held_time;
     cmd_real_time = held_real;
     gren_release_have_org = FALSE;
+    // The deadline too: it is this release's, and ExplodePerson reads it on
+    // every route in, so left set it gave the next backstop blast -- anyone's
+    // -- a blast_cmd_due from a fuse that was not theirs.
+    gren_release_fuse = 0;
     self = held;
     FO_RetireGrenTimer(t);
 }

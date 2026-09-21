@@ -379,6 +379,11 @@ enumflags {
     // per-command message and nobody who is not looking at it should be paying
     // for it -- and the client is the only side that knows whether anybody is.
     CSQC_PMDEBUG,
+    // Which pushes the movement replay applies, so the server can tell a
+    // victim who has already felt a late push from one who will only see it
+    // arrive (Knock_CatchUp).
+    CSQC_KNOCK_SELF,
+    CSQC_KNOCK_OTHER,
 };
 
 enumflags {

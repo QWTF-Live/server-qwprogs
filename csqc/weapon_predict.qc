@@ -59,6 +59,8 @@ float PM_CmdClock();
 float PM_WantPmove();
 float PM_KnockSelf();
 float PM_KnockOther();
+float PM_KnockSelf();
+float PM_KnockOther();
 
 float WP_PlayerClass() {
     return pstate_server.playerclass;
@@ -339,8 +341,15 @@ void WPP_UpdateEnable(float force) {
     }
 
     // Set this independently of init above so that it can come up faster.
-    if (PM_WantPmove())
+    if (PM_WantPmove()) {
         wpp_status |= CSQC_PMOVE;
+        // What the replay will push us for.  The server's catch-up step for
+        // a late push is owed only to a victim who has already applied it.
+        if (PM_KnockSelf())
+            wpp_status |= CSQC_KNOCK_SELF;
+        if (PM_KnockOther())
+            wpp_status |= CSQC_KNOCK_OTHER;
+    }
     // Asking for the journal rather than having it configured on the server:
     // one switch, on the side that knows whether the lines are being read.
     if (CVARF(fopm_debug))

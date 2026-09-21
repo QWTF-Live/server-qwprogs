@@ -1037,7 +1037,7 @@ static void Knock_Unlink(entity e) {
     e.knock_next = world;
 }
 
-static void Knock_CatchUp(entity targ, vector knock, float back);
+static void Knock_CatchUp(entity targ, vector knock, float back, float mine);
 
 static void Antilag_Knock(entity e) {
     entity o = e.owner;
@@ -1061,7 +1061,7 @@ static void Antilag_Knock(entity e) {
         rj_trace("S: knock-extra t=%.3f by=%v wl=%.0f og=%.0f mt=%.0f tfs=%.0f\n",
                  time, unaccounted, o.waterlevel, (float)!!(o.flags & FL_ONGROUND),
                  o.movetype, o.tfstate);
-    Knock_CatchUp(o, o.velocity - vbefore, max(time - e.forward_knock, 0));
+    Knock_CatchUp(o, o.velocity - vbefore, max(time - e.forward_knock, 0), TRUE);
     o.rj_trace_until = time + 0.4;
     dremove(e);
 }
@@ -1096,6 +1096,7 @@ entity Knock_Defer(entity targ, vector src, float kind) {
     k.classname = "pending_knock";
     k.knock_kind = kind;
     k.owner = targ;
+    k.enemy = blast_proj ? blast_proj.owner : world;   // whose blast: self or other
     k.heat = blast_base;
     // Their reading of the explosion clock plus how long the blast took to
     // arrive: a base both of us hold identically and a duration both of us
@@ -1191,9 +1192,16 @@ entity Knock_Defer(entity targ, vector src, float kind) {
 // command this lands on is the command the push was measured at.
 const float KNOCK_CATCHUP_MAX = 96;
 
-static void Knock_CatchUp(entity targ, vector knock, float back) {
+static void Knock_CatchUp(entity targ, vector knock, float back, float mine) {
     if (input_timelength <= 0 || back < input_timelength)
         return;   // inside the command the push was due on: nothing to make up
+    // Only for a victim who has already applied the push: the step makes up
+    // the travel between their prediction and this late release.  A client
+    // that predicts no push of this kind -- pm_knock_other is off by default
+    // -- would get the push late and a jump on top of it.  Which kinds they
+    // predict rides in fo_wpp_status.
+    if (!ClientPred_Enabled(targ, mine ? CSQC_KNOCK_SELF : CSQC_KNOCK_OTHER))
+        return;
     if (targ.movetype != MOVETYPE_WALK)
         return;   // dead, gibbed, spectating: not a trajectory anyone predicted
 
@@ -1238,7 +1246,7 @@ static void Blast_Knock(entity e) {
         targ.velocity += knock;
         PMD_Knock(targ, knock, moment);
         Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock, moment, knock, 0, targ.cmd_sequence);
-        Knock_CatchUp(targ, knock, b.back);
+        Knock_CatchUp(targ, knock, b.back, e.enemy == targ);
     }
     dremove(e);
 }
@@ -1264,7 +1272,7 @@ static void Bounce_Knock(entity e) {
         PMD_Knock(targ, targ.velocity - before, points);
         Knock_Trace(&b, targ, targ.cmd_sequence, targ.cmd_clock, e.forward_knock,
                     points, targ.velocity - before, 0, targ.cmd_sequence);
-        Knock_CatchUp(targ, targ.velocity - before, b.back);
+        Knock_CatchUp(targ, targ.velocity - before, b.back, e.enemy == targ);
         NB_ConcCapAction(targ, targ.playerclass, &targ.tfstate,
                          time, &targ.conc_cap_time, kLaunch);
     }

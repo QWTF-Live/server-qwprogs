@@ -1258,7 +1258,11 @@ void PM_AddSimExplosion(float itime, entity ent) {
                  time, itime, ent.fpp.cmd_base, (itime - KNOCK_LEAD - ent.fpp.cmd_base) * 1000,
                  ent.first_phys_time, ent.phys_time, (float)clientcommandframe);
     } else if (ent.entnum) {
-        // Same lead, same reason: a push the server scheduled for us.
+        // Same lead, same reason: a push the server scheduled for us.  On the
+        // explicit window like every other server copy: the open-ended kind
+        // read as expired while its due was still ahead and as live once it
+        // had passed, and only the entity's removal ever retired it.
+        nat = NA_ITIME_EXPLICIT_EXPIRE;
         itime = PM_WorldToCmdTime(itime) + KNOCK_LEAD;
     } else if (ent.created_seq && ent.entnum == 0) {
         float dtime = 0;

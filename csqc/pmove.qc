@@ -1069,7 +1069,9 @@ void PM_AddSimExplosion(float itime, entity ent) {
     float ktype = KNOCK_RADIUS;
     if (ent.hit_self && !PM_LegacySelfHit()) {
         ktype = KNOCK_DIRECT;
-        dmg = KNOCK_DIRECT_DMG;
+        // By type: the incendiary's direct hit is about half a rocket's.
+        dmg = (ent.fpp.index == FPP_INCENDIARY) ? KNOCK_DIRECT_IC_DMG
+                                                : KNOCK_DIRECT_DMG;
     }
 
     float seq = 0, nat = NA_ITIME;

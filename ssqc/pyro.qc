@@ -563,6 +563,8 @@ void () T_IncendiaryTouch = {
             other.solid != SOLID_BSP)
             SetOnFire(other, self.owner, self.origin, 30);
         deathmsg = DMSG_FLAME;
+        // Hurt them for the roll, shove them for the constant (T_MissileTouch).
+        knock_damage = KNOCK_DIRECT_IC_DMG;
         TF_T_Damage(other, self, self.owner, damg, TF_TD_NOTTEAM,
                     TF_TD_FIRE);
     }

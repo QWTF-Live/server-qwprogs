@@ -220,6 +220,10 @@ enum {
 // who feels it.  Fixing the number costs nothing anyone can see: the damage
 // still varies, only the shove does not.
 const float KNOCK_DIRECT_DMG = 102;
+// The incendiary's direct hit rolls 42 + 20 and had no fixed push at all, so
+// the client -- which handles rockets and incendiaries in one place -- was
+// predicting the rocket's 102 against a shove of about half that.
+const float KNOCK_DIRECT_IC_DMG = 52;
 
 struct FO_GrenExp {
     int type;

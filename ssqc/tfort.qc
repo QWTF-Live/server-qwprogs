@@ -1283,18 +1283,24 @@ void () FO_ThrowGrenade = {
         late_edge = timer.heat;
     }
 
-    if ((timer.nextthink < timer.heat || throwtime > late_edge - 0.1) &&
-        !IsClownMode(CLOWN_SPAM_GRENADES)) {
-        // We do not allow throwing within the 0.8s, or the last 0.1s.
-        // The former is a priming time, the latter is so that client side
-        // knockback will be able to reliably predict whether a grenade was held
-        // (e.g. gren jump) or thrown up to ~200ms ping.
-        //
-        // In the first case, we've set THROWING so think will handle.
-        // In the second, buckle up.
-    } else {
+    // We do not allow throwing within the 0.8s, or the last 0.1s.  The former
+    // is a priming time, the latter is so that client side knockback will be
+    // able to reliably predict whether a grenade was held (e.g. gren jump) or
+    // thrown up to ~200ms ping.
+    float early = timer.nextthink < timer.heat;
+    float late = throwtime > late_edge - 0.1;
+    if (IsClownMode(CLOWN_SPAM_GRENADES) || (!early && !late)) {
         FO_SpawnThrownGrenade(timer, 0);   // the release itself
         FO_RetireGrenTimer(timer);
+    } else if (early) {
+        // GRENTHROWING stays set: FO_GrenadeThink spawns the throw at 0.8.
+    } else {
+        // Refused, and it goes off in the hand.  Not a latch: PlayerGren_Apply
+        // returns on GRENTHROWING, so leaving it set handed the held blast to
+        // the timer's backstop, half a second after its fuse.  The client
+        // predicts the held blast on time (its WP_ExplodeGren tests only the
+        // primed bits), so the delay was ours alone.
+        self.tfstate &= ~TFSTATE_GRENTHROWING;
     }
 }
 

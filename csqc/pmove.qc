@@ -578,6 +578,15 @@ static float nudge_expired(PM_Nudge* n) {
     if (n->fired_seq && n->fired_seq > pstate_server.seq)
         return FALSE;
 
+    // Acknowledged, and it has a due it fired on: the server's state carries
+    // the push -- it consumed its queued effect once -- so the nudge is spent
+    // whatever the clock reads.  The time test below used to settle this by
+    // itself, and a backward correction defeated it: the snapshot's clock sat
+    // before the due again, the nudge read live, and the fresh replay seeded
+    // from that snapshot pushed a second time.
+    if (n->fired_seq && n->expire_time)
+        return TRUE;
+
     if (n->expire_time && n->expire_time <= pstate_server.server_time)
         return TRUE;
 

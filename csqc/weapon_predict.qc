@@ -779,8 +779,14 @@ static float WP_Sniper_IsAttack() {
         return FALSE;
 
     if (pstate_pred.buttons_held & BUTTON_ATTACK) {
-        // Start charging when possible/necessary.
-        if (!aiming && pmove_onground && vlen(PM_Vel()) <= 50) {
+        // Start charging when possible/necessary.  The server's test
+        // (W_WeaponFrame): horizontal speed at most 50, on the ground or not
+        // -- only the release needs the ground.  Requiring it here, and
+        // measuring the full velocity, left a sniper holding fire in a jump
+        // aiming on the server and not here.
+        vector hv = PM_Vel();
+        hv_z = 0;
+        if (!aiming && vlen(hv) <= 50) {
             pstate_pred.tfstate |= TFSTATE_AIMING;
             SniperState.start_seq = pstate_pred.seq;
         }

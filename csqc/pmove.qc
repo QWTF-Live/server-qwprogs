@@ -9,10 +9,22 @@ DEFCVAR_FLOAT(fo_jumpvolume, 1);
 // state.  In the case that `seq == commandclientframe` this could only be
 // partially true since the input_*s (in particular, timelength) are not
 // constant for this frame.
+const static float PM_NUDGES = 8;
+
 static struct PMS_Data {
     vector org, vel;
     float seq, server_seq;
     float interp_t;
+    // Per nudge slot, the command its push landed on in the lineage that
+    // produced this state -- so a replay resumed from it does not land the
+    // push again.  Part of the state rather than a global: a replay that
+    // resumes the cache (or the error pass's prior state) is a continuation
+    // whose starting velocity already carries the push, while a fresh replay
+    // from the snapshot is not and must land it.  A backward clock correction
+    // is what makes the window reopen; with the clock folded into one command
+    // the next command's window can contain a due the lineage already fired
+    // on, and the server consumes its queued push once.
+    float nudge_fired[PM_NUDGES];
 } pm_s, pm_so, pm_c;
 
 static struct {
@@ -23,6 +35,7 @@ static struct {
     float seq, server_seq;
     float interp_t;
     float last_nudge;
+    float nudge_fired[PM_NUDGES];   // the running copy of the state's
 
     vector error;
     float errortime;
@@ -386,6 +399,8 @@ static void PM_SavePMS(PMS_Data *pmsd) {
     pmsd->seq = pm.seq;
     pmsd->server_seq = pm.server_seq;
     pmsd->interp_t = pm.interp_t;
+    for (float i = 0; i < PM_NUDGES; i++)
+        pmsd->nudge_fired[i] = pm.nudge_fired[i];
 }
 
 static void PM_ActivatePMS(PMS_Data *pmsd) {
@@ -397,6 +412,8 @@ static void PM_ActivatePMS(PMS_Data *pmsd) {
     pm.seq = pmsd->seq;
     pm.server_seq = pmsd->server_seq;
     pm.interp_t = pmsd->interp_t;
+    for (float i = 0; i < PM_NUDGES; i++)
+        pm.nudge_fired[i] = pmsd->nudge_fired[i];
     pm.active_pmsd = pmsd;
 };
 
@@ -471,20 +488,13 @@ struct PM_Nudge {
     // acknowledged that command the push exists only here, so the nudge has to
     // outlive its own timer until it does.
     float fired_seq;
-    // The replay pass this nudge last fired in.  A window is matched by the
-    // command clock, and a backward clock correction (cmd_clock_fix < 0)
-    // folded into one command can carry the clock back past a due the pass
-    // already fired on, so the next command's window contains it again.  The
-    // server consumes its queued push once; so must a pass.
-    float fired_pass;
     float trace_seq;   // RJ_TRACE: last replay seq this nudge was reported at
 };
 
 const static float NUDGE_SEQ = 3;
 const static float NUDGE_EPS = NUDGE_SEQ * SERVER_FRAME_DT;
-static PM_Nudge nudges[8];
+static PM_Nudge nudges[PM_NUDGES];
 static float num_nudges, have_active_nudges;
-static float pm_pass_id;   // bumped per PM_RunMovement, never zero
 static float nudges_added;   // since the last error pass; its saved prior state predates them
 // A command is replayed several times a frame -- rendering, the error pass,
 // the graphs -- and only the last one reaching clientcommandframe is what the
@@ -623,12 +633,14 @@ static PM_Nudge* find_nudge_slot() {
         n->expire_frame = 0;
         n->expire_time = 0;
         n->expire_spawnseq = 0;
-        n->fired_pass = 0;
         // Identity too: a recycled slot kept the previous blast's handles, and
         // a constructor that did not write them then matched the wrong copy.
         n->src_cseq = 0;
         n->src_fseq = 0;
         n->fire_clk = 0;
+        // A new push is in no state yet.  The cache is invalidated above; this
+        // is the running copy, for a replay already in progress.
+        pm.nudge_fired[i] = 0;
         return n;
     }
 
@@ -1274,14 +1286,14 @@ static void PM_ApplyNudges(entity ent, float seq, float sitime, float eitime, fl
             n->cmd_resolved = TRUE;
         }
 
-        if (n->fired_pass && n->fired_pass == pm_pass_id)
-            continue;   // once per pass, whatever the clock does after
+        if (pm.nudge_fired[i])
+            continue;   // already in the state this replay is running from
         if (!MatchNudge(n, seq, sitime, eitime, slack))
             continue;
 
         pm.last_nudge = seq;
         n->fired_seq = seq;
-        n->fired_pass = pm_pass_id;
+        pm.nudge_fired[i] = seq;
         if (seq > nudge_sig_from)
             nudge_sig += seq * nudges.length + i + 1;
         switch (n->type) {
@@ -1352,7 +1364,6 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
     entity ent = pm.ent;
     pm_final_pass = (endframe == clientcommandframe) && !pmd_norecord;
     nudge_sig = 0;
-    pm_pass_id += 1;
 
     // This runs several times per frame (rendering, error measurement, debug
     // graphs), so it must be idempotent.  The conc paths below now advance
@@ -2121,6 +2132,10 @@ void PM_ServerUpdate() {
 #endif
     pm.ent.origin = pstate_server.pmove.origin;
     pm.ent.velocity = pstate_server.pmove.velocity;
+    // The server's state carries none of our predicted pushes; every replay
+    // from here lands them afresh.
+    for (float i = 0; i < PM_NUDGES; i++)
+        pm.nudge_fired[i] = 0;
     PM_SavePMS(&pm_s);
 
     if (!CVARF(fopm_nocache)) {

@@ -49,6 +49,7 @@
 .vector pusher_predict_velocity;
 .float  pusher_predict_endtime;
 .entity pusher_predict_client;  // world = every client
+.float  pusher_noadvance;       // pushers: hold the real motion where it is (an opening door)
 
 void () door_trigger_touch;
 void () door_use;

@@ -29,6 +29,7 @@ void () door_blocked = {
 void () door_hit_top = {
     FO_Sound(self, CHAN_VOICE, self.noise1, 1, ATTN_NORM);
     self.state = STATE_TOP;
+    self.pusher_noadvance = FALSE;
     if (self.spawnflags & 32)
         return;
 
@@ -48,6 +49,8 @@ void () door_go_down_silent = {
         self.health = self.max_health;
     }
     self.state = STATE_DOWN;
+    // Closing: more obstructive as it goes, so the engine may show it ahead.
+    self.pusher_noadvance = FALSE;
     SUB_CalcMove(self.pos1, self.speed, door_hit_bottom);
 }
 
@@ -66,6 +69,13 @@ void () door_go_up = {
     }
     FO_Sound(self, CHAN_VOICE, self.noise2, 1, ATTN_NORM);
     self.state = STATE_UP;
+    // Opening: less obstructive as it goes.  Shown ahead by a client's ping,
+    // the one position in a snapshot served every command that client
+    // re-predicted, and the older of those we had already run against the
+    // less-open door -- they saw a gap that was not there yet and walked into
+    // it.  Held where it is, the client at worst bumps an edge we let it
+    // through (server-antilag.qc).
+    self.pusher_noadvance = TRUE;
     SUB_CalcMove(self.pos2, self.speed, door_hit_top);
     SUB_UseTargets();
 };

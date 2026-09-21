@@ -246,6 +246,9 @@ enumflags {
     // AT_SAVEEXPLOSION (every *_INITARMORCLASS is 0 bar pyro's AT_SAVEFIRE),
     // so it only ever arrives via an armour pickup.
     PF_SAVE_EXPLOSION,
+    // Fire armour, for a direct incendiary hit: TF_TD_FIRE, halved by
+    // AT_SAVEFIRE.  Pyros spawn with it, so it is not a pickup case.
+    PF_SAVE_FIRE,
 };
 
 static float MAX_FILTER_ENTS = 4;
@@ -605,6 +608,10 @@ static float Prediction_ChangedMask(entity player, entity src) {
         src.predict_flags |= PF_SAVE_EXPLOSION;
     else
         src.predict_flags &= ~PF_SAVE_EXPLOSION;
+    if (src.armorclass & AT_SAVEFIRE)
+        src.predict_flags |= PF_SAVE_FIRE;
+    else
+        src.predict_flags &= ~PF_SAVE_FIRE;
 
     player.predict_state.server_time = time;
 

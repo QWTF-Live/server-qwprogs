@@ -861,6 +861,7 @@ float CalcRadiusDamage(vector src, entity targ, float flags, float damage,
 enumflags {
     DSF_BURNING,         // target is burning
     DSF_SAVE_EXPLOSION,  // target's armour absorbs explosion damage
+    DSF_SAVE_FIRE,       // target's armour absorbs fire damage
 };
 
 float Damage_Scale(float damage, float kflags, float dsflags) {
@@ -874,6 +875,9 @@ float Damage_Scale(float damage, float kflags, float dsflags) {
         damage *= 4;
 
     if (dsflags & DSF_SAVE_EXPLOSION)
+        damage = floor(damage * 0.5);
+
+    if (dsflags & DSF_SAVE_FIRE)
         damage = floor(damage * 0.5);
 
     return damage;

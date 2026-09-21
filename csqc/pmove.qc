@@ -773,7 +773,22 @@ static void PM_NudgeExplosion(PM_Nudge* nudge, entity ent, float back) {
     float dsf = 0;
     if (pstate_pred.tfstate & TFSTATE_BURNING)
         dsf |= DSF_BURNING;
-    if (pstate_server.predict_flags & PF_SAVE_EXPLOSION)
+    if (b.type == KNOCK_DIRECT) {
+        // A direct hit is dealt as the projectile's own damage type, not as
+        // an explosion.  A rocket's is TF_TD_OTHER, which no armour halves.
+        // An incendiary's is TF_TD_FIRE: halved by fire armour, and dealt
+        // after SetOnFire has lit the target, so the burn amp is already on
+        // when it lands even if we were not burning a moment ago -- unless
+        // SetOnFire declined, which it does for fire armour with value left
+        // in it, and in prematch.
+        if (nudge->src_fpp == FPP_INCENDIARY) {
+            float fire_armour = pstate_server.predict_flags & PF_SAVE_FIRE;
+            if (!(fire_armour && getstatf(STAT_ARMOR) > 0) && !prematch)
+                dsf |= DSF_BURNING;
+            if (fire_armour)
+                dsf |= DSF_SAVE_FIRE;
+        }
+    } else if (pstate_server.predict_flags & PF_SAVE_EXPLOSION)
         dsf |= DSF_SAVE_EXPLOSION;
 
     float moment = Class_ScaleMoment(WP_PlayerClass(), Damage_Scale(points, b.flags, dsf));

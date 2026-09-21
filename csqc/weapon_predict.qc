@@ -1971,7 +1971,7 @@ void WP_Attack() {
                 PP_CreateProjectile(FPP_TRANQ, PM_Org() + v_forward * 8 + '0 0 16');
                 break;
             case WEAP_RAILGUN:
-                PP_CreateProjectile(FPP_RAILGUN, PM_Org() + '0 0 16');
+                PP_CreateProjectile(FPP_RAILGUN, PM_Org() + v_forward * 8 + '0 0 16');
                 break;
 
             case WEAP_GRENADE_LAUNCHER:

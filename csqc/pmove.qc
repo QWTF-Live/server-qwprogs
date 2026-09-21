@@ -624,6 +624,11 @@ static PM_Nudge* find_nudge_slot() {
         n->expire_time = 0;
         n->expire_spawnseq = 0;
         n->fired_pass = 0;
+        // Identity too: a recycled slot kept the previous blast's handles, and
+        // a constructor that did not write them then matched the wrong copy.
+        n->src_cseq = 0;
+        n->src_fseq = 0;
+        n->fire_clk = 0;
         return n;
     }
 
@@ -877,8 +882,16 @@ static void PM_AddNudgeBounce(float itime, entity ent, float dmg) {
     n->expire_time = itime;
     n->itime = itime;
 
+    // The same identity block PM_AddNudgeExplosion writes.  Without it a conc
+    // carried whatever handles the slot last held: supersession by its own
+    // server copy missed, and PM_UpdateNudgeSource refused the authoritative
+    // blast position because src_cseq was not the projectile's.
     n->src = ent;
     n->src_no = ent.entnum;
+    n->src_cseq = ent.created_seq;
+    n->src_fseq = ent.fire_seq;
+    if (!ent.entnum && ent.owner == pengine.player_ent)
+        n->fire_clk = ent.fire_cmd_time;
 
     ent.nudge = n;
     ent.removefunc = PM_RemoveSelfNudges;

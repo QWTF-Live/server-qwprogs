@@ -228,7 +228,12 @@ void PP_PlayerPostThink() {
         return;
     }
 
-    adv = (min(self.client_ping, pp_max) - pp_buffer) / 1000;
+    // Plus the buffer, not minus.  Only pushers whose motion makes them more
+    // obstructive are advanced now (doors.qc holds an opening one), so the
+    // margin for ping jitter belongs on the obstructive side: a closing door
+    // shown a little further along is a phantom edge the server lets the
+    // player through, shown a little short it is a gap the server closes.
+    adv = (min(self.client_ping, pp_max) + pp_buffer) / 1000;
     if (adv < 0)
         adv = 0;
     self.pusher_advance = adv;

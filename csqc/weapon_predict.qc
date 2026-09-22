@@ -1872,17 +1872,18 @@ static void GrenDecline(float why) {
 }
 
 static void W_ThrowGren(float is_throw) {
-    // Predicting our own throw does not depend on REWIND_GRENADES, and being
-    // gated behind it was costing the thrower a round trip of their own
-    // grenade for nothing.  The flag buys the server rewinding the throw and
-    // crediting it forward by ping, which advances the grenade along its arc
-    // for everyone else and takes their reaction time -- that stays off.  This
-    // changes only when *we* see our own grenade leave our hand; the server
-    // spawns it at the same instant either way, so every other player sees the
-    // identical flight with the identical warning.
+    // The throw's state and sound are predicted whatever REWIND_GRENADES says:
+    // the hand empties and the throw is heard on the command, and that costs
+    // nobody anything.  The predicted copy of the grenade is another matter.
+    // A copy starts where the server's will (PP_CreateProjectile mirrors it),
+    // and without the flag the server's copy gets no ping credit, so it starts
+    // when the command arrives -- a round trip after the throw, which is when
+    // the real one reaches us anyway.  A copy could show nothing before then
+    // and can only be wrong, so there is none; with the flag on, the credit is
+    // what lets a copy leave the hand early.
     //
-    // What has to hold instead is that we never predict a throw the server
-    // refuses, or the grenade appears and vanishes.  CanThrowGrenade below is
+    // What has to hold either way is that we never predict a throw the server
+    // refuses, or the hand empties and fills again.  CanThrowGrenade below is
     // the same window the server applies, evaluated on the same clock now that
     // last_prime is on the chain, and it declines a command and a half early.
     if (getstatf(STAT_NOFIRE)) {
@@ -1918,15 +1919,15 @@ static void W_ThrowGren(float is_throw) {
                  pstate_pred.last_prime + 0.8, PM_Org(), (float)clientcommandframe);
         rj_cmd_trace_until_seq = clientcommandframe + 12;
         gren_decline = 0;
-        // Where the server spawns it: the thrower's origin on this command
-        // (FO_SpawnThrownGrenade does setorigin(proj, user.origin)).  This
-        // spawned at '0 0 0' -- dead code while the REWIND_GRENADES gate stood,
-        // and never audited when the gate came off, so the predicted grenade
-        // flew from the map origin and the server's copy, a player-position
-        // away, could not claim it.
-        entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org());
-        gren.fpp.gren_type = gren_type;
-        FPP_ApplyGrenadeProperties(gren);
+        if (RewindFlagEnabled(REWIND_GRENADES)) {
+            // Where the server spawns it: the thrower's origin on this command
+            // (FO_SpawnThrownGrenade does setorigin(proj, user.origin)).
+            entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org());
+            gren.fpp.gren_type = gren_type;
+            FPP_ApplyGrenadeProperties(gren);
+        } else {
+            PredProj_Sound(FPP_HANDGRENADE);   // what the copy would have played
+        }
     }
 
     pstate_pred.tfstate &= ~TFSTATE_GREN_MASK_ALL;

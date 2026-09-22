@@ -366,6 +366,23 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             FO_DebugDropOn(self, arg2 == "gren" ? "gren" : "rocket",
                            arg3 ? bound(0.05, stof(arg3), 2) : 0.2);
             return TRUE;
+        case "pmove_status":
+            // What each client advertises in fo_wpp_status: movement
+            // prediction and the two knock kinds it predicts.
+            sprint(self, PRINT_HIGH, sprintf("%-16s %-6s %-6s %-6s\n",
+                                             "name", "pmove", "kself", "kother"));
+            for (pl = nextent(world); pl != world; pl = nextent(pl)) {
+                if (pl.classname != "player" && pl.classname != "observer")
+                    continue;
+                if (!(pl.flags & FL_CLIENT) || pl.netname == "")
+                    continue;
+                sprint(self, PRINT_HIGH, sprintf("%-16s %-6s %-6s %-6s\n",
+                    substring(pl.netname, 0, 16),
+                    ClientPred_Enabled(pl, CSQC_PMOVE) ? "on" : "off",
+                    ClientPred_Enabled(pl, CSQC_KNOCK_SELF) ? "on" : "off",
+                    ClientPred_Enabled(pl, CSQC_KNOCK_OTHER) ? "on" : "off"));
+            }
+            return TRUE;
         case "spawn_debug":
             if (!qwtf_debug) {
                 sprint(self, PRINT_HIGH,

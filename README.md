@@ -7,6 +7,7 @@ New commands
 * `fo_reloadalpha x` alpha of viewmodel when reloading, 0 for invisible
 * `fo_team_color_crosshair` change crosshair to team colour
 * `cmd updateserver` tell server to pull latest progs and maps
+* `cmd pmove_status` lists every client with the movement prediction and knock prediction (self, other) their client advertises
 * `+slot n` bind. fires nth weapon
 * `fo_default_weapon 0` default weapon when using `+slot` binds
 * `fo_hud_cache 1` less resource intensive hud

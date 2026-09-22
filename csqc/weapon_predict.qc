@@ -1579,13 +1579,26 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
   float static_dt = push_t.static_ms / 1000.0;
 
   // Note: We use true time here as created projectiles exist outside of pred.
-  // The server's stamp for this frame, rebuilt from the echoed stamp of the
-  // last acked command plus frame lengths since; the server anchors its copy
-  // of this projectile on the same number.
+  // Where the server's copy will start.  Forward_Projectile starts it at its
+  // real time less the type's ping credit for the command's age -- real time
+  // less the stamp -- and pulls it back only where REWIND_PROJ_FIRE applies.
+  // The stamp is the server's for this frame, rebuilt from the echoed stamp of
+  // the last acked command plus frame lengths since; its real time is the
+  // command clock, to within the chain's tolerance.  A type whose credit
+  // covers the age starts on the stamp exactly, the drift cancelling; one
+  // whose credit falls short starts later by the remainder, and there the
+  // drift is the error.
   float stamp_anchor = pstate_pred.pmove.cmd_servertime;
-  if (tf_config.cmd_time && stamp_anchor > 0)
-      proj.starttime = stamp_anchor;
-  else
+  if (tf_config.cmd_time && stamp_anchor > 0) {
+      float real_time = pstate_pred.server_time;
+      float age_ms = (real_time - stamp_anchor) * 1000;
+      ProjectResult srv = Forward_ProjectOffset(fpp_type,
+          min(age_ms, tf_config.max_rewind_ms - 25) + SERVER_FRAME_MS);
+      // FPF_NO_REWIND is server-side state, set on the in-hand blast alone,
+      // and that copy sets its own start below (CP_DROP), so it is not asked.
+      float pull = RewindFlagEnabled(REWIND_PROJ_FIRE) ? srv.dynamic_ms / 1000.0 : 0;
+      proj.starttime = real_time - pull;
+  } else
       proj.starttime = time + uncorrected_dt - input_timelength / 2;
   proj.endtime = proj.starttime + ms_ahead / 1000.0 + PP_EPS;
 

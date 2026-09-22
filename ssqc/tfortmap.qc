@@ -2572,8 +2572,7 @@ void (entity Item, float PAlive, entity P) tfgoalitem_drop = {
         if (P.v_angle_x < 25) {
             Item.velocity = (v_forward * 400) + (v_up * 200);
         } else {
-            Item.velocity = aim(P, 10000);
-            Item.velocity = Item.velocity * 400;
+            Item.velocity = v_forward * 400;
             Item.velocity_z = 200;
         }
         Item.touch = item_tfgoal_touch;

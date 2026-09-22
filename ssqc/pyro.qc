@@ -502,7 +502,7 @@ void () W_FireFlame = {
     flame.solid = SOLID_BBOX;
     flame.classname = "flamerflame";
     makevectors(self.v_angle);
-    flame.velocity = aim(self, 10000) * FPP_Get(FPP_FLAMETHROWER)->speed;
+    flame.velocity = v_forward * FPP_Get(FPP_FLAMETHROWER)->speed;
     flame.nextthink = time + 0.15;
 
     flame.touch = Flamer_stream_touch;
@@ -597,7 +597,7 @@ void W_FireIncendiaryCannon(vector org, vector v_ang) {
     proj.solid = SOLID_BBOX;
 
     makevectors(v_ang);
-    proj.velocity = aim(self, 1000) * FPP_Get(FPP_INCENDIARY)->speed;
+    proj.velocity = v_forward * FPP_Get(FPP_INCENDIARY)->speed;
     proj.angles = vectoangles(proj.velocity);
     proj.touch = T_IncendiaryTouch;
     proj.think = SUB_Remove;

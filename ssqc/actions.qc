@@ -98,8 +98,7 @@ void () TeamFortress_Discard = {
     if (self.v_angle_x) {
         newmis.velocity = v_forward * 400 + v_up * 200;
     } else {
-        newmis.velocity = aim(self, 10000);
-        newmis.velocity = newmis.velocity * 400;
+        newmis.velocity = v_forward * 400;
         newmis.velocity_z = 200;
     }
     newmis.avelocity = '0 300 0';

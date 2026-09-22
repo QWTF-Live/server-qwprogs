@@ -774,8 +774,7 @@ void (entity timer, float via) FO_SpawnThrownGrenade = {
             (shared_crandom(PRNG_WEAP) * 10 * v_right);
         self = held_prng;
     } else {
-        proj.velocity = aim(user, 10000);
-        proj.velocity = proj.velocity * 600;
+        proj.velocity = v_forward * 600;
         proj.velocity_z = 200;
     }
     proj.angles = vectoangles(proj.velocity);
@@ -868,8 +867,7 @@ void TeamFortress_PrimeGrenade(float inp, float is_player) {
             if (self.v_angle_x) {
                 newmis.velocity = v_forward * 1200 + v_up * 200;
             } else {
-                newmis.velocity = aim(self, 10000);
-                newmis.velocity = newmis.velocity * 1200;
+                newmis.velocity = v_forward * 1200;
                 newmis.velocity_z = 75;
             }
             newmis.angles = vectoangles(newmis.velocity);
@@ -2607,8 +2605,7 @@ void (float type, float ammo) TeamFortress_DropAmmo = {
     if (self.v_angle_x) {
         newmis.velocity = v_forward * 400 + v_up * 200;
     } else {
-        newmis.velocity = aim(self, 10000);
-        newmis.velocity = newmis.velocity * 400;
+        newmis.velocity = v_forward * 400;
         newmis.velocity_z = 200;
     }
     newmis.avelocity = '0 300 0';

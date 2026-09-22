@@ -213,8 +213,7 @@ void () W_FireRailgun = {
 
     makevectors(self.v_angle);
     org = self.origin + v_forward * 8;
-    vec = aim(self, 10000);
-    vec = normalize(vec);
+    vec = v_forward;
 
     entity proj = FOProj_Create(FPP_RAILGUN);
     proj.owner = self;

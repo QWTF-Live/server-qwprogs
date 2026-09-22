@@ -787,7 +787,7 @@ void () W_FireShotgun = {
 
     KickPlayer(-2, self);
     self.ammo_shells = self.ammo_shells - 1;
-    dir = aim(self, 100000);
+    dir = v_forward;
     deathmsg = DMSG_SHOTGUN;
     FireBullets(6, dir, '0.04 0.04 0');
 };
@@ -803,7 +803,7 @@ void () W_FireSuperShotgun = {
 
     KickPlayer(-4, self);
     self.ammo_shells = self.ammo_shells - 2;
-    dir = aim(self, 100000);
+    dir = v_forward;
     deathmsg = DMSG_SSHOTGUN;
     FireBullets(14, dir, '0.14 0.08 0');
 };
@@ -849,7 +849,7 @@ void () W_FireSniperRifle = {
 
     KickPlayer(-4, self);
 
-    dir = aim(self, 10000);
+    dir = v_forward;
     float range = old_sniperrange ? 3072 : 9192;  // Super arbitrary but ok.
     traceline(src, src + dir * range, MOVE_LAGGED, self);
 
@@ -939,11 +939,8 @@ void () W_FireAssaultCannon = {
     *ws->clip_fired += 1;
     *ws->ammo_remaining -= (ws->wi)->ammo_per_shot;
 
-    local vector dir;
-
     KickPlayer(-4, self);
 
-    dir = aim(self, 100000);
     deathmsg = DMSG_ASSAULTCANNON;
 
     WeapPred_FireAssCan(self.v_angle, 5, '0.04 0.04 0');
@@ -1702,8 +1699,7 @@ void W_FireGrenade(vector org, vector v_ang) {
             (200 + shared_crandom(PRNG_WEAP) * 10) * v_up +
             (shared_crandom(PRNG_WEAP) * 10 * v_right);
     } else {
-        proj.velocity = aim(self, 10000);
-        proj.velocity = proj.velocity * 600;
+        proj.velocity = v_forward * 600;
         proj.velocity_z = 200;
     }
     proj.angles = vectoangles(proj.velocity);
@@ -1723,13 +1719,13 @@ entity (int fpp_type, vector offset) W_FireNail = {
     proj.movetype = MOVETYPE_FLYMISSILE;
     proj.solid = SOLID_BBOX;
 
-    proj.angles = vectoangles(aim(self, 1000));
+    proj.angles = vectoangles(v_forward);
     proj.classname = "spike";
     proj.think = SUB_Remove;
     proj.nextthink = time + 6;
     setorigin(proj, self.origin + offset + '0 0 16');
 
-    proj.velocity = aim(self, 1000) * FPP_Get(fpp_type)->speed;
+    proj.velocity = v_forward * FPP_Get(fpp_type)->speed;
 
     if (fpp_type == FPP_NAIL) {
         proj.weapon = DMSG_NAILGUN;

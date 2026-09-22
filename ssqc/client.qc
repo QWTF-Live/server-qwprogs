@@ -2982,8 +2982,7 @@ void () PlayerPreThink = {
             if (!self.feign_areachecked) {
                 local float check_area = Spy_CheckArea(self);
                 if (check_area == 1 || check_area == 3) {
-                    self.velocity = aim(self, 10000);
-                    self.velocity = self.velocity * 200;
+                    self.velocity = v_forward * 200;
                     self.velocity_z = 200;
                 } else {
                     self.feign_areachecked = 1;

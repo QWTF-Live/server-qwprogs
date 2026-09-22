@@ -528,6 +528,15 @@ CsGrenTimer ParseGrenPrimed(float grentype, float explodes_at,
 
     if (game_state.is_spectator)
         timer_flags &= ~FL_GT_ADJPING;
+    // A prime we predicted ourselves ends on our own clock: the blast is
+    // predicted 3.8 s of our command time after it, and the throw deadline is
+    // judged on that same chain (blast_cmd_due), so the countdown reads zero
+    // on the blast and a release before the end is on time by construction.
+    // The ping pull dates from a deadline judged at server time, where the
+    // release had to leave a round trip early; kept for a prime the server
+    // reported that we did not predict.
+    if (timer_flags & FL_GT_LOCAL)
+        timer_flags &= ~FL_GT_ADJPING;
 
     float debug_print_state = CVARF(fo_grentimer_debug) & 1;
 

@@ -2274,6 +2274,18 @@ static void WP_GrenadeTimers() {
     // the rest of the map.  The THROWN dimming already happened on the frame
     // the throw was predicted, while server_exp still carried the prime.
     if (!server_exp) {
+        // The server retiring a prime we were still showing primed is a throw
+        // we did not predict -- released inside the window CanThrowGrenade
+        // declines, or with prediction off -- so the dim happens here, on the
+        // acknowledgement, instead of never.  A blast retires it too, and that
+        // timer is expiring anyway.
+        if (last_server_exp) {
+            CsGrenTimer gone = CsGrenTimer::Match(last_server_exp, 25*MSEC);
+            if (gone == world)
+                gone = CsGrenTimer::MatchLocal();
+            if (gone != world)
+                gone.set_flag(FL_GT_THROWN);
+        }
         last_server_exp = 0;
         return;
     }

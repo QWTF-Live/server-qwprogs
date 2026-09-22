@@ -240,7 +240,6 @@ void WPP_Status() {
     PRINT_CONFIG(max_rewind_ms);
     PRINT_CONFIG(max_rewind_slow_projectile_ms);
     PRINT_CONFIG(max_rewind_fast_projectile_ms);
-    PRINT_CONFIG(max_rewind_grenade_ms);
     PRINT_CONFIG(rewind_fast_projectile_thresh);
     printf("\n");
 
@@ -1550,7 +1549,8 @@ float PP_PredrawPredicted() {
 static float PP_EPS = 0.05;
 
 enumflags {
-    CP_DROP
+    CP_DROP,
+    CP_GREN1,   // grenade 1, the one hand grenade with a ping credit
 };
 
 entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
@@ -1571,7 +1571,8 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
 
   float ms_ahead = (pstate_pred.server_time - pstate_server.server_time) * 1000;
 
-  ProjectResult push_t = Forward_ProjectOffset(fpp_type, ms_ahead);
+  float gren1 = (cp_flags & CP_GREN1) != 0;
+  ProjectResult push_t = Forward_ProjectOffset(fpp_type, ms_ahead, gren1);
 
   float uncorrected_dt = max(ms_ahead - push_t.dynamic_ms, 0) / 1000.0;
   if (cp_flags & CP_DROP)
@@ -1593,7 +1594,7 @@ entity PP_CreateProjectile(int fpp_type, vector org, float cp_flags=0) {
       float real_time = pstate_pred.server_time;
       float age_ms = (real_time - stamp_anchor) * 1000;
       ProjectResult srv = Forward_ProjectOffset(fpp_type,
-          min(age_ms, tf_config.max_rewind_ms - 25) + SERVER_FRAME_MS);
+          min(age_ms, tf_config.max_rewind_ms - 25) + SERVER_FRAME_MS, gren1);
       // FPF_NO_REWIND is server-side state, set on the in-hand blast alone,
       // and that copy sets its own start below (CP_DROP), so it is not asked.
       float pull = RewindFlagEnabled(REWIND_PROJ_FIRE) ? srv.dynamic_ms / 1000.0 : 0;
@@ -1742,7 +1743,6 @@ static float CanThrowGrenade(int gren_type) {
         return FALSE;  // Not time to throw yet, THROWING set if necessary.
 
     float last_possible_throw = pstate_pred.last_prime + 3.7;
-    last_possible_throw -= FO_RewindGrenDt(gren_type);
 
     // We're conservative here, a missed predicted projectile throw into what's
     // actually a held grenade is frustrating.  Better to leave it up to the
@@ -1872,15 +1872,15 @@ static void GrenDecline(float why) {
 }
 
 static void W_ThrowGren(float is_throw) {
-    // The throw's state and sound are predicted whatever REWIND_GRENADES says:
-    // the hand empties and the throw is heard on the command, and that costs
-    // nobody anything.  The predicted copy of the grenade is another matter.
-    // A copy starts where the server's will (PP_CreateProjectile mirrors it),
-    // and without the flag the server's copy gets no ping credit, so it starts
-    // when the command arrives -- a round trip after the throw, which is when
-    // the real one reaches us anyway.  A copy could show nothing before then
-    // and can only be wrong, so there is none; with the flag on, the credit is
-    // what lets a copy leave the hand early.
+    // The throw's state and sound are predicted for every grenade: the hand
+    // empties and the throw is heard on the command, and that costs nobody
+    // anything.  The predicted copy of the grenade is another matter.  A copy
+    // starts where the server's will (PP_CreateProjectile mirrors it), and a
+    // grenade with no ping credit starts there when the command arrives -- a
+    // round trip after the throw, which is when the real one reaches us
+    // anyway -- so a copy could show nothing before then and could only be
+    // wrong.  Grenade 1 alone has a credit (Forward_ProjectOffset), so it
+    // alone gets a copy.
     //
     // What has to hold either way is that we never predict a throw the server
     // refuses, or the hand empties and fills again.  CanThrowGrenade below is
@@ -1919,10 +1919,10 @@ static void W_ThrowGren(float is_throw) {
                  pstate_pred.last_prime + 0.8, PM_Org(), (float)clientcommandframe);
         rj_cmd_trace_until_seq = clientcommandframe + 12;
         gren_decline = 0;
-        if (RewindFlagEnabled(REWIND_GRENADES)) {
+        if (FO_IsGren1(pstate_pred.playerclass, gren_type)) {
             // Where the server spawns it: the thrower's origin on this command
             // (FO_SpawnThrownGrenade does setorigin(proj, user.origin)).
-            entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org());
+            entity gren = PP_CreateProjectile(FPP_HANDGRENADE, PM_Org(), CP_GREN1);
             gren.fpp.gren_type = gren_type;
             FPP_ApplyGrenadeProperties(gren);
         } else {

@@ -520,42 +520,10 @@ inline float fixed_newmis_ms(int fpp_type) {
     return tf_config.static_newmis_ms;
 }
 
-float FO_RewindGrenMs(int gren_type) {
-    if (!RewindFlagEnabled(REWIND_GRENADES))
-        return 0;
-
-    float result = tf_config.max_rewind_grenade_ms;
-    if (gren_type == GREN_CONC)
-        result += 25;
-
-    return result;
-}
-
-float FO_RewindGrenDt(int gren_type) {
-    if (!RewindFlagEnabled(REWIND_GRENADES))
-        return 0;
-
-    return FO_RewindGrenMs(gren_type) / 1000.0;
-}
-
-float FO_RewindGrenWinDt(int gren_type) {
-    if (!RewindFlagEnabled(REWIND_GRENADES) ||
-        tf_config.max_rewind_ms <= 50)
-        return 0;
-
-    // There's no benefit to holding a conc grenade -- and it's beneficial to
-    // hold it late, so we open the window slightly further when needed.
-    return gren_type == GREN_CONC ? 0.05 : 0.025;
-}
-
-float FO_MaxRewindGrenWinDt() {
-    if (!RewindFlagEnabled(REWIND_GRENADES) ||
-        tf_config.max_rewind_ms <= 50)
-        return 0;
-
-    // Large rewind possible, open up the window.
-    return 0.1;  // An always correct value
-}
+// Grenade 1's ping credit: the command's age past the floor, up to the cap.
+// No other grenade gets any.  Compiled in, not a knob (2026-09-21).
+const float GREN1_CREDIT_FLOOR_MS = 50;
+const float GREN1_CREDIT_MAX_MS = 50;
 
 #ifdef SSQC
 
@@ -1118,7 +1086,6 @@ void Predict_InitDefaultConfig() {
     tf_config.max_rewind_ms = 250;
     tf_config.max_rewind_slow_projectile_ms = 150;
     tf_config.max_rewind_fast_projectile_ms = 150;
-    tf_config.max_rewind_grenade_ms = 50; // Only affects REWIND_GREN
     tf_config.rewind_fast_projectile_thresh = 1500;
     tf_config.clown_flags = 0;
     tf_config.clown_grav = 400;
@@ -1188,7 +1155,6 @@ static void TflCheckConfigUpdate() {
     CONFIG_UPDATE(FALSE, "mrt", max_rewind_ms);
     CONFIG_UPDATE(FALSE, "mrsp", max_rewind_slow_projectile_ms);
     CONFIG_UPDATE(FALSE, "mrfp", max_rewind_fast_projectile_ms);
-    CONFIG_UPDATE(FALSE, "mrg", max_rewind_grenade_ms);
     CONFIG_UPDATE(FALSE, "rfpt", rewind_fast_projectile_thresh);
     CONFIG_UPDATE(FALSE, "gbd", gren_beta_disable);
 
@@ -1210,7 +1176,6 @@ static void TflCheckConfigUpdate() {
     CLAMP_UPDATE(max_rewind_ms, 0, 250);
     CLAMP_UPDATE(max_rewind_slow_projectile_ms, 0, tf_config.max_rewind_ms);
     CLAMP_UPDATE(max_rewind_fast_projectile_ms, 0, tf_config.max_rewind_ms);
-    CLAMP_UPDATE(max_rewind_grenade_ms, 0, 125);
 
     if (!ForwardDoorsPossible())
         tf_config.rewind_flags &= ~REWIND_FORWARD_DOORS;
@@ -1385,18 +1350,18 @@ struct ProjectResult {
     float dynamic_ms;
 };
 
-ProjectResult Forward_ProjectOffset(int fpp_type, float ping) {
+ProjectResult Forward_ProjectOffset(int fpp_type, float ping, float gren1 = FALSE) {
     float max_ping_credit = max_rewind_credit_ms(fpp_type);
+    float ping_floor = 0;
     float static_credit;
 
     if (FPP_Get(fpp_type)->fixed_project) {
         static_credit = fixed_newmis_ms(fpp_type);
     } else if (fpp_type == FPP_HANDGRENADE) {
         static_credit = static_newmis_ms(fpp_type);
-        if (RewindFlagEnabled(REWIND_GRENADES))
-            max_ping_credit = tf_config.max_rewind_grenade_ms;
-        else
-            max_ping_credit = 0;
+        // Grenade 1 alone, and only the age past the floor.
+        max_ping_credit = gren1 ? GREN1_CREDIT_MAX_MS : 0;
+        ping_floor = GREN1_CREDIT_FLOOR_MS;
     } else {
         static_credit = static_newmis_ms(fpp_type);
         max_ping_credit += dynamic_newmis_ms();
@@ -1407,7 +1372,7 @@ ProjectResult Forward_ProjectOffset(int fpp_type, float ping) {
 
     // Everything lower than SERVER_FRAME_MS falls into the next frame (and we
     // have no resolution anyway), linearize beyond that.
-    float adj_ping = max(ping - SERVER_FRAME_MS, 0);
+    float adj_ping = max(ping - SERVER_FRAME_MS - ping_floor, 0);
 
     ProjectResult result;
     result.static_ms = static_credit;

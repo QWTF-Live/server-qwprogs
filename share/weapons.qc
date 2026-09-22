@@ -297,6 +297,13 @@ FO_GrenInfo* FO_ClassGren(int playerclass, int index) {
     return FO_GrenDesc(class_grenades[playerclass].gren[index]);
 }
 
+// Grenade 1 is the class's first slot: the normal grenade for everyone but the
+// scout, whose is the flash.  It alone has a ping credit (Forward_ProjectOffset)
+// and alone gets a predicted copy of its throw (W_ThrowGren).
+float FO_IsGren1(int playerclass, int gren_type) {
+    return gren_type != GREN_NONE && class_grenades[playerclass].gren[0] == gren_type;
+}
+
 #ifdef SSQC
 float (entity ent, string ps_short, string ps_setting, string ps_default) FO_GetUserSetting;
 float IsUsingOldImpulses();

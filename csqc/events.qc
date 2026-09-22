@@ -491,8 +491,6 @@ void CsGrenTimer::Set(float expires_at, float _grentype, float timer_flags) {
 
     if (this.flags_ & FL_GT_ADJPING) {
         float rtt = WP_PingMs() * CVARF(fo_grentimer_ping_frac);
-        if (RewindFlagEnabled(REWIND_GRENADES))
-            rtt = max(0, rtt - (100 + FO_RewindGrenMs(_grentype)));
         expires_at_ -= rtt / 1000;
     }
 

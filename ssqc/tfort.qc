@@ -1218,13 +1218,8 @@ void () FO_GrenadeThink = {
             FO_SpawnThrownGrenade(self, 1);   // latched during the prime window
             FO_RetireGrenTimer(self);
         } else {
-            // When REWIND_GRENADES is enabled, we slightly time-warp the
-            // spawned grenade to open up the timing window on being able to
-            // rewind a throw further.  Total time is the same.
-            float expiry = self.heat + FO_RewindGrenWinDt(self.fpp.gren_type);
-
             // If this fires, we never threw.
-            self.nextthink = expiry;
+            self.nextthink = self.heat;
         }
     } else {
         // The release owns this for a holder whose commands are running.
@@ -1276,14 +1271,9 @@ void () FO_ThrowGrenade = {
     // refused up to a couple of commands the client -- which tests chain
     // against chain in CanThrowGrenade -- still predicts, so a late throw
     // showed the grenade leaving the hand and then blowing up in it.
-    // blast_cmd_due is heat on the chain, stamped at the prime.  The rewind
-    // path's throwtime is world time and keeps heat.
+    // blast_cmd_due is heat on the chain, stamped at the prime.
     float throwtime = time;
     float late_edge = timer.blast_cmd_due ? timer.blast_cmd_due : timer.heat;
-    if (RewindFlagEnabled(REWIND_GRENADES)) {
-        throwtime = bounded_remote_time(FO_RewindGrenDt(timer.fpp.gren_type));
-        late_edge = timer.heat;
-    }
 
     // We do not allow throwing within the 0.8s, or the last 0.1s.  The former
     // is a priming time, the latter is so that client side knockback will be

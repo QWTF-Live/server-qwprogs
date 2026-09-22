@@ -128,7 +128,9 @@ void Forward_Projectile(int fpp_type, entity proj) {
         ping += SERVER_FRAME_MS;
     }
 
-    ProjectResult offset = Forward_ProjectOffset(fpp_type, ping);
+    float gren1 = fpp_type == FPP_HANDGRENADE &&
+                  FO_IsGren1(proj.owner.playerclass, proj.fpp.gren_type);
+    ProjectResult offset = Forward_ProjectOffset(fpp_type, ping, gren1);
     float static_dt = offset.static_ms / 1000.0;
     float dynamic_dt = offset.dynamic_ms / 1000.0;
 

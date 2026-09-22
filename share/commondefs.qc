@@ -45,7 +45,6 @@ enumflags {
     _OP(3, Byte,  float, max_rewind_ms) \
     _OP(3, Byte,  float, max_rewind_slow_projectile_ms) \
     _OP(3, Byte,  float, max_rewind_fast_projectile_ms) \
-    _OP(3, Short, float, max_rewind_grenade_ms) \
     _OP(3, Short, float, rewind_fast_projectile_thresh) \
     _OP(4, Short, float, clown_flags) \
     _OP(4, Short, float, clown_grav) \
@@ -78,7 +77,6 @@ var struct {
 enumflags {
     REWIND_PROJ_FIRE,
     REWIND_PROJ_TRAVEL,
-    REWIND_GRENADES,
     REWIND_FORWARD_PROJ_SELFKNOCK,
     REWIND_FORWARD_DOORS,
     REWIND_PROJ_CROSSING,
@@ -87,7 +85,6 @@ enumflags {
 string REWIND_DESC[] = {
     "rewind projectile on firing",
     "rewind on projectile travel",
-    "rewind grenade throws",
     "forward projectile self-knockback",
     "open doors earlier for hpbs [requires rfd=1]",
     "catch a player and a projectile crossing paths within a frame",

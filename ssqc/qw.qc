@@ -56,6 +56,7 @@ entity Knock_Defer(entity targ, vector src, float kind);
 // death are run against it, so what the client fired while still predicting
 // itself alive is fired here too, from where the engine's own physics puts it.
 // See Ghost_* in client.qc.
+float ghost_command;   // the command being run is the death ghost's: a shot it takes is owned by the real player, but nothing it lays outlives the death
 .entity ghost;
 .float ghost_time;               // real time of the command the ghost was taken after
 

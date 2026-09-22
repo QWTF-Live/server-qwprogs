@@ -3447,9 +3447,11 @@ static void Ghost_RunCommand() {
              self.cmd_sequence, self.cmd_acked_time, self.last_death, RealTime(), self.cmd_clock);
     rj_trace(" att=%.0f org=%v vel=%v\n", self.button0, self.origin, self.velocity);
 
+    ghost_command = TRUE;
     FO_CheckClientThink();
     PlayerPostThinkAlive();
     PlayerKnock_Apply();
+    ghost_command = FALSE;
 
     rj_trace("S: ghost-state af=%.4f cnt=%.4f ti=%.0f tfs=%.0f weap=%.0f imp=%.0f",
              self.attack_finished, self.client_nextthink, self.client_thinkindex, self.tfstate, FO_CurrentWeapon(), self.impulse);

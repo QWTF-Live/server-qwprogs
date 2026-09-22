@@ -2038,7 +2038,12 @@ void () W_Attack = {
     } else if (ws.weapon == WEAP_PIPE_LAUNCHER) {
         player_rocket1();
         self.ammo_rockets = self.ammo_rockets - 1;
-        W_FireGrenade(self.origin, self.v_angle);
+        // Not from the death ghost: the death already detonated the pipes,
+        // and one laid after it lies there unexplained.  The shot is still
+        // taken, so the ghost's cycle and ammo stay in step with what the
+        // client predicted; the client's own copy of the pipe expires unclaimed.
+        if (!ghost_command)
+            W_FireGrenade(self.origin, self.v_angle);
     } else if (ws.weapon == WEAP_ROCKET_LAUNCHER) {
         player_rocket1();
         self.ammo_rockets = self.ammo_rockets - 1;

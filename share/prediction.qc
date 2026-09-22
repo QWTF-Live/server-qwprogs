@@ -170,6 +170,10 @@ const float KNOCK_LEAD = SERVER_FRAME_DT;
 // inside that floor would chase frame boundaries and feed their jitter into
 // the chain, which is the one thing the chain exists to keep out of the replay.
 // So the threshold tracks the floor rather than naming a number.
+//
+// That is the floor for a chain behind the world clock.  Ahead, the chain's
+// lower envelope is held within half a frame by CmdClock_Update, so that
+// KNOCK_LEAD still covers it.
 float CmdClockTol(float cmdlen) {
     return max(0.050, 2 * (SERVER_FRAME_DT + cmdlen));
 }

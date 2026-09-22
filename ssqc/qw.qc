@@ -79,6 +79,8 @@ float cmd_real_time;             // real `time` while the warp is active, else 0
 .float cmd_clock_fix;            // correction to fold into the chain, announced before it applies
 .float cmd_clock_fix_seq;        // the command it applies from, far enough ahead that the client has heard
 .float cmd_clock_sample_at;      // next periodic clock-error sample, for the trace
+.float cmd_clock_lead_min;       // lower envelope of cmd_clock - real time over the current window
+.float cmd_clock_lead_at;        // when that window closes
 .float last_remote_time;         // For monoticity of remote_time()
 
 .void() client_think;            // client-time relative think

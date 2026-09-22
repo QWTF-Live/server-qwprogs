@@ -2815,6 +2815,13 @@ float SpawnProtectWouldStick(entity p) {
 // current client it steps by its own servo'd clock rather than by msec.
 // Anchored to real time at first use and whenever it drifts more than 50ms
 // from it; in between it is jitter-free.
+// How far ahead of the world clock the chain's lower envelope may sit before a
+// correction pulls it back: half the frame KNOCK_LEAD covers, so the sawtooth
+// on top still lands inside the lead.  The window is long enough to see the
+// sawtooth's bottom at any client rate.
+const float CMD_CLOCK_LEAD_MAX = SERVER_FRAME_DT / 2;
+const float CMD_CLOCK_LEAD_WINDOW = 0.25;
+
 static void CmdClock_Update() {
     if (!tf_config.cmd_time || input_timelength <= 0) {
         self.cmd_clock = 0;
@@ -2853,7 +2860,28 @@ static void CmdClock_Update() {
     // time, so packet bursts walk it forward and sparse patches walk it back.
     // Announce a correction when the walk gets too far out, to land well past
     // anything the client has already predicted.
-    if (!self.cmd_clock_fix_seq && fabs(time - clk) > CmdClockTol(input_timelength)) {
+    //
+    // Ahead is the side that matters.  KNOCK_LEAD covers a chain up to a frame
+    // past the world clock at a blast; one sitting further ahead releases every
+    // push a command late, and the catch-up steps for it in front of everyone
+    // watching -- the 2026-09-19 log had it 31-37 ms ahead, under the 52 ms
+    // floor, and four steps in five were that one command.  The instantaneous
+    // difference carries the frame sawtooth CmdClockTol describes, so it is
+    // the window's lower envelope that is held near zero, and the correction is
+    // that envelope, not the reading.  Behind only delays a push and keeps the
+    // wide floor.
+    float lead = clk - time;
+    if (time >= self.cmd_clock_lead_at) {
+        if (!self.cmd_clock_fix_seq && self.cmd_clock_lead_at &&
+            self.cmd_clock_lead_min > CMD_CLOCK_LEAD_MAX) {
+            self.cmd_clock_fix = -self.cmd_clock_lead_min;
+            self.cmd_clock_fix_seq = self.cmd_sequence + CMD_CLOCK_LEAD;
+        }
+        self.cmd_clock_lead_min = lead;
+        self.cmd_clock_lead_at = time + CMD_CLOCK_LEAD_WINDOW;
+    } else
+        self.cmd_clock_lead_min = min(self.cmd_clock_lead_min, lead);
+    if (!self.cmd_clock_fix_seq && time - clk > CmdClockTol(input_timelength)) {
         self.cmd_clock_fix = time - clk;
         self.cmd_clock_fix_seq = self.cmd_sequence + CMD_CLOCK_LEAD;
     }
@@ -2879,9 +2907,9 @@ void () PlayerPreThink = {
     // a client running at several hundred frames a second.
     if (RealTime() >= self.cmd_clock_sample_at) {
         self.cmd_clock_sample_at = RealTime() + 0.5;
-        rj_trace("S: clk seq=%.0f err=%+.1fms msec=%.2f fix=%+.1fms@%.0f fixes=%.0f\n",
-                 self.cmd_sequence, (self.cmd_clock - time) * 1000, input_timelength * 1000,
-                 self.cmd_clock_fix * 1000, self.cmd_clock_fix_seq, self.cmd_clock_k);
+        rj_trace("S: clk seq=%.0f err=%+.1fms lead=%+.1fms msec=%.2f fix=%+.1fms@%.0f fixes=%.0f\n",
+                 self.cmd_sequence, (self.cmd_clock - time) * 1000, self.cmd_clock_lead_min * 1000,
+                 input_timelength * 1000, self.cmd_clock_fix * 1000, self.cmd_clock_fix_seq, self.cmd_clock_k);
     }
 
     // Both halves are one line; without the braces the tail printed for every
@@ -3377,6 +3405,8 @@ static void Ghost_Carry(entity from, entity to) {
     to.cmd_clock_k = from.cmd_clock_k;
     to.cmd_clock_last = from.cmd_clock_last;
     to.cmd_stamp_clock = from.cmd_stamp_clock;
+    to.cmd_clock_lead_min = from.cmd_clock_lead_min;
+    to.cmd_clock_lead_at = from.cmd_clock_lead_at;
     to.client_ping = from.client_ping;
     to.pending_knock = from.pending_knock;   // one list, drained by whoever runs the command
     to.last_death = from.last_death;

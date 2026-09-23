@@ -369,15 +369,18 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
         case "pmove_status":
             // What each client advertises in fo_wpp_status: movement
             // prediction and the two knock kinds it predicts.
-            sprint(self, PRINT_HIGH, sprintf("%-16s %-6s %-6s %-6s\n",
+            sprint(self, PRINT_HIGH, sprintf("%-20s %-6s %-6s %-6s\n",
                                              "name", "pmove", "kself", "kother"));
             for (pl = nextent(world); pl != world; pl = nextent(pl)) {
                 if (pl.classname != "player" && pl.classname != "observer")
                     continue;
                 if (!(pl.flags & FL_CLIENT) || pl.netname == "")
                     continue;
-                sprint(self, PRINT_HIGH, sprintf("%-16s %-6s %-6s %-6s\n",
-                    substring(pl.netname, 0, 16),
+                // Truncated a character inside the field so a long name still
+                // leaves the gap the format's own space would otherwise be
+                // the whole of.
+                sprint(self, PRINT_HIGH, sprintf("%-20s %-6s %-6s %-6s\n",
+                    substring(pl.netname, 0, 19),
                     ClientPred_Enabled(pl, CSQC_PMOVE) ? "on" : "off",
                     ClientPred_Enabled(pl, CSQC_KNOCK_SELF) ? "on" : "off",
                     ClientPred_Enabled(pl, CSQC_KNOCK_OTHER) ? "on" : "off"));

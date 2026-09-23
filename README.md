@@ -111,6 +111,7 @@ sound files are found in `fortress/sound/hitaudio/` and  `fortress/sound/announc
 * scout has "new" flash grenades - localinfo fo_flash on (default on)
 * ability to set client side min and max flash amounts - localinfo minflash x/localinfo maxflash x (number as a percentage - 1.5 = 150%)
 * `cmd votemap`/`cmd showvotes`/`cmd listmaps` can now be used at any time and are part of the same system
+* `cmd votemap <map>` takes any map the server has, not only the ones in the configured list
 * new server command `vote_removemap <name>` removes them
 * new server command `vote_addmap <name> <desc> [mapgroup] [num_teams] [min_players] [max_players]` can be used to add maps to the below menu
 * `cmd mapmenu` brings up a map selection menu, which can then either be voted for or changed immediately, provided you have adminpwd/rcon set up

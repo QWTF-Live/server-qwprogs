@@ -886,32 +886,23 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             break;
         case "votemap":
             processedCmd = TRUE;
-            if(vote_style) {
-                if(arg2) {
-                    VoteForMap(self, arg2);
-                }
-            } else {
-                switch(arg2) {
-                    case vote1_map:
-                        Vote_Input(1);
-                        break;
-                    case vote2_map:
-                        Vote_Input(2);
-                        break;
-                    case vote3_map:
-                        Vote_Input(3);
-                        break;
-                    case vote4_map:
-                        Vote_Input(4);
-                        break;
-                    case vote5_map:
-                        Vote_Input(5);
-                        break;
-                    default: 
-                        Vote_Menu(self);
-                        break;
-                }
-            }
+            // Any map the server has, whatever the vote style.  VoteForMap
+            // checks the .bsp is there and stands the map up as a candidate,
+            // so a name needs no entry in the configured list.  What this
+            // replaced took a name only when it was one of the five the
+            // end-of-map menu was offering, and read vote_style, which is not
+            // assigned until an intermission has run -- so during a game every
+            // name silently opened the menu instead of casting a vote.  This
+            // was the five-way vote's only input -- nothing assigns Vote_Input
+            // to menu_input -- so Vote_Input and Vote_Check are unreachable
+            // now, and were already half so: Vote_Check, which is what would
+            // have acted on their tally, has no callers either.  The menu
+            // players actually use is Vote_Menu_Map_Input, on the same
+            // candidates as this.
+            if (arg2)
+                VoteForMap(self, arg2);
+            else
+                Vote_Menu(self);
             break;
         case "showvotes":
             processedCmd = TRUE;

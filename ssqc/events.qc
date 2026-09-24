@@ -106,7 +106,6 @@ void () LogEventGameStart = {
         {KV_S, "gameToken", game_token},
         {KV_S, "server_name", JSON_Escape(infokey(world, "hostname"))},
         {KV_S, "server_address", JSON_Escape(cvar_string("sv_serverip"))},
-        {KV_S, "region", JSON_Escape(infokey(world, "tfl_region"))},
         {KV_S, "shard", JSON_Escape(infokey(world, "shard"))},
         {KV_S, "mvd", MvdName(TRUE)},
     };

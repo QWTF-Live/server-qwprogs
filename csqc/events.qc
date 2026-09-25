@@ -489,9 +489,21 @@ void CsGrenTimer::Set(float expires_at, float _grentype, float timer_flags) {
     flags_ = timer_flags;
     playing_ = FALSE;
 
+    // The countdown is pulled ahead of the fuse by the ping, so a throw made
+    // on it lands when it should: the timer is offset on purpose and is not
+    // to be moved.  The one exception is what the server gives back -- grenade
+    // 1's credit, the command's age past 50 ms up to 50 ms of it
+    // (Forward_ProjectOffset) -- which is subtracted from the pull, as the old
+    // REWIND_GRENADES credit was.  Nothing for grenade 2, which has none.
     if (this.flags_ & FL_GT_ADJPING) {
-        float rtt = WP_PingMs() * CVARF(fo_grentimer_ping_frac);
-        expires_at_ -= rtt / 1000;
+        float ping = WP_PingMs();
+        float pull = ping * CVARF(fo_grentimer_ping_frac);
+        // Plus the frame Forward_ProjectOffset takes back, as Forward_Projectile
+        // gives it on the server: the credit is the age past 50 ms, not the
+        // age past 63.
+        if (FO_IsGren1(WP_PlayerClass(), _grentype))
+            pull -= Forward_ProjectOffset(FPP_HANDGRENADE, ping + SERVER_FRAME_MS, TRUE).dynamic_ms;
+        expires_at_ -= max(pull, 0) / 1000;
     }
 
     if (!CVARF(fo_grentimer_nostack))
@@ -527,15 +539,6 @@ CsGrenTimer ParseGrenPrimed(float grentype, float explodes_at,
     }
 
     if (game_state.is_spectator)
-        timer_flags &= ~FL_GT_ADJPING;
-    // A prime we predicted ourselves ends on our own clock: the blast is
-    // predicted 3.8 s of our command time after it, and the throw deadline is
-    // judged on that same chain (blast_cmd_due), so the countdown reads zero
-    // on the blast and a release before the end is on time by construction.
-    // The ping pull dates from a deadline judged at server time, where the
-    // release had to leave a round trip early; kept for a prime the server
-    // reported that we did not predict.
-    if (timer_flags & FL_GT_LOCAL)
         timer_flags &= ~FL_GT_ADJPING;
 
     float debug_print_state = CVARF(fo_grentimer_debug) & 1;

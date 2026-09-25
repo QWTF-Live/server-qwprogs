@@ -1376,7 +1376,13 @@ trail_table_entry trail_table[] = {
 };
 
 inline float get_phys_time(entity e) {
-    if (e.owner_entnum == pengine.player_entnum) {
+    // Ours by the engine's view of who we are, not prediction's: pengine's
+    // entnum is -1 whenever weapon prediction is off, and that sent a
+    // non-predicting client's own projectiles -- and every projectile a
+    // spectator watches -- down the other branch, a round trip ahead of where
+    // they should be drawn.  Where a projectile is drawn does not depend on
+    // whether we predict it.
+    if (e.owner_entnum == player_localentnum) {
         // We want to align our own entities with remote player interp so that
         // collisions feel correct.
         return interp_time();

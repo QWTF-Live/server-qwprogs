@@ -2144,6 +2144,17 @@ void InitProjectileEnt(float sendflags) {
         self.owner = pengine.player_ent;
 
     float ptime = get_phys_time(self);
+    // RJ_TRACE: how far ahead of the server's last known position this copy is
+    // drawn.  The match traces compare the two copies at one clock and say
+    // nothing about that; this is the display offset itself.  sent is the
+    // clock the server stamped, draw the clock it is advanced to, and lead
+    // their difference: our own should sit a nudge past the snapshot (~20 ms),
+    // somebody else's a round trip past it.
+    if (sendflags & FOPP_INIT)
+        rj_trace("C: proj-draw %s own=%.0f sent=%.3f draw=%.3f lead=%.0fms snap=%.3f t=%.3f\n",
+                 FPP_Name(self.fpp.index), (float)(self.owner_entnum == player_localentnum),
+                 self.phys_time, ptime, (ptime - self.phys_time) * 1000,
+                 pstate_server.server_time, time);
     if (ptime > self.phys_time /* from server */)
         Phys_Advance(self, ptime, PHYSF_CONSUME_ALL);
     else

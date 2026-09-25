@@ -25,6 +25,7 @@ time.qc
 ../share/animate.qc
 ../share/mcp_precache.qc
 json.qc
+rcon.qc
 login.qc
 helpers.qc
 events.qc

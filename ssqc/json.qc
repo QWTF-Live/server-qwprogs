@@ -479,6 +479,18 @@ void WEB_MigrateLoginRequest(entity player) {
     uri_post(GetEndpoint("login"), LOGIN_REQUEST, "application/json", req);
 }
 
+// Asked once per login.  The reply is two numbers as plain text; rcon.qc says
+// what they mean and what they are worth.
+void WEB_AdminLevelRequest(entity player) {
+    KeyVal fvs[] = {
+        {KV_S, "type", "level"},
+        {KV_S, "id", JSON_Escape(player.tfl_id)},
+    };
+
+    string req = JSON_Wrap(fvs.length, fvs);
+    uri_post(GetEndpoint("admin"), ADMIN_REQUEST, "application/json", req);
+}
+
 void WEB_CheckLoginRequest(entity player, string token) {
     KeyVal fvs[] = {
         {KV_S, "type", "check"},
@@ -496,6 +508,7 @@ enumflags {
 
 float TFL_CheckLogin(string token, float flags = 0);
 void UpdateClient_SetLoginToken(entity player, string token);
+void Admin_LevelResponse(entity player, float responsecode, string body);
 
 void(float reqid, float responsecode, string resourcebody, int resourcebytes) URI_Get_Callback = {
     local float success = !responsecode;
@@ -513,6 +526,10 @@ void(float reqid, float responsecode, string resourcebody, int resourcebytes) UR
             // Note: In the case of a migration, we have no original raw token.
             if ((token != self.tfl_raw_token) && TFL_CheckLogin(token, kCheckLoginFromWeb))
                 UpdateClient_SetLoginToken(self, resourcebody);
+            break;
+
+        case ADMIN_REQUEST:
+            Admin_LevelResponse(self, responsecode, resourcebody);
             break;
     }
 }

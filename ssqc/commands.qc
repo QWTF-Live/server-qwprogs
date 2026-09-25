@@ -407,14 +407,6 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
             // yy.mm.dd.incremented vers
             sprint(self, PRINT_HIGH, "sv progs version: 22.02.13.1\n");
             break;
-        case "adminpwd":
-            processedCmd = TRUE;
-            if (arg_num == 2) {
-                Admin_Check(arg2);
-            } else {
-                sprint(self, PRINT_HIGH, "usage: cmd adminpwd password, where password is the admin password\n");
-            }
-            break;
         case "setinfo":
             if (arg2)
             {
@@ -973,7 +965,6 @@ float (string raw, string arg1, string arg2, string arg3) ParseCmds = {
         case "list":
             processedCmd = TRUE;
             sprint(self, PRINT_HIGH, "\bUser Commands list:\b\n");
-            sprint(self, PRINT_HIGH, "cmd adminpwd <password>\n");
             sprint(self, PRINT_HIGH, "cmd mapmenu\b: menu for changing maps\b\n");
             if(votemode) {
                 sprint(self, PRINT_HIGH, "cmd listmaps\b: list votable maps\b\n");

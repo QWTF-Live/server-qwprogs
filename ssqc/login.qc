@@ -1,3 +1,5 @@
+void Admin_PrimeLevel(entity player);
+
 float TFL_IsLoggedIn() {
     return self.tfl_id != "";
 }
@@ -86,6 +88,7 @@ static float TFL_ValidateLogin(string token, float flags = 0) {
             forceinfokey(self, "tdat" , "1");
     }
 
+    Admin_PrimeLevel(self);
 
     return TRUE;
 }

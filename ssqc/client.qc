@@ -55,7 +55,6 @@ void () StopTimer;
 void () StartQuadRound;
 void Pug_Init();   // ssqc/pug.qc, compiled after this file
 float Pug_Frozen();
-void (string cl_pwd) Admin_Check;
 void () PreMatch_Message;
 void () UpdateReadyStatus;
 float () CheckAllPlayersReady;
@@ -117,7 +116,7 @@ void () SetChangeParms = {
     parm12 = cb_keepteams?self.playerclass:0;
     parm13 = self.team_no;
     parm14 = 0;
-    parm15 = self.is_admin;
+    parm15 = 0;
 };
 
 void () SetNewParms = {
@@ -1011,9 +1010,6 @@ void () DecodeLevelParms = {
     if (self.playerclass == 0 && self.team_no) {
         TeamFortress_ChangeClass(parm12);
     }
-    if (parm15)
-        self.is_admin = parm15;
-
     // Process these options after game modes which might set defaults above
     float pipe_cooldown = CF_GetSetting("pcdt", "pipecooldown_time", "-1");
     if (pipe_cooldown != -1)
@@ -3564,15 +3560,6 @@ void () UpdateAllClientsTeamScores = {
     }
 }
 
-void CheckClientAdmin() {
-    self.is_admin = stof(infokey(self, "*admin"));
-    if (!self.is_admin) {
-        string st = FO_GetUserSettingString(self, "apw", "adminpwd", "");
-        if (st)
-            Admin_Check(st);
-    }
-}
-
 void ClientsFlagUpdate(entity only);
 
 void () ClientConnect = {
@@ -3608,8 +3595,6 @@ void () ClientConnect = {
         }
         spec = find(spec, classname, "observer");
     }
-
-    CheckClientAdmin();
 
     if (intermission_running) {
         PutClientInIntermission();

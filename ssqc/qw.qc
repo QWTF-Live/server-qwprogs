@@ -694,7 +694,7 @@ float autokick_kills;
 .float bvote;
 .float stat_flags;
 
-.float is_admin;
+.float is_admin;   // admin level 1 or better, see rcon.qc
 .float admin_mode;
 .entity admin_use;
 .string ip;
@@ -892,3 +892,7 @@ float qwtf_debug;       // localinfo qwtf_debug: enables the debug commands
 .string tfl_foid;
 
 .string old_fo_login, old_fo_token;
+
+.string admin_level_for;   // tfl_id an outstanding resync is for, see rcon.qc
+.float admin_resync_at;    // earliest time this player may ask the site again
+.float admin_announced;    // rcon level already announced to them, 0 = none

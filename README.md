@@ -38,6 +38,7 @@ New commands
 
 * `localinfo cmd_time 1` run weapon timing on the client's per-command clock (default on; needs the fteqw fork)
 * `localinfo ghost_lockout_snapshots 1` commands generated against the last N snapshots before a death are not replayed for the dead player
+* rcon without the correct `rcon_password` is ruled on per command against the level of the player sending it: `map` needs 1, `quit` 2, anything else 3, and `quit` needs 3 while a pug or quad is on. The level comes from the site -- games played, or an override set from the bot with `set <user> admin <n>`. Level 1 or better is also what makes you an in-game admin for the menus, votes and kicks; that flag grants no rcon of its own. Levels are cached in `data/admin_levels.txt` and survive a map change; an admin is told what they have on login and has `rcon_password` set for them, so nobody needs a password of their own and `rcon_password` can change without telling them. With the correct password rcon is unchanged (needs the fteqw fork)
 * `localinfo pusher_buffer 25`, `localinfo pusher_max 200` per-client door/pusher advance, ms: closing doors are shown ping plus buffer ahead, opening doors where they are; a door a player's own path will open is shown opening from that moment, to that player (see antilag.md)
   
 Client commands, default shown:
@@ -114,7 +115,7 @@ sound files are found in `fortress/sound/hitaudio/` and  `fortress/sound/announc
 * `cmd votemap <map>` takes any map the server has, not only the ones in the configured list
 * new server command `vote_removemap <name>` removes them
 * new server command `vote_addmap <name> <desc> [mapgroup] [num_teams] [min_players] [max_players]` can be used to add maps to the below menu
-* `cmd mapmenu` brings up a map selection menu, which can then either be voted for or changed immediately, provided you have adminpwd/rcon set up
+* `cmd mapmenu` brings up a map selection menu, which can then either be voted for or changed immediately, provided you are an admin
 * localinfo vote_threshold 0.5 will set the portion of players required to win a vote
 * scout has "new" flash grenades - localinfo fo_flash on (default off)
 * ability to set client side min and max flash amounts - setinfo minflash x/localinfo maxflash x (number as a percentage - 1.5 = 150%)
@@ -160,7 +161,7 @@ sound files are found in `fortress/sound/hitaudio/` and  `fortress/sound/announc
 * Option for maximum grenades for all classes. `localinfo max_gren1_<class> <number>`, short `localinfo mg1_<classnum> <number>`. Works for gren1s and gren2s. Eg `localinfo max_gren1_scout 0` to remove caltrops or `localinfo mg2_9 2` to reduce max EMPs to 2.
 * Option to fully restock player's clip and finish reload immediately if in progress. `localinfo stock_reload 1` (`localinfo srd 1`) will trigger only on flag capture (with stock_on_cap enabled). `2` will trigger whenever any tfgoal gives you the appropriate ammo.
 * Option for statusbar flaginfo. `setinfo sbflaginfo 1` (default). Setting it to `2` will skip the tf tips on respawn and show flag info all the time.
-* Admin system created to allow for easy setup of pub/clan/quad/duel games, kick players etc `localinfo adminpwd <password>` and `cmd adminpwd <password>; wait; adminmenu`
+* Admin system created to allow for easy setup of pub/clan/quad/duel games, kick players etc: `adminmenu`. Admin is admin level 1 or better, which comes from the site with your login -- there is no admin password
 * Loc support added to server, show locations for dropped flag.
 * Nailgrenades changed to "Shock/Laser Grenades" to lower spam/not stop bunnyhopping on hit (0 original, 1 laser, 2 burst). `localinfo nailgren_type 1` and `nginfo` in game for all configurable settings.
 * Option for hitsounds (1 - enemies only, 2 - enemies and teammates). `setinfo hitsound 2`

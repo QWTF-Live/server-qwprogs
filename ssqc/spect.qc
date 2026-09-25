@@ -51,7 +51,6 @@ void () SpectatorConnect = {
     forceinfokey(self, "dupe", "0");
 
     TFL_CheckLogin(string_null);  // Must be after is_spectator
-    CheckClientAdmin();
 };
 
 void () SpectatorDisconnect = {

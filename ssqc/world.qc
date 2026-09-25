@@ -80,6 +80,7 @@ entity lastspawn;
 void WorldSpawnPost() 
 {
     loadloc();
+    Admin_LoadCache();
     FO_FlashDimension = -1;
 
     dremove(self);

@@ -266,24 +266,3 @@ void (entity p) CheckAutoKick = {
     }
 };
 
-void (string cl_pwd) Admin_Check =
-{
-    if (self.is_admin) {
-        sprint(self, PRINT_HIGH, "You are already an admin\n");
-        return;
-    }
-    local string st2;
-
-    st2 = infokey(world, "adminpwd");
-    if (cl_pwd != string_null) {
-        stuffcmd(self, "setinfo adminpwd \"");
-        stuffcmd(self, "\"\n");
-        if (st2 != string_null && cl_pwd == st2) {
-            self.is_admin = TRUE;
-            forceinfokey(self,"*admin", ftos(self.is_admin));
-            bprint(2, self.netname, "\s gains full admin status!\s\n");
-            sprint(self, 2, "Type \scmd list\s for admin commands.\n");
-            sprint(self, 2, "You can also use the \sadminmenu\s command for adjusting some settings.\n");  
-        }
-    }
-};

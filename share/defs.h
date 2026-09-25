@@ -1495,6 +1495,7 @@ enum {
 // web request index
 #define LOGIN_REQUEST			1
 #define TFL_RESULT 			2
+#define ADMIN_REQUEST			3
 
 #define SPEC_MAXSPEED 1000
 

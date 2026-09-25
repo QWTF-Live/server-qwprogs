@@ -268,6 +268,9 @@ float RJ_On();
 #define MSG_SPAWN_DEBUG     34
 #define MSG_PMDEBUG         35
 #define MSG_PUSHVOLS        36
+// The bot's silent journal: same body as MSG_PMDEBUG, gated on
+// CSQC_JOURNAL instead. 37 is the bot-line route echo.
+#define MSG_JOURNAL         38
 
 // What happened to a player during one command, as each side saw it.  The
 // client records its own while predicting; the server records its own and
@@ -381,6 +384,10 @@ enumflags {
     // arrive (Knock_CatchUp).
     CSQC_KNOCK_SELF,
     CSQC_KNOCK_OTHER,
+    // The bot reads the same per-command record as PMDEBUG, but asking for
+    // it must stay silent: no rj_trace console spam, no join-time prints
+    // for anyone else.  So it rides its own bit, which sets no global.
+    CSQC_JOURNAL,
 };
 
 enumflags {

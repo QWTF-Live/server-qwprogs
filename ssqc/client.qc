@@ -3283,19 +3283,7 @@ void PlayerPeriodicThink(float is_player) {
         return;
     self.periodic_think_time = time + 1;
 
-    // Does anybody want the prediction trace?  Asked of the clients rather than
-    // of a localinfo: they are the side that knows whether the lines are being
-    // read, and a server setting that silently overrode fopm_debug is what had
-    // the console talking with the client switched off.
-    pm_debug = FALSE;
-    entity pmd_p = find(world, classname, "player");
-    while (pmd_p) {
-        if (ClientPred_Enabled(pmd_p, CSQC_PMDEBUG)) {
-            pm_debug = TRUE;
-            break;
-        }
-        pmd_p = find(pmd_p, classname, "player");
-    }
+    PMD_Refresh(world);
 
 
     // This will generate extra sends on spec/client transition; but not worth
@@ -3647,6 +3635,7 @@ void () CountMatchPlayersAndReset = {
 }
 
 void () ClientDisconnect = {
+    PMD_Refresh(self);
     if (self.ghost) {
         remove(self.ghost);
         self.ghost = world;

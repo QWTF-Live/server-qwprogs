@@ -432,6 +432,21 @@ void() CSQC_Parse_Event = {
             PMD_ServerRecord(pseq, ppre, porg, pvel, pog, pwl, pev, pimp, pdmg, pgen, pmsec);
             break;
         }
+        case MSG_JOURNAL: {
+            // The bot's silent journal: the same body as MSG_PMDEBUG. It is
+            // only ever multicast to the bot, but a misdirected or recorded
+            // one must still be walked exactly, so read it and drop it.
+            float bseq = readfloat();
+            vector bpre, borg, bvel;
+            bpre_x = readcoord(); bpre_y = readcoord(); bpre_z = readcoord();
+            borg_x = readcoord(); borg_y = readcoord(); borg_z = readcoord();
+            bvel_x = readcoord(); bvel_y = readcoord(); bvel_z = readcoord();
+            float bog = readbyte(), bwl = readbyte(), bev = readfloat();
+            vector bimp;
+            bimp_x = readcoord(); bimp_y = readcoord(); bimp_z = readcoord();
+            float bdmg = readfloat(), bgen = readfloat(), bmsec = readfloat();
+            break;
+        }
         case MSG_SOUND:
             float stime, vol, chan, targ;
             vector org;

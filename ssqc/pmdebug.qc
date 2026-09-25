@@ -12,6 +12,32 @@ float pm_debug;   // a client has advertised CSQC_PMDEBUG; refreshed per second
 // asks: is anybody reading this right now.
 float RJ_On() { return pm_debug; }
 
+// Who gets a journal record on this command: a human debugger on
+// MSG_PMDEBUG, or a bot on the silent MSG_JOURNAL. Asked of the
+// player, not of the pm_debug global, so a bot's advertisement records
+// its own events without switching the global trace (and its prints)
+// on for everyone else.
+float PMD_Wanted(entity p) { return ClientPred_Enabled(p, CSQC_PMDEBUG) || ClientPred_Enabled(p, CSQC_JOURNAL); }
+
+// Does anybody want the prediction trace?  Asked of the clients rather than
+// of a localinfo: they are the side that knows whether the lines are being
+// read, and a server setting that silently overrode fopm_debug is what had
+// the console talking with the client switched off.  Refreshed once a
+// second, and on a disconnect with the leaver left out: the trace is a
+// broadcast, and a stale on from a debugger who has gone was still
+// printing to the next client's first commands.
+void PMD_Refresh(entity leaving) {
+    pm_debug = FALSE;
+    entity pmd_p = find(world, classname, "player");
+    while (pmd_p) {
+        if (pmd_p != leaving && ClientPred_Enabled(pmd_p, CSQC_PMDEBUG)) {
+            pm_debug = TRUE;
+            break;
+        }
+        pmd_p = find(pmd_p, classname, "player");
+    }
+}
+
 // Set from wherever the event happens, cleared at the top of each command.
 //
 // Gated on the same question the send is: whether anybody is reading.  Testing
@@ -19,13 +45,13 @@ float RJ_On() { return pm_debug; }
 // event bits and its impulse empty -- a dump reporting no push on a command
 // that had one, which reads as a prediction bug rather than a gating slip.
 void PMD_Event(entity p, float bit) {
-    if (pm_debug)
+    if (PMD_Wanted(p))
         p.pmd_events |= bit;
 }
 
 // An explosion push, as the server applies it.
 void PMD_Knock(entity p, vector impulse, float dmg) {
-    if (!pm_debug)
+    if (!PMD_Wanted(p))
         return;
     p.pmd_events |= PMDE_KNOCK;
     p.pmd_impulse += impulse;
@@ -42,8 +68,17 @@ void PMD_BeginCommand(entity p) {
 void PMD_EndCommand(entity p) {
     // Sent to whoever asked for it.  This is a message per command per player,
     // so it goes to the clients reading it and to nobody else.
-    if (p.classname != "player" || !ClientPred_Enabled(p, CSQC_PMDEBUG))
+    if (p.classname != "player")
         return;
+    // A human debugger keeps the MSG_PMDEBUG id its comparator reads; a
+    // bot's advertisement selects the silent id. Never both: one record
+    // per command.
+    float journal = MSG_PMDEBUG;
+    if (!ClientPred_Enabled(p, CSQC_PMDEBUG)) {
+        if (!ClientPred_Enabled(p, CSQC_JOURNAL))
+            return;
+        journal = MSG_JOURNAL;
+    }
 
     float onground = (p.flags & FL_ONGROUND) ? 1 : 0;
     if (p.pmd_last_onground && !onground)
@@ -61,7 +96,7 @@ void PMD_EndCommand(entity p) {
     // buffer sends an empty packet and desynchronises the client's parse.
     msg_entity = p;
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
-    WriteByte(MSG_MULTICAST, MSG_PMDEBUG);
+    WriteByte(MSG_MULTICAST, journal);
     WriteFloat(MSG_MULTICAST, p.cmd_sequence);
     WriteCoord(MSG_MULTICAST, p.pmd_pre_org_x);
     WriteCoord(MSG_MULTICAST, p.pmd_pre_org_y);

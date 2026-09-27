@@ -16,6 +16,10 @@ void() CSQC_Parse_Event = {
             TFL_RecvPredictState();
             break;
 
+        case MSG_PM_RIDE:
+            PM_ParseRide();
+            break;
+
         case MSG_TFL_CONFIG:
             TFL_ReceiveConfig();
             break;

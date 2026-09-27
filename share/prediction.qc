@@ -333,6 +333,14 @@ struct predict_tf_state {
         float cmd_clock_skew;
     float cmd_clock_fix;
     float cmd_clock_fix_seq;
+
+        // The pusher the player stood on when this state was recorded, if any
+        // (Predict_RecordRide): which, the player's offset from its origin, and
+        // how it was moving.  The replay rides it (PM_Ride*, pmove.qc).
+        float ride_ent;
+        vector ride_h;
+        float ride_rem;
+        vector ride_vel;
     } pmove;
 
 #ifdef CSQC
@@ -656,8 +664,34 @@ void Predict_SyncPmove(float is_player);
 
 void TFL_SendPredictState(entity to_player, float mask);
 
+// What the player stands on, if it is a pusher that will carry them: the
+// engine moves every MOVETYPE_PUSH's grounded riders with it in the physics
+// that follows the commands (WPhys_PushMove), so the client's replay has to as
+// well.  Taken after the command's move and anything that knocked them off
+// the ground since (PostThink), which is what that physics will see.  A
+// rotating pusher is left out: the replay carries by translation only.
+static void Predict_RecordRide() {
+    entity ge = self.groundentity;
+    self.ride_ent = 0;
+    if (!(self.flags & FL_ONGROUND) || !ge || ge.movetype != MOVETYPE_PUSH ||
+        ge.avelocity != '0 0 0')
+        return;
+
+    self.ride_ent = num_for_edict(ge);
+    self.ride_h = self.origin - ge.origin;
+    // Pushers move while their local-time nextthink is ahead, and stop on it.
+    if (ge.velocity != '0 0 0' && ge.nextthink > ge.ltime) {
+        self.ride_rem = ge.nextthink - ge.ltime;
+        self.ride_vel = ge.velocity;
+    } else {
+        self.ride_rem = 0;
+        self.ride_vel = '0 0 0';
+    }
+}
+
 void Predict_Update(float is_player) {
     Predict_SyncPmove(is_player);
+    Predict_RecordRide();
 
     // When spectating, goalentity is our target.
     entity src = self.goalentity;
@@ -741,6 +775,7 @@ void TFL_ReceiveConfig() {
 #define GETF(_field) self.predict_state.##_field
 #define COMM(_type, _field) Write##_type(MSG_MULTICAST, GETF(_field))
 #define COMM_PM(_type, _field) Write##_type(MSG_MULTICAST, self.##_field)
+#define GETPM(_field) self.##_field
 void TFL_SendPredictState(entity to_player, float mask) {
     WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
     WriteByte(MSG_MULTICAST, MSG_PREDICTSTATE);
@@ -749,6 +784,7 @@ void TFL_SendPredictState(entity to_player, float mask) {
 #define GETF(_field) pstate_server.##_field
 #define COMM(_type, _field) GETF(_field) = Read##_type()
 #define COMM_PM(_type, _field) pstate_server.pmove.##_field = Read##_type()
+#define GETPM(_field) pstate_server.pmove.##_field
 #define cmd_stamp_clock cmd_servertime   // the echoed stamp clock lands in pmove.cmd_servertime
 
 void WP_ServerUpdate(float mask);
@@ -791,6 +827,30 @@ void TFL_RecvPredictState() {
         // cmd_stamp_clock and the correction are sent above; this one really
         // is movement prediction and stays here.
         COMM_PM(Float, cmd_clock_skew);
+
+        // The ride.  Floats, not coords: the offset is what places the replay
+        // on the pusher, and a quantised one leaves it standing in it.
+        COMM_PM(Short, ride_ent);
+        if (GETPM(ride_ent)) {
+            COMM_PM(Float, ride_h[0]);
+            COMM_PM(Float, ride_h[1]);
+            COMM_PM(Float, ride_h[2]);
+            COMM_PM(Float, ride_rem);
+            if (GETPM(ride_rem) > 0) {
+                COMM_PM(Float, ride_vel[0]);
+                COMM_PM(Float, ride_vel[1]);
+                COMM_PM(Float, ride_vel[2]);
+            }
+        }
+#ifdef CSQC
+        // Unsent is zero, not whatever the last ride left behind.
+        if (!pstate_server.pmove.ride_ent) {
+            pstate_server.pmove.ride_h = '0 0 0';
+            pstate_server.pmove.ride_rem = 0;
+        }
+        if (pstate_server.pmove.ride_rem <= 0)
+            pstate_server.pmove.ride_vel = '0 0 0';
+#endif
     }
 
     if (mask & FOWP_FILTER_ENTS) {
@@ -912,6 +972,7 @@ void TFL_RecvPredictState() {
 }
 #undef COMM
 #undef COMM_PM
+#undef GETPM
 #undef GETF
 #ifndef SSQC
 #undef cmd_stamp_clock   // scoped like the rest: 20-odd csqc files follow this one

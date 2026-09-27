@@ -4363,6 +4363,7 @@ void ClientsFlagUpdate(entity only) {
 
 void EndFrame() {
     ClientsFlagUpdate(world);
+    PP_SendRides();
 }
 
 #if 0

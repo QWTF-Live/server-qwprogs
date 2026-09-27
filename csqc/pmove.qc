@@ -25,6 +25,13 @@ static struct PMS_Data {
     // the next command's window can contain a due the lineage already fired
     // on, and the server consumes its queued push once.
     float nudge_fired[PM_NUDGES];
+    // The pusher the state stands on (PM_Ride*): its anchor from the
+    // acknowledged command, and whether this lineage is still riding it.  Per
+    // state for the same reason: the error pass replays the prior state, and
+    // that prior prediction was carried from its own anchor.
+    float ride_ent, riding;
+    vector ride_o, ride_vel;
+    float ride_rem, ride_t, ride_hz;
 } pm_s, pm_so, pm_c;
 
 static struct {
@@ -36,6 +43,9 @@ static struct {
     float interp_t;
     float last_nudge;
     float nudge_fired[PM_NUDGES];   // the running copy of the state's
+    float ride_ent, riding;         // and of its ride
+    vector ride_o, ride_vel;
+    float ride_rem, ride_t, ride_hz;
 
     vector error;
     float errortime;
@@ -403,6 +413,13 @@ static void PM_SavePMS(PMS_Data *pmsd) {
     pmsd->interp_t = pm.interp_t;
     for (float i = 0; i < PM_NUDGES; i++)
         pmsd->nudge_fired[i] = pm.nudge_fired[i];
+    pmsd->ride_ent = pm.ride_ent;
+    pmsd->riding = pm.riding;
+    pmsd->ride_o = pm.ride_o;
+    pmsd->ride_vel = pm.ride_vel;
+    pmsd->ride_rem = pm.ride_rem;
+    pmsd->ride_t = pm.ride_t;
+    pmsd->ride_hz = pm.ride_hz;
 }
 
 static void PM_ActivatePMS(PMS_Data *pmsd) {
@@ -416,8 +433,67 @@ static void PM_ActivatePMS(PMS_Data *pmsd) {
     pm.interp_t = pmsd->interp_t;
     for (float i = 0; i < PM_NUDGES; i++)
         pm.nudge_fired[i] = pmsd->nudge_fired[i];
+    pm.ride_ent = pmsd->ride_ent;
+    pm.riding = pmsd->riding;
+    pm.ride_o = pmsd->ride_o;
+    pm.ride_vel = pmsd->ride_vel;
+    pm.ride_rem = pmsd->ride_rem;
+    pm.ride_t = pmsd->ride_t;
+    pm.ride_hz = pmsd->ride_hz;
     pm.active_pmsd = pmsd;
 };
+
+// Riding a pusher.
+//
+// The server carries a player standing on a MOVETYPE_PUSH with it, in the
+// physics that follows each frame's commands (WPhys_PushMove).  Our replay has
+// to as well, and has one more problem: player physics collides with the
+// newest snapshot's copy of the pusher, one position for every command it
+// replays, while the real one moves under them command by command.  A lift
+// rising past a replay a round trip long was a pusher the rider stood inside
+// for the older commands and floated above for the newer, and a rider carried
+// by nothing -- the view lagged the lift and snapped on every update.
+//
+// So the pusher stays where the snapshot has it and the rider moves instead:
+// each command runs in the frame where the pusher sits there, shifted by the
+// difference, and is shifted back after.  Relative to the pusher every command
+// is then exact, and the rider stands on it exactly as the acknowledged state
+// did, because the offset comes from the server as a float and the position
+// the snapshot gives the pusher comes from the server too (PP_SendRides) --
+// neither depends on a clock.  The world is out by the shift instead, which is
+// along the pusher's travel: a shaft's walls do not care, and at either end
+// the snapshot's copy is advanced to where the pusher stops, so the shift is
+// nothing by the time anyone steps off.
+//
+// Between commands the rider is carried by the pusher's own motion over the
+// command, which on average is what the server's per-frame carry comes to.
+static struct {
+    float seq;    // the command the snapshot it came with acknowledges
+    float ent;
+    vector at;    // where that snapshot has the pusher
+} pm_ride_msg;
+
+void PM_ParseRide() {
+    pm_ride_msg.seq = readlong();
+    pm_ride_msg.ent = readshort();
+    vector at;
+    at_x = readcoord();
+    at_y = readcoord();
+    at_z = readcoord();
+    pm_ride_msg.at = at;
+}
+
+// Where player physics has the pusher we are riding, if we know: the newest
+// snapshot's position for it, which is what every replay collides with.
+static float PM_RideFrameKnown() {
+    return pm.ride_ent && pm_ride_msg.ent == pm.ride_ent &&
+           pm_ride_msg.seq == servercommandframe;
+}
+
+// The real pusher at command-clock time t, from the acknowledged command on.
+static vector PM_RidePos(float t) {
+    return pm.ride_o + pm.ride_vel * bound(0, t - pm.ride_t, pm.ride_rem);
+}
 
 static float cache_invalidated;
 // Frame and time of the previous server update, for judging nudge expiry in
@@ -519,6 +595,24 @@ static float pm_final_pass;
 static float nudge_sig;
 static float nudge_sig_from;   // only commands past this one are in the signature
 static float rj_trace_until_seq;   // RJ_TRACE: report server updates/errors until this seq
+
+// The acknowledged state's ride: its origin less the offset is the pusher's
+// origin then, and its command clock is the anchor.
+static void PM_RideFromServer() {
+    pm.ride_ent = pstate_server.pmove.ride_ent;
+    pm.riding = pm.ride_ent != 0;
+    pm.ride_o = pstate_server.pmove.origin - pstate_server.pmove.ride_h;
+    pm.ride_vel = pstate_server.pmove.ride_vel;
+    pm.ride_rem = pstate_server.pmove.ride_rem;
+    pm.ride_t = pstate_server.server_time;
+    vector h = pstate_server.pmove.ride_h;
+    pm.ride_hz = h_z;
+
+    if (pm.riding && servercommandframe < rj_trace_until_seq)
+        rj_trace("C: ride scf=%.0f ent=%.0f o=%v vel=%v rem=%.3f at=%v known=%.0f\n",
+                 servercommandframe, pm.ride_ent, pm.ride_o, pm.ride_vel, pm.ride_rem,
+                 pm_ride_msg.at, PM_RideFrameKnown());
+}
 // RJ_TRACE: a frame's correction is only worth a line if it is big enough to
 // read; the quiet ones are carried as a count so the denominator survives.
 const static float RJ_ERR_NOTABLE = 0.25;
@@ -1577,7 +1671,20 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
             PM_InputFrame();
 
         vector pm_moved_from = ent.origin;
+
+        // On a pusher: run the command where the snapshot has it.  Unknown
+        // (no position for this snapshot) is the old behaviour, not a guess.
+        if (pm.riding && !PM_RideFrameKnown())
+            pm.riding = FALSE;
+        vector ride_at = pm_ride_msg.at;
+        vector ride_shift = pm.riding ? ride_at - PM_RidePos(pm.interp_t) : '0 0 0';
+        ent.origin += ride_shift;
         RunPlayerPhysics();
+        if (pm.riding && (ent.flags & FL_ONGROUND) &&
+            fabs(ent.origin_z - ride_at_z - pm.ride_hz) > 1)
+            pm.riding = FALSE;   // stood on something else: off it
+        ent.origin -= ride_shift;
+
         PM_PushVolumes(ent, pm_moved_from);
 
         PM_CheckMissileHits(ent, pm_moved_from, pm.interp_t, pm.interp_t + step);
@@ -1624,6 +1731,14 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
                        (ent.flags & FL_ONGROUND) ? 1 : 0,
                        PM_GetWaterLevel(ent.origin, &wtype), nudge_sig);
         }
+
+        // The carry, after the record: the server journals the command before
+        // the physics that moves its riders.  Only while standing on it -- the
+        // engine carries grounded riders, and a jump leaves the pusher to
+        // move under us, which the frame shift above already accounts for.
+        if (pm.riding && (ent.flags & FL_ONGROUND))
+            ent.origin += PM_RidePos(pm.interp_t + step) - PM_RidePos(pm.interp_t);
+
         pm.seq++;
         pm.interp_t += step;
     }
@@ -2122,6 +2237,18 @@ static void PM_UpdateLocalMovement() {
     float step_dt = min(max(time - pm.steptime, 0), 0.25);
     pm.steptime = time;
 
+    // A lift's own climb is not a step.  The smoothing ramps any rise on the
+    // ground at STEP_RAMP, slower than a plat moves, so riding one left the
+    // view a full STEP_MAX_LAG under the eye; move its reference with the lift
+    // and only what the rider does on it is smoothed.
+    static float ride_view_z, ride_view_ok;
+    float ride_now = pm.riding && PM_RideFrameKnown();
+    vector lift = ride_now ? PM_RidePos(pm.interp_t) : '0 0 0';
+    if (ride_now && ride_view_ok)
+        pm.step_oldz += lift_z - ride_view_z;
+    ride_view_z = lift_z;
+    ride_view_ok = ride_now;
+
     if (PM_onground() && org_z > pm.step_oldz) {
         pm.step_oldz += step_dt * STEP_RAMP;
 
@@ -2296,6 +2423,7 @@ void PM_ServerUpdate() {
     // from here lands them afresh.
     for (float i = 0; i < PM_NUDGES; i++)
         pm.nudge_fired[i] = 0;
+    PM_RideFromServer();
     PM_SavePMS(&pm_s);
 
     if (!CVARF(fopm_nocache)) {

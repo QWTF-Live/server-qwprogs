@@ -24,8 +24,8 @@
 //                       the margin for ping jitter belongs on that side.
 //   pusher_max (pm)     ping cap in ms, default 200.
 //
-// Not covered: plats (the player stands on them; advancing a plat into a
-// predicted player would need a carry step the client's pmove doesn't have).
+// A player standing on a pusher is carried by it on the server; the client's
+// replay does the same from PP_SendRides and the ride in the predict state.
 
 // Engine fields (fteqw server/progdefs.h).
 .float  pusher_advance;         // players: seconds to report pushers ahead by
@@ -104,6 +104,48 @@ static void PP_ReportPusherStop() {
     rj_trace("S: hard-stop seq=%.0f lost=%.0f org=%v vel=%v -> %v og=%.0f\n",
              self.cmd_sequence, lost, self.origin, self.pp_vel_pre, self.velocity,
              (float)!!(self.flags & FL_ONGROUND));
+}
+
+// Where the pusher each rider stands on sits in the snapshot about to go out
+// to them, for their movement replay to place them on it (PM_Ride*, pmove.qc).
+//
+// Player physics on the client collides with the snapshot's copy of the
+// pusher, one position for every command it replays, so the replay moves the
+// rider into the frame where the pusher sits there instead of moving the
+// pusher.  That needs the position exactly: short of it the rider stands in
+// the pusher, past it they float.  So this is the engine's own arithmetic
+// (SV_Snapshot_AdvancePusher), on the same fields at the same moment: EndFrame
+// runs after the frame's pusher physics and before the snapshots are built,
+// and `time` here is the physicstime they are built at.  Tagged with the
+// command the snapshot acknowledges, so the client can tell it belongs.
+void PP_SendRides() {
+    for (entity p = find(world, classname, "player"); p; p = find(p, classname, "player")) {
+        if (!p.ride_ent || !(p.predict_flags & PF_PMOVE))
+            continue;
+        entity e = edict_num(p.ride_ent);
+        if (e.movetype != MOVETYPE_PUSH)
+            continue;
+
+        vector at = e.origin;
+        float adv = max(0, p.pusher_advance);
+        float moving = (e.velocity != '0 0 0' || e.avelocity != '0 0 0') && e.nextthink > e.ltime;
+        if (adv > 0 && moving && !e.pusher_noadvance) {
+            float end = time + adv;
+            float dt = min(end - time, e.nextthink - e.ltime);
+            if (dt > 0)
+                at = at + e.velocity * dt;
+        }
+
+        msg_entity = p;
+        WriteByte(MSG_MULTICAST, SVC_CGAMEPACKET);
+        WriteByte(MSG_MULTICAST, MSG_PM_RIDE);
+        WriteLong(MSG_MULTICAST, p.cmd_sequence);
+        WriteShort(MSG_MULTICAST, p.ride_ent);
+        WriteCoord(MSG_MULTICAST, at_x);
+        WriteCoord(MSG_MULTICAST, at_y);
+        WriteCoord(MSG_MULTICAST, at_z);
+        multicast('0 0 0', MULTICAST_ONE_NOSPECS);
+    }
 }
 
 void PP_PlayerPostThink() {

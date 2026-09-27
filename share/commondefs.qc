@@ -271,6 +271,9 @@ float RJ_On();
 // The bot's silent journal: same body as MSG_PMDEBUG, gated on
 // CSQC_JOURNAL instead. 37 is the bot-line route echo.
 #define MSG_JOURNAL         38
+// Where the pusher a player rides sits in the snapshot that message arrives
+// with, for their movement replay (PP_SendRides, PM_ParseRide).
+#define MSG_PM_RIDE         39
 
 // What happened to a player during one command, as each side saw it.  The
 // client records its own while predicting; the server records its own and

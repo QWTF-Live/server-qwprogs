@@ -82,6 +82,12 @@ float cmd_real_time;             // real `time` while the warp is active, else 0
 .float cmd_clock_sample_at;      // next periodic clock-error sample, for the trace
 .float cmd_clock_lead_min;       // lower envelope of cmd_clock - real time over the current window
 .float cmd_clock_lead_at;        // when that window closes
+// The pusher this player was standing on when the command's state was
+// recorded (Predict_RecordRide), for the client to carry its replay with it.
+.float ride_ent;                 // edict number, 0 when not standing on one
+.vector ride_h;                  // player origin less the pusher's
+.float ride_rem;                 // how much longer the pusher moves, s (0: at rest)
+.vector ride_vel;                // its velocity while it does
 .float last_remote_time;         // For monoticity of remote_time()
 
 .void() client_think;            // client-time relative think

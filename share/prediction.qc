@@ -339,6 +339,7 @@ struct predict_tf_state {
         // how it was moving.  The replay rides it (PM_Ride*, pmove.qc).
         float ride_ent;
         vector ride_h;
+        float ride_wait;
         float ride_rem;
         vector ride_vel;
     } pmove;
@@ -670,6 +671,42 @@ void TFL_SendPredictState(entity to_player, float mask);
 // well.  Taken after the command's move and anything that knocked them off
 // the ground since (PostThink), which is what that physics will see.  A
 // rotating pusher is left out: the replay carries by translation only.
+void () plat_go_down;
+void () door_go_down;
+void () train_next;
+
+// The move a pusher at rest has scheduled for itself, as SUB_CalcMove will set
+// it up when the think fires: a plat waiting at the top, a door waiting open,
+// a train paused at a corner.  These start on a think, not in answer to any
+// command, so the client cannot see one coming -- the rider's acknowledged
+// states all say "at rest" until one from after the start arrives, and the
+// replay carried nothing for that round trip and then snapped the whole of it.
+// Only these three: anything else a think might do is not ours to guess.
+static float Ride_PendingMove(entity ge, __out vector vel, __out float travel) {
+    vector dest;
+    if (ge.think == plat_go_down)
+        dest = ge.pos2;
+    else if (ge.think == door_go_down)
+        dest = ge.pos1;
+    else if (ge.think == train_next) {
+        entity targ = find(world, targetname, ge.target);
+        if (!targ)
+            return FALSE;
+        dest = targ.origin - ge.mins;
+    } else
+        return FALSE;
+
+    // SUB_CalcMove, from where it stands: at rest it is still there then.
+    if (!ge.speed || dest == ge.origin)
+        return FALSE;
+    vector delta = dest - ge.origin;
+    travel = vlen(delta) / ge.speed;
+    if (travel < 0.03)
+        travel = 0.03;
+    vel = delta * (1 / travel);
+    return TRUE;
+}
+
 static void Predict_RecordRide() {
     entity ge = self.groundentity;
     self.ride_ent = 0;
@@ -680,9 +717,19 @@ static void Predict_RecordRide() {
     self.ride_ent = num_for_edict(ge);
     self.ride_h = self.origin - ge.origin;
     // Pushers move while their local-time nextthink is ahead, and stop on it.
+    // At rest ltime still runs with the world (WPhys_PushMove), so the same
+    // difference is how long until a scheduled move starts -- to within the
+    // physics tick the think fires in, after which the move begins.
+    vector vel;
+    float travel;
+    self.ride_wait = 0;
     if (ge.velocity != '0 0 0' && ge.nextthink > ge.ltime) {
         self.ride_rem = ge.nextthink - ge.ltime;
         self.ride_vel = ge.velocity;
+    } else if (ge.nextthink > ge.ltime && Ride_PendingMove(ge, vel, travel)) {
+        self.ride_wait = ge.nextthink - ge.ltime;
+        self.ride_rem = travel;
+        self.ride_vel = vel;
     } else {
         self.ride_rem = 0;
         self.ride_vel = '0 0 0';
@@ -840,6 +887,7 @@ void TFL_RecvPredictState() {
                 COMM_PM(Float, ride_vel[0]);
                 COMM_PM(Float, ride_vel[1]);
                 COMM_PM(Float, ride_vel[2]);
+                COMM_PM(Float, ride_wait);
             }
         }
 #ifdef CSQC
@@ -848,8 +896,10 @@ void TFL_RecvPredictState() {
             pstate_server.pmove.ride_h = '0 0 0';
             pstate_server.pmove.ride_rem = 0;
         }
-        if (pstate_server.pmove.ride_rem <= 0)
+        if (pstate_server.pmove.ride_rem <= 0) {
             pstate_server.pmove.ride_vel = '0 0 0';
+            pstate_server.pmove.ride_wait = 0;
+        }
 #endif
     }
 

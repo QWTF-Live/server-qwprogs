@@ -86,7 +86,8 @@ float cmd_real_time;             // real `time` while the warp is active, else 0
 // recorded (Predict_RecordRide), for the client to carry its replay with it.
 .float ride_ent;                 // edict number, 0 when not standing on one
 .vector ride_h;                  // player origin less the pusher's
-.float ride_rem;                 // how much longer the pusher moves, s (0: at rest)
+.float ride_wait;                // how long until it starts moving, s (0: moving now)
+.float ride_rem;                 // how long it then moves for, s (0: at rest, nothing scheduled)
 .vector ride_vel;                // its velocity while it does
 .float last_remote_time;         // For monoticity of remote_time()
 

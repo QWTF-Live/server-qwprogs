@@ -31,7 +31,7 @@ static struct PMS_Data {
     // that prior prediction was carried from its own anchor.
     float ride_ent, riding;
     vector ride_o, ride_vel;
-    float ride_rem, ride_t, ride_hz;
+    float ride_wait, ride_rem, ride_t, ride_hz;
 } pm_s, pm_so, pm_c;
 
 static struct {
@@ -45,7 +45,7 @@ static struct {
     float nudge_fired[PM_NUDGES];   // the running copy of the state's
     float ride_ent, riding;         // and of its ride
     vector ride_o, ride_vel;
-    float ride_rem, ride_t, ride_hz;
+    float ride_wait, ride_rem, ride_t, ride_hz;
 
     vector error;
     float errortime;
@@ -417,6 +417,7 @@ static void PM_SavePMS(PMS_Data *pmsd) {
     pmsd->riding = pm.riding;
     pmsd->ride_o = pm.ride_o;
     pmsd->ride_vel = pm.ride_vel;
+    pmsd->ride_wait = pm.ride_wait;
     pmsd->ride_rem = pm.ride_rem;
     pmsd->ride_t = pm.ride_t;
     pmsd->ride_hz = pm.ride_hz;
@@ -437,6 +438,7 @@ static void PM_ActivatePMS(PMS_Data *pmsd) {
     pm.riding = pmsd->riding;
     pm.ride_o = pmsd->ride_o;
     pm.ride_vel = pmsd->ride_vel;
+    pm.ride_wait = pmsd->ride_wait;
     pm.ride_rem = pmsd->ride_rem;
     pm.ride_t = pmsd->ride_t;
     pm.ride_hz = pmsd->ride_hz;
@@ -490,9 +492,10 @@ static float PM_RideFrameKnown() {
            pm_ride_msg.seq == servercommandframe;
 }
 
-// The real pusher at command-clock time t, from the acknowledged command on.
+// The real pusher at command-clock time t, from the acknowledged command on:
+// still for the wait, if it has a move scheduled, then moving for the rest.
 static vector PM_RidePos(float t) {
-    return pm.ride_o + pm.ride_vel * bound(0, t - pm.ride_t, pm.ride_rem);
+    return pm.ride_o + pm.ride_vel * bound(0, t - pm.ride_t - pm.ride_wait, pm.ride_rem);
 }
 
 static float cache_invalidated;
@@ -603,15 +606,17 @@ static void PM_RideFromServer() {
     pm.riding = pm.ride_ent != 0;
     pm.ride_o = pstate_server.pmove.origin - pstate_server.pmove.ride_h;
     pm.ride_vel = pstate_server.pmove.ride_vel;
+    pm.ride_wait = pstate_server.pmove.ride_wait;
     pm.ride_rem = pstate_server.pmove.ride_rem;
     pm.ride_t = pstate_server.server_time;
     vector h = pstate_server.pmove.ride_h;
     pm.ride_hz = h_z;
 
-    if (pm.riding && servercommandframe < rj_trace_until_seq)
-        rj_trace("C: ride scf=%.0f ent=%.0f o=%v vel=%v rem=%.3f at=%v known=%.0f\n",
-                 servercommandframe, pm.ride_ent, pm.ride_o, pm.ride_vel, pm.ride_rem,
-                 pm_ride_msg.at, PM_RideFrameKnown());
+    if (pm.riding && servercommandframe < rj_trace_until_seq) {
+        rj_trace("C: ride scf=%.0f ent=%.0f o=%v at=%v known=%.0f",
+                 servercommandframe, pm.ride_ent, pm.ride_o, pm_ride_msg.at, PM_RideFrameKnown());
+        rj_trace(" vel=%v wait=%.3f rem=%.3f\n", pm.ride_vel, pm.ride_wait, pm.ride_rem);
+    }
 }
 // RJ_TRACE: a frame's correction is only worth a line if it is big enough to
 // read; the quiet ones are carried as a count so the denominator survives.

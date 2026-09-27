@@ -323,6 +323,13 @@ void () worldspawn = {
     precache_sound("mcp_grentimer25.wav");
     precache_sound("mcp_grentimer26.wav");
     precache_sound("buttons/switch04.wav");
+    // the duel announcer: spawn guard, a player out of the spawn, FIGHT.
+    // Precached here rather than at the first round reset, which left
+    // the first guard's sounds unplayed ("not precached") and sent every
+    // client a late precache mid-match
+    precache_sound("come_get.wav");
+    precache_sound("misc/basekey.wav");
+    precache_sound("fight.wav");
     precache_sound("boss1/out1.wav");
     precache_sound("items/qpi2.wav");
     precache_sound("shalrath/death.wav");

@@ -63,9 +63,15 @@ void (float inp) SetQuadRounds = {
 }
 
 
+// Each mode writes the short clan key beside the long one: CF_GetSetting
+// reads "c" before "clan", so a config's `localinfo c off` otherwise vetoed
+// every switch, and duel mode ran without clan mode -- no prematch, and no
+// spawn guard on the first round.
+
 void () QuadMode =
 {
     localcmd ("localinfo clan on\n");
+    localcmd ("localinfo c on\n");
     localcmd ("localinfo pug off\n");
     localcmd ("localinfo quadmode on\n");
     localcmd ("localinfo duelmode off\n");
@@ -90,6 +96,7 @@ void () PugMode =
     localcmd ("localinfo pug on\n");
     localcmd ("localinfo quadmode off\n");
     localcmd ("localinfo clan off\n");
+    localcmd ("localinfo c off\n");
     localcmd ("localinfo duelmode off\n");
     localcmd ("localinfo rounds 2\n");
     localcmd ("timelimit 0\n");
@@ -107,6 +114,7 @@ void () PugMode =
 void () ClanMode =
 {
     localcmd("localinfo clan on\n");
+    localcmd("localinfo c on\n");
     localcmd ("localinfo pug off\n");
     localcmd ("localinfo rd 0\n"); 
     localcmd ("localinfo votemode 0\n"); 
@@ -120,6 +128,7 @@ void () ClanMode =
 void () PubMode = 
 {
     localcmd ("localinfo clan off\n");
+    localcmd ("localinfo c off\n");
     localcmd ("localinfo pug off\n");
     localcmd ("localinfo quadmode off\n");
     localcmd ("localinfo duelmode off\n");
@@ -143,6 +152,7 @@ void () DuelMode =
     localcmd ("localinfo teamfrags off\n");
     localcmd ("localinfo fullteamscore off\n");
     localcmd ("localinfo clan on\n");
+    localcmd ("localinfo c on\n");
     localcmd ("localinfo quadmode off\n");
     localcmd ("localinfo duelmode on\n");
     localcmd ("localinfo sf on\n"); // spawnfull, ie spawn fully stocked
@@ -154,7 +164,11 @@ void () DuelMode =
     localcmd ("timelimit 0\n");
     localcmd ("fraglimit 30\n");
     localcmd ("localinfo votemode 0\n"); 
-    localcmd ("localinfo vote_style 2\n"); 
+    // 2 keeps the map at intermission; 4 stops vote mode switching itself
+    // on at a map load when the map is vote_map -- which on a duel server
+    // is the duel map, and vote mode skips ButtonFrame: the grenade and
+    // special buttons did nothing, only the impulses worked
+    localcmd ("localinfo vote_style 6\n"); 
     localcmd ("exec fo_duelmode.cfg\n");
     bprint(PRINT_HIGH, "Duel Mode set to on\n");
 	bprint(PRINT_HIGH, "Map Restart needed to take effect!\n");

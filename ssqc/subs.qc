@@ -40,6 +40,13 @@ void MSG_SoundOne(entity targ, string samp, float chan, float vol) {
 
 void FO_Sound(entity e, float chan, string samp, float vol, float atten)
 {
+    // world is read-only once the map runs: the duel announcer (spawn
+    // guard, FIGHT, round countdown) plays from it, and the flash trick
+    // below logged an assignment error with a stack trace every time
+    if (e == world) {
+        sound(e, chan, samp, vol, atten);
+        return;
+    }
     float olddimens = e.dimension_seen;
     // make the sound go to no flash, so it isn't heard by those that are flashed
     e.dimension_seen = DMN_NOFLASH;

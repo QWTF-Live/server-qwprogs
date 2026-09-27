@@ -1562,8 +1562,6 @@ void () ResetPlayers = {
     
     if(duelmode && duel_spawn_guard) {
         StartSpawnGuard();
-        precache_sound("get_some.wav");
-        precache_sound("fight.wav");
     }
 
 }

@@ -96,6 +96,16 @@ void Antilag_CrossCheck(entity p) {
     if (scan)
         projs = find_list(al_proj, 1, EV_FLOAT, count);
 
+    // The box the player's sweep covers, grown by a unit, far more than any
+    // rounding in SegBox: a projectile whose motion stays outside it on any
+    // axis cannot have crossed, and is passed over without the call chain.
+    vector sw_lo = p.al_cmd_prev, sw_hi = p.origin;
+    if (sw_lo_x > sw_hi_x) { float t = sw_lo_x; sw_lo_x = sw_hi_x; sw_hi_x = t; }
+    if (sw_lo_y > sw_hi_y) { float t = sw_lo_y; sw_lo_y = sw_hi_y; sw_hi_y = t; }
+    if (sw_lo_z > sw_hi_z) { float t = sw_lo_z; sw_lo_z = sw_hi_z; sw_hi_z = t; }
+    sw_lo += p.mins - '1 1 1';
+    sw_hi += p.maxs + '1 1 1';
+
     for (int i = 0; i < count; i++) {
         entity e = scan ? projs[i] : al_list[i];
         if (!scan && (wasfreed(e) || !e.al_proj))
@@ -119,6 +129,11 @@ void Antilag_CrossCheck(entity p) {
 
         if (qa == qb)
             continue;   // did not move: the command's own sweep covered it
+
+        if ((qa_x < sw_lo_x && qb_x < sw_lo_x) || (qa_x > sw_hi_x && qb_x > sw_hi_x) ||
+            (qa_y < sw_lo_y && qb_y < sw_lo_y) || (qa_y > sw_hi_y && qb_y > sw_hi_y) ||
+            (qa_z < sw_lo_z && qb_z < sw_lo_z) || (qa_z > sw_hi_z && qb_z > sw_hi_z))
+            continue;
 
         // The same predicate the client runs, on the same interval, out of the
         // same function.  A projectile is a point, so this is exactly what the

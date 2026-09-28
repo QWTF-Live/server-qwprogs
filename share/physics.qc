@@ -144,7 +144,7 @@ static inline float get_gravity() { return cvar("sv_gravity"); }
 // Where a straight-flying projectile is at time t on its own clock.  Its path
 // is a line, so this needs no simulation and no stepping -- which is what lets
 // both sides ask about an instant neither of them has stepped to.
-vector Proj_OrgAt(entity e, float t) {
+inline vector Proj_OrgAt(entity e, float t) {
     return e.origin + e.velocity * (t - e.phys_time);
 }
 
@@ -186,8 +186,8 @@ float SegBox(vector p0, vector p1, vector mins, vector maxs, float* frac) {
 // relative to them, which for two straight segments is exact.  Both sides run
 // this, over the same interval -- one command -- which is the only interval
 // either of them holds both ends of.
-float Proj_Crosses(vector qa, vector qb, vector pa, vector pb,
-                   vector mins, vector maxs, float* frac) {
+inline float Proj_Crosses(vector qa, vector qb, vector pa, vector pb,
+                          vector mins, vector maxs, float* frac) {
     return SegBox(qa - pa, qb - pb, mins, maxs, frac);
 }
 

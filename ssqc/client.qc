@@ -4383,9 +4383,12 @@ void ClientsFlagUpdate(entity only) {
     }
 }
 
+void AL_Refresh();
+
 void EndFrame() {
     ClientsFlagUpdate(world);
     PP_SendRides();
+    AL_Refresh();
 }
 
 #if 0

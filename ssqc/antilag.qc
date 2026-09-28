@@ -12,6 +12,62 @@
 
 float (string ps_short, string ps_setting, string ps_default) CF_GetSetting;
 
+// The live projectiles on the integrator (al_proj), for Antilag_CrossCheck,
+// which runs for every moving player on every command.  Finding them there with
+// find_list walked every entity slot each time -- 2.4 us a command on 1on1r in
+// play, several times that on a pub map.  Instead each joins the list as it is
+// armed (AL_Arm), and the list is pruned once a frame (AL_Refresh, from
+// EndFrame).  One removed in between, by a touch from the check itself
+// included, stays listed until then; the check skips it.
+#define AL_LIST_MAX 256
+entity al_list[AL_LIST_MAX];
+float al_count;
+float al_overflow;   // more than the list holds: the check scans for itself
+
+// Once a frame.  Pruning walks only the list; a scan of every slot is needed
+// just to recover from overflowing, when projectiles armed meanwhile went
+// unlisted.
+void AL_Refresh() {
+    if (al_overflow) {
+        int count;
+        entity* found = find_list(al_proj, 1, EV_FLOAT, count);
+        al_overflow = count > AL_LIST_MAX;
+        al_count = min(count, AL_LIST_MAX);
+        for (float i = 0; i < al_count; i++)
+            al_list[i] = found[i];
+        return;
+    }
+
+    float kept = 0;
+    for (float i = 0; i < al_count; i++) {
+        entity e = al_list[i];
+        if (!wasfreed(e) && e.al_proj) {
+            al_list[kept] = e;
+            kept++;
+        }
+    }
+    al_count = kept;
+}
+
+// The only way a projectile joins the integrator's set, so the list never
+// misses one armed mid-frame.
+void AL_Arm(entity mis) {
+    mis.al_proj = 1;
+    if (al_overflow)
+        return;
+    // An entity slot freed and reused within the frame is already listed:
+    // twice would run its touch twice.
+    for (float i = 0; i < al_count; i++)
+        if (al_list[i] == mis)
+            return;
+    if (al_count >= AL_LIST_MAX) {
+        al_overflow = TRUE;
+        return;
+    }
+    al_list[al_count] = mis;
+    al_count++;
+}
+
 // A player and a projectile crossing paths within one frame.  The projectile's
 // sweep for the frame is tested against where the player stood at its start,
 // and the player's next command sweeps against where the projectile ended up:
@@ -32,10 +88,18 @@ void Antilag_CrossCheck(entity p) {
     // to be measured over for the two to be paired at all.
     float t1 = RealTime(), t0 = t1 - input_timelength;
 
-    int count;
-    entity* projs = find_list(al_proj, 1, EV_FLOAT, count);
+    // Taken before the loop, as the scan's result was: a projectile armed by a
+    // touch in here is checked from the next command.
+    float scan = al_overflow;
+    int count = al_count;
+    entity* projs = __NULL__;
+    if (scan)
+        projs = find_list(al_proj, 1, EV_FLOAT, count);
+
     for (int i = 0; i < count; i++) {
-        entity e = projs[i];
+        entity e = scan ? projs[i] : al_list[i];
+        if (!scan && (wasfreed(e) || !e.al_proj))
+            continue;   // removed since the list was built
         if (e.voided || !e.touch || e.owner == p || e.solid == SOLID_NOT)
             continue;
         // The projectile's motion over *this command's* span, not over its last

@@ -20,7 +20,7 @@ void(float t) setlaggedtime = #0:setlaggedtime;
 void(float t, optional entity exclude) rewindworld = #0:rewindworld;
 void() restoreworld = #0:restoreworld;
 vector(entity player, float t) laggedorigin = #0:laggedorigin;
-.float al_proj;               // a live projectile on the integrator (Antilag_CrossCheck finds them)
+.float al_proj;               // a live projectile on the integrator (set by AL_Arm, for Antilag_CrossCheck)
 .vector al_prev_origin;       // projectile: origin before its last physics frame
 .vector al_cmd_prev;          // player: origin before this command
 #endif

@@ -1375,6 +1375,7 @@ void PredProj_Sound(int proj_type, float vol = 1) {
 }
 
 void Forward_Projectile(int fpp_type, entity projectile);
+void AL_Arm(entity mis);
 
 entity FOProj_Create(int fpp_type) {
     entity prj = spawn();
@@ -1435,7 +1436,7 @@ void FOProj_Finalize(entity mis) {
     setsize(mis, '0 0 0', '0 0 0');
 
     mis.customphysics = FO_CustomPhysics;
-    mis.al_proj = 1;
+    AL_Arm(mis);
     mis.al_prev_origin = mis.origin;   // after the forward: only real frames count as motion
 
     Forward_Projectile(mis.fpp.index, mis);

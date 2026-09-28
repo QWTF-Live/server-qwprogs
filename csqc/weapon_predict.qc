@@ -499,9 +499,9 @@ void UpdateMinPing() {
     next_minv_update = next_ping_update + 1;  // Limit modulation
 }
 
-// Our own ping, straight from the engine.  The server reads the same key for
-// us (FO_UpdateClientPing) and used to send it back in the predict state; there
-// is no reason to spend the wire on a number we can already read.
+// Our own ping, straight from the engine.  The server used to send its reading
+// of the same key back in the predict state; there is no reason to spend the
+// wire on a number we can already read.
 float WP_PingMs() { return inst_ping_ms; }
 
 void WP_UpdatePings() {

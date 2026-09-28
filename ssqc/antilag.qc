@@ -117,7 +117,7 @@ float RewindPlayersExcept(entity except, float farthest_rewind_point) {
 // command path, including those from before a death the client had not yet
 // seen (the ghost replay in client.qc).
 void Forward_Projectile(int fpp_type, entity proj) {
-    float ping = proj.owner.client_ping;
+    float ping;
     if (tf_config.cmd_time && proj.owner.classname == "player" && proj.owner.cmd_stamp_clock > 0) {
         ping = min((RealTime() - proj.owner.cmd_stamp_clock) * 1000,
                    tf_config.max_rewind_ms - 25);
@@ -126,6 +126,8 @@ void Forward_Projectile(int fpp_type, entity proj) {
         // client anchors its copy on it exactly, so give the frame back: the
         // projectile then starts at the stamp, not a frame after it.
         ping += SERVER_FRAME_MS;
+    } else {
+        ping = infokeyf(proj.owner, INFOKEY_P_PING);
     }
 
     float gren1 = fpp_type == FPP_HANDGRENADE &&
@@ -181,7 +183,7 @@ void Forward_OpenDoors(entity player) {
         return;
 
     vector offset = min(550, vlen(player.velocity)) * normalize(player.velocity);
-    offset *= max(player.client_ping, 150) / 1000.0;
+    offset *= max(CmdPing(player), 150) / 1000.0;
     traceline(player.origin, player.origin + offset, MOVE_TRIGGERS, player);
 
     if (trace_fraction < 1 && trace_ent.solid == SOLID_TRIGGER) {

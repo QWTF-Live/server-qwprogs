@@ -1,9 +1,22 @@
-// Ping corrected `time`: how far back this client's view of the world is.
+// How old the command being run is, as a ping in milliseconds: from the
+// client's own stamp on it (cmd_stamp_clock) where it has one, which is exact
+// for this command, and otherwise the engine's ping -- an average over the last
+// 64 packets, and a builtin to read.  The stamp's age gets a server frame added,
+// the frame a ping is taken to overstate by and remote_time takes back off, so
+// the two read alike.
+float CmdPing(entity p) {
+    if (tf_config.cmd_time && p.classname == "player" && p.cmd_stamp_clock > 0)
+        return ((cmd_real_time ? cmd_real_time : time) - p.cmd_stamp_clock) * 1000
+               + SERVER_FRAME_MS;
+    return infokeyf(p, INFOKEY_P_PING);
+}
+
+// Lag corrected `time`: how far back this client's view of the world is.
 // Monotonically non-decreasing, which guarantees that for some offset `o`:
 //     at t1: remote_time() + o < at t2: remote_time() + o  FOR t2 > t1
 // i.e. lag correction can never reorder events that `time` would not.
 float remote_time() {
-    float adj_ping = max(self.client_ping - SERVER_FRAME_MS, 0);
+    float adj_ping = max(CmdPing(self) - SERVER_FRAME_MS, 0);
     float offset = min(adj_ping, tf_config.max_rewind_ms);
 
     float target = (cmd_real_time ? cmd_real_time : time) - offset / 1000.0;
@@ -11,10 +24,6 @@ float remote_time() {
     self.last_remote_time = target;
 
     return target;
-}
-
-float bounded_remote_time(float dt) {
-    return max(time - dt, remote_time());
 }
 
 // Runs the pending client-time think, warping `time` to the instant the think
@@ -32,8 +41,4 @@ void FO_CheckClientThink() {
 
         time = held_time;
     }
-}
-
-void FO_UpdateClientPing() {
-    self.client_ping = infokeyf(self, INFOKEY_P_PING);
 }

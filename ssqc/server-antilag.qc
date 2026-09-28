@@ -163,5 +163,9 @@ void PP_PlayerPostThink() {
     // for ping jitter belongs on the obstructive side: a closing door shown a
     // little further along is a phantom edge the server lets the player
     // through, shown a little short it is a gap the server closes.
-    self.pusher_advance = max(0, (min(self.client_ping, pp_max) + pp_buffer) / 1000);
+    // The engine's ping, not the command's age (CmdPing): it is already an
+    // average, and one command's age jitters with its packet, which would move
+    // a door that is on screen.
+    float ping = infokeyf(self, INFOKEY_P_PING);
+    self.pusher_advance = max(0, (min(ping, pp_max) + pp_buffer) / 1000);
 }

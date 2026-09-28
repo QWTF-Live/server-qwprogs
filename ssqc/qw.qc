@@ -11,7 +11,6 @@ enum {
 
 .float last_death;
 
-.float client_ping;              // ping used for prediction
 .float setting_cfpi;             // cached setinfo cfpi / cf_pyro_impulses (FO_RefreshUserSettings)
 .float setting_owi;              // cached setinfo owi / old_weapon_impulses (FO_RefreshUserSettings)
 .float setting_hg;               // cached setinfo hg / hold_grens (FO_RefreshUserSettings)

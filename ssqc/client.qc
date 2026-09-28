@@ -2887,7 +2887,6 @@ static void CmdClock_Update() {
 }
 
 void () PlayerPreThink = {
-    FO_UpdateClientPing();
     PMD_BeginCommand(self);
     CmdClock_Update();
     self.pp_vel_pre = self.velocity;   // for the pusher-stop detector
@@ -3389,7 +3388,6 @@ static void Ghost_Carry(entity from, entity to) {
     to.cmd_stamp_clock = from.cmd_stamp_clock;
     to.cmd_clock_lead_min = from.cmd_clock_lead_min;
     to.cmd_clock_lead_at = from.cmd_clock_lead_at;
-    to.client_ping = from.client_ping;
     to.pending_knock = from.pending_knock;   // one list, drained by whoever runs the command
     to.last_death = from.last_death;
     to.ghost = from.ghost;

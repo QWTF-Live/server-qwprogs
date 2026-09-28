@@ -549,6 +549,7 @@ float self_class() { return self.playerclass; }
 Slot self_current_slot() { return self.current_slot; }
 Slot self_queue_slot() { return self.queue_slot; }
 float* self_clip_fired(Slot slot) { return &self.clip_fired[SlotIndex(slot)]; }
+float self_pyro_swapped() { return self.setting_cfpi; }
 
 #else
 
@@ -559,6 +560,7 @@ float self_class() { return pstate_pred.playerclass; }
 Slot self_current_slot() { return pstate_pred.current_slot; }
 Slot self_queue_slot() { return pstate_pred.queue_slot; }
 float* self_clip_fired(Slot slot) { return &pstate_pred.clip_fired[SlotIndex(slot)]; }
+float self_pyro_swapped() { return cs_setting_cfpi; }
 
 #define MASK_PRED_ENT        256
 #define MASK_PRED_PROJECTILE 512

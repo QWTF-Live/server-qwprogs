@@ -28,8 +28,14 @@ void FO_Sound(entity e, float chan, string samp, float vol, float atten);
 
 #ifdef SSQC
 
+// The CSQC_* bits the client advertises in its fo_wpp_status userinfo.  Several
+// are asked of every player on every command, so the value is cached
+// (FO_RefreshUserSettings, on connect and on setinfo) rather than parsed out of
+// the userinfo on each ask.
+.float fo_wpp_status;
+
 inline float ClientPred_Enabled(entity client, float pred_flag) {
-    return infokeyf(client, "fo_wpp_status") & pred_flag;
+    return client.fo_wpp_status & pred_flag;
 }
 
 #endif

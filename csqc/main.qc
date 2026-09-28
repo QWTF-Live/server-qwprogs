@@ -352,6 +352,8 @@ void Web_KeepSpectating() {
 }
 
 noref void(float width, float height, float menushown) CSQC_UpdateView = {
+    FO_RefreshLocalSettings();  // before prediction (the viewmodel predraw) reads them
+
     clearscene();
     setproperty(VF_DRAWWORLD, 1);     // we want to draw our world!
 

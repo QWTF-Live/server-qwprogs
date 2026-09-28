@@ -115,7 +115,6 @@ void () ToggleInvincibility;
 
 float () GetMaxWeaponInput;
 float () IsUsingOldImpulses;
-float () IsUsingCFImpulses;
 
 void (entity pl) W_UpdateCurrentWeapon;
 
@@ -2144,7 +2143,7 @@ void () W_PrintWeaponMessage = {
 };
 
 float (float weap) W_GetSlot = {
-    local float cf_pyro_impulses = FO_GetUserSetting(self, "cf_pyro_impulses", "cfpi", "off");
+    local float cf_pyro_impulses = self.setting_cfpi;
     if (weap == WEAP_ROCKET_LAUNCHER
                 || weap == WEAP_SUPER_NAILGUN
                 || weap == WEAP_SNIPER_RIFLE
@@ -2803,7 +2802,7 @@ void () ButtonFrame = {
         }
     }
 
-    float hold_grens = FO_GetUserSetting(self, "hold_grens", "hg", "off");
+    float hold_grens = IsHoldGrenades();
     if (keydowns & BUTTON_GRENADE1)
         ExecImpulseCommand(hold_grens ? TF_GRENADE_1 : TF_GRENADE_PT_1);
     if (keydowns & BUTTON_GRENADE2)

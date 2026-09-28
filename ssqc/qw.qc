@@ -12,6 +12,9 @@ enum {
 .float last_death;
 
 .float client_ping;              // ping used for prediction
+.float setting_cfpi;             // cached setinfo cfpi / cf_pyro_impulses (FO_RefreshUserSettings)
+.float setting_owi;              // cached setinfo owi / old_weapon_impulses (FO_RefreshUserSettings)
+.float setting_hg;               // cached setinfo hg / hold_grens (FO_RefreshUserSettings)
 .float rj_trace_until;           // RJ_TRACE: per-command trace after a self-knock
 .float rj_cmd_trace_until;       // RJ_TRACE: per-command stamp trace after a fire
 .entity pending_knock;           // deferred self-knocks, applied in PlayerPostThink (see AntilagKnock)

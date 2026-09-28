@@ -304,12 +304,27 @@ float FO_IsGren1(int playerclass, int gren_type) {
     return gren_type != GREN_NONE && class_grenades[playerclass].gren[0] == gren_type;
 }
 
+// Per-player settings the weapon code consults on every command, defined once
+// for both sides: the short key, then the long one, then the default, read as
+// on/off or a number.  Neither side parses userinfo per lookup: the server
+// caches them on the player (FO_RefreshUserSettings, on connect and on
+// setinfo), the client once a frame (FO_RefreshLocalSettings).
+//   cfpi: the pyro's first two slots are swapped.
+//   owi:  impulses 1-7 pick weapons the classic way rather than slots 1-4.
+//   hg:   a grenade key primes while held and throws on release.
+#define SETTING_CFPI "cfpi", "cf_pyro_impulses", "off"
+#define SETTING_OWI "owi", "old_weapon_impulses", "off"
+#define SETTING_HG "hg", "hold_grens", "off"
+
 #ifdef SSQC
 float (entity ent, string ps_short, string ps_setting, string ps_default) FO_GetUserSetting;
-float IsUsingOldImpulses();
 
-static float IsPyroSlotSwapped() {
-    return FO_GetUserSetting(self, "cf_pyro_impulses", "cfpi", "off");
+float IsUsingOldImpulses() {
+    return self.setting_owi;
+}
+
+float IsHoldGrenades() {
+    return self.setting_hg;
 }
 
 FO_GrenInfo* FO_PlayerGren(entity player, int index) {
@@ -333,16 +348,22 @@ float csqc_get_user_setting(string s_short, string s_long, string def) {
     }
 }
 
-float IsUsingOldImpulses() {
-    return csqc_get_user_setting("owi", "old_weapon_impulses", "off");
+// The local player's copies of the settings above, refreshed at the top of
+// every frame: prediction consults them many times a frame.
+float cs_setting_cfpi, cs_setting_owi, cs_setting_hg;
+
+void FO_RefreshLocalSettings() {
+    cs_setting_cfpi = csqc_get_user_setting(SETTING_CFPI);
+    cs_setting_owi = csqc_get_user_setting(SETTING_OWI);
+    cs_setting_hg = csqc_get_user_setting(SETTING_HG);
 }
 
-static float IsPyroSlotSwapped() {
-    return csqc_get_user_setting("cfpi", "cf_pyro_impulses", "off");
+float IsUsingOldImpulses() {
+    return cs_setting_owi;
 }
 
 float IsHoldGrenades() {
-    return csqc_get_user_setting("hg", "hold_grens", "off");
+    return cs_setting_hg;
 }
 #endif
 // We keep these out of the main table just to keep things a little more
@@ -444,14 +465,15 @@ float FO_WeapAvailable(float weapon) {
     return TRUE;
 }
 
-FO_WeapInfo* FO_SlotWeapInfo(float playerclass, Slot slot) {
+// The weapon in a class's slot.  pyro_swapped is the asking player's cfpi
+// setting (SETTING_CFPI): the caller passes it, since only the caller knows
+// whose weapon this is -- self is not always that player.
+FO_WeapInfo* FO_SlotWeapInfo(float playerclass, Slot slot, float pyro_swapped) {
     if (IsSlotNull(slot))
         return FO_GetWeapInfo(WEAP_NONE);
 
-    float si = SlotIndex(slot);
     float idx = SlotIndex(slot);
-    float cf_pyro_impulses = IsPyroSlotSwapped();
-    if (playerclass == PC_PYRO && cf_pyro_impulses && (idx == 0 || idx == 1))
+    if (playerclass == PC_PYRO && (idx == 0 || idx == 1) && pyro_swapped)
         idx = 1 - idx;
 
     FO_WeapInfo* wi = class_weapons[playerclass]->info[idx];
@@ -466,7 +488,7 @@ FO_WeapInfo* FO_SlotWeapInfo(float playerclass, Slot slot) {
 float FO_WeaponsMask(entity player) {
     float mask = 0;
     for (float i = 1; i <= TF_NUM_SLOTS; i++) {
-        FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, MakeSlot(i));
+        FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, MakeSlot(i), player.setting_cfpi);
         if (wi)
             mask |= wi->weapon;
     }
@@ -505,9 +527,10 @@ float FO_CanReloadMsg(FO_WeapInfo* wi, int ammo_remaining, int clip_fired,
 float self_class();
 Slot self_current_slot();
 float* self_clip_fired(Slot slot);
+float self_pyro_swapped();
 
 float FO_CurrentWeapon() {
-    FO_WeapInfo* wi = FO_SlotWeapInfo(self_class(), self_current_slot());
+    FO_WeapInfo* wi = FO_SlotWeapInfo(self_class(), self_current_slot(), self_pyro_swapped());
     if (!wi)
         return WEAP_NONE;
     return wi->weapon;
@@ -515,7 +538,7 @@ float FO_CurrentWeapon() {
 
 #ifdef SSQC
 float FO_PlayerCurrentWeapon(entity player) {
-    FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, player.current_slot);
+    FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, player.current_slot, player.setting_cfpi);
     if (!wi)
         return WEAP_NONE;
     return wi->weapon;
@@ -537,7 +560,7 @@ struct FO_WeapState {
 float* W_ammo_to_p(entity player, AmmoType ammo_type);
 
 void FO_FillWeapState(entity player, Slot slot, FO_WeapState* result) {
-    FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, slot);
+    FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, slot, player.setting_cfpi);
 
     result->weapon =  wi->weapon;
     result->slot = slot;
@@ -733,7 +756,7 @@ Slot FO_FindPrevNextWeaponSlot(float playerclass, Slot slot, float is_prev) {
         for (i = 0; i < len - 1; i++) {
             idx += direction;
             Slot c = MakeSlot(1 + (idx % len));
-            FO_WeapInfo* wi = FO_SlotWeapInfo(playerclass, c);
+            FO_WeapInfo* wi = FO_SlotWeapInfo(playerclass, c, self_pyro_swapped());
             if (wi->weapon != WEAP_NONE)
                 return c;
         }

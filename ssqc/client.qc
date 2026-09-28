@@ -3548,6 +3548,8 @@ void () UpdateAllClientsTeamScores = {
 
 void ClientsFlagUpdate(entity only);
 
+void FO_RefreshUserSettings(entity p);
+
 void () ClientConnect = {
     // csqc is required, and the engine has already dropped anyone without it
     // (sv_csqc_required, set in worldspawn).
@@ -3558,6 +3560,9 @@ void () ClientConnect = {
     self.connect_time = time;
     self.motd = 0;
     self.is_spectator = 0;
+    // The userinfo a player connects with never reaches UserInfo_Changed, and
+    // a map change wipes the fields: read the cached settings here.
+    FO_RefreshUserSettings(self);
 
     if (self.netname == string_null)
         KickCheater(self);
@@ -4261,13 +4266,34 @@ void (entity targ, entity attacker) ClientObituary = {
 
 };
 
-float () IsUsingOldImpulses = {
-    return ((infokey(self, "old_weapon_impulses") == "1") || (infokey(self, "owi") == "1"));
+// Re-read the userinfo the server consults every command into cached fields:
+// the settings (SETTING_* in share/weapons.qc) and the prediction capabilities
+// (ClientPred_Enabled).  Parsing userinfo on each lookup was a measurable share
+// of the per-command QC.
+void FO_RefreshUserSettings(entity p) {
+    p.setting_cfpi = FO_GetUserSetting(p, SETTING_CFPI);
+    p.setting_owi = FO_GetUserSetting(p, SETTING_OWI);
+    p.setting_hg = FO_GetUserSetting(p, SETTING_HG);
+    p.fo_wpp_status = infokeyf(p, "fo_wpp_status");
 }
 
-float () IsUsingCFImpulses = {
-    return FO_GetUserSetting(self, "cf_pyro_impulses", "cfpi", "off");
-}
+// The engine calls this with self = the client on every setinfo they send,
+// CSQC's setlocaluserinfo included.  Not for the userinfo they connect with
+// (ClientConnect and SpectatorConnect read that), nor for keys the server sets
+// itself with forceinfokey.
+void(string key, string oldvalue, string newvalue) UserInfo_Changed = {
+    switch (key) {
+        case "cfpi":
+        case "cf_pyro_impulses":
+        case "owi":
+        case "old_weapon_impulses":
+        case "hg":
+        case "hold_grens":
+        case "fo_wpp_status":
+            FO_RefreshUserSettings(self);
+            break;
+    }
+};
 
 float GetMaxWeaponInput()  {
     return IsUsingOldImpulses() ? 7 : 4;

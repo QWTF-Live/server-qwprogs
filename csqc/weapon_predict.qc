@@ -547,7 +547,7 @@ void Attack_Finished(float attack_time) {
 ////////////////////////////////////////////////////////////////////////////////
 static inline Slot CurrentSlot() { return pstate_pred.current_slot; }
 static inline FO_WeapInfo* SlotWI(Slot slot) {
-    return FO_SlotWeapInfo(pstate_pred.playerclass, slot);
+    return FO_SlotWeapInfo(pstate_pred.playerclass, slot, self_pyro_swapped());
 }
 
 inline FO_WeapInfo* WP_CurrentWeapon() {

@@ -12,6 +12,7 @@
 void () SpectatorDisconnect;
 void () SpectatorImpulseCommand;
 void () SpectatorThink;
+void FO_RefreshUserSettings(entity p);
 
 void () SpectatorConnect = {
     SetDimensions(TRUE);
@@ -23,6 +24,8 @@ void () SpectatorConnect = {
     self.classname = "observer";
     self.flags = 8;
     self.is_spectator = 1;
+    // pmove_status lists observers too: their cached userinfo must be current.
+    FO_RefreshUserSettings(self);
 
 
     st = infokey(self, "em");

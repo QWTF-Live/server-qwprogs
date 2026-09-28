@@ -82,14 +82,15 @@ sound files are found in `fortress/sound/hitaudio/` and  `fortress/sound/announc
 * `+dropflag` Allows player to hold button and flag will be thrown on contact.
 * `+rj` Switches to rocket/incendiary weapon, jumps and shoots. `+aux_jump` is no longer required.
 * `dlastspawn` Tells spy to disguise as enemy who last spawned.
-* `setinfo cf_pyro_impulses 1` to swap Pyro's primary and secondary weapons.
+* `setinfo cfpi on` (or `cf_pyro_impulses`) to swap Pyro's primary and secondary weapons.
+* `setinfo owi on` (or `old_weapon_impulses`) to select weapons with the classic impulses 1-7 rather than slots 1-4.
 * `setinfo autodisguise 1` Causes spy to `dlastspawn` after spawning or cover blown.
 * `setinfo autodisguise 2` Causes spy to `dlast` after spawning or cover blown.
 * `special2` Scout: `autoscan`, Demoman: `+det5`, Pyro: `+rj`, Spy: `dlastspawn`, Engineer: `togglesentry`
 * New buttons (not impulses):
 * `+special` Scout: `dash`, Demoman: `detpipe`, Medic: `aura`, Hwguy: `lock`, Pyro: `airblast`, Spy: `+feign`, Engineer: `toggledispenser`.
 * `+special2` Same as `special2`, but also has `+rj` for Soldier and Pyro.
-* `setinfo hold_grens` for press and hold `+grenade1` and `+grenade2`
+* `setinfo hg on` (or `hold_grens`) for press and hold `+grenade1` and `+grenade2`
 * `setinfo hold_fiegn` for press and hold feigning
 * `localinfo standardizedeathammo 1` server setting to make all backpack's dropped on death contain same ammo, regardless of victims ammo. If enabled defaults to 25 shells, 25 nails, 10 rockets, 50 cells. `localinfo deathammo_shells <number>` , `localinfo deathammo_nails <number>` , `localinfo deathammo_rockets <number>`, `localinfo deathammo_cells <number>` to modify these values 
 * `localinfo splitbackpackmodels 1` server setting to have different visual models for backpack dropped on death ``progs/deathbag.mdl`` and discards ``progs/discard.mdl`` 

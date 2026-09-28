@@ -417,8 +417,7 @@ void () TeamFortress_Inventory = {
     if (self.tf_items & NIT_SCANNER)
         sprint(self, PRINT_HIGH, "Scanner\n");
 
-    float current_weapons = FO_WeaponsMask(self);
-    if (current_weapons & WEAP_MEDIKIT)
+    if (FO_HasWeapon(self, WEAP_MEDIKIT))
         sprint(self, PRINT_HIGH, "Medikit\n");
 
     if (self.ammo_detpack > 0) {

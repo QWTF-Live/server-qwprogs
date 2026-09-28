@@ -238,7 +238,7 @@ void () health_touch = {
         }
     } else {
         if (!T_Heal(other, self.healamount, 0)) {
-            if (FO_WeaponsMask(other) & WEAP_MEDIKIT) {
+            if (FO_HasWeapon(other, WEAP_MEDIKIT)) {
                 if (other.ammo_medikit < other.maxammo_medikit) {
                     other.ammo_medikit =
                         other.ammo_medikit + self.healamount;
@@ -521,7 +521,6 @@ void () weapon_touch = {
     local float new;
     local float old;
     local float leave;
-    float other_weapons_carried = FO_WeaponsMask(other);
     new = 0;
 
     if (!(other.flags & 8))
@@ -539,7 +538,7 @@ void () weapon_touch = {
         leave = 0;
     }
     if (self.classname == "weapon_nailgun") {
-        if (leave && (other_weapons_carried & WEAP_NAILGUN)) {
+        if (leave && FO_HasWeapon(other, WEAP_NAILGUN)) {
             return;
         }
         if (!TeamFortress_CanGetWeapon(other, WEAP_NAILGUN)) {
@@ -550,7 +549,7 @@ void () weapon_touch = {
         other.ammo_nails = other.ammo_nails + 30;
     } else {
         if (self.classname == "weapon_supernailgun") {
-            if (leave && (other_weapons_carried & WEAP_SUPER_NAILGUN)) {
+            if (leave && FO_HasWeapon(other, WEAP_SUPER_NAILGUN)) {
                 return;
             }
             if (!TeamFortress_CanGetWeapon(other, WEAP_SUPER_NAILGUN)) {
@@ -561,7 +560,7 @@ void () weapon_touch = {
             other.ammo_nails = other.ammo_nails + 30;
         } else {
             if (self.classname == "weapon_supershotgun") {
-                if (leave && (other_weapons_carried & WEAP_SUPER_SHOTGUN)) {
+                if (leave && FO_HasWeapon(other, WEAP_SUPER_SHOTGUN)) {
                     return;
                 }
                 if (!TeamFortress_CanGetWeapon(other, WEAP_SUPER_SHOTGUN)) {
@@ -572,7 +571,7 @@ void () weapon_touch = {
                 other.ammo_shells = other.ammo_shells + 5;
             } else {
                 if (self.classname == "weapon_rocketlauncher") {
-                    if (leave && (other_weapons_carried & WEAP_ROCKET_LAUNCHER)) {
+                    if (leave && FO_HasWeapon(other, WEAP_ROCKET_LAUNCHER)) {
                         return;
                     }
                     if (!TeamFortress_CanGetWeapon(other, WEAP_ROCKET_LAUNCHER)) {
@@ -583,7 +582,7 @@ void () weapon_touch = {
                     other.ammo_rockets = other.ammo_rockets + 5;
                 } else {
                     if (self.classname == "weapon_grenadelauncher") {
-                        if (leave && (other_weapons_carried & WEAP_GRENADE_LAUNCHER)) {
+                        if (leave && FO_HasWeapon(other, WEAP_GRENADE_LAUNCHER)) {
                             return;
                         }
                         if (!TeamFortress_CanGetWeapon(other, WEAP_GRENADE_LAUNCHER)) {
@@ -594,7 +593,7 @@ void () weapon_touch = {
                         other.ammo_rockets = other.ammo_rockets + 5;
                     } else {
                         if (self.classname == "weapon_lightning") {
-                            if (leave && (other_weapons_carried & WEAP_LIGHTNING)) {
+                            if (leave && FO_HasWeapon(other, WEAP_LIGHTNING)) {
                                 return;
                             }
                             if (!TeamFortress_CanGetWeapon(other, WEAP_LIGHTNING)) {

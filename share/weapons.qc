@@ -485,14 +485,10 @@ FO_WeapInfo* FO_SlotWeapInfo(float playerclass, Slot slot, float pyro_swapped) {
 }
 
 #ifndef CSQC
-float FO_WeaponsMask(entity player) {
-    float mask = 0;
-    for (float i = 1; i <= TF_NUM_SLOTS; i++) {
-        FO_WeapInfo* wi = FO_SlotWeapInfo(player.playerclass, MakeSlot(i), player.setting_cfpi);
-        if (wi)
-            mask |= wi->weapon;
-    }
-    return mask;
+// Whether the player's class carries the weapon in any slot.  WEAP_* are
+// indices, not bits, so there is no mask of them to test against.
+float FO_HasWeapon(entity player, float weapon) {
+    return !IsSlotNull(WEAP_to_slot(player.playerclass, weapon));
 }
 #endif
 

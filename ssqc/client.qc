@@ -1289,6 +1289,12 @@ void () respawn = {
         return;
     if (cease_fire)
         return;
+    // A duel round waits on its reset for its dead: ResetPlayers puts
+    // everybody back in, and until then nobody respawns.  Held here, before
+    // the corpse and the parms, rather than in PutClientInServer, which ran
+    // half a spawn -- health, solidity, a model -- before refusing the rest.
+    if (no_fire_mode)
+        return;
     if (votemode && vote_anarchy_mode) {
         return;
     }
@@ -2082,11 +2088,9 @@ void () PutClientInServer = {
 
     self.touch = player_touch;
     self.classname = "player";
-    // What a player is, not whether it has spawned: set before the no-fire
-    // return below.  A client that joined during a duel spawn guard left
-    // here without them, TeamFortress_ChangeClass then made it damageable
-    // by hand when it picked a class, and its first death called a null
-    // th_die and took the server down.
+    // What a player is, set first.  A client that joined during a duel spawn
+    // guard once left here without them, was made damageable by the class
+    // pick's own spawn, and its first death called a null th_die.
     self.th_pain = player_pain;
     self.th_die = PlayerDie;
     self.health = 100;
@@ -2169,10 +2173,6 @@ void () PutClientInServer = {
     /* if(votemode) { */
     /*     SetVoteParams(self); */
     /* } */
-
-    if(no_fire_mode) {
-        return;
-    }
 
     // remove prime timers to avoid getting an old grenade in your face
     float had_primetimer = FALSE;

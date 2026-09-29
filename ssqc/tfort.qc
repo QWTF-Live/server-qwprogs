@@ -102,7 +102,6 @@ void () RemoveGrenades = {
 
 void (float inp) TeamFortress_ChangeClass = {
     local entity spot;
-    local entity te;
 
     if ((intermission_running != 0) || (intermission_exittime > time))
         return;
@@ -190,100 +189,27 @@ void (float inp) TeamFortress_ChangeClass = {
         return;
     }
 
-    // FIXME - should this be using putclientinserver instead?
+    // The first life is spawned the way every other one is.  This used to be
+    // a spawn of its own -- movetype, solidity, a spot, a model -- that took
+    // nothing PutClientInServer sets up after the fact: no death handler, no
+    // spawn protection, no duel guard, no telefrag.  New parms, as respawn
+    // uses, so the globals another player left behind are not decoded onto
+    // this one; the class goes on first so the parms decode leaves it alone.
     self.playerclass = inp;
-
-    //self.nextpc = 0;
     self.nextpc = inp;
-    self.takedamage = 2;
-    self.movetype = 3;
-    self.flags = FL_CLIENT | FL_ONGROUND;
-    self.waterlevel = 0;
-    self.air_finished = time + 12;
-    self.solid = 3;
-    self.pausetime = 0;
-    spot = SelectSpawnPoint();
-    self.origin = spot.origin + '0 0 1';
-    self.angles = spot.angles;
-    self.fixangle = 1;
+    if (inp == PC_RANDOM)
+        self.tfstate |= TFSTATE_RANDOMPC;
+    SetNewParms();
+    PutClientInServer();
 
-    setmodel(self, string_null);
-    modelindex_null = self.modelindex;
-    setmodel(self, "progs/eyes.mdl");
-    modelindex_eyes = self.modelindex;
-    FO_SetModel(self, "progs/player.mdl");
-    modelindex_player = self.modelindex;
-    setsize(self, VEC_HULL_MIN, VEC_HULL_MAX);
-    self.view_ofs = '0 0 22';
-    player_stand1();
-    if (deathmatch || coop) {
-        makevectors(self.angles);
-        spawn_tfog(self.origin + v_forward * 20);
-    }
-    if (self.playerclass == PC_RANDOM) {
-        sprint(self, PRINT_HIGH, "Random playerclass\n");
-        self.tfstate = self.tfstate | TFSTATE_RANDOMPC;
-        self.playerclass = 1 + floor(random() * 9);
-    }
-    if ((spot.classname == "info_player_teamspawn") &&
-        (!cb_prematch)) {
-        if (spot.items != 0) {
-            te = Finditem(spot.items);
-            if (te)
-                tfgoalitem_GiveToPlayer(te, self, self);
-            if (!(spot.goal_activation & TFSP_MULTIPLEITEMS))
-                spot.items = 0;
-        }
-        if (spot.message) {
-            CenterPrint(self, spot.message);
-            if (!(spot.goal_activation & TFSP_MULTIPLEMSGS))
-                spot.message = string_null;
-        }
-        if (spot.activate_goal_no != 0) {
-            te = Findgoal(spot.activate_goal_no);
-            if (te)
-                AttemptToActivate(te, self, spot);
-        }
-        if (spot.goal_effects == 1) {
-            spot.classname = "deadpoint";
-            spot.team_str_home = string_null;
-            spot.nextthink = time + 1;
-            spot.think = SUB_Remove;
-        }
-    }
     spot = find(world, classname, "player");
     while (spot) {
         if ((spot.team_no == self.team_no) && (spot != self)) {
             sprint(spot, PRINT_HIGH, self.netname, " is playing as a ");
             TeamFortress_PrintClassName(spot, self.playerclass,
-                                        self.tfstate & 8);
+                                        self.tfstate & TFSTATE_RANDOMPC);
         }
         spot = find(spot, classname, "player");
-    }
-    TeamFortress_PrintClassName(self, self.playerclass,
-                                (self.tfstate & 8));
-    TeamFortress_SetEquipment();
-    TeamFortress_SetHealth();
-    TeamFortress_SetSpeed(self);
-    TeamFortress_SetSkin(self);
-    W_ChangeToBestWeapon();
-    if (cease_fire) {
-        sprint(self, PRINT_HIGH, "\n\nCease fire mode\n");
-        self.immune_to_check = time + 10;
-        self.tfstate |= TFSTATE_CANT_MOVE;
-    }
-    self.spawn_time = time;
-
-    local float autodisguise = FO_GetUserSetting(self, "autodisguise", "ad", "off");
-    if (self.playerclass == PC_SPY) {
-        switch(autodisguise) {
-            case 1:
-                FO_Spy_DisguiseLastSpawned(self, FALSE);
-                break;
-            case 2:
-                FO_Spy_DisguiseLast(self, FALSE);
-                break;
-        }
     }
 };
 

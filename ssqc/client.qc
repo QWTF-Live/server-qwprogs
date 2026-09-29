@@ -2082,6 +2082,13 @@ void () PutClientInServer = {
 
     self.touch = player_touch;
     self.classname = "player";
+    // What a player is, not whether it has spawned: set before the no-fire
+    // return below.  A client that joined during a duel spawn guard left
+    // here without them, TeamFortress_ChangeClass then made it damageable
+    // by hand when it picked a class, and its first death called a null
+    // th_die and took the server down.
+    self.th_pain = player_pain;
+    self.th_die = PlayerDie;
     self.health = 100;
     self.solid = SOLID_SLIDEBOX;
     self.movetype = MOVETYPE_WALK;
@@ -2257,8 +2264,6 @@ void () PutClientInServer = {
     SetTeamName(self);
 
     self.attack_finished = time + 0.3;
-    self.th_pain = player_pain;
-    self.th_die = PlayerDie;
     self.height = 0;
     Sniper_ZoomReset(self);
 

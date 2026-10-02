@@ -59,6 +59,7 @@ float PM_CmdClock();
 float PM_WantPmove();
 float PM_KnockSelf();
 float PM_KnockOther();
+float PM_DoorPred();       // doorpred.qc
 
 float WP_PlayerClass() {
     return pstate_server.playerclass;
@@ -347,6 +348,11 @@ void WPP_UpdateEnable(float force) {
         if (PM_KnockOther())
             wpp_status |= CSQC_KNOCK_OTHER;
     }
+    // With pmove, never alone: the replay is the doors' collision once the
+    // server stops sending them.  The server waits for the replay to be on
+    // (PF_PMOVE) before it does, since this is only checked every few seconds.
+    if (PM_WantPmove() && PM_DoorPred())
+        wpp_status |= CSQC_DOOR_PRED;
     // Asking for the journal rather than having it configured on the server:
     // one switch, on the side that knows whether the lines are being read.
     if (CVARF(fopm_debug))

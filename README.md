@@ -7,7 +7,9 @@ New commands
 * `fo_reloadalpha x` alpha of viewmodel when reloading, 0 for invisible
 * `fo_team_color_crosshair` change crosshair to team colour
 * `cmd updateserver` tell server to pull latest progs and maps
-* `cmd pmove_status` lists every client with the movement prediction and knock prediction (self, other) their client advertises
+* `cmd pmove_status` lists every client with the movement prediction and knock prediction (self, other) their client advertises, and whether it is predicting doors
+* `pm_doors -1` with movement prediction on, collide with and draw doors from their schedule: each command meets a door where it is at that command's time, and a door you open starts on your own touch. `0` uses the engine's copy of the door
+* `pm_doorsdebug 0` `1` prints door clips, predicted starts and the prediction's error near a door; `2` adds each moving door's drawn position every frame
 * `+slot n` bind. fires nth weapon
 * `fo_default_weapon 0` default weapon when using `+slot` binds
 * `fo_hud_cache 1` less resource intensive hud

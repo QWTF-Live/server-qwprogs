@@ -32,6 +32,8 @@ static struct PMS_Data {
     float ride_ent, riding;
     vector ride_o, ride_vel;
     float ride_wait, ride_rem, ride_t, ride_hz;
+    // What this lineage's own touches did to each door (doorpred.qc).
+    float dp_t[DP_MAX], dp_close[DP_MAX], dp_ready[DP_MAX];
 } pm_s, pm_so, pm_c;
 
 static struct {
@@ -436,6 +438,11 @@ static void PM_SavePMS(PMS_Data *pmsd) {
     pmsd->ride_rem = pm.ride_rem;
     pmsd->ride_t = pm.ride_t;
     pmsd->ride_hz = pm.ride_hz;
+    for (float j = 0; j < DP_MAX; j++) {
+        pmsd->dp_t[j] = dp_pred_t[j];
+        pmsd->dp_close[j] = dp_pred_close[j];
+        pmsd->dp_ready[j] = dp_pred_ready[j];
+    }
 }
 
 static void PM_ActivatePMS(PMS_Data *pmsd) {
@@ -457,6 +464,11 @@ static void PM_ActivatePMS(PMS_Data *pmsd) {
     pm.ride_rem = pmsd->ride_rem;
     pm.ride_t = pmsd->ride_t;
     pm.ride_hz = pmsd->ride_hz;
+    for (float j = 0; j < DP_MAX; j++) {
+        dp_pred_t[j] = pmsd->dp_t[j];
+        dp_pred_close[j] = pmsd->dp_close[j];
+        dp_pred_ready[j] = pmsd->dp_ready[j];
+    }
     pm.active_pmsd = pmsd;
 };
 
@@ -1705,6 +1717,24 @@ static void PM_RunMovement(PMS_Data* pmsd, float endframe) {
             pm.riding = FALSE;   // stood on something else: off it
         ent.origin -= ride_shift;
 
+        // Doors: the engine copy is not sent while we predict them, so this is
+        // the whole of the collision, at the time the server runs this command:
+        // the world time its clock reaches at the end of it (the server's
+        // command clock is the end of the command it runs, and the skew is that
+        // clock less world time, measured there).
+        if (DoorPred_Active()) {
+            float door_t = pm.interp_t + step - pstate_server.pmove.cmd_clock_skew;
+            dp_debug_seq = 0;
+            if (pm.seq > dp_debug_last && pm.seq != clientcommandframe) {
+                dp_debug_seq = pm.seq;
+                dp_debug_last = pm.seq;
+            }
+            DoorPred_Clip(ent, pm_moved_from, door_t);
+            DoorPred_Touch(ent, pm_moved_from, door_t);
+            if (pm.seq != clientcommandframe)
+                DoorPred_DebugShown(pm.seq, ent.origin);
+        }
+
         PM_PushVolumes(ent, pm_moved_from);
 
         PM_CheckMissileHits(ent, pm_moved_from, pm.interp_t, pm.interp_t + step);
@@ -2004,6 +2034,7 @@ static const float kLerpTeleport = 100;  // inter-sample jump treated as discont
 static struct {
     float t[3];
     vector o[3];
+    float c[3];     // the command clock each sample was predicted to
     float last_seq, lat, newframe, valid;
     float maxlat;   // latency ceiling
 } lm;
@@ -2029,6 +2060,7 @@ static void PM_LerpSample() {
 
     lm.t[2] = lm.t[1]; lm.t[1] = lm.t[0]; lm.t[0] = cltime;
     lm.o[2] = lm.o[1]; lm.o[1] = lm.o[0]; lm.o[0] = o;
+    lm.c[2] = lm.c[1]; lm.c[1] = lm.c[0]; lm.c[0] = pm.interp_t;
 
     lm.last_seq = seq;
     lm.maxlat = kLerpMaxLat;
@@ -2221,10 +2253,13 @@ static vector PM_LerpEye(vector fallback) {
     float from = 2, to = 1;
     if (simtime > lm.t[1]) { from = 1; to = 0; }
 
-    if (lm.t[to] == lm.t[from])
+    if (lm.t[to] == lm.t[from]) {
+        dp_view_cmd = lm.c[to];
         return lm.o[to];
+    }
 
     float frac = min(max((simtime - lm.t[from]) / (lm.t[to] - lm.t[from]), 0), 1);
+    dp_view_cmd = lm.c[from] + (lm.c[to] - lm.c[from]) * frac;   // doors are drawn on the eye's clock
     return lm.o[from] + (lm.o[to] - lm.o[from]) * frac;
 }
 
@@ -2241,6 +2276,7 @@ static void PM_UpdateLocalMovement() {
     }
 
     vector org = pm.ent.origin;
+    dp_view_cmd = pm.interp_t;  // the eye below may lerp it back
     if (CVARF(fopm_lerpmove))
         org = PM_LerpEye(org);
 
@@ -2443,6 +2479,10 @@ void PM_ServerUpdate() {
     // from here lands them afresh.
     for (float i = 0; i < PM_NUDGES; i++)
         pm.nudge_fired[i] = 0;
+    // Likewise our door starts: the server's motion now carries every touch it
+    // has run, and the commands after it fire again in every replay.
+    DoorPred_ResetPredicted();
+    DoorPred_DebugAck(servercommandframe, pstate_server.pmove.origin, pstate_server.server_time);
     PM_RideFromServer();
     PM_SavePMS(&pm_s);
 

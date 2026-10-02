@@ -1144,7 +1144,7 @@ string WP_GetClip() {
 float WP_CanReload(Slot slot, string* msg = __NULL__) {
     FO_WeapInfo* wi = SlotWI(slot);
 
-    if (!wi->needs_reload || WP_IsReloading() || prematch)
+    if (!wi->needs_reload || WP_IsReloading())
         return FALSE;
 
     float clip_fired = *WP_ClipFired(slot);

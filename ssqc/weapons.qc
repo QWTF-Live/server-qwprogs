@@ -2316,26 +2316,10 @@ static int ImpulseAllowed(int impulse) {
     if (cease_fire || self.deadflag || self.playerclass == 0)
         return FALSE;
 
-    if (cb_prematch) {
-        // Only impulses below allowed
-        switch (impulse) {
-            case TF_PREMATCH_INVULN:
-                return TRUE;
-            case TF_WEAPNEXT:
-            case TF_WEAPPREV:
-            case TF_INVENTORY:
-            case TF_ID:
-            case FLAG_INFO:
-            case TF_GRENADE_1:
-            case TF_GRENADE_2:
-            case TF_GRENADE_T:
-            case TF_GRENADE_PT_1:
-            case TF_GRENADE_PT_2:
-                break;
-            default:
-                return FALSE;
-        }
-    }
+    // Prematch takes nothing away: warming up is the match's own game, plus
+    // the invulnerability toggle.
+    if (cb_prematch && impulse == TF_PREMATCH_INVULN)
+        return TRUE;
 
     if (IsFeigned(self)) {
         // Only impulses below allowed
@@ -2377,8 +2361,8 @@ static int ImpulseAllowed(int impulse) {
     // Final filter
     switch (impulse) {
         case TF_PREMATCH_INVULN:
-            return FALSE;  // Only allowed higher
-                           //
+            return FALSE;  // Only allowed in prematch, above
+
         case TF_DASH:
         case TF_SCAN:
         case TF_SCAN_ENEMY:

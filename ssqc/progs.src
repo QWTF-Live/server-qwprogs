@@ -21,6 +21,7 @@ time.qc
 ../share/physics.qc
 ../share/weapons.qc
 ../share/prediction.qc
+../share/doorpred.qc
 ../share/classes.qc
 ../share/animate.qc
 ../share/mcp_precache.qc
@@ -52,6 +53,7 @@ world.qc
 client.qc
 player.qc
 doors.qc
+doorpred.qc
 buttons.qc
 triggers.qc
 tforttm.qc

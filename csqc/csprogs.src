@@ -19,11 +19,13 @@ profile.qc
 ../share/physics.qc
 ../share/weapons.qc
 ../share/prediction.qc
+../share/doorpred.qc
 ../share/classes.qc
 ../share/animate.qc
 ../share/mcp_precache.qc						
 weapon_predict.qc
 pmdebug.qc
+doorpred.qc
 pmove.qc
 tfx.qc
 sui_sys.qc

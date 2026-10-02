@@ -506,6 +506,7 @@ void AddToBodyQueue(entity ent) {
 
 void () StartFrame = {
     SpawnProtect_Pulse();
+    DoorNet_Frame();
     stat_nofire = no_fire_mode || cease_fire;
 
     teamplay = cvar("teamplay");

@@ -382,6 +382,8 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
         PM_UpdateView();
     else
         PM_SpecView();
+    // After the replay, so a door is drawn at the clock of the eye just placed.
+    DoorPred_AddToScene();
 
     PM_SmoothProbe(PM_ViewOrigin());
 
@@ -862,6 +864,9 @@ void(float isnew) CSQC_Ent_Update = {
     switch (etype) {
         case ENT_PROJECTILE:
             EntUpdate_Projectile(isnew);
+            break;
+        case ENT_DOOR:
+            EntUpdate_Door(isnew);
             break;
         default:
             error("Unhandled CSQC entity\n");

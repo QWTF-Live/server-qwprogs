@@ -335,7 +335,7 @@ void PM_SetPushVolumes(float n) {
 // staying in it all touch, but a frame that starts inside and ends outside
 // does not -- and on a pad that frame is a second launch the server never
 // gave.
-static float PM_SegHitsBox(vector a, vector b, vector lo, vector hi) {
+float PM_SegHitsBox(vector a, vector b, vector lo, vector hi) {
     vector d = b - a;
     float tmin = 0, tmax = 1, t1, t2, t;
 

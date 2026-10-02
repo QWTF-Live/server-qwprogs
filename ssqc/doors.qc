@@ -24,23 +24,28 @@ void () door_blocked = {
         else
             door_go_down();
     }
+    DoorNet_Changed();  // held where it is: no leg change says so
 };
 
 void () door_hit_top = {
     FO_Sound(self, CHAN_VOICE, self.noise1, 1, ATTN_NORM);
     self.state = STATE_TOP;
     self.pusher_noadvance = FALSE;
-    if (self.spawnflags & 32)
+    if (self.spawnflags & 32) {
+        DoorNet_Changed();
         return;
+    }
 
     self.think = door_go_down;
     self.nextthink = self.ltime + self.wait;
+    DoorNet_Changed();
 };
 
 void () door_hit_bottom = {
     self.goal_state = 2;
     FO_Sound(self, CHAN_VOICE, self.noise1, 1, ATTN_NORM);
     self.state = STATE_BOTTOM;
+    DoorNet_Changed();
 };
 
 void () door_go_down_silent = {
@@ -51,6 +56,7 @@ void () door_go_down_silent = {
     self.state = STATE_DOWN;
     // Closing: more obstructive as it goes, so the engine may show it ahead.
     self.pusher_noadvance = FALSE;
+    DoorNet_LegStart();
     SUB_CalcMove(self.pos1, self.speed, door_hit_bottom);
 }
 
@@ -65,6 +71,7 @@ void () door_go_up = {
 
     if (self.state == STATE_TOP) {
         self.nextthink = self.ltime + self.wait;
+        DoorNet_Changed();
         return;
     }
     FO_Sound(self, CHAN_VOICE, self.noise2, 1, ATTN_NORM);
@@ -76,6 +83,7 @@ void () door_go_up = {
     // it.  Held where it is, the client at worst bumps an edge we let it
     // through (server-antilag.qc).
     self.pusher_noadvance = TRUE;
+    DoorNet_LegStart();
     SUB_CalcMove(self.pos2, self.speed, door_hit_top);
     SUB_UseTargets();
 };

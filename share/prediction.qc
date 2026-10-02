@@ -1,6 +1,7 @@
 #define ENT_CONFIG     100
 #define ENT_WEAPONPRED 101
 #define ENT_PROJECTILE 102
+#define ENT_DOOR       103
 
 // Below apply to both CSQC & SSQC ents
 .float antilag_ms;

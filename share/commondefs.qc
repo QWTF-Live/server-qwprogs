@@ -391,6 +391,9 @@ enumflags {
     // it must stay silent: no rj_trace console spam, no join-time prints
     // for anyone else.  So it rides its own bit, which sets no global.
     CSQC_JOURNAL,
+    // The client draws and collides with doors from their schedule
+    // (share/doorpred.qc), so it is sent that instead of the engine copy.
+    CSQC_DOOR_PRED,
 };
 
 enumflags {

@@ -800,17 +800,15 @@ void () DumpClanScores = {
         st = ftos(team4score);
         bprint(PRINT_HIGH, st, " team score\n");
     }
+    // Class stints are closed by the log's own closer, which every caller
+    // runs next (MapEndSequence, Pug_LogMatchEnd).  Closing them here too
+    // wrote each one twice, the second at zero length, and wrote a stint for
+    // players who had already logged their disconnect.
     te = find(world, classname, "player");
     while (te) {
         st = infokey(te, "take_sshot");
         if (st != string_null) {
             stuffcmd(te, "screenshot\n");
-        }
-
-        if (te.playerclass != 0) {
-            local float timeplayed = gametime - te.classtime;
-            LogEventChangeClass(te, te.playerclass, 0, timeplayed, CC_MATCH_END);
-            te.classtime = gametime;
         }
 
         te = find(te, classname, "player");

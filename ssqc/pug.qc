@@ -918,6 +918,14 @@ void Pug_BeginRound(float round_no) {
     localcmd("timelimit ", ftos(pug.round_time), "\n");
     lightstyle(0, "m");
 
+    // Round 2 is reported as halftime, matching what the bot already expects
+    // to receive.  It carries round 1's interval, so it goes out before the
+    // round clock and the stats base move on, as quadmode's does.
+    if (round_no > 1) {
+        AnnounceEvent("round_end", __NULL__);
+        ReportMatchResult(kReportHalftime);
+    }
+
     Pug_EnterPhase(PUG_ROUND, pug.round_time * 60);
     round_start_time = time;
 
@@ -929,8 +937,7 @@ void Pug_BeginRound(float round_no) {
     bprint(2, "ROUND ", ftos(round_no), " OF ", ftos(kPugRounds),
            " BEGINS NOW\n");
 
-    // The match proper starts with round 1; round 2 is reported as halftime,
-    // matching what the bot already expects to receive.
+    // The match proper starts with round 1.
     if (round_no == 1) {
         // Whoever holds a team place now is the pug.  From here
         // Pug_TeamJoinAllowed only lets these logins back in, or anyone into
@@ -938,9 +945,6 @@ void Pug_BeginRound(float round_no) {
         Pug_CaptureRoster();
         AnnounceEvent("game_start", __NULL__);
         ReportMatchResult(kReportStart);
-    } else {
-        AnnounceEvent("round_end", __NULL__);
-        ReportMatchResult(kReportHalftime);
     }
 }
 
@@ -1373,9 +1377,6 @@ static void Pug_RoundSecond(float secs_left) {
             bprint(2, "s");
         bprint(2, " remaining\n");
     }
-
-    gametime++;
-    gametime_string = ftos(gametime);
 }
 
 static void Pug_TickClock() {
@@ -1386,9 +1387,18 @@ static void Pug_TickClock() {
 
     if (secs == pug.last_sec)
         return;
+    float prev = pug.last_sec;
     pug.last_sec = secs;
 
     if (pug.state == PUG_ROUND) {
+        // gametime is seconds played, one for each mark the clock passes.  The
+        // mark it starts from -- a round's first tick, or the first after
+        // pug_settime -- is not one: counting every tick logged a one minute
+        // round as 61 seconds.
+        if (prev > secs) {
+            gametime += prev - secs;
+            gametime_string = ftos(gametime);
+        }
         Pug_RoundSecond(secs);
 
         float mins = ceil(remaining / 60);

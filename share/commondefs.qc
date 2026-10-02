@@ -442,7 +442,7 @@ enum {
 // TFL_VER_* naming the version it landed in, so the comparison reads as what
 // it is.  Never renumber one that has shipped.
 #define TFL_VER_INFOKEY "tfl_ver"
-#define TFL_VER 1
+#define TFL_VER 2
 
 // Separate from the above, and do not conflate them.  tfl_ver rides serverinfo
 // and answers "how do I interpret this game", for a client or an mvd.  This one
@@ -463,6 +463,7 @@ enum {
 #define CC_MATCH_END  "matchEnd"    // match ending, everyone closed out
 
 #define TFL_VER_SHORTSCOREKEYS 1   // scoreboard stats moved to the short names
+#define TFL_VER_PADGATES       2   // each push volume ends with its team and class
 
 // v1 name, then the name it replaced.
 #define SBK_TEAM_APPARENT "stn"   // team as others see it; a spy's disguise

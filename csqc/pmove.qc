@@ -288,12 +288,13 @@ DEFCVAR_FLOAT(fopmd_graph, 0);
 //
 // Push volumes are static and their effect is a constant, so the prediction
 // can run them itself instead of being launched a round trip late.  The server
-// sends the plain ones when we join (SendPushVolumes); anything aimed or gated
-// is left to arrive as state, as all of them used to.
+// sends the ones it can describe when we join (SendPushVolumes), each with the
+// team and class it pushes, 0 for any; one gated on goal or item state is left
+// to arrive as state, as all of them used to.
 DEFCVAR_FLOAT(fopm_pushpred, 1);
 
 static const float PUSHPRED_MAX = 32;
-struct PM_Push { vector mins, maxs, vel; };
+struct PM_Push { vector mins, maxs, vel; float team, pclass; };
 static PM_Push pm_push[PUSHPRED_MAX];
 static float pm_npush;
 
@@ -301,18 +302,27 @@ void PM_SetPushVolumes(float n) {
     pm_npush = n > PUSHPRED_MAX ? PUSHPRED_MAX : n;
     printf("pmd: %i push volumes for prediction\n", (int)pm_npush);
     float verbose = CVARF(fopm_debug) > 1;
+    float gates = serverkeyfloat(TFL_VER_INFOKEY, 0) >= TFL_VER_PADGATES;
     for (float i = 0; i < n; i++) {
         vector mins, maxs, vel;
+        float team = 0, pclass = 0;
         mins_x = readcoord(); mins_y = readcoord(); mins_z = readcoord();
         maxs_x = readcoord(); maxs_y = readcoord(); maxs_z = readcoord();
         vel_x  = readcoord(); vel_y  = readcoord(); vel_z  = readcoord();
+        if (gates) {
+            team = readbyte();
+            pclass = readbyte();
+        }
         if (i >= PUSHPRED_MAX)
             continue;
         pm_push[i].mins = mins;
         pm_push[i].maxs = maxs;
         pm_push[i].vel = vel;
+        pm_push[i].team = team;
+        pm_push[i].pclass = pclass;
         if (verbose)
-            printf("pmd:   pad %v .. %v vel=%v\n", mins, maxs, vel);
+            printf("pmd:   pad %v .. %v vel=%v team=%g class=%g\n",
+                   mins, maxs, vel, team, pclass);
     }
 }
 
@@ -367,6 +377,11 @@ static void PM_PushVolumes(entity ent, vector from) {
     // tests against them is grown by a unit as well.  Match both.
     const vector margin = '1 1 1';
     for (float i = 0; i < pm_npush; i++) {
+        // Activated()'s team and class tests, the only ones a sent pad has.
+        if (pm_push[i].team && pm_push[i].team != team_no)
+            continue;
+        if (pm_push[i].pclass && pm_push[i].pclass != pstate_server.playerclass)
+            continue;
         vector lo = pm_push[i].mins - ent.maxs - margin;
         vector hi = pm_push[i].maxs - ent.mins + margin;
         if (!PM_SegHitsBox(from, ent.origin, lo, hi))

@@ -745,10 +745,30 @@ void () trigger_jumper = {
 //
 // An aimed pad computes its arc once, a second after the map starts, and then
 // pushes with that same vector forever, so it travels as well as a plain one.
-// The gated ones depend on goal state the client does not have, and the
-// flagged ones vary by what is touching them; those keep waiting for the
+//
+// A pad only pushes whoever Activated() lets through.  The team and class it
+// asks for are fixed and the client knows its own, so those travel with the
+// volume and the client checks them (japanc's pads each push one team).  The
+// rest of the criteria read goal and item state the client does not have, and
+// the flagged pads vary by what is touching them; those keep waiting for the
 // server, as everything did before.
 const float PUSHPRED_MAX = 32;
+
+static float PushPredictable(entity e) {
+    if (e.else_goal || e.goal_no || e.spawnflags)
+        return FALSE;
+    if (e.goal_activation & TFGA_REVERSE_AP)
+        return FALSE;
+    if (e.items_allowed || e.has_item_from_group || e.hasnt_item_from_group)
+        return FALSE;
+    if (e.if_goal_is_active || e.if_goal_is_inactive || e.if_goal_is_removed)
+        return FALSE;
+    if (e.if_group_is_active || e.if_group_is_inactive || e.if_group_is_removed)
+        return FALSE;
+    if (e.if_item_has_moved || e.if_item_hasnt_moved)
+        return FALSE;
+    return TRUE;
+}
 
 void SendPushVolumes(entity pl) {
     int count;
@@ -756,10 +776,8 @@ void SendPushVolumes(entity pl) {
 
     int n = 0, n_sent;
     for (int i = 0; i < count && n < PUSHPRED_MAX; i++) {
-        entity e = list[i];
-        if (e.else_goal || e.goal_no || e.spawnflags)
-            continue;   // gated or a variant: leave it to the server
-        n++;
+        if (PushPredictable(list[i]))
+            n++;
     }
 
     n_sent = n;
@@ -769,7 +787,7 @@ void SendPushVolumes(entity pl) {
     WriteByte(MSG_MULTICAST, n);
     for (int i = 0; i < count && n > 0; i++) {
         entity e = list[i];
-        if (e.else_goal || e.goal_no || e.spawnflags)
+        if (!PushPredictable(e))
             continue;
         WriteCoord(MSG_MULTICAST, e.absmin_x);
         WriteCoord(MSG_MULTICAST, e.absmin_y);
@@ -781,6 +799,8 @@ void SendPushVolumes(entity pl) {
         WriteCoord(MSG_MULTICAST, v_x);
         WriteCoord(MSG_MULTICAST, v_y);
         WriteCoord(MSG_MULTICAST, v_z);
+        WriteByte(MSG_MULTICAST, e.team_no);        // TFL_VER_PADGATES
+        WriteByte(MSG_MULTICAST, e.playerclass);
         n--;
     }
     multicast('0 0 0', MULTICAST_ONE_R);
@@ -790,7 +810,7 @@ void SendPushVolumes(entity pl) {
                ftos(count), " push volumes\n"));
         for (int i = 0; i < count; i++) {
             entity e = list[i];
-            if (!e.else_goal && !e.goal_no && !e.spawnflags)
+            if (PushPredictable(e))
                 continue;
             sprint(pl, PRINT_HIGH, strcat("pmd:   skipped pad flags=", ftos(e.spawnflags),
                    " goal=", ftos(e.goal_no)));

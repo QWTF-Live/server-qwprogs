@@ -1303,9 +1303,23 @@ static void SL_Dot(vector at, float radius, vector rgb, float alpha) {
     R_EndPolygon();
 }
 
+static void SL_Draw();
+
+// v_forward, v_right and v_up are left as the view set them: the build preview
+// reads v_forward next frame as the way the player is looking, and
+// getentity(GE_ORIGINANDVECTORS) and SL_Dot's makevectors would otherwise
+// leave it pointing the way the sentry does.
 void WP_DrawSentryLaser() {
     if (!CVARF(tf_sentry_laser))
         return;
+    vector f = v_forward, r = v_right, u = v_up;
+    SL_Draw();
+    v_forward = f;
+    v_right = r;
+    v_up = u;
+}
+
+static void SL_Draw() {
     float gun = getstatf(STAT_SENTRY_GUN);
     if (!gun || !(float)getentity(gun, GE_ACTIVE))
         return;

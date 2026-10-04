@@ -233,6 +233,7 @@ vector PM_ViewOrigin();
 float PM_SpecView();
 void WP_PreviewSentry();
 void WP_DrawSentryRange();
+void WP_DrawSentryLaser();
 
 DEFCVAR_FLOAT(fov, 90);
 
@@ -386,6 +387,7 @@ noref void(float width, float height, float menushown) CSQC_UpdateView = {
     // After the replay, so a door is drawn at the clock of the eye just placed.
     DoorPred_AddToScene();
     WP_DrawSentryRange();
+    WP_DrawSentryLaser();
 
     PM_SmoothProbe(PM_ViewOrigin());
 

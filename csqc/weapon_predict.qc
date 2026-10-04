@@ -1007,6 +1007,28 @@ static vector sr_center;                  // the gun's eye
 static float sr_yaw, sr_valid, sr_next_cast;
 static string sr_shader;
 
+// Plain additive colour, per-vertex colour and alpha: the range fill, and the
+// laser's core and dot.  Named with the client source hash, as rnds() does in
+// tfx.qc: an edited body gets a new name, which shaderforname's by-name cache
+// would otherwise ignore.
+static string SR_Shader() {
+    if (!sr_shader) {
+        sr_shader = strzone(strcat("sentry_range_", FO_NAME_SUFFIX));
+        shaderforname(sr_shader,
+            "{\n"
+            "    cull disable\n"
+            "    polygonoffset\n"
+            "    {\n"
+            "        map $whiteimage\n"
+            "        blendfunc GL_SRC_ALPHA GL_ONE\n"
+            "        rgbgen vertex\n"
+            "        alphagen vertex\n"
+            "    }\n"
+            "}\n");
+    }
+    return sr_shader;
+}
+
 static float SR_FloorZ(vector p, float fallback) {
     traceline(p, p - '0 0 192', MOVE_NOMONSTERS, pengine.building_preview);
     return trace_fraction < 1 ? trace_endpos_z : fallback;
@@ -1095,24 +1117,7 @@ void WP_DrawSentryRange() {
         sr_next_cast = time + kSRRecastDt;
     }
 
-    // Named with the client source hash, as rnds() does in tfx.qc: an edited
-    // body gets a new name, which shaderforname's by-name cache would
-    // otherwise ignore.
-    if (!sr_shader) {
-        sr_shader = strzone(strcat("sentry_range_", FO_NAME_SUFFIX));
-        shaderforname(sr_shader,
-            "{\n"
-            "    cull disable\n"
-            "    polygonoffset\n"
-            "    {\n"
-            "        map $whiteimage\n"
-            "        blendfunc GL_SRC_ALPHA GL_ONE\n"
-            "        rgbgen vertex\n"
-            "        alphagen vertex\n"
-            "    }\n"
-            "}\n");
-    }
-    R_BeginPolygon(sr_shader);
+    R_BeginPolygon(SR_Shader());
 
     const vector kNearRGB = '1 0.72 0.22';
     const vector kFarRGB = '1 0.28 0.18';
@@ -1204,6 +1209,155 @@ void WP_DrawSentryRange() {
         }
         prev = q;
     }
+}
+
+// The laser sight on the engineer's own built sentry.
+//
+// The server names the gun and what it is tracking (STAT_SENTRY_GUN,
+// STAT_SENTRY_ENEMY; Sentry_ReportAim).  The gun never pitches -- it turns
+// and fires straight at its target -- so the beam leaves the barrel's tip on
+// the model's interpolated yaw, which keeps it on the barrel as the gun
+// turns, and takes its pitch from the target.  Idle it lies level
+// and fades out toward the gun's 1000 reach; tracking, it reaches the target,
+// with a dot once the gun is within the 10 degrees Sentry_Fire wants before
+// it shoots.  Walls and doors stop it.
+//
+// Drawn as two boxes rather than a line: a translucent sheath with the pent
+// shell's texture flowing along it toward the target, and a thin bright core.
+DEFCVAR_FLOAT(tf_sentry_laser, 1);
+
+// Where the barrel ends, ahead of and above the gun's origin, measured from
+// progs/turrgun.mdl's rest frames: level 1 (frame 0) has one barrel; levels 2
+// and 3 (frames 3 and 6) two, 10.7 either side, and the beam starts between
+// them.  The server sets the skin to the level less one on an upgrade, which
+// getentity can read where it cannot read the frame.
+static const vector kSLTip1 = '25.2 0 32.4';
+static const vector kSLTip23 = '21.6 0 28.9';
+static const float kSLSheath = 1.6;     // half widths
+static const float kSLCore = 0.45;
+static const float kSLLockDeg = 10;     // Sentry_Fire's yaw tolerance
+static string sl_shader;
+
+static string SL_Shader() {
+    if (!sl_shader) {
+        sl_shader = strzone(strcat("sentry_laser_", FO_NAME_SUFFIX));
+        // Additive, so its black is nothing and the pattern glows; scrolling
+        // against s makes it flow from the gun toward the far end.
+        shaderforname(sl_shader,
+            "{\n"
+            "    cull disable\n"
+            "    {\n"
+            "        map textures/sfx/pent.tga\n"
+            "        blendfunc GL_ONE GL_ONE\n"
+            "        rgbgen vertex\n"
+            "        tcmod scroll -2.5 0.11\n"
+            "    }\n"
+            "}\n");
+    }
+    return sl_shader;
+}
+
+static vector SL_Cross(vector a, vector b) {
+    return [a_y * b_z - a_z * b_y, a_z * b_x - a_x * b_z, a_x * b_y - a_y * b_x];
+}
+
+// A box from a to b, half width h about the axis, as four long faces and the
+// far cap.  Colour runs from ca at a to cb at b; with alpha for the white
+// shader, and texture s along the length for the textured one (one repeat per
+// 48 units, so the pattern keeps its scale whatever the length).
+static void SL_Box(vector a, vector b, float h, vector ca, vector cb,
+                   float aa, float ab) {
+    vector d = normalize(b - a);
+    vector up = fabs(d_z) < 0.99 ? '0 0 1' : '1 0 0';
+    vector r = normalize(SL_Cross(d, up)) * h;
+    vector u = normalize(SL_Cross(r, d)) * h;
+    float len = vlen(b - a) / 48;
+    vector c[4];
+    c[0] = r + u; c[1] = -r + u; c[2] = -r - u; c[3] = r - u;
+    for (float f = 0; f < 4; f++) {
+        vector p = c[f], q = c[(f + 1) % 4];
+        float t0 = f * 0.125, t1 = t0 + 0.125;
+        R_PolygonVertex(a + p, [0, t0, 0], ca, aa);
+        R_PolygonVertex(b + p, [len, t0, 0], cb, ab);
+        R_PolygonVertex(b + q, [len, t1, 0], cb, ab);
+        R_PolygonVertex(a + q, [0, t1, 0], ca, aa);
+        R_EndPolygon();
+    }
+    R_PolygonVertex(b + c[0], '0 0 0', cb, ab);
+    R_PolygonVertex(b + c[1], '0 0 0', cb, ab);
+    R_PolygonVertex(b + c[2], '0 0 0', cb, ab);
+    R_PolygonVertex(b + c[3], '0 0 0', cb, ab);
+    R_EndPolygon();
+}
+
+// A soft dot facing the view: bright centre fading to nothing at the rim.
+static void SL_Dot(vector at, float radius, vector rgb, float alpha) {
+    makevectors(getviewprop(VF_ANGLES));
+    vector right = v_right, upv = v_up;
+    R_PolygonVertex(at, '0 0 0', rgb, alpha);
+    for (float i = 0; i <= 16; i++) {
+        float a = i * (2 * M_PI / 16);
+        R_PolygonVertex(at + (right * cos(a) + upv * sin(a)) * radius,
+                        '0 0 0', rgb, 0);
+    }
+    R_EndPolygon();
+}
+
+void WP_DrawSentryLaser() {
+    if (!CVARF(tf_sentry_laser))
+        return;
+    float gun = getstatf(STAT_SENTRY_GUN);
+    if (!gun || !(float)getentity(gun, GE_ACTIVE))
+        return;
+
+    vector org = (vector)getentity(gun, GE_ORIGINANDVECTORS);
+    vector fwd = v_forward;
+    fwd_z = 0;
+    if (vlen(fwd) < 0.001)
+        return;
+    fwd = normalize(fwd);
+    vector tip = (float)getentity(gun, GE_SKIN) ? kSLTip23 : kSLTip1;
+    vector muzzle = org + fwd * tip_x + [0, 0, tip_z];
+
+    // Level along the gun's heading, or pitched to what it is tracking.
+    vector dir = fwd;
+    float reach = kSRFar, tracking = FALSE, locked = FALSE;
+    float enemy = getstatf(STAT_SENTRY_ENEMY);
+    if (enemy && (float)getentity(enemy, GE_ACTIVE)) {
+        vector to = (vector)getentity(enemy, GE_ORIGIN) - muzzle;
+        vector flat = to;
+        flat_z = 0;
+        float fl = vlen(flat);
+        if (fl > 1) {
+            tracking = TRUE;
+            dir = normalize(fwd * fl + [0, 0, to_z]);
+            // To the near side of them, not their centre, where the dot
+            // would be inside the model and hidden by it.
+            reach = min(max(0, vlen(to) - 14), kSRFar);
+            locked = (flat * fwd) / fl > cos(kSLLockDeg * (M_PI / 180));
+        }
+    }
+    traceline(muzzle, muzzle + dir * reach, MOVE_NOMONSTERS, world);
+    vector end = trace_endpos;
+    float blocked = trace_fraction < 1;
+
+    // Idle and unobstructed it trails off; anything it reaches, it reaches
+    // at full strength.
+    float flicker = 0.9 + 0.1 * sin(time * 23) * sin(time * 7);
+    vector hot = tracking ? '1 0.32 0.22' : '0.85 0.12 0.08';
+    hot *= flicker;
+    vector far = (blocked || tracking) ? hot * 0.8 : '0 0 0';
+
+    R_BeginPolygon(SL_Shader());
+    SL_Box(muzzle, end, kSLSheath, hot, far, 1, 1);
+
+    R_BeginPolygon(SR_Shader());
+    float core = tracking ? 0.75 : 0.45;
+    SL_Box(muzzle, end, kSLCore, '1 0.55 0.45', '1 0.4 0.3', core * flicker,
+           (blocked || tracking) ? core * 0.8 * flicker : 0);
+    if (locked || blocked)
+        SL_Dot(end - dir * 1.5, locked ? 9 : 5, '1 0.35 0.25',
+               (locked ? 0.9 : 0.55) * flicker);
 }
 
 static void WP_Special() {

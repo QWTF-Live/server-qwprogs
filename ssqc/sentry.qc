@@ -13,7 +13,35 @@ void () Sentry_Die;
 float () Sentry_Fire;
 void () Sentry_MuzzleFlash;
 
+// Tells the owner's client which gun is theirs and what it is tracking, for
+// the laser sight it draws (csqc/weapon_predict.qc).  Every sentry think goes
+// through ai_face (attacking) or Sentry_Rotate (idle), so this is current to
+// the 0.1 s the gun itself is; the stats only travel when a value changes.
+// Idle reports no target: .enemy is left set when an attack gives up.  A gun
+// removed without thinking again is cleared by Sentry_CheckAimStat.
+void (float tracking) Sentry_ReportAim = {
+    entity owner = self.real_owner;
+    if (self.classname != "building_sentrygun" || owner.classname != "player")
+        return;
+    owner.sentry_aim_gun = num_for_edict(self);
+    owner.sentry_aim_enemy = (tracking && self.enemy) ? num_for_edict(self.enemy) : 0;
+};
+
+// PlayerPostThink: the gun the stat names is gone, or is no longer this
+// player's -- however it went, dismantled, destroyed or removed with its
+// owner's buildings, none of which goes through one place.
+void (entity p) Sentry_CheckAimStat = {
+    if (!p.sentry_aim_gun)
+        return;
+    entity gun = edict_num(p.sentry_aim_gun);
+    if (wasfreed(gun) || gun.classname != "building_sentrygun" || gun.real_owner != p) {
+        p.sentry_aim_gun = 0;
+        p.sentry_aim_enemy = 0;
+    }
+};
+
 void () ai_face = {
+    Sentry_ReportAim(TRUE);
     self.ideal_yaw = vectoyaw(self.enemy.origin - self.origin);
     self.ideal_yaw = anglemod(self.ideal_yaw);
     ChangeYaw();
@@ -276,6 +304,7 @@ void () Sentry_Rotate = {
 
     self.effects = self.effects - (self.effects & EF_DIMLIGHT);
     CheckSentry(self);
+    Sentry_ReportAim(FALSE);
 
     if (fo_sentry_targeting)
     {

@@ -356,6 +356,8 @@ void () worldspawn = {
     clientstat(STAT_ALL_TIME, EV_FLOAT, all_time);
     clientstat(STAT_FLAGS, EV_FLOAT, stat_flags);
     clientstat(STAT_SPAWN_GEN, EV_FLOAT, spawn_gen);
+    clientstat(STAT_SENTRY_GUN, EV_FLOAT, sentry_aim_gun);
+    clientstat(STAT_SENTRY_ENEMY, EV_FLOAT, sentry_aim_enemy);
 
     globalstat(STAT_ROUND_END, EV_FLOAT, "round_end_time");
     globalstat(STAT_PAUSED, EV_FLOAT, "cs_paused");

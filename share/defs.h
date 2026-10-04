@@ -1457,6 +1457,10 @@ enum {
 #define STAT_SPAWN_GEN          39
 #define STAT_ROUND_END          40
 #define STAT_ORG_GAME           41
+// The player's own sentry gun, and what it is tracking (0 for nothing), as
+// entity numbers: the client draws its laser sight from them.
+#define STAT_SENTRY_GUN         42
+#define STAT_SENTRY_ENEMY       43
 
 // Dimensions
 #define DMN_FLASH 1 // when flashed, we set dimension see to this

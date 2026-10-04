@@ -3460,6 +3460,7 @@ void PlayerGren_Apply();
 void PlayerGren_Blast();
 
 void () PlayerPostThink = {
+    Sentry_CheckAimStat(self);
     // Run the weapon, think and predict-state path on the command clock, so
     // every schedule set here and every comparison against it uses the clock
     // the client rebuilds from the echoed state plus exact frame lengths: the

@@ -10,6 +10,8 @@ New commands
 * `cmd pmove_status` lists every client with the movement prediction and knock prediction (self, other) their client advertises, and whether it is predicting doors
 * `pm_doors -1` with movement prediction on, collide with and draw doors from their schedule: each command meets a door where it is at that command's time, and a door you open starts on your own touch. `0` uses the engine's copy of the door
 * `pm_doorsdebug 0` `1` prints door clips, predicted starts and the prediction's error near a door; `2` adds each moving door's drawn position every frame
+* `tf_sentry_laser 1` draw a laser sight on your own sentry gun: along its heading while it sweeps, onto its target while it tracks, with a dot once it is lined up to fire. `0` off
+* `tf_build_preview_range 1` while placing a sentry, show on the floor where it will shoot: all round to 500, and to 1000 over the arc its cone sweeps, clipped to what it can see
 * `+slot n` bind. fires nth weapon
 * `fo_default_weapon 0` default weapon when using `+slot` binds
 * `fo_hud_cache 1` less resource intensive hud

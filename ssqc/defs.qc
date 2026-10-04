@@ -60,6 +60,7 @@ void SendPushVolumes(entity pl);   // triggers.qc
 void DoorNet_Changed();            // doorpred.qc
 void DoorNet_LegStart();
 void DoorNet_Frame();
+void (entity p) Sentry_CheckAimStat;   // sentry.qc
 float SpawnProtectedFrom(entity targ, entity inflictor, entity attacker);   // combat.qc
 void SpawnProtect_End(entity p);
 void SpawnProtect_Pulse();

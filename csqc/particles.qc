@@ -76,52 +76,17 @@ static string gas_p[] = {
 	ramp 0 0 0 0.4\
 }\n"};
 
-static string sentry_p[] = {
-"r_part sentry_radius_max\
-{\
-	texture \"particles/flare2.tga\"\
-	count 200\
-	scale 8\
-	scalefactor 0\
-	alpha 0.8\
-	die 0.5\
-	diesubrand 0.2\
-	rgb 255 50 50\
-	friction 0 0 1\
-	spawnorg 1000 0\
-	spawnmode circle\
-	clipcount 0\
-};\n",
-"r_part sentry_radius_fast\
-{\
-	texture \"particles/flare2.tga\"\
-	count 100\
-	scale 8\
-	scalefactor 0\
-	alpha 0.4\
-	die 0.5\
-	diesubrand 0.2\
-	rgb 255 255 50\
-	friction 0 0 1\
-	spawnorg 500 0\
-	spawnmode circle\
-	clipcount 0\
-};\n"};
-
 void Register_Particles() {
 #if 0
     localcmd("wait\nwait\nwait\n");  // Synchronizes some unknown race
 #endif
     // Gas names carry the build suffix so they cannot be redefined by a client
     // that wants to see through the cloud; the server derives the same name.
-    // The sentry rings are client-only decoration, so they stay fixed.
     localcmd(sprintf(gas_p[0], FO_NAME_SUFFIX, FO_NAME_SUFFIX));
     localcmd(sprintf(gas_p[1], FO_NAME_SUFFIX, FO_NAME_SUFFIX));
     // Suffix twice on purpose: fteqcc cannot tell which array element the
     // format string is, so it checks every call against the widest one and
     // warns that arg 3 is missing here.  sprintf ignores the surplus argument.
     localcmd(sprintf(gas_p[2], FO_NAME_SUFFIX, FO_NAME_SUFFIX));
-    localcmd(sentry_p[0]);
-    localcmd(sentry_p[1]);
 }
 

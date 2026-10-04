@@ -896,7 +896,6 @@ void PM_AddNudgeDash(float cseq);
 
 
 static float disp_index, sentry_index;
-static float part_sentry_range[2];
 
 static void WP_InitSentryPreview() {
     // This is a bit annoying with pmove and !pmove..
@@ -917,9 +916,6 @@ static void WP_InitSentryPreview() {
 
     pengine.building_preview = building;
     pengine.building_owner = building_owner;
-
-    part_sentry_range[0] = particleeffectnum("sentry_radius_max");
-    part_sentry_range[1] = particleeffectnum("sentry_radius_fast");
 }
 
 void WP_ActivateBuildingPreview(float type) {
@@ -974,13 +970,239 @@ void WP_PreviewSentry() {
         setorigin(building_preview, trace_endpos + '0 0 0');
 
     building_preview.drawmask = MASK_ENGINE;
+}
 
-    static float next_particles;
-    if (pengine.preview == 1 && CVARF(tf_build_preview_range) &&
-        time > next_particles) {
-        pointparticles(part_sentry_range[0], building_preview.origin);
-        pointparticles(part_sentry_range[1], building_preview.origin);
-        next_particles = time + 0.025;
+// The sentry preview's range, drawn on the floor around it.
+//
+// What a sentry will shoot at, from Sentry_FindTarget: anyone it can see
+// within 500 of its eye, in any direction; from 500 to 1000 only inside its
+// front cone (infront: dot > 0.3, 72.5 degrees either side); nothing past
+// 1000.  Idle, the gun sweeps 50 degrees either side of the yaw it was built
+// at, so the outer band covers 122.5 degrees either side over a sweep, and the
+// cone itself is drawn sweeping through it as the real one will.  Range is
+// measured from the gun's eye, 8 above the base and 22 above that.
+//
+// Rays are cast from that eye and stop at walls, as `visible` does, and every
+// vertex is dropped onto the floor beneath it, so the shape follows stairs
+// and ledges and does not go through walls.  The rays are cast only when the
+// preview moves; the polygons are emitted every frame, since a scene polygon
+// lasts one renderscene.
+static const float kSRNear = 500;
+static const float kSRFar = 1000;
+static const float kSREyeZ = 30;          // base to gun (8) plus view_ofs (22)
+static const float kSRCone = 72.5424;     // acos(0.3), infront's half angle
+static const float kSRSweep = 50;         // waitmin/waitmax about the build yaw
+static const float kSRArc = 122.5424;     // kSRSweep + kSRCone
+static const float kSRSweepRate = 100;    // yaw_speed 10 per 0.1 s think
+static const float kSRRays = 72;          // 5 degrees apart
+static const float kSRRings = 9;          // samples per ray, 0 .. kSRFar
+static const float kSRRingStep = 125;     // kSRFar / (kSRRings - 1)
+static const float kSRRim = 12;           // width of the glowing edge bands
+static const float kSRLift = 1.5;         // above the floor, against z-fighting
+static const float kSRRecastDt = 1.0 / 30.0;
+
+static vector sr_pt[kSRRays * kSRRings];  // vertex on the floor per ray, ring
+static float sr_reach[kSRRays];           // how far each ray sees, <= kSRFar
+static vector sr_center;                  // the gun's eye
+static float sr_yaw, sr_valid, sr_next_cast;
+static string sr_shader;
+
+static float SR_FloorZ(vector p, float fallback) {
+    traceline(p, p - '0 0 192', MOVE_NOMONSTERS, pengine.building_preview);
+    return trace_fraction < 1 ? trace_endpos_z : fallback;
+}
+
+static void SR_Cast(vector base, float yaw) {
+    entity ignore = pengine.building_preview;
+    sr_center = base + [0, 0, kSREyeZ];
+    sr_yaw = yaw;
+    for (float i = 0; i < kSRRays; i++) {
+        float a = (yaw + i * (360 / kSRRays)) * (M_PI / 180);
+        vector dir = [cos(a), sin(a), 0];
+        traceline(sr_center, sr_center + dir * kSRFar, MOVE_NOMONSTERS, ignore);
+        // A unit short of whatever stopped it, so the drop starts in the open.
+        float reach = kSRFar;
+        if (trace_fraction < 1)
+            reach = max(0, trace_fraction * kSRFar - 1);
+        sr_reach[i] = reach;
+        float z = base_z;
+        for (float k = 0; k < kSRRings; k++) {
+            vector p = sr_center + dir * min(k * kSRRingStep, reach);
+            if (k)
+                z = SR_FloorZ(p, z);
+            p_z = z + kSRLift;
+            sr_pt[i * kSRRings + k] = p;
+        }
+    }
+    sr_valid = TRUE;
+}
+
+// Degrees from the build yaw, -180 .. 180, of ray i.
+static float SR_Off(float i) {
+    float off = i * (360 / kSRRays);
+    return off > 180 ? off - 360 : off;
+}
+
+// The outer band's alpha scale at an offset: whole inside the arc the cone
+// sweeps, fading to nothing over its last 12 degrees.
+static float SR_ArcFade(float off) {
+    return bound(0, (kSRArc - fabs(off)) / 12, 1);
+}
+
+static float SR_Sq(float x) { return x * x; }
+
+// Brighter inside the cone as it is now, soft at its edges.
+static float SR_ConeBoost(float off, float facing) {
+    return bound(0, (kSRCone - fabs(off - facing)) / 10, 1);
+}
+
+static void SR_Quad(vector a, vector b, vector c, vector d, vector rgb,
+                    float aa, float ab, float ac, float ad) {
+    if (aa <= 0 && ab <= 0 && ac <= 0 && ad <= 0)
+        return;
+    R_PolygonVertex(a, '0 0 0', rgb, aa);
+    R_PolygonVertex(b, '0 0 0', rgb, ab);
+    R_PolygonVertex(c, '0 0 0', rgb, ac);
+    R_PolygonVertex(d, '0 0 0', rgb, ad);
+    R_EndPolygon();
+}
+
+// A ring sample pulled in toward the centre, keeping its height: the inner
+// edge of a rim band.
+static vector SR_Inset(vector p, float by) {
+    vector flat = p - sr_center;
+    flat_z = 0;
+    float r = vlen(flat);
+    vector q = p;
+    if (r > by)
+        q = sr_center + flat * ((r - by) / r);
+    q_z = p_z;
+    return q;
+}
+
+void WP_DrawSentryRange() {
+    if (pengine.preview != 1 || !CVARF(tf_build_preview_range) ||
+        !pengine.building_preview.drawmask) {
+        sr_valid = FALSE;
+        return;
+    }
+
+    entity bp = pengine.building_preview;
+    if (!sr_valid || (time >= sr_next_cast &&
+        (vlen(bp.origin + [0, 0, kSREyeZ] - sr_center) > 0.5 ||
+         fabs(anglemod(bp.angles_y - sr_yaw + 180) - 180) > 0.5))) {
+        SR_Cast(bp.origin, bp.angles_y);
+        sr_next_cast = time + kSRRecastDt;
+    }
+
+    // Named with the client source hash, as rnds() does in tfx.qc: an edited
+    // body gets a new name, which shaderforname's by-name cache would
+    // otherwise ignore.
+    if (!sr_shader) {
+        sr_shader = strzone(strcat("sentry_range_", FO_NAME_SUFFIX));
+        shaderforname(sr_shader,
+            "{\n"
+            "    cull disable\n"
+            "    polygonoffset\n"
+            "    {\n"
+            "        map $whiteimage\n"
+            "        blendfunc GL_SRC_ALPHA GL_ONE\n"
+            "        rgbgen vertex\n"
+            "        alphagen vertex\n"
+            "    }\n"
+            "}\n");
+    }
+    R_BeginPolygon(sr_shader);
+
+    const vector kNearRGB = '1 0.72 0.22';
+    const vector kFarRGB = '1 0.28 0.18';
+    const vector kBeamRGB = '1 0.92 0.75';
+
+    // The cone's facing now, a triangle wave over the sweep, and a slow
+    // breath on the edges.
+    float s = time * kSRSweepRate / (4 * kSRSweep);
+    s -= floor(s);
+    float facing = kSRSweep * (s < 0.5 ? 4 * s - 1 : 3 - 4 * s);
+    float pulse = 0.85 + 0.15 * sin(time * 3);
+
+    float nearRing = kSRNear / kSRRingStep;
+    for (float i = 0; i < kSRRays; i++) {
+        float j = (i + 1) % kSRRays;
+        float i0 = i * kSRRings, j0 = j * kSRRings;
+        float offi = SR_Off(i), offj = SR_Off(j);
+
+        // Inner disc: faint at the gun, brightening toward its edge.
+        for (float k = 0; k < nearRing; k++) {
+            float rk = k * kSRRingStep, rk1 = rk + kSRRingStep;
+            if (sr_reach[i] <= rk && sr_reach[j] <= rk)
+                break;
+            float ri = min(rk, sr_reach[i]), ri1 = min(rk1, sr_reach[i]);
+            float rj = min(rk, sr_reach[j]), rj1 = min(rk1, sr_reach[j]);
+            SR_Quad(sr_pt[i0 + k], sr_pt[i0 + k + 1], sr_pt[j0 + k + 1], sr_pt[j0 + k],
+                    kNearRGB,
+                    0.03 + 0.13 * SR_Sq(ri / kSRNear),
+                    0.03 + 0.13 * SR_Sq(ri1 / kSRNear),
+                    0.03 + 0.13 * SR_Sq(rj1 / kSRNear),
+                    0.03 + 0.13 * SR_Sq(rj / kSRNear));
+        }
+        // Its rim, where nothing stands in the way.
+        if (sr_reach[i] >= kSRNear && sr_reach[j] >= kSRNear) {
+            vector oi = sr_pt[i0 + nearRing], oj = sr_pt[j0 + nearRing];
+            SR_Quad(SR_Inset(oi, kSRRim), oi, oj, SR_Inset(oj, kSRRim), kNearRGB,
+                    0.12 * pulse, 0.55 * pulse, 0.55 * pulse, 0.12 * pulse);
+        }
+
+        // Outer band, over the arc the cone sweeps, the cone itself brighter.
+        // Not where either ray stops short of it: that quad would fold back
+        // over the inner disc.  The only gap where the offsets jump, from 180
+        // to -175, is behind the arc and faded out.
+        float fi = SR_ArcFade(offi), fj = SR_ArcFade(offj);
+        if ((fi <= 0 && fj <= 0) || sr_reach[i] <= kSRNear || sr_reach[j] <= kSRNear)
+            continue;
+        float bi = 0.07 * SR_ConeBoost(offi, facing);
+        float bj = 0.07 * SR_ConeBoost(offj, facing);
+        for (float k = nearRing; k < kSRRings - 1; k++) {
+            float rk = k * kSRRingStep, rk1 = rk + kSRRingStep;
+            if (sr_reach[i] <= rk && sr_reach[j] <= rk)
+                break;
+            float ti = (min(rk, sr_reach[i]) - kSRNear) / (kSRFar - kSRNear);
+            float ti1 = (min(rk1, sr_reach[i]) - kSRNear) / (kSRFar - kSRNear);
+            float tj = (min(rk, sr_reach[j]) - kSRNear) / (kSRFar - kSRNear);
+            float tj1 = (min(rk1, sr_reach[j]) - kSRNear) / (kSRFar - kSRNear);
+            SR_Quad(sr_pt[i0 + k], sr_pt[i0 + k + 1], sr_pt[j0 + k + 1], sr_pt[j0 + k],
+                    kFarRGB,
+                    fi * (0.02 + 0.08 * SR_Sq(max(0, ti)) + bi),
+                    fi * (0.02 + 0.08 * SR_Sq(max(0, ti1)) + bi),
+                    fj * (0.02 + 0.08 * SR_Sq(max(0, tj1)) + bj),
+                    fj * (0.02 + 0.08 * SR_Sq(max(0, tj)) + bj));
+        }
+        if (sr_reach[i] >= kSRFar && sr_reach[j] >= kSRFar) {
+            vector oi = sr_pt[i0 + kSRRings - 1], oj = sr_pt[j0 + kSRRings - 1];
+            SR_Quad(SR_Inset(oi, kSRRim), oi, oj, SR_Inset(oj, kSRRim), kFarRGB,
+                    fi * 0.1 * pulse, fi * 0.45 * pulse,
+                    fj * 0.45 * pulse, fj * 0.1 * pulse);
+        }
+    }
+
+    // The gun's facing: a thin beam from the gun to as far as it sees,
+    // between the two rays either side of it.
+    float p = facing / (360 / kSRRays);
+    float a0 = floor(p);
+    float t = p - a0;
+    float ra = (a0 + kSRRays) % kSRRays, rb = (a0 + 1 + kSRRays) % kSRRays;
+    float fa = (sr_yaw + facing) * (M_PI / 180);
+    vector side = [-sin(fa), cos(fa), 0] * 2.5;
+    vector prev = '0 0 0';
+    for (float k = 0; k < kSRRings; k++) {
+        vector pa = sr_pt[ra * kSRRings + k], pb = sr_pt[rb * kSRRings + k];
+        vector q = pa + (pb - pa) * t;
+        if (k) {
+            float al0 = 0.4 * (1 - (k - 1) / kSRRings);
+            float al1 = 0.4 * (1 - k / kSRRings);
+            SR_Quad(prev - side, q - side, q + side, prev + side, kBeamRGB,
+                    al0, al1, al1, al0);
+        }
+        prev = q;
     }
 }
 
